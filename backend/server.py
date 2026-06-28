@@ -919,7 +919,353 @@ async def get_tiers():
         ]},
     ]
 
-# -------------------- HEALTH --------------------
+# -------------------- TAX VAULT --------------------
+class VaultSetupIn(BaseModel):
+    institution_name: Optional[str] = "Milli Reserve (Demo Partner)"
+    account_nickname: Optional[str] = "Tax Vault"
+
+class VaultRuleIn(BaseModel):
+    mode: Optional[str] = None  # auto | approval | manual
+    strategy: Optional[str] = None  # conservative | balanced | minimum
+    fixed_percentage: Optional[float] = None  # if None → use Milli-calculated
+    min_checking_balance: Optional[float] = None
+    max_daily_transfer: Optional[float] = None
+    paused: Optional[bool] = None
+
+class VaultTransferIn(BaseModel):
+    amount: float
+    direction: str  # in | out
+    note: Optional[str] = None
+
+class QuarterlyPaymentIn(BaseModel):
+    period: str  # Q1 / Q2 / Q3 / Q4
+    year: int
+    amount: float
+    paid_on: Optional[str] = None
+    confirmation: Optional[str] = None
+    method: Optional[str] = "IRS Direct Pay"
+
+STRATEGY_RATIOS = {"conservative": 0.30, "balanced": 0.25, "minimum": 0.20}
+
+async def _get_vault(user_id: str):
+    return await db.tax_vaults.find_one({"user_id": user_id}, {"_id": 0})
+
+@api.post("/vault/setup")
+async def vault_setup(body: VaultSetupIn, user: dict = Depends(get_current_user)):
+    existing = await _get_vault(user["id"])
+    if existing:
+        return existing
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "institution_name": body.institution_name,
+        "account_nickname": body.account_nickname,
+        "account_number_masked": "****" + str(uuid.uuid4().int)[-4:],
+        "routing_number_masked": "****" + str(uuid.uuid4().int)[-4:],
+        "balance": 0.0,
+        "interest_earned_ytd": 0.0,
+        "rule": {
+            "mode": "auto",
+            "strategy": "balanced",
+            "fixed_percentage": None,
+            "min_checking_balance": 200.0,
+            "max_daily_transfer": 1000.0,
+            "paused": False,
+        },
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.tax_vaults.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api.get("/vault")
+async def vault_get(user: dict = Depends(get_current_user)):
+    v = await _get_vault(user["id"])
+    if not v:
+        return None
+    transfers = await db.vault_transfers.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    v["transfers"] = transfers
+    return v
+
+@api.put("/vault/rule")
+async def vault_rule(body: VaultRuleIn, user: dict = Depends(get_current_user)):
+    v = await _get_vault(user["id"])
+    if not v:
+        raise HTTPException(404, "Vault not set up")
+    rule = v.get("rule", {})
+    for k, val in body.dict(exclude_none=True).items():
+        rule[k] = val
+    await db.tax_vaults.update_one({"user_id": user["id"]}, {"$set": {"rule": rule}})
+    return rule
+
+@api.post("/vault/transfer")
+async def vault_transfer(body: VaultTransferIn, user: dict = Depends(get_current_user)):
+    v = await _get_vault(user["id"])
+    if not v:
+        raise HTTPException(400, "Set up the Tax Vault first")
+    amt = round(float(body.amount), 2)
+    if amt <= 0:
+        raise HTTPException(400, "Amount must be > 0")
+    delta = amt if body.direction == "in" else -amt
+    new_balance = round(v.get("balance", 0) + delta, 2)
+    if new_balance < 0:
+        raise HTTPException(400, "Insufficient Vault balance")
+    tx = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "direction": body.direction,
+        "amount": amt,
+        "balance_after": new_balance,
+        "note": body.note or ("Auto reserve" if body.direction == "in" else "Withdrawal"),
+        "source": "manual",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.vault_transfers.insert_one(tx)
+    await db.tax_vaults.update_one({"user_id": user["id"]}, {"$set": {"balance": new_balance}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {"tax_savings_balance": new_balance}})
+    tx.pop("_id", None)
+    return tx
+
+# Modified manual deposit to auto-reserve if vault + auto mode
+@api.post("/deposits/manual-v2")
+async def add_manual_deposit_v2(body: dict, user: dict = Depends(get_current_user)):
+    amount = float(body.get("amount", 0))
+    if amount <= 0:
+        raise HTTPException(400, "Amount must be > 0")
+    vault = await _get_vault(user["id"])
+    rule = (vault or {}).get("rule", {}) if vault else {}
+    strategy = rule.get("strategy", "balanced")
+    pct = rule.get("fixed_percentage")
+    if pct is None:
+        pct = STRATEGY_RATIOS.get(strategy, 0.25)
+    savings = round(amount * pct, 2)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "transaction_id": f"manual_{uuid.uuid4()}",
+        "plaid_item_id": None,
+        "date": body.get("date") or datetime.now(timezone.utc).date().isoformat(),
+        "merchant": body.get("merchant") or body.get("platform") or "Manual",
+        "platform": body.get("platform") or "Manual",
+        "amount": amount,
+        "savings_set_aside": savings,
+        "auto_allocated": vault is not None and not rule.get("paused") and rule.get("mode") == "auto",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.deposits.insert_one(doc)
+    # If auto-reserve + vault exists, transfer
+    if doc["auto_allocated"]:
+        new_balance = round(vault.get("balance", 0) + savings, 2)
+        await db.vault_transfers.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "direction": "in",
+            "amount": savings,
+            "balance_after": new_balance,
+            "note": f"Auto reserve from {doc['platform']} (${amount:.2f})",
+            "source": "auto",
+            "deposit_id": doc["id"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        await db.tax_vaults.update_one({"user_id": user["id"]}, {"$set": {"balance": new_balance}})
+        await db.users.update_one({"id": user["id"]}, {"$set": {"tax_savings_balance": new_balance}})
+    doc.pop("_id", None)
+    return doc
+
+# -------------------- QUARTERLY TAX CENTER --------------------
+@api.get("/quarterly")
+async def quarterly_overview(user: dict = Depends(get_current_user), year: Optional[int] = None):
+    year = year or datetime.now(timezone.utc).year
+    summary = await tax_summary(user, year)
+    payments = await db.quarterly_payments.find({"user_id": user["id"], "year": year}, {"_id": 0}).to_list(100)
+    paid_by_q = {p["period"]: p for p in payments}
+    quarters = []
+    today = date.today()
+    for d, label in _quarter_due_dates(year):
+        q_amount = round(summary["estimated_tax"] / 4, 2)
+        paid = paid_by_q.get(label)
+        vault = await _get_vault(user["id"])
+        reserved = round(min((vault or {}).get("balance", 0), q_amount), 2)
+        readiness = 100 if paid else (round(reserved / q_amount * 100) if q_amount else 0)
+        quarters.append({
+            "period": label,
+            "due_date": d.isoformat(),
+            "amount": q_amount,
+            "reserved": reserved,
+            "readiness": min(100, readiness),
+            "days_until": (d - today).days,
+            "status": "paid" if paid else ("overdue" if d < today else "upcoming"),
+            "payment": paid,
+        })
+    return {"year": year, "quarters": quarters, "annual_estimate": summary["estimated_tax"]}
+
+@api.post("/quarterly/payment")
+async def record_quarterly_payment(body: QuarterlyPaymentIn, user: dict = Depends(get_current_user)):
+    if body.period not in ("Q1", "Q2", "Q3", "Q4"):
+        raise HTTPException(400, "Invalid period")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "period": body.period,
+        "year": int(body.year),
+        "amount": float(body.amount),
+        "paid_on": body.paid_on or datetime.now(timezone.utc).date().isoformat(),
+        "confirmation": body.confirmation,
+        "method": body.method or "IRS Direct Pay",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.quarterly_payments.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+# -------------------- DEMO MODE --------------------
+@api.post("/demo/seed")
+async def demo_seed():
+    """Create or refresh demo user 'Jordan Taylor' and return a token."""
+    email = "demo@milli.app"
+    user = await db.users.find_one({"email": email})
+    if user:
+        # Wipe existing demo data to keep it fresh
+        uid = user["id"]
+        await db.deposits.delete_many({"user_id": uid})
+        await db.trips.delete_many({"user_id": uid})
+        await db.expenses.delete_many({"user_id": uid})
+        await db.vault_transfers.delete_many({"user_id": uid})
+        await db.tax_vaults.delete_many({"user_id": uid})
+        await db.quarterly_payments.delete_many({"user_id": uid})
+    else:
+        uid = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
+        await db.users.insert_one({
+            "id": uid,
+            "email": email,
+            "name": "Jordan Taylor",
+            "state": "CA",
+            "filing_status": "single",
+            "password_hash": hash_password("milli-demo-2026"),
+            "plan": "elite",
+            "trial_end": (now + timedelta(days=30)).isoformat(),
+            "stripe_active_until": (now + timedelta(days=30)).isoformat(),
+            "plaid_items": [],
+            "tax_savings_balance": 0.0,
+            "created_at": now.isoformat(),
+        })
+
+    # Seed deposits across 6 months
+    import random
+    random.seed(42)
+    today = date.today()
+    platforms = ["DoorDash", "Uber", "Spark", "Lyft", "Instacart", "Upwork"]
+    total_gross = 0.0
+    for i in range(40):
+        plat = random.choice(platforms)
+        amt = round(random.uniform(45, 285), 2)
+        d_date = (today - timedelta(days=random.randint(0, 180))).isoformat()
+        savings = round(amt * 0.27, 2)
+        await db.deposits.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": uid,
+            "transaction_id": f"demo_{uuid.uuid4()}",
+            "plaid_item_id": None,
+            "date": d_date,
+            "merchant": plat,
+            "platform": plat,
+            "amount": amt,
+            "savings_set_aside": savings,
+            "auto_allocated": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        total_gross += amt
+
+    # Seed mileage trips
+    total_miles = 0.0
+    for i in range(28):
+        miles = round(random.uniform(8, 95), 2)
+        plat = random.choice(platforms[:5])
+        d_date = (today - timedelta(days=random.randint(0, 120)))
+        await db.trips.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": uid,
+            "status": "completed",
+            "purpose": "delivery" if plat != "Upwork" else "client_meeting",
+            "platform": plat,
+            "start_address": None,
+            "end_address": None,
+            "start_time": f"{d_date.isoformat()}T09:00:00Z",
+            "end_time": f"{d_date.isoformat()}T17:00:00Z",
+            "miles": miles,
+            "deductible_value": round(miles * IRS_MILEAGE_RATE, 2),
+            "manual": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        total_miles += miles
+
+    # Seed expenses
+    cats = [("gas", "Shell"), ("gas", "Chevron"), ("maintenance", "Jiffy Lube"),
+            ("phone", "Verizon"), ("supplies", "Amazon"), ("food", "Chipotle"),
+            ("software", "Adobe"), ("insurance", "Geico")]
+    for i in range(18):
+        cat, merch = random.choice(cats)
+        amt = round(random.uniform(12, 180), 2)
+        await db.expenses.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": uid,
+            "date": (today - timedelta(days=random.randint(0, 150))).isoformat(),
+            "amount": amt,
+            "category": cat if cat != "software" else "other",
+            "merchant": merch,
+            "notes": None,
+            "receipt_url": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    # Seed Vault with ~80% of recommended reserve
+    vault_balance = round(total_gross * 0.27 * 0.80, 2)
+    await db.tax_vaults.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": uid,
+        "institution_name": "Milli Reserve (Demo Partner)",
+        "account_nickname": "Tax Vault",
+        "account_number_masked": "****4821",
+        "routing_number_masked": "****0397",
+        "balance": vault_balance,
+        "interest_earned_ytd": round(vault_balance * 0.042 * 0.5, 2),
+        "rule": {"mode": "auto", "strategy": "balanced", "fixed_percentage": 0.27,
+                 "min_checking_balance": 200.0, "max_daily_transfer": 1000.0, "paused": False},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    await db.users.update_one({"id": uid}, {"$set": {"tax_savings_balance": vault_balance}})
+
+    # Seed last 10 transfers
+    for i in range(10):
+        amt = round(random.uniform(35, 220), 2)
+        await db.vault_transfers.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": uid,
+            "direction": "in",
+            "amount": amt,
+            "balance_after": vault_balance,
+            "note": f"Auto reserve from {random.choice(platforms[:5])}",
+            "source": "auto",
+            "created_at": (datetime.now(timezone.utc) - timedelta(days=i*2)).isoformat(),
+        })
+
+    # Record Q1 payment
+    await db.quarterly_payments.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": uid,
+        "period": "Q1",
+        "year": today.year,
+        "amount": 2860.0,
+        "paid_on": f"{today.year}-04-15",
+        "confirmation": "IRS-DP-2026-04812",
+        "method": "IRS Direct Pay",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    return {"token": create_token(uid, email), "user": {"id": uid, "email": email, "name": "Jordan Taylor", "plan": "elite"}}
+
+
 @api.get("/")
 async def root():
     return {"name": "TaxHaul", "ok": True}
@@ -947,6 +1293,9 @@ async def _startup():
     await db.expenses.create_index("user_id")
     await db.plaid_items.create_index("user_id")
     await db.payment_transactions.create_index("session_id", unique=True)
+    await db.tax_vaults.create_index("user_id", unique=True)
+    await db.vault_transfers.create_index("user_id")
+    await db.quarterly_payments.create_index([("user_id", 1), ("year", 1), ("period", 1)])
 
 @app.on_event("shutdown")
 async def _shutdown():

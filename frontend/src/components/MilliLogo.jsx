@@ -22,8 +22,8 @@ export default function MilliLogo({ size = 64, withRoad = true, className = "" }
           <stop offset="100%" stopColor="#E8EEF2" />
         </linearGradient>
         <linearGradient id={`${id}-cyan`} x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#00E5FF" stopOpacity="1" />
+          <stop offset="0%" stopColor="#13D8D1" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#13D8D1" stopOpacity="1" />
         </linearGradient>
       </defs>
 

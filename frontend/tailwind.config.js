@@ -8,9 +8,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Inter"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Audiowide"', '"Outfit"', 'system-ui', 'sans-serif'],
-        chrome: ['"Orbitron"', '"Outfit"', 'system-ui', 'sans-serif'],
+        sans: ['"Manrope"', '"Inter"', 'system-ui', 'sans-serif'],
+        display: ['"Manrope"', '"Inter"', 'system-ui', 'sans-serif'],
+        chrome: ['"Manrope"', '"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
@@ -23,29 +23,30 @@ module.exports = {
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
-        // Brand: cyan / chrome aesthetic
+        // Brand: turquoise & polished silver
         volt: {
-          DEFAULT: '#00E5FF',
-          hover: '#00C8E0',
+          DEFAULT: '#13D8D1',
+          hover: '#10BFB9',
         },
         cyan: {
-          400: '#00E5FF',
-          500: '#00C8E0',
-          600: '#00A0B8',
+          400: '#13D8D1',
+          500: '#10BFB9',
+          600: '#087F82',
         },
         chrome: {
-          100: '#F4F8FA',
-          200: '#D8E0E5',
-          300: '#A8B3BA',
-          400: '#7A8590',
-          500: '#5B6670',
+          100: '#F7F9FA',
+          200: '#D9E0E4',
+          300: '#8B949B',
+          400: '#5B6670',
+          500: '#3A4450',
         },
-        obsidian: '#03060A',
-        surface: '#0A1015',
-        hairline: '#1A2530',
-        danger: '#FF4D6A',
-        success: '#00FFB0',
-        info: '#00E5FF',
+        obsidian: '#050607',
+        surface: '#0B0E11',
+        hairline: '#1B2027',
+        danger: '#FF5C67',
+        success: '#39D98A',
+        warning: '#FFB547',
+        info: '#13D8D1',
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'

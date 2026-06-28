@@ -1,45 +1,72 @@
-# MILLI — PRD
+# MILLI — Tax Autopilot for Gig Workers
 
-## Problem Statement (original)
-"Build me a comprehensive tax collection and mileage tracker app that can connect with apps like spark or uber and door dash. Allowing those who deliver to remove and collect tax and track miles for end of year tax's"
+## Positioning
+**Tax Autopilot for Gig Workers** — _Earn freely. Milli handles the tax side._
 
-## Target User
-US-based 1099 gig delivery drivers (Uber, DoorDash, Spark, Lyft, Instacart, Amazon Flex, Grubhub, Shipt). Typically not tax-savvy; need a tool that auto-saves tax, tracks miles, and produces year-end forms.
+## Target Users
+Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelancers · independent contractors · creators · consultants · home-service pros · anyone with 1099 income.
 
-## User Decisions Captured
-- Bank → Plaid (sandbox keys provided, production secret available for switch)
-- Auth: Email + password (JWT, Bearer token, localStorage)
-- Mileage: device geolocation (browser GPS)
-- Tax: Federal SE 15.3% + quarterly + state (configurable on signup)
-- AI: Gemini 3 Flash (cheapest) via Emergent Universal Key — tax tips chat + receipt OCR
-- Pricing: 3-day trial → Basic $19.99 / Pro $29.99 / Elite $49.99 (Stripe via emergentintegrations)
-- "Elite" feature: auto-allocate tax savings per deposit + auto-generate Schedule C + SE PDFs
-
-## Core Requirements
-1. Marketing landing + sign-up + login
-2. Plaid Link → bank connect → auto-detect gig deposits → suggest tax savings %
-3. Live GPS trip tracker + manual trip entry + trip history
-4. Expense ledger with AI receipt OCR (Pro+)
-5. AI tax assistant chat (streaming)
-6. Schedule C + SE worksheet PDF (Pro+), mileage CSV (all)
-7. Stripe checkout for tier upgrade (Basic / Pro / Elite)
-8. Quarterly estimated tax tracker
+## Brand
+- Glossy Black `#050607`, Milli Turquoise `#13D8D1`, Deep Teal `#087F82`, Polished Silver `#D9E0E4`, Alpine White `#F7F9FA`, Supporting Gray `#8B949B`. Status: success `#39D98A`, warning `#FFB547`, critical `#FF5C67`.
+- Typography: Manrope / Inter (no display fonts), tabular numerals.
+- Chrome M monogram logo with turquoise road accent.
+- Premium glass cards `rounded-2xl` on carbon-fibre obsidian background.
 
 ## Implemented (2026-02)
-- Backend (FastAPI, MongoDB) — full auth, Plaid (link/exchange/sync), trips (start/end/active/manual/list/delete), expenses (CRUD + OCR via Gemini 3 Flash), AI streaming chat, tax summary (SE+fed+state+quarterly), reports (Schedule C PDF, mileage CSV), Stripe checkout (3 tiers) + polling status + webhook
-- Frontend (React, Tailwind, Phosphor icons, shadcn baseline) — Landing, Login, Register, Dashboard, Income (Plaid Link), Mileage (live GPS + manual), Expenses (+ OCR upload), AI Assistant (SSE streaming), Reports (PDF/CSV downloads), Pricing, Billing success polling, Settings
-- Design — Volt Yellow / Obsidian / Neo-Brutalist tactical theme per design agent
-- Test credentials saved to `/app/memory/test_credentials.md`
+### Backend (FastAPI, MongoDB)
+- Auth: email + password JWT, configurable state on signup
+- Plaid: link-token, exchange, sync, items list/remove
+- Income: auto-detected gig deposits + manual entry with auto-reserve to Vault
+- Mileage: live GPS tracking (Haversine), manual entry, list, delete
+- Expenses: CRUD + AI receipt OCR (Gemini 3 Flash)
+- AI tax assistant chat (SSE streaming)
+- Tax summary: SE 15.3% + federal + state + quarterly estimate
+- **Tax Vault** (`/api/vault/...`): setup, balance, rules (mode/strategy/percentage/min-balance/max-daily/pause), in/out transfers, transfer history
+- **Quarterly Tax Center** (`/api/quarterly/...`): 4-quarter overview with reserved + readiness, record outside payment
+- Reports: Schedule C + SE worksheet PDF, mileage CSV
+- Stripe checkout (3 tiers via emergentintegrations) + webhook + polling
+- **Demo Mode** (`POST /api/demo/seed`): one-click Jordan Taylor demo user with 40 deposits, 28 trips, 18 expenses, vault balance, Q1 paid payment record
 
-## Known / MOCKED items
-- Stripe is **one-time payment that grants 30 days of access**, not native recurring subscriptions (emergentintegrations doesn't support native Stripe subscription billing). Webhook + polling both update plan.
-- Schedule C PDF is a worksheet — not an officially-fillable IRS PDF.
-- State tax uses simplified flat top-bracket estimates.
+### Frontend (React, Tailwind, Phosphor icons)
+- Landing page (rebranded, demo CTA, turquoise theme)
+- Login, Register, Billing success polling
+- Dashboard with Quarterly Payment hero, Tax Ready Score circular ring, Quarterly Checklist, Federal+State Filing Elite card, KPI grid
+- Income (Plaid Link, manual deposits, ledger)
+- Mileage (live GPS tracker, manual trip, history)
+- Expenses (manual + AI receipt OCR)
+- AI Assistant (streaming chat)
+- Reports (PDF/CSV download)
+- Pricing (3 tiers + 3-day trial)
+- Settings (profile, state, filing status)
+- **Tax Vault** (new): balance card, account details, auto-reserve rules dialog, transfer history
+- **Quarterly Tax Center** (new): 4-quarter timeline with status rings + record payment dialog
+- **More** menu (new): Quarterly · Reports · AI · Plans · Settings + "coming soon" placeholders
+- 5-tab mobile bottom nav: **Home · Income · Mileage · Vault · More**
 
-## Backlog (P1/P2)
-- Recurring Stripe subscriptions + customer portal
-- Schedule SE separate PDF (currently rolled into Schedule C PDF)
-- Auto-savings → real bank transfer via Plaid Transfer (requires production approval)
-- Push notifications for quarterly reminders + auto-end-trip detection
-- Drive detection (start trip automatically when speed > threshold)
-- Multi-year reports / 1099 import flow
+## MOCKED / Important Notes
+- **Tax Vault** is a mocked banking account (no real partner). Account/routing numbers are randomly generated; balance is tracked in MongoDB. Real production requires a Banking-as-a-Service partner (Stripe Treasury, Unit, Synapse, Treasury Prime).
+- **Stripe** uses emergentintegrations one-time checkout (grants 30 days of access). Native recurring subscriptions + customer portal not yet supported.
+- **Schedule C PDF** is a worksheet, not an official fillable IRS form. Tax filing requires a licensed e-file partner (TurboTax/TaxAct API).
+- **State tax** uses flat top-bracket estimates for informational purposes only.
+- **Plaid Transfer** for real bank-to-Vault movement requires production approval.
+
+## Deferred to Backlog
+- **Multi-step onboarding flow** (8 screens — currently using single-step register)
+- **Recurring categorization rules** UI
+- **Tax Documents center** (1099-NEC/K/MISC, W-2 upload)
+- **Accountant Collaboration** (invite with permissions)
+- **Referral Program** (give $20 / get $20)
+- **Security Center** (MFA, sessions, device management, login history)
+- **Admin Dashboard** (user mgmt, fraud alerts, content, audit logs)
+- **Push/email/SMS notifications system**
+- **Multi-vehicle management**
+- **Receipt scanning** with line-item extraction
+- **Safe to Spend** calculator on dashboard
+- **Monthly Cash Flow chart** on dashboard
+- **App icon & splash screen** assets (currently SVG logo only)
+
+## Test Accounts
+- **Demo Mode**: `POST /api/demo/seed` returns Jordan Taylor (email `demo@milli.app`, plan Elite) with full seeded data. Landing page "Try the demo" button auto-logs in.
+- **Trial test user**: `driver@taxhaul.app` / `Driver123!` (state CA, trial plan)
+- Plaid sandbox: `user_good` / `pass_good`
+- Stripe test card: `4242 4242 4242 4242`

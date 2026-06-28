@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import {
   MapTrifold, Bank, Robot, FileText, ShieldCheck, CaretRight,
-  CurrencyDollar, Clock, ArrowUpRight, CheckCircle, Star,
+  CurrencyDollar, Clock, ArrowUpRight, CheckCircle, Star, Sparkle,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 
@@ -11,7 +13,20 @@ const PLATFORMS = ["UBER", "DOORDASH", "SPARK", "LYFT", "INSTACART", "AMAZON FLE
 
 export default function Landing() {
   const [tiers, setTiers] = useState([]);
+  const { setSession } = useAuth();
+  const navigate = useNavigate();
   useEffect(() => { api.get("/pricing/tiers").then(({ data }) => setTiers(data)).catch(() => {}); }, []);
+
+  async function handleDemo() {
+    try {
+      const { data } = await api.post("/demo/seed");
+      setSession(data.token, data.user);
+      toast.success("Welcome to the Milli demo");
+      navigate("/app");
+    } catch (e) {
+      toast.error("Demo unavailable — try again in a moment");
+    }
+  }
 
   return (
     <div className="min-h-screen carbon-bg text-white">
@@ -26,6 +41,7 @@ export default function Landing() {
             <a href="#features" className="hover:text-white">Features</a>
             <a href="#how" className="hover:text-white">How it works</a>
             <a href="#pricing" className="hover:text-white">Pricing</a>
+            <button onClick={() => handleDemo()} className="hover:text-volt" data-testid="nav-demo">Try demo</button>
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-sm text-zinc-300 hover:text-white px-3 py-2" data-testid="nav-login">Sign in</Link>
@@ -40,24 +56,23 @@ export default function Landing() {
           <div className="col-span-12 lg:col-span-7">
             <div className="inline-flex items-center gap-2 milli-card !rounded-full px-4 py-1.5 text-xs font-medium text-volt mb-8">
               <span className="w-1.5 h-1.5 bg-volt rounded-full animate-pulse-volt" />
-              Built for 1099 delivery drivers
+              Tax Autopilot for Gig Workers
             </div>
-            <h1 className="font-display chrome-text text-5xl sm:text-6xl lg:text-7xl tracking-tighter leading-[0.95]">
-              Your money.<br />
-              Your miles.<br />
-              <span className="text-volt" style={{ textShadow: "0 0 30px rgba(0,229,255,0.5)" }}>Made tax-ready.</span>
+            <h1 className="font-display chrome-text text-5xl sm:text-6xl lg:text-7xl tracking-tight leading-[0.95]">
+              Earn freely.<br />
+              <span className="text-volt" style={{ textShadow: "0 0 30px rgba(19,216,209,0.45)" }}>Milli handles<br />the tax side.</span>
             </h1>
             <p className="mt-8 text-lg text-zinc-400 max-w-xl leading-relaxed">
-              MILLI links your bank, watches for Uber, DoorDash & Spark deposits, auto-skims tax savings,
-              tracks every mile, and hands you a finished Schedule C at year end.
+              Milli connects to your accounts, identifies every gig payout, auto-reserves your tax %,
+              tracks every mile, and hands you tax-ready reports. Built for Uber, DoorDash, Spark, freelancers, and creators.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <Link to="/register" data-testid="hero-cta-start" className="btn-volt px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2">
                 Start 3-day free trial <CaretRight weight="bold" />
               </Link>
-              <Link to="/login" data-testid="hero-cta-signin" className="btn-outline-cyan px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2 font-semibold">
-                Sign in
-              </Link>
+              <button onClick={handleDemo} data-testid="hero-cta-demo" className="btn-outline-cyan px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2 font-semibold">
+                <Sparkle size={16} weight="fill" /> Try the demo
+              </button>
             </div>
             <div className="mt-10 grid grid-cols-3 gap-6 max-w-md">
               <Stat label="Avg miles missed" value="3,200" suffix="mi/yr" />

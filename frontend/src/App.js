@@ -17,6 +17,9 @@ import Reports from "@/pages/Reports";
 import Pricing from "@/pages/Pricing";
 import BillingSuccess from "@/pages/BillingSuccess";
 import Settings from "@/pages/Settings";
+import Vault from "@/pages/Vault";
+import Quarterly from "@/pages/Quarterly";
+import More from "@/pages/More";
 
 function App() {
   return (
@@ -37,6 +40,9 @@ function App() {
             <Route path="/app/reports" element={<ProtectedRoute><AppLayout><Reports /></AppLayout></ProtectedRoute>} />
             <Route path="/app/pricing" element={<ProtectedRoute><AppLayout><Pricing /></AppLayout></ProtectedRoute>} />
             <Route path="/app/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/vault" element={<ProtectedRoute><AppLayout><Vault /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/quarterly" element={<ProtectedRoute><AppLayout><Quarterly /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/more" element={<ProtectedRoute><AppLayout><More /></AppLayout></ProtectedRoute>} />
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>
