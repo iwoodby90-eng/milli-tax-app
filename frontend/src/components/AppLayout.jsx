@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Gauge, Wallet, MapTrifold, Vault as VaultIcon, DotsThree, Gear, SignOut, List, Star,
-  Sparkle, FileText, Robot,
+  Sparkle, FileText, Robot, PiggyBank, ChartLineUp,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import { useState } from "react";
@@ -13,6 +13,8 @@ const sideNav = [
   { to: "/app/income", icon: Wallet, label: "Income", testid: "nav-income" },
   { to: "/app/mileage", icon: MapTrifold, label: "Mileage", testid: "nav-mileage" },
   { to: "/app/vault", icon: VaultIcon, label: "Tax Vault", testid: "nav-vault" },
+  { to: "/app/retirement", icon: PiggyBank, label: "401(k)", testid: "nav-retirement" },
+  { to: "/app/investing", icon: ChartLineUp, label: "Investing", testid: "nav-investing" },
   { to: "/app/quarterly", icon: Sparkle, label: "Quarterly", testid: "nav-quarterly" },
   { to: "/app/expenses", icon: FileText, label: "Expenses", testid: "nav-expenses" },
   { to: "/app/ai", icon: Robot, label: "Assistant", testid: "nav-ai" },

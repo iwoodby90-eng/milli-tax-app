@@ -912,9 +912,13 @@ async def get_tiers():
             "Schedule C worksheet PDF", "27% smart tax savings allocation",
         ], "popular": True},
         {"id": "elite", "name": "Elite", "price": 49.99, "trial_days": 3, "features": [
-            "Everything in Pro", "Auto tax-savings bucket per deposit",
-            "Auto-generated Schedule C + SE forms ready to file",
-            "Priority AI assistant", "Year-end CPA review checklist",
+            "Everything in Pro",
+            "Auto 401(k) + Brokerage contributions per deposit",
+            "Auto Federal + State tax filing (via licensed partner)",
+            "Auto-generated Schedule C + SE forms",
+            "Auto tax-savings bucket per deposit",
+            "Priority Milli AI assistant",
+            "Year-end CPA review checklist",
             "Audit-ready mileage log",
         ]},
     ]
@@ -1069,10 +1073,165 @@ async def add_manual_deposit_v2(body: dict, user: dict = Depends(get_current_use
         })
         await db.tax_vaults.update_one({"user_id": user["id"]}, {"$set": {"balance": new_balance}})
         await db.users.update_one({"id": user["id"]}, {"$set": {"tax_savings_balance": new_balance}})
+    # Smart allocations for 401k + investing accounts
+    await _smart_auto_allocate(user, doc)
     doc.pop("_id", None)
     return doc
 
-# -------------------- QUARTERLY TAX CENTER --------------------
+# -------------------- SMART ACCOUNTS: 401K & INVESTING --------------------
+# Both follow the same pattern as the Tax Vault — a user-owned account with auto-allocation
+# rules that skim a % of each detected deposit.
+
+SMART_ACCOUNT_CONFIG = {
+    "retirement": {
+        "collection": "retirement_accounts",
+        "transfers": "retirement_transfers",
+        "default_pct": 0.08,
+        "default_partner": "Milli Retirement (Demo Custodian)",
+        "default_nickname": "Solo 401(k)",
+        "user_balance_field": "retirement_balance",
+    },
+    "investing": {
+        "collection": "investment_accounts",
+        "transfers": "investment_transfers",
+        "default_pct": 0.05,
+        "default_partner": "Milli Invest (Demo Brokerage)",
+        "default_nickname": "Brokerage Account",
+        "user_balance_field": "investing_balance",
+    },
+}
+
+class SmartSetupIn(BaseModel):
+    institution_name: Optional[str] = None
+    account_nickname: Optional[str] = None
+
+class SmartRuleIn(BaseModel):
+    mode: Optional[str] = None  # auto | manual
+    fixed_percentage: Optional[float] = None
+    max_daily_transfer: Optional[float] = None
+    paused: Optional[bool] = None
+
+class SmartTransferIn(BaseModel):
+    amount: float
+    direction: str  # in | out
+    note: Optional[str] = None
+
+def _smart_cfg(kind: str):
+    if kind not in SMART_ACCOUNT_CONFIG:
+        raise HTTPException(404, "Unknown account type")
+    return SMART_ACCOUNT_CONFIG[kind]
+
+async def _smart_get(kind: str, user_id: str):
+    cfg = _smart_cfg(kind)
+    return await db[cfg["collection"]].find_one({"user_id": user_id}, {"_id": 0})
+
+@api.post("/smart/{kind}/setup")
+async def smart_setup(kind: str, body: SmartSetupIn, user: dict = Depends(get_current_user)):
+    cfg = _smart_cfg(kind)
+    existing = await _smart_get(kind, user["id"])
+    if existing:
+        return existing
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "kind": kind,
+        "institution_name": body.institution_name or cfg["default_partner"],
+        "account_nickname": body.account_nickname or cfg["default_nickname"],
+        "account_number_masked": "****" + str(uuid.uuid4().int)[-4:],
+        "balance": 0.0,
+        "ytd_growth": 0.0,
+        "rule": {
+            "mode": "auto",
+            "fixed_percentage": cfg["default_pct"],
+            "max_daily_transfer": 500.0,
+            "paused": False,
+        },
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db[cfg["collection"]].insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api.get("/smart/{kind}")
+async def smart_get(kind: str, user: dict = Depends(get_current_user)):
+    cfg = _smart_cfg(kind)
+    a = await _smart_get(kind, user["id"])
+    if not a:
+        return None
+    transfers = await db[cfg["transfers"]].find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    a["transfers"] = transfers
+    return a
+
+@api.put("/smart/{kind}/rule")
+async def smart_rule(kind: str, body: SmartRuleIn, user: dict = Depends(get_current_user)):
+    cfg = _smart_cfg(kind)
+    a = await _smart_get(kind, user["id"])
+    if not a:
+        raise HTTPException(404, "Account not set up")
+    rule = a.get("rule", {})
+    for k, v in body.dict(exclude_none=True).items():
+        rule[k] = v
+    await db[cfg["collection"]].update_one({"user_id": user["id"]}, {"$set": {"rule": rule}})
+    return rule
+
+@api.post("/smart/{kind}/transfer")
+async def smart_transfer(kind: str, body: SmartTransferIn, user: dict = Depends(get_current_user)):
+    cfg = _smart_cfg(kind)
+    a = await _smart_get(kind, user["id"])
+    if not a:
+        raise HTTPException(400, "Set up the account first")
+    amt = round(float(body.amount), 2)
+    if amt <= 0:
+        raise HTTPException(400, "Amount must be > 0")
+    delta = amt if body.direction == "in" else -amt
+    new_balance = round(a.get("balance", 0) + delta, 2)
+    if new_balance < 0:
+        raise HTTPException(400, "Insufficient balance")
+    tx = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "direction": body.direction,
+        "amount": amt,
+        "balance_after": new_balance,
+        "note": body.note or ("Auto contribution" if body.direction == "in" else "Withdrawal"),
+        "source": "manual",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db[cfg["transfers"]].insert_one(tx)
+    await db[cfg["collection"]].update_one({"user_id": user["id"]}, {"$set": {"balance": new_balance}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {cfg["user_balance_field"]: new_balance}})
+    tx.pop("_id", None)
+    return tx
+
+async def _smart_auto_allocate(user: dict, deposit: dict):
+    """Run auto-allocation for both retirement + investing accounts when a deposit lands."""
+    for kind, cfg in SMART_ACCOUNT_CONFIG.items():
+        a = await _smart_get(kind, user["id"])
+        if not a:
+            continue
+        rule = a.get("rule", {})
+        if rule.get("paused") or rule.get("mode") != "auto":
+            continue
+        pct = rule.get("fixed_percentage") or cfg["default_pct"]
+        amt = round(deposit["amount"] * pct, 2)
+        if amt <= 0:
+            continue
+        new_balance = round(a.get("balance", 0) + amt, 2)
+        await db[cfg["transfers"]].insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "direction": "in",
+            "amount": amt,
+            "balance_after": new_balance,
+            "note": f"Auto from {deposit.get('platform', 'deposit')} (${deposit['amount']:.2f})",
+            "source": "auto",
+            "deposit_id": deposit["id"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        await db[cfg["collection"]].update_one({"user_id": user["id"]}, {"$set": {"balance": new_balance}})
+        await db.users.update_one({"id": user["id"]}, {"$set": {cfg["user_balance_field"]: new_balance}})
+
+
 @api.get("/quarterly")
 async def quarterly_overview(user: dict = Depends(get_current_user), year: Optional[int] = None):
     year = year or datetime.now(timezone.utc).year
@@ -1133,6 +1292,10 @@ async def demo_seed():
         await db.vault_transfers.delete_many({"user_id": uid})
         await db.tax_vaults.delete_many({"user_id": uid})
         await db.quarterly_payments.delete_many({"user_id": uid})
+        await db.retirement_accounts.delete_many({"user_id": uid})
+        await db.investment_accounts.delete_many({"user_id": uid})
+        await db.retirement_transfers.delete_many({"user_id": uid})
+        await db.investment_transfers.delete_many({"user_id": uid})
     else:
         uid = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
@@ -1234,7 +1397,50 @@ async def demo_seed():
                  "min_checking_balance": 200.0, "max_daily_transfer": 1000.0, "paused": False},
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
-    await db.users.update_one({"id": uid}, {"$set": {"tax_savings_balance": vault_balance}})
+    # Seed 401(k) retirement at 8%
+    ret_balance = round(total_gross * 0.08, 2)
+    await db.retirement_accounts.insert_one({
+        "id": str(uuid.uuid4()), "user_id": uid, "kind": "retirement",
+        "institution_name": "Milli Retirement (Demo Custodian)",
+        "account_nickname": "Solo 401(k)",
+        "account_number_masked": "****7245",
+        "balance": ret_balance,
+        "ytd_growth": round(ret_balance * 0.07, 2),
+        "rule": {"mode": "auto", "fixed_percentage": 0.08, "max_daily_transfer": 500.0, "paused": False},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    # Seed Investing at 5%
+    inv_balance = round(total_gross * 0.05, 2)
+    await db.investment_accounts.insert_one({
+        "id": str(uuid.uuid4()), "user_id": uid, "kind": "investing",
+        "institution_name": "Milli Invest (Demo Brokerage)",
+        "account_nickname": "Brokerage Account",
+        "account_number_masked": "****3318",
+        "balance": inv_balance,
+        "ytd_growth": round(inv_balance * 0.092, 2),
+        "rule": {"mode": "auto", "fixed_percentage": 0.05, "max_daily_transfer": 300.0, "paused": False},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    await db.users.update_one({"id": uid}, {"$set": {
+        "tax_savings_balance": vault_balance,
+        "retirement_balance": ret_balance,
+        "investing_balance": inv_balance,
+    }})
+
+    # Seed retirement + investing contribution histories
+    for i in range(8):
+        ret_amt = round(random.uniform(15, 65), 2)
+        inv_amt = round(random.uniform(8, 40), 2)
+        ts = (datetime.now(timezone.utc) - timedelta(days=i*3)).isoformat()
+        plat = random.choice(platforms[:5])
+        await db.retirement_transfers.insert_one({
+            "id": str(uuid.uuid4()), "user_id": uid, "direction": "in", "amount": ret_amt,
+            "balance_after": ret_balance, "note": f"Auto from {plat} (8%)", "source": "auto", "created_at": ts,
+        })
+        await db.investment_transfers.insert_one({
+            "id": str(uuid.uuid4()), "user_id": uid, "direction": "in", "amount": inv_amt,
+            "balance_after": inv_balance, "note": f"Auto invest from {plat} (5%)", "source": "auto", "created_at": ts,
+        })
 
     # Seed last 10 transfers
     for i in range(10):
@@ -1296,6 +1502,10 @@ async def _startup():
     await db.tax_vaults.create_index("user_id", unique=True)
     await db.vault_transfers.create_index("user_id")
     await db.quarterly_payments.create_index([("user_id", 1), ("year", 1), ("period", 1)])
+    await db.retirement_accounts.create_index("user_id", unique=True)
+    await db.investment_accounts.create_index("user_id", unique=True)
+    await db.retirement_transfers.create_index("user_id")
+    await db.investment_transfers.create_index("user_id")
 
 @app.on_event("shutdown")
 async def _shutdown():

@@ -55,19 +55,34 @@ export default function Vault() {
           <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-volt/10 border border-volt/40 flex items-center justify-center">
             <ShieldCheck size={32} weight="duotone" className="text-volt" />
           </div>
-          <div className="font-display text-2xl mb-2">Give your tax money a place of its own.</div>
-          <div className="text-zinc-400 text-sm mb-6 max-w-md mx-auto">
-            Open or connect a secure user-owned savings account to reserve estimated taxes automatically.
-            Your money stays yours — Milli is a technology platform, not a bank.
+          <div className="font-display text-2xl mb-2">Your savings account. Your tax money.</div>
+          <div className="text-zinc-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+            The Tax Vault is a <strong className="text-white">user-owned savings account</strong> you set up through our banking partner.
+            Each time a payout from Uber, DoorDash, Spark, or any gig platform hits your checking account,
+            Milli automatically transfers a tax % into your Vault — so the money is there when the IRS asks.
           </div>
-          <button
-            onClick={setup}
-            disabled={busy}
-            data-testid="vault-setup-btn"
-            className="btn-volt px-6 py-3 uppercase tracking-wider text-sm disabled:opacity-50"
-          >{busy ? "Opening..." : "Open my Tax Vault"}</button>
+          <div className="grid sm:grid-cols-2 gap-3 max-w-md mx-auto">
+            <button
+              onClick={setup}
+              disabled={busy}
+              data-testid="vault-setup-btn"
+              className="btn-volt px-4 py-3 uppercase tracking-wider text-xs disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            >
+              <Bank size={14} weight="bold" /> {busy ? "Opening..." : "Open Milli Reserve"}
+            </button>
+            <button
+              disabled
+              title="Coming soon"
+              data-testid="vault-connect-existing"
+              className="btn-outline-cyan px-4 py-3 uppercase tracking-wider text-xs font-semibold opacity-60 cursor-not-allowed"
+            >
+              Connect existing savings
+            </button>
+          </div>
           <div className="mt-6 text-[10px] text-zinc-500 max-w-md mx-auto leading-relaxed">
-            <Info size={10} className="inline mr-1" /> Banking partner: Demo Reserve Bank (sandbox). FDIC coverage and partner disclosures will be displayed when a production partner is connected.
+            <Info size={10} className="inline mr-1" /> Banking partner: Demo Reserve Bank (sandbox).
+            You own the account — Milli initiates transfers on your behalf with read-write access you authorize.
+            FDIC + partner-specific disclosures will be shown when connected to a production partner.
           </div>
         </div>
       </div>
@@ -127,16 +142,21 @@ export default function Vault() {
       <div className="milli-card p-5 mb-4">
         <div className="text-volt text-xs font-semibold uppercase tracking-[0.2em] mb-3">Account Details</div>
         <div className="grid grid-cols-2 gap-4 text-sm">
+          <Detail label="Account type" value="User-owned savings" />
+          <Detail label="Owner" value={user?.name || "—"} />
           <Detail label="Bank partner" value={vault.institution_name} />
           <Detail label="Nickname" value={vault.account_nickname} />
           <Detail label="Account" value={vault.account_number_masked} mono />
           <Detail label="Routing" value={vault.routing_number_masked} mono />
           <Detail label="Strategy" value={(rule.strategy || "balanced").toUpperCase()} />
-          <Detail label="Auto reserve" value={`${Math.round((rule.fixed_percentage ?? 0.25) * 100)}% per deposit`} />
+          <Detail label="Auto-pull per payout" value={`${Math.round((rule.fixed_percentage ?? 0.25) * 100)}%`} />
         </div>
         <div className="mt-4 text-[10px] text-zinc-500 leading-relaxed flex gap-2">
           <Info size={12} className="flex-shrink-0 mt-0.5" />
-          <span>Milli is a technology platform — not a bank. Funds are held at our banking partner and remain user-owned. FDIC and partner-specific disclosures will be displayed when connected to a production partner.</span>
+          <span>This savings account is yours. Milli is a technology platform — not a bank.
+            Funds are held at our banking partner under your name. Each detected payout
+            triggers an automatic transfer of your selected tax % from your checking account into this Vault.
+            FDIC and partner-specific disclosures will be displayed when connected to a production partner.</span>
         </div>
       </div>
 
@@ -179,9 +199,9 @@ export default function Vault() {
 function Header() {
   return (
     <div className="mb-6">
-      <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// Vault</div>
-      <h1 className="font-display text-3xl sm:text-4xl tracking-tight mt-1 chrome-text">Your tax reserve stays yours.</h1>
-      <p className="text-zinc-400 mt-1 text-sm">Reserve and grow what you owe — automatically.</p>
+      <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// Tax Vault · User-owned savings</div>
+      <h1 className="font-display text-3xl sm:text-4xl tracking-tight mt-1 chrome-text">Your tax money lives here.</h1>
+      <p className="text-zinc-400 mt-1 text-sm">A savings account you own. Milli auto-pulls the tax % from every payout.</p>
     </div>
   );
 }

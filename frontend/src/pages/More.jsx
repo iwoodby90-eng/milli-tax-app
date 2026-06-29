@@ -8,6 +8,8 @@ import {
 
 const ITEMS = [
   { to: "/app/quarterly", icon: Sparkle, label: "Quarterly Tax Center", sub: "Deadlines, payments, readiness", testid: "more-quarterly" },
+  { to: "/app/retirement", icon: Sparkle, label: "401(k) Retirement", sub: "Auto-contribute per payout", testid: "more-retirement" },
+  { to: "/app/investing", icon: Sparkle, label: "Investing", sub: "Auto-invest a % of every payout", testid: "more-investing" },
   { to: "/app/reports", icon: FileText, label: "Tax Vault Reports", sub: "Schedule C · SE · Mileage CSV", testid: "more-reports" },
   { to: "/app/ai", icon: Sparkle, label: "Milli Assistant", sub: "Ask anything about your numbers", testid: "more-ai" },
   { to: "/app/pricing", icon: Gift, label: "Plans & Billing", sub: "Essential · Pro · Elite", testid: "more-pricing" },

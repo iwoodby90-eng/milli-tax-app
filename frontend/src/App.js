@@ -20,6 +20,8 @@ import Settings from "@/pages/Settings";
 import Vault from "@/pages/Vault";
 import Quarterly from "@/pages/Quarterly";
 import More from "@/pages/More";
+import Retirement from "@/pages/Retirement";
+import Investing from "@/pages/Investing";
 
 function App() {
   return (
@@ -43,6 +45,8 @@ function App() {
             <Route path="/app/vault" element={<ProtectedRoute><AppLayout><Vault /></AppLayout></ProtectedRoute>} />
             <Route path="/app/quarterly" element={<ProtectedRoute><AppLayout><Quarterly /></AppLayout></ProtectedRoute>} />
             <Route path="/app/more" element={<ProtectedRoute><AppLayout><More /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/retirement" element={<ProtectedRoute><AppLayout><Retirement /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/investing" element={<ProtectedRoute><AppLayout><Investing /></AppLayout></ProtectedRoute>} />
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>
