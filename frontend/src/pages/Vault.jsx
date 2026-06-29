@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api, money, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { usePlaidLink } from "react-plaid-link";
 import { toast } from "sonner";
 import {
-  ShieldCheck, ArrowDown, ArrowUp, Plus, Pause, Play, Sparkle, Info, LockKey, Bank, CaretRight,
+  ShieldCheck, ArrowDown, ArrowUp, Pause, Play, Sparkle, Info, LockKey, Bank, Plug,
 } from "@phosphor-icons/react";
 
 export default function Vault() {
   const { user, refresh } = useAuth();
-  const [vault, setVault] = useState(null);
+  const [vault, setVault] = useState(undefined);
   const [summary, setSummary] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [transferOpen, setTransferOpen] = useState(null); // 'in' | 'out' | null
+  const [transferOpen, setTransferOpen] = useState(null);
   const [ruleOpen, setRuleOpen] = useState(false);
+  const [linkToken, setLinkToken] = useState(null);
+  const [loadingLink, setLoadingLink] = useState(false);
 
   async function load() {
     try {
@@ -22,15 +25,51 @@ export default function Vault() {
   }
   useEffect(() => { load(); }, []);
 
-  async function setup() {
+  async function setupMilliReserve() {
     setBusy(true);
     try {
       await api.post("/vault/setup", {});
-      toast.success("Tax Vault opened");
+      toast.success("Milli Reserve vault opened");
       await load(); await refresh();
     } catch (e) { toast.error(formatApiError(e)); }
     finally { setBusy(false); }
   }
+
+  async function startPlaidConnect() {
+    setLoadingLink(true);
+    try {
+      const { data } = await api.post("/plaid/link-token");
+      setLinkToken(data.link_token);
+    } catch (e) { toast.error(formatApiError(e)); }
+    finally { setLoadingLink(false); }
+  }
+
+  const onPlaidSuccess = useCallback(async (public_token, metadata) => {
+    try {
+      // Prefer a savings account; fall back to first depository account.
+      const accts = metadata?.accounts || [];
+      const savings = accts.find((a) => a.subtype === "savings") || accts[0];
+      await api.post("/vault/connect-plaid", {
+        public_token,
+        institution_name: metadata?.institution?.name || "Connected Bank",
+        account_id: savings?.id,
+        account_name: savings?.name,
+        account_mask: savings?.mask,
+        account_subtype: savings?.subtype,
+      });
+      toast.success(`${savings?.name || "Savings account"} connected as Tax Vault`);
+      setLinkToken(null);
+      await load(); await refresh();
+    } catch (e) { toast.error(formatApiError(e)); }
+  }, []);
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess: onPlaidSuccess,
+    onExit: () => setLinkToken(null),
+  });
+
+  useEffect(() => { if (linkToken && ready) open(); }, [linkToken, ready, open]);
 
   async function togglePause() {
     if (!vault) return;
@@ -42,8 +81,7 @@ export default function Vault() {
     } catch (e) { toast.error(formatApiError(e)); }
   }
 
-  // Setup flow if no vault
-  if (vault === null || vault === undefined) {
+  if (vault === undefined) {
     return <div className="p-12 font-mono text-volt animate-pulse">[ LOADING VAULT... ]</div>;
   }
 
@@ -57,32 +95,32 @@ export default function Vault() {
           </div>
           <div className="font-display text-2xl mb-2">Your savings account. Your tax money.</div>
           <div className="text-zinc-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            The Tax Vault is a <strong className="text-white">user-owned savings account</strong> you set up through our banking partner.
-            Each time a payout from Uber, DoorDash, Spark, or any gig platform hits your checking account,
-            Milli automatically transfers a tax % into your Vault — so the money is there when the IRS asks.
+            The Tax Vault is a <strong className="text-white">user-owned savings account</strong>. Connect your existing
+            high-yield savings (Ally, Marcus, Capital One 360, etc.) via Plaid — or open a new Milli Reserve
+            account through our banking partner. Either way, Milli auto-pulls your tax % from every payout.
           </div>
           <div className="grid sm:grid-cols-2 gap-3 max-w-md mx-auto">
             <button
-              onClick={setup}
+              onClick={startPlaidConnect}
+              disabled={loadingLink}
+              data-testid="vault-connect-plaid"
+              className="btn-volt px-4 py-3 uppercase tracking-wider text-xs inline-flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Plug size={14} weight="bold" /> {loadingLink ? "Loading..." : "Connect existing savings"}
+            </button>
+            <button
+              onClick={setupMilliReserve}
               disabled={busy}
               data-testid="vault-setup-btn"
-              className="btn-volt px-4 py-3 uppercase tracking-wider text-xs disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              className="btn-outline-cyan px-4 py-3 uppercase tracking-wider text-xs font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Bank size={14} weight="bold" /> {busy ? "Opening..." : "Open Milli Reserve"}
             </button>
-            <button
-              disabled
-              title="Coming soon"
-              data-testid="vault-connect-existing"
-              className="btn-outline-cyan px-4 py-3 uppercase tracking-wider text-xs font-semibold opacity-60 cursor-not-allowed"
-            >
-              Connect existing savings
-            </button>
           </div>
           <div className="mt-6 text-[10px] text-zinc-500 max-w-md mx-auto leading-relaxed">
-            <Info size={10} className="inline mr-1" /> Banking partner: Demo Reserve Bank (sandbox).
-            You own the account — Milli initiates transfers on your behalf with read-write access you authorize.
-            FDIC + partner-specific disclosures will be shown when connected to a production partner.
+            <Info size={10} className="inline mr-1" /> Plaid uses read-only connections by default. You own the account.
+            Milli is a technology platform — not a bank. FDIC and partner-specific disclosures will be shown once a production
+            banking partner is connected.
           </div>
         </div>
       </div>
@@ -92,12 +130,12 @@ export default function Vault() {
   const annualTarget = summary?.estimated_tax || 0;
   const coverage = annualTarget ? Math.min(100, Math.round((vault.balance / annualTarget) * 100)) : 0;
   const rule = vault.rule || {};
+  const isPlaid = vault.provider_type === "plaid_connected";
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto">
       <Header />
 
-      {/* Vault balance card */}
       <div className="milli-card-strong p-7 mb-4 relative overflow-hidden" data-testid="vault-balance-card">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-volt to-transparent" />
         <div className="flex items-start justify-between flex-wrap gap-4">
@@ -105,6 +143,11 @@ export default function Vault() {
             <div className="flex items-center gap-2 mb-2">
               <LockKey size={14} weight="bold" className="text-volt" />
               <span className="text-volt text-xs font-semibold uppercase tracking-[0.2em]">Milli Tax Vault</span>
+              {isPlaid && (
+                <span className="px-2 py-0.5 rounded-full bg-success/20 text-success text-[9px] font-bold uppercase tracking-wider">
+                  Plaid-Connected
+                </span>
+              )}
             </div>
             <div className="chrome-text font-chrome font-bold text-5xl sm:text-6xl tabular-nums" data-testid="vault-balance">
               {money(vault.balance)}
@@ -138,29 +181,28 @@ export default function Vault() {
         </div>
       </div>
 
-      {/* Account details */}
       <div className="milli-card p-5 mb-4">
         <div className="text-volt text-xs font-semibold uppercase tracking-[0.2em] mb-3">Account Details</div>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <Detail label="Account type" value="User-owned savings" />
+          <Detail label="Account type" value={isPlaid ? "Plaid-connected savings" : "Milli Reserve savings"} />
           <Detail label="Owner" value={user?.name || "—"} />
-          <Detail label="Bank partner" value={vault.institution_name} />
+          <Detail label="Bank" value={vault.institution_name} />
           <Detail label="Nickname" value={vault.account_nickname} />
           <Detail label="Account" value={vault.account_number_masked} mono />
-          <Detail label="Routing" value={vault.routing_number_masked} mono />
+          {!isPlaid && <Detail label="Routing" value={vault.routing_number_masked} mono />}
           <Detail label="Strategy" value={(rule.strategy || "balanced").toUpperCase()} />
           <Detail label="Auto-pull per payout" value={`${Math.round((rule.fixed_percentage ?? 0.25) * 100)}%`} />
         </div>
         <div className="mt-4 text-[10px] text-zinc-500 leading-relaxed flex gap-2">
           <Info size={12} className="flex-shrink-0 mt-0.5" />
-          <span>This savings account is yours. Milli is a technology platform — not a bank.
-            Funds are held at our banking partner under your name. Each detected payout
-            triggers an automatic transfer of your selected tax % from your checking account into this Vault.
-            FDIC and partner-specific disclosures will be displayed when connected to a production partner.</span>
+          <span>
+            {isPlaid
+              ? "This savings account is held at your bank, in your name. Milli uses Plaid for read-only balance + transaction access. Auto-pulls require a separate Plaid Transfer authorization (coming soon — production approval pending)."
+              : "This savings account is yours — held at our banking partner under your name. Milli is a technology platform, not a bank. FDIC + partner disclosures will be shown when a production partner is connected."}
+          </span>
         </div>
       </div>
 
-      {/* Recent transfers */}
       <div className="milli-card p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-volt text-xs font-semibold uppercase tracking-[0.2em]">Recent Transfers</div>
@@ -219,7 +261,6 @@ function TransferDialog({ dir, maxOut, onClose, onDone }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-
   async function save() {
     setBusy(true);
     try {
@@ -229,7 +270,6 @@ function TransferDialog({ dir, maxOut, onClose, onDone }) {
     } catch (e) { toast.error(formatApiError(e)); }
     finally { setBusy(false); }
   }
-
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="milli-card p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
@@ -260,20 +300,18 @@ function RuleDialog({ rule, onClose, onDone }) {
   async function save() {
     setBusy(true);
     try {
-      const body = {
+      await api.put("/vault/rule", {
         mode: form.mode,
         strategy: form.strategy,
         fixed_percentage: form.fixed_percentage === "" ? null : parseFloat(form.fixed_percentage),
         min_checking_balance: parseFloat(form.min_checking_balance),
         max_daily_transfer: parseFloat(form.max_daily_transfer),
-      };
-      await api.put("/vault/rule", body);
+      });
       toast.success("Rules saved");
       onDone();
     } catch (e) { toast.error(formatApiError(e)); }
     finally { setBusy(false); }
   }
-
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="milli-card p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>

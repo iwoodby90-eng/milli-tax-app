@@ -956,6 +956,14 @@ class VaultSetupIn(BaseModel):
     institution_name: Optional[str] = "Milli Reserve (Demo Partner)"
     account_nickname: Optional[str] = "Tax Vault"
 
+class VaultPlaidConnectIn(BaseModel):
+    public_token: str
+    institution_name: Optional[str] = None
+    account_id: Optional[str] = None
+    account_name: Optional[str] = None
+    account_mask: Optional[str] = None
+    account_subtype: Optional[str] = None
+
 class VaultRuleIn(BaseModel):
     mode: Optional[str] = None  # auto | approval | manual
     strategy: Optional[str] = None  # conservative | balanced | minimum
@@ -994,6 +1002,7 @@ async def vault_setup(body: VaultSetupIn, user: dict = Depends(get_current_user)
         "account_nickname": body.account_nickname,
         "account_number_masked": "****" + str(uuid.uuid4().int)[-4:],
         "routing_number_masked": "****" + str(uuid.uuid4().int)[-4:],
+        "provider_type": "milli_reserve",
         "balance": 0.0,
         "interest_earned_ytd": 0.0,
         "rule": {
@@ -1502,7 +1511,7 @@ async def demo_seed():
 
 @api.get("/")
 async def root():
-    return {"name": "TaxHaul", "ok": True}
+    return {"name": "Milli", "ok": True}
 
 # -------------------- MOUNT --------------------
 app.include_router(api)

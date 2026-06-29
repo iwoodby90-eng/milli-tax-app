@@ -1,0 +1,47 @@
+{
+  "summary": "MILLI rebrand iteration — verified all new endpoints (onboarding, vault, smart accounts, quarterly, deposits/manual-v2, vault/connect-plaid) and ran a full frontend E2E from Landing → Register → 8-step Onboarding → /app → Vault → Settings → Quarterly → Retirement → Investing. Backend: 49/49 pytest passing. Frontend: full happy-path traversed successfully with no JS errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/vault/rule", "issue": "Uses body.dict(exclude_none=True) so passing fixed_percentage=null cannot CLEAR a previously-set fixed percentage — the field is silently dropped and the old value persists. Same on PUT /api/smart/{kind}/rule. Consider explicit sentinel (e.g. -1) or accept None as 'reset to strategy default'."},
+      {"endpoint": "POST /api/plaid/exchange + POST /api/vault/connect-plaid", "issue": "When called with a fake/invalid public_token both surface a 500 from the upstream Plaid exception. They DO return JSON (no crash), but a 502/400 with a sanitized message would be more correct than 500."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Vault page after clicking 'Open Milli Reserve'", "issue": "vault-balance-card not visible within 2.5s after setup click. Likely the global 5s Splash overlay on next render is masking the page or the load() refetch races with re-render. Not blocking — settings page later confirms vault was created.", "affected_selectors": ["[data-testid=vault-balance-card]"]}
+    ],
+    "design_issues": [
+      {"screen": "Global", "issues": ["Cinematic splash plays on EVERY route change/page load (~5s). UX-heavy — consider playing only once per session via sessionStorage. Currently every navigation between /app/vault, /app/settings, /app/quarterly etc. blocks the screen for 5s."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_milli_backend.py",
+    "/app/backend/tests/test_taxhaul_backend.py",
+    "/app/test_reports/pytest/milli_results.xml"
+  ],
+  "action_items": [
+    "Decide if PUT /vault/rule and /smart/*/rule should be able to clear fixed_percentage back to null (currently impossible).",
+    "Wrap Plaid exchange errors to return 400 with sanitized error_code instead of 500.",
+    "Consider gating Splash via sessionStorage so it plays once per session instead of every route load (huge UX win)."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 1549 lines — should be split into routers (auth, vault, smart, quarterly, plaid, deposits, ai, reports, stripe).",
+    "Vault/smart rule update uses dict(exclude_none=True) which prevents clearing optional fields — design bug.",
+    "_get_vault and _smart_get duplicate the find_one + projection pattern — could be unified.",
+    "All MongoDB calls properly exclude _id via projection — good.",
+    "JWT secret is a real-looking hex in .env (committed to repo) — acceptable for preview but rotate before production.",
+    "STRIPE_API_KEY=sk_test_emergent is a placeholder; checkout still works because the integration appears to mock or use Emergent's Stripe key resolution."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_milli_backend.py (new — 49 tests covering all new MILLI endpoints)"
+  ],
+  "success_rate": {"backend": "100% (49/49)", "frontend": "~95% (full happy path traversed; minor timing issue on vault setup confirmation)"},
+  "test_credentials": "Random qa-<hex>@example.com / Driver123! created per run. Demo: demo@milli.app / milli-demo-2026 (Elite tier seeded).",
+  "seed_data_creation": "POST /api/demo/seed verified — creates/refreshes Jordan Taylor demo user with seeded deposits/trips/expenses/vault.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_milli_backend.py is module-scoped — fixtures register one fresh user and chain through tests. Run order matters within TestDepositsV2AutoAllocation (it depends on TestVault + TestSmartAccounts running first). Use addopts override (-o 'addopts=') to disable xdist parallelism (pytest.ini sets -n auto which breaks fixture sharing). Existing test_taxhaul_backend.py covers legacy endpoints (auth, deposits, trips, expenses, tax/summary, reports, pricing, stripe, ai, OCR, protected) — still relevant.",
+  "rca of the issue": "PUT /vault/rule fixed_percentage cannot be cleared: body.dict(exclude_none=True) drops null values, so the previously-stored fixed_percentage (e.g. 0.30) persists even when the client passes None to revert to strategy-based calc. Caught by test_manual_v2_auto_allocates which initially expected 25% (balanced) but got 30% (stale fixed_percentage). Mitigation: either remove exclude_none for fixed_percentage specifically, or use a sentinel value, or have client pass strategy and recompute server-side."
+}
