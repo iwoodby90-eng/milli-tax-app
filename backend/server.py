@@ -246,6 +246,9 @@ async def register(body: RegisterIn):
         "stripe_active_until": None,
         "plaid_items": [],
         "tax_savings_balance": 0.0,
+        "retirement_balance": 0.0,
+        "investing_balance": 0.0,
+        "onboarding_complete": False,
         "created_at": now.isoformat(),
     }
     await db.users.insert_one(user_doc)
@@ -275,6 +278,31 @@ async def update_profile(body: ProfileUpdateIn, user: dict = Depends(get_current
     if body.filing_status: update["filing_status"] = body.filing_status
     if update:
         await db.users.update_one({"id": user["id"]}, {"$set": update})
+    out = await db.users.find_one({"id": user["id"]}, {"password_hash": 0, "_id": 0})
+    return out
+
+class OnboardingIn(BaseModel):
+    employment_types: List[str] = []
+    income_sources: List[str] = []
+    expected_income: Optional[float] = 0
+    dependents: Optional[int] = 0
+    reserve_strategy: Optional[str] = "balanced"
+    mileage_mode: Optional[str] = "auto"
+
+@api.post("/onboarding/complete")
+async def onboarding_complete(body: OnboardingIn, user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "onboarding_complete": True,
+            "employment_types": body.employment_types,
+            "income_sources": body.income_sources,
+            "expected_income": float(body.expected_income or 0),
+            "dependents": int(body.dependents or 0),
+            "reserve_strategy": body.reserve_strategy,
+            "mileage_mode": body.mileage_mode,
+        }},
+    )
     out = await db.users.find_one({"id": user["id"]}, {"password_hash": 0, "_id": 0})
     return out
 

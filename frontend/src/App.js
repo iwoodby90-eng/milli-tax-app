@@ -1,9 +1,11 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
+import Splash from "@/components/Splash";
 
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -22,10 +24,19 @@ import Quarterly from "@/pages/Quarterly";
 import More from "@/pages/More";
 import Retirement from "@/pages/Retirement";
 import Investing from "@/pages/Investing";
+import Onboarding from "@/pages/Onboarding";
+
+function OnboardingGate({ children }) {
+  const { user } = useAuth();
+  if (user && user.onboarding_complete === false) return <Navigate to="/onboarding" replace />;
+  return children;
+}
 
 function App() {
+  const [splashDone, setSplashDone] = useState(false);
   return (
     <div className="App">
+      {!splashDone && <Splash onDone={() => setSplashDone(true)} />}
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -33,20 +44,21 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/billing/success" element={<BillingSuccess />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
-            <Route path="/app" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/income" element={<ProtectedRoute><AppLayout><Income /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/mileage" element={<ProtectedRoute><AppLayout><Mileage /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/ai" element={<ProtectedRoute><AppLayout><AIAssistant /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/reports" element={<ProtectedRoute><AppLayout><Reports /></AppLayout></ProtectedRoute>} />
+            <Route path="/app" element={<ProtectedRoute><OnboardingGate><AppLayout><Dashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/income" element={<ProtectedRoute><OnboardingGate><AppLayout><Income /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/mileage" element={<ProtectedRoute><OnboardingGate><AppLayout><Mileage /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/expenses" element={<ProtectedRoute><OnboardingGate><AppLayout><Expenses /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/ai" element={<ProtectedRoute><OnboardingGate><AppLayout><AIAssistant /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/reports" element={<ProtectedRoute><OnboardingGate><AppLayout><Reports /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/pricing" element={<ProtectedRoute><AppLayout><Pricing /></AppLayout></ProtectedRoute>} />
             <Route path="/app/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/vault" element={<ProtectedRoute><AppLayout><Vault /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/quarterly" element={<ProtectedRoute><AppLayout><Quarterly /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/vault" element={<ProtectedRoute><OnboardingGate><AppLayout><Vault /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/quarterly" element={<ProtectedRoute><OnboardingGate><AppLayout><Quarterly /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/more" element={<ProtectedRoute><AppLayout><More /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/retirement" element={<ProtectedRoute><AppLayout><Retirement /></AppLayout></ProtectedRoute>} />
-            <Route path="/app/investing" element={<ProtectedRoute><AppLayout><Investing /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>

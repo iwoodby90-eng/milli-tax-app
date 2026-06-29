@@ -1,11 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import {
   MapTrifold, Bank, Robot, FileText, ShieldCheck, CaretRight,
-  CurrencyDollar, Clock, ArrowUpRight, CheckCircle, Star, Sparkle,
+  CurrencyDollar, Clock, ArrowUpRight, CheckCircle, Star,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 
@@ -13,20 +11,7 @@ const PLATFORMS = ["UBER", "DOORDASH", "SPARK", "LYFT", "INSTACART", "AMAZON FLE
 
 export default function Landing() {
   const [tiers, setTiers] = useState([]);
-  const { setSession } = useAuth();
-  const navigate = useNavigate();
   useEffect(() => { api.get("/pricing/tiers").then(({ data }) => setTiers(data)).catch(() => {}); }, []);
-
-  async function handleDemo() {
-    try {
-      const { data } = await api.post("/demo/seed");
-      setSession(data.token, data.user);
-      toast.success("Welcome to the Milli demo");
-      navigate("/app");
-    } catch (e) {
-      toast.error("Demo unavailable — try again in a moment");
-    }
-  }
 
   return (
     <div className="min-h-screen carbon-bg text-white">
@@ -41,7 +26,6 @@ export default function Landing() {
             <a href="#features" className="hover:text-white">Features</a>
             <a href="#how" className="hover:text-white">How it works</a>
             <a href="#pricing" className="hover:text-white">Pricing</a>
-            <button onClick={() => handleDemo()} className="hover:text-volt" data-testid="nav-demo">Try demo</button>
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-sm text-zinc-300 hover:text-white px-3 py-2" data-testid="nav-login">Sign in</Link>
@@ -70,9 +54,9 @@ export default function Landing() {
               <Link to="/register" data-testid="hero-cta-start" className="btn-volt px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2">
                 Start 3-day free trial <CaretRight weight="bold" />
               </Link>
-              <button onClick={handleDemo} data-testid="hero-cta-demo" className="btn-outline-cyan px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2 font-semibold">
-                <Sparkle size={16} weight="fill" /> Try the demo
-              </button>
+              <Link to="/login" data-testid="hero-cta-signin" className="btn-outline-cyan px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2 font-semibold">
+                Sign in
+              </Link>
             </div>
             <div className="mt-10 grid grid-cols-3 gap-6 max-w-md">
               <Stat label="Avg miles missed" value="3,200" suffix="mi/yr" />
