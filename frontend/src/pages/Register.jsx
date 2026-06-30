@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { ArrowRight } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import RoadScene from "@/components/RoadScene";
 
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
@@ -29,8 +30,8 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen carbon-bg text-white flex">
-      <div className="w-full lg:w-1/2 flex flex-col px-6 py-10 justify-center max-w-xl mx-auto">
+    <div className="min-h-screen carbon-bg text-white flex flex-col-reverse lg:flex-row">
+      <div className="w-full lg:w-1/2 flex flex-col px-6 py-10 justify-center max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:px-12">
         <Link to="/" className="flex items-center gap-3 mb-12" data-testid="register-logo">
           <MilliLogo size={36} />
           <span className="font-display chrome-text text-2xl tracking-[0.25em]">MILLI</span>
@@ -59,12 +60,11 @@ export default function Register() {
           <Link to="/login" className="text-volt font-semibold" data-testid="register-link-login">Sign in</Link>
         </div>
       </div>
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center rays-bg">
-        <div className="text-center">
-          <MilliLogo size={160} className="mx-auto" />
-          <div className="font-display chrome-text text-5xl mt-6 tracking-[0.3em]">MILLI</div>
-          <div className="text-volt mt-4 font-mono text-xs uppercase tracking-[0.3em]">// You drive. We chase deductions</div>
-        </div>
+      <div
+        className="w-full lg:w-1/2 relative h-[44vh] lg:h-auto"
+        data-testid="register-road-panel"
+      >
+        <RoadScene tagline="You drive. We chase deductions." />
       </div>
     </div>
   );

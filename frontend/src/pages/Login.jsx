@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { ArrowRight } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import RoadScene from "@/components/RoadScene";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,8 +28,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen carbon-bg text-white flex">
-      <div className="w-full lg:w-1/2 flex flex-col px-6 py-10 justify-center max-w-xl mx-auto">
+    <div className="min-h-screen carbon-bg text-white flex flex-col-reverse lg:flex-row">
+      <div className="w-full lg:w-1/2 flex flex-col px-6 py-10 justify-center max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:px-12">
         <Link to="/" className="flex items-center gap-3 mb-12" data-testid="login-logo">
           <MilliLogo size={36} />
           <span className="font-display chrome-text text-2xl tracking-[0.25em]">MILLI</span>
@@ -48,12 +49,11 @@ export default function Login() {
           <Link to="/register" className="text-volt font-semibold" data-testid="login-link-register">Start 3-day trial</Link>
         </div>
       </div>
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center rays-bg">
-        <div className="text-center">
-          <MilliLogo size={160} className="mx-auto" />
-          <div className="font-display chrome-text text-5xl mt-6 tracking-[0.3em]">MILLI</div>
-          <div className="text-volt mt-4 font-mono text-xs uppercase tracking-[0.3em]">// Every mile is a deduction</div>
-        </div>
+      <div
+        className="w-full lg:w-1/2 relative h-[44vh] lg:h-auto"
+        data-testid="login-road-panel"
+      >
+        <RoadScene tagline="Every mile is a deduction" />
       </div>
     </div>
   );
