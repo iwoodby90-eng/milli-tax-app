@@ -25,6 +25,7 @@ import More from "@/pages/More";
 import Retirement from "@/pages/Retirement";
 import Investing from "@/pages/Investing";
 import Onboarding from "@/pages/Onboarding";
+import MarketingStudio from "@/pages/MarketingStudio";
 
 function OnboardingGate({ children }) {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/marketing" element={<MarketingStudio />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/billing/success" element={<BillingSuccess />} />

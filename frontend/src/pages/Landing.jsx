@@ -26,6 +26,7 @@ export default function Landing() {
             <a href="#features" className="hover:text-white">Features</a>
             <a href="#how" className="hover:text-white">How it works</a>
             <a href="#pricing" className="hover:text-white">Pricing</a>
+            <Link to="/marketing" data-testid="nav-marketing" className="hover:text-volt">Reel</Link>
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-sm text-zinc-300 hover:text-white px-3 py-2" data-testid="nav-login">Sign in</Link>

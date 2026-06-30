@@ -26,6 +26,27 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - Reports: Schedule C + SE worksheet PDF, mileage CSV
 - Stripe checkout (3 tiers via emergentintegrations) + webhook + polling
 - **Demo Mode** (`POST /api/demo/seed`): one-click Jordan Taylor demo user with 40 deposits, 28 trips, 18 expenses, vault balance, Q1 paid payment record
+- **Marketing Studio** (`/api/marketing/videos`, `/api/marketing/videos/{file}.mp4`): lists + streams Sora 2 generated brand films
+
+## Implemented (2026-06)
+### Native iOS Shell (Capacitor 7)
+- Capacitor v7 wired into `/app/frontend` (cli + core + ios + community plugins)
+- `ios/` Xcode project scaffolded with app id `app.milli.tax`, name `Milli`
+- `Info.plist` configured with `NSLocationAlwaysAndWhenInUseUsageDescription`, `NSLocationWhenInUseUsageDescription`, `NSMotionUsageDescription` and `UIBackgroundModes: location, fetch, processing`
+- `@capacitor-community/background-geolocation` integrated via `src/native/mileageTracker.js`; falls back to web `watchPosition` when not native
+- `Mileage.jsx` auto-detects platform and runs background-capable GPS on iOS/Android, web continues unchanged
+- Build guide checked in at `/app/IOS_BUILD_GUIDE.md` (Xcode signing, pod install, App Store checklist)
+
+### Marketing Studio (Sora 2)
+- 5 cinematic 8-second brand films generated and stored at `/app/marketing_videos/`:
+  - 01 Cinematic Luxury — Skyline (9:16, 720x1280) — Reels / TikTok
+  - 02 Driver POV — Night HUD (16:9, 1280x720) — YouTube / web hero
+  - 03 Lifestyle — Gig Worker Smile (9:16, 720x1280)
+  - 04 Product — Kinetic Typography (16:9, 1280x720)
+  - 05 Hero Brand Montage (9:16, 720x1280)
+- `/marketing` React page with auto-preview hover cards, modal player, per-clip MP4 download, polls backend for in-progress clips
+- Generator script at `/app/scripts/generate_marketing_videos.py` (resumable, status logged to `generation_log.json`)
+- Added `Reel` link in Landing page nav
 
 ### Frontend (React, Tailwind, Phosphor icons)
 - Landing page (rebranded, demo CTA, turquoise theme)
@@ -51,6 +72,9 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - **Plaid Transfer** for real bank-to-Vault movement requires production approval.
 
 ## Deferred to Backlog
+- **Apple In-App Purchase + Google Play Billing** for native Basic/Pro/Elite (web still uses Stripe)
+- **Real partner integrations** (Stripe Treasury / Unit for Vault, Carry / Altruist for Investing) when production keys arrive
+- **Plaid Sandbox → Production** swap
 - **Multi-step onboarding flow** (8 screens — currently using single-step register)
 - **Recurring categorization rules** UI
 - **Tax Documents center** (1099-NEC/K/MISC, W-2 upload)

@@ -1521,6 +1521,56 @@ async def demo_seed():
 async def root():
     return {"name": "Milli", "ok": True}
 
+
+# -------------------- MARKETING ASSETS --------------------
+MARKETING_DIR = Path("/app/marketing_videos")
+
+
+@api.get("/marketing/videos")
+async def list_marketing_videos():
+    """List generated marketing clips, including aspect ratio + status."""
+    import json as _json
+    log_path = MARKETING_DIR / "generation_log.json"
+    if not log_path.exists():
+        return {"clips": []}
+    log = _json.loads(log_path.read_text())
+    titles = {
+        "01_cinematic_luxury": "Cinematic Luxury — Skyline",
+        "02_driver_pov_hud": "Driver POV — Night HUD",
+        "03_lifestyle_gigworker": "Lifestyle — Gig Worker Smile",
+        "04_product_kinetic_type": "Product — Kinetic Typography",
+        "05_hero_montage": "Hero Brand Montage",
+    }
+    clips = []
+    for cid, meta in log.items():
+        ready = meta.get("status") == "done"
+        clips.append({
+            "id": cid,
+            "title": titles.get(cid, meta.get("title", cid)),
+            "size": meta.get("size"),
+            "orientation": "vertical" if meta.get("size", "").startswith("720") else "landscape",
+            "duration": meta.get("duration"),
+            "ready": ready,
+            "status": meta.get("status"),
+            "url": f"/api/marketing/videos/{cid}.mp4" if ready else None,
+        })
+    # Stable order by id
+    clips.sort(key=lambda c: c["id"])
+    return {"clips": clips}
+
+
+@api.get("/marketing/videos/{filename}")
+async def get_marketing_video(filename: str):
+    """Stream a generated MP4."""
+    from fastapi.responses import FileResponse
+    if not filename.endswith(".mp4") or "/" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    path = MARKETING_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(path, media_type="video/mp4", filename=filename)
+
+
 # -------------------- MOUNT --------------------
 app.include_router(api)
 

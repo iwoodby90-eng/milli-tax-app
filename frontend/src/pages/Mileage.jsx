@@ -3,6 +3,7 @@ import { api, money, num, formatApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { MapTrifold, Play, Stop, Plus, Trash, Crosshair } from "@phosphor-icons/react";
 import RoadScene from "@/components/RoadScene";
+import { isNative, startTrip as startNativeTrip, stopTrip as stopNativeTrip } from "@/native/mileageTracker";
 
 export default function Mileage() {
   const [active, setActive] = useState(null);
@@ -59,6 +60,55 @@ export default function Mileage() {
   }
 
   async function startTrip() {
+    // Native iOS/Android: use background-capable GPS so trips continue
+    // while the screen is off or the app is backgrounded.
+    if (isNative()) {
+      try {
+        // Get a one-shot fix to anchor the trip start on the server.
+        const fix = await new Promise((resolve, reject) => {
+          if (!navigator.geolocation) return reject(new Error("Geolocation not supported"));
+          navigator.geolocation.getCurrentPosition(
+            (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+            (err) => reject(err),
+            { enableHighAccuracy: true, timeout: 15000 }
+          );
+        });
+        const { data } = await api.post("/trips/start", {
+          platform,
+          start_lat: fix.lat,
+          start_lng: fix.lng,
+        });
+        setActive(data);
+        setTracking(true);
+        setLivePoints([[fix.lat, fix.lng]]);
+        setLiveMiles(0);
+        startTimeRef.current = Date.now();
+        setElapsed(0);
+        startTicker();
+        await startNativeTrip(
+          (loc) => {
+            const pt = [loc.latitude, loc.longitude];
+            setLivePoints((prev) => {
+              if (prev.length) {
+                const d = hav(prev[prev.length - 1], pt);
+                if (d > 0.005) {
+                  setLiveMiles((m) => m + d);
+                  return [...prev, pt];
+                }
+                return prev;
+              }
+              return [pt];
+            });
+          },
+          (err) => toast.error("GPS error: " + err.message)
+        );
+        toast.success("Trip started — background GPS active");
+      } catch (e) {
+        toast.error(typeof e === "string" ? e : (e?.message || formatApiError(e)));
+      }
+      return;
+    }
+
     if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try {
@@ -99,6 +149,9 @@ export default function Mileage() {
 
   async function endTrip() {
     if (!active) return;
+    if (isNative()) {
+      try { await stopNativeTrip(); } catch (_) { /* noop */ }
+    }
     if (watchIdRef.current && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
     if (tickRef.current) clearInterval(tickRef.current);
     const finalPoints = livePoints.map((p) => ({ lat: p[0], lng: p[1] }));
@@ -178,7 +231,7 @@ export default function Mileage() {
             <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
               <div className="flex-1">
                 <div className="font-display font-black text-3xl mb-2">Ready to roll?</div>
-                <div className="text-zinc-400 text-sm mb-4">Pick your platform, hit Start. We'll track the rest.</div>
+                <div className="text-zinc-400 text-sm mb-4">Pick your platform, hit Start. We&apos;ll track the rest.</div>
                 <select
                   data-testid="live-platform"
                   value={platform}
