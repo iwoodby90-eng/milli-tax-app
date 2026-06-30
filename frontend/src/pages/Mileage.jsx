@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, money, num, formatApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { MapTrifold, Play, Stop, Plus, Trash, Crosshair } from "@phosphor-icons/react";
+import RoadScene from "@/components/RoadScene";
 
 export default function Mileage() {
   const [active, setActive] = useState(null);
@@ -150,15 +151,28 @@ export default function Mileage() {
 
       {/* Live tracker */}
       <div
-        className="milli-card p-8 mb-6 relative overflow-hidden"
+        className="milli-card mb-6 relative overflow-hidden"
         style={tracking ? {
           backgroundImage: "url(https://images.pexels.com/photos/5962471/pexels-photo-5962471.jpeg)",
           backgroundSize: "cover", backgroundPosition: "center",
-        } : undefined}
+          minHeight: 320,
+        } : { minHeight: 320 }}
         data-testid="live-tracker"
       >
         {tracking && <div className="absolute inset-0 bg-black/80" />}
-        <div className="relative">
+        {/* Idle road scene — only when not tracking */}
+        {!tracking && (
+          <div className="absolute inset-0 opacity-60">
+            <RoadScene showLogo={false} />
+          </div>
+        )}
+        {/* Soft gradient overlay so controls stay readable on the road */}
+        {!tracking && (
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: "linear-gradient(180deg, rgba(5,6,7,0.85) 0%, rgba(5,6,7,0.55) 35%, rgba(5,6,7,0.45) 65%, rgba(5,6,7,0.9) 100%)",
+          }} />
+        )}
+        <div className="relative p-8 h-full">
           <div className="text-volt font-mono text-xs uppercase tracking-[0.3em] mb-4">// Live tracker</div>
           {!tracking ? (
             <div className="flex flex-col md:flex-row items-start md:items-end gap-6">

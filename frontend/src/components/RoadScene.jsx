@@ -1,16 +1,34 @@
 /**
- * Animated perspective road — pure CSS, no framer-motion.
- * Lane dashes scroll from the vanishing point toward the viewer,
- * scaling up + brightening to create the illusion of driving forward.
- * Used on Login + Register right panels.
+ * Animated perspective road — pure CSS, tap-to-pulse acceleration.
+ * Lane dashes scroll from the vanishing point toward the viewer.
+ * Tap anywhere → speed-streak burst + cyan flash + 20ms haptic pulse.
  */
+import { useState, useRef } from "react";
 import MilliLogo from "@/components/MilliLogo";
 
 const DASH_COUNT = 18;
+const STREAK_COUNT = 9;
 
-export default function RoadScene({ tagline = "Every mile is a deduction" }) {
+export default function RoadScene({ tagline = "Every mile is a deduction", showLogo = true }) {
+  const [pulses, setPulses] = useState([]);
+  const idRef = useRef(0);
+
+  const onTap = () => {
+    const id = ++idRef.current;
+    setPulses((p) => [...p, id]);
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try { navigator.vibrate(20); } catch {}
+    }
+    setTimeout(() => setPulses((p) => p.filter((x) => x !== id)), 900);
+  };
+
   return (
-    <div className="absolute inset-0 overflow-hidden" data-testid="road-scene">
+    <div
+      className="absolute inset-0 overflow-hidden cursor-pointer select-none"
+      data-testid="road-scene"
+      onClick={onTap}
+      onTouchStart={onTap}
+    >
       {/* Sky / horizon gradient */}
       <div
         className="absolute inset-0"
@@ -32,7 +50,7 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
         }}
       />
 
-      {/* Distant city lights (small twinkling dots near horizon) */}
+      {/* Distant city lights */}
       {Array.from({ length: 20 }).map((_, i) => (
         <span
           key={`city-${i}`}
@@ -40,8 +58,7 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
           style={{
             top: `${55 + Math.random() * 3}%`,
             left: `${10 + Math.random() * 80}%`,
-            width: 1.5,
-            height: 1.5,
+            width: 1.5, height: 1.5,
             background: i % 3 === 0 ? "#13D8D1" : "#D9E0E4",
             boxShadow: "0 0 4px currentColor",
             opacity: 0.4 + Math.random() * 0.6,
@@ -50,7 +67,7 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
         />
       ))}
 
-      {/* Road plane — trapezoid */}
+      {/* Road plane */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="road-grad" x1="0" y1="0" x2="0" y2="1">
@@ -62,17 +79,13 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
             <stop offset="100%" stopColor="rgba(19,216,209,0.9)" />
           </linearGradient>
         </defs>
-        {/* Road surface */}
         <polygon points="48,58 52,58 95,100 5,100" fill="url(#road-grad)" />
-        {/* Left edge line */}
         <line x1="48" y1="58" x2="5" y2="100" stroke="url(#edge-grad)" strokeWidth="0.3" />
-        {/* Right edge line */}
         <line x1="52" y1="58" x2="95" y2="100" stroke="url(#edge-grad)" strokeWidth="0.3" />
-        {/* Center line (faint) */}
         <line x1="50" y1="58" x2="50" y2="100" stroke="rgba(217,224,228,0.06)" strokeWidth="0.15" strokeDasharray="0.6 1" />
       </svg>
 
-      {/* Animated lane dashes scrolling toward viewer */}
+      {/* Lane dashes */}
       <div className="absolute left-1/2 top-[58%] bottom-0 -translate-x-1/2" style={{ width: "60%" }}>
         {Array.from({ length: DASH_COUNT }).map((_, i) => (
           <div
@@ -83,25 +96,17 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
         ))}
       </div>
 
-      {/* Guard rail dots */}
+      {/* Guard rails */}
       <div className="absolute left-0 right-0 top-[58%] bottom-0">
         {Array.from({ length: 14 }).map((_, i) => (
-          <div
-            key={`rail-l-${i}`}
-            className="absolute milli-rail milli-rail-l"
-            style={{ animationDelay: `${(i * 2.0) / 14}s` }}
-          />
+          <div key={`rail-l-${i}`} className="absolute milli-rail milli-rail-l" style={{ animationDelay: `${(i * 2.0) / 14}s` }} />
         ))}
         {Array.from({ length: 14 }).map((_, i) => (
-          <div
-            key={`rail-r-${i}`}
-            className="absolute milli-rail milli-rail-r"
-            style={{ animationDelay: `${(i * 2.0) / 14}s` }}
-          />
+          <div key={`rail-r-${i}`} className="absolute milli-rail milli-rail-r" style={{ animationDelay: `${(i * 2.0) / 14}s` }} />
         ))}
       </div>
 
-      {/* Floating dust motes (drift up) */}
+      {/* Dust motes */}
       {Array.from({ length: 14 }).map((_, i) => (
         <div
           key={`dust-${i}`}
@@ -118,20 +123,55 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
         />
       ))}
 
-      {/* Foreground content (MILLI mark + tagline) */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-6">
-        <div className="mb-3 sm:mb-6 scale-75 sm:scale-100"><MilliLogo size={140} /></div>
-        <div className="font-display chrome-text text-3xl sm:text-5xl tracking-[0.35em] text-center">MILLI</div>
-        <div className="mt-3 sm:mt-4 h-px w-24 sm:w-32" style={{
-          background: "linear-gradient(90deg, transparent, #13D8D1, transparent)",
-          boxShadow: "0 0 12px #13D8D1",
-        }} />
-        <div className="mt-3 sm:mt-4 text-volt text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.3em] sm:tracking-[0.4em] text-center px-2">
-          // {tagline}
+      {/* TAP BURST overlays — one-shot per tap */}
+      {pulses.map((id) => (
+        <div key={id} className="absolute inset-0 pointer-events-none" data-testid="road-tap-burst">
+          {/* Cyan radial flash from horizon */}
+          <div className="absolute inset-0 milli-boost-flash" />
+          {/* Speed streaks radiating from horizon */}
+          {Array.from({ length: STREAK_COUNT }).map((_, i) => {
+            const angle = (i / STREAK_COUNT) * 360;
+            const offset = ((i * 137) % 60) - 30; // pseudo-random horizontal
+            return (
+              <div
+                key={i}
+                className="absolute milli-streak"
+                style={{
+                  left: `${50 + offset}%`,
+                  top: "58%",
+                  transform: `rotate(${angle}deg)`,
+                  animationDelay: `${i * 25}ms`,
+                }}
+              />
+            );
+          })}
+          {/* Horizon spotlight burst */}
+          <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 milli-burst-ring" />
         </div>
-      </div>
+      ))}
 
-      {/* All animations */}
+      {/* Foreground content */}
+      {showLogo && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-6">
+          <div className="mb-3 sm:mb-6 scale-75 sm:scale-100"><MilliLogo size={140} /></div>
+          <div className="font-display chrome-text text-3xl sm:text-5xl tracking-[0.35em] text-center">MILLI</div>
+          <div className="mt-3 sm:mt-4 h-px w-24 sm:w-32" style={{
+            background: "linear-gradient(90deg, transparent, #13D8D1, transparent)",
+            boxShadow: "0 0 12px #13D8D1",
+          }} />
+          <div className="mt-3 sm:mt-4 text-volt text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.3em] sm:tracking-[0.4em] text-center px-2">
+            // {tagline}
+          </div>
+        </div>
+      )}
+
+      {/* Subtle "tap to pulse" hint — only when no recent pulse */}
+      {pulses.length === 0 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-[0.3em] text-zinc-600 font-mono pointer-events-none opacity-60">
+          tap to rev
+        </div>
+      )}
+
       <style>{`
         @keyframes road-dash-scroll {
           0%   { top: 0%;  transform: translate(-50%, 0) scale(0.12); opacity: 0;   width: 1.2px; height: 4px; background: rgba(217,224,228,0.0); }
@@ -177,6 +217,39 @@ export default function RoadScene({ tagline = "Every mile is a deduction" }) {
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50%      { opacity: 1; }
+        }
+
+        /* Tap-to-pulse boost */
+        @keyframes boost-flash {
+          0%   { background: radial-gradient(ellipse 20% 14% at 50% 58%, rgba(19,216,209,0), transparent 70%); }
+          15%  { background: radial-gradient(ellipse 70% 50% at 50% 65%, rgba(19,216,209,0.55), transparent 70%); }
+          100% { background: radial-gradient(ellipse 220% 220% at 50% 115%, rgba(19,216,209,0), transparent 70%); }
+        }
+        .milli-boost-flash { animation: boost-flash 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes streak-fire {
+          0%   { width: 1px; height: 1px; opacity: 0; box-shadow: 0 0 0 #13D8D1; transform-origin: 0 50%; }
+          25%  { opacity: 1; }
+          100% { width: 240px; height: 1.5px; opacity: 0; box-shadow: 0 0 16px #13D8D1; }
+        }
+        .milli-streak {
+          background: linear-gradient(90deg, #13D8D1, transparent);
+          border-radius: 9999px;
+          animation: streak-fire 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: width, opacity;
+        }
+
+        @keyframes burst-ring {
+          0%   { width: 0; height: 0; opacity: 0.9; border-width: 2px; }
+          50%  { opacity: 0.7; border-width: 1px; }
+          100% { width: 360px; height: 360px; opacity: 0; border-width: 0.5px; }
+        }
+        .milli-burst-ring {
+          border-radius: 9999px;
+          border: 2px solid #13D8D1;
+          box-shadow: 0 0 24px #13D8D1, inset 0 0 24px rgba(19,216,209,0.4);
+          animation: burst-ring 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: width, height, opacity;
         }
       `}</style>
     </div>
