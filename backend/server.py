@@ -330,7 +330,8 @@ async def plaid_exchange(body: PublicTokenIn, user: dict = Depends(get_current_u
             ItemPublicTokenExchangeRequest(public_token=body.public_token)
         )
     except plaid.ApiException as e:
-        raise HTTPException(status_code=500, detail=f"Plaid exchange error: {e.body}")
+        logging.exception("Plaid exchange failed")
+        raise HTTPException(status_code=400, detail="Could not link this account. Please try again.")
     access_token = exch["access_token"]
     item_id = exch["item_id"]
     item_doc = {
@@ -1034,6 +1035,10 @@ async def vault_rule(body: VaultRuleIn, user: dict = Depends(get_current_user)):
     if not v:
         raise HTTPException(404, "Vault not set up")
     rule = v.get("rule", {})
+    payload = body.dict()
+    # Allow explicit clearing of fixed_percentage by passing null
+    if payload.get("fixed_percentage") is None and "fixed_percentage" in body.__fields_set__:
+        rule["fixed_percentage"] = None
     for k, val in body.dict(exclude_none=True).items():
         rule[k] = val
     await db.tax_vaults.update_one({"user_id": user["id"]}, {"$set": {"rule": rule}})
@@ -1206,6 +1211,9 @@ async def smart_rule(kind: str, body: SmartRuleIn, user: dict = Depends(get_curr
     if not a:
         raise HTTPException(404, "Account not set up")
     rule = a.get("rule", {})
+    # Allow explicit clearing of fixed_percentage
+    if body.fixed_percentage is None and "fixed_percentage" in body.__fields_set__:
+        rule["fixed_percentage"] = None
     for k, v in body.dict(exclude_none=True).items():
         rule[k] = v
     await db[cfg["collection"]].update_one({"user_id": user["id"]}, {"$set": {"rule": rule}})

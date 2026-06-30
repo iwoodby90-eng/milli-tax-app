@@ -33,10 +33,17 @@ function OnboardingGate({ children }) {
 }
 
 function App() {
-  const [splashDone, setSplashDone] = useState(false);
+  // Show splash only on first session entry (per browser session)
+  const [splashDone, setSplashDone] = useState(() => {
+    try { return sessionStorage.getItem("milli_splash_seen") === "1"; } catch { return false; }
+  });
+  const onSplashDone = () => {
+    try { sessionStorage.setItem("milli_splash_seen", "1"); } catch {}
+    setSplashDone(true);
+  };
   return (
     <div className="App">
-      {!splashDone && <Splash onDone={() => setSplashDone(true)} />}
+      {!splashDone && <Splash onDone={onSplashDone} />}
       <BrowserRouter>
         <AuthProvider>
           <Routes>
