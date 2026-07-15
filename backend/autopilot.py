@@ -114,20 +114,25 @@ async def update_settings(db, user_id: str, patch: dict) -> dict:
 
 
 def compute_tax_rate(user: dict) -> dict:
-    """Return the blended effective tax rate breakdown for a payout."""
-    state_rate = STATE_EFFECTIVE_RATES.get(
-        (user.get("state") or "TX").upper(), DEFAULT_STATE_RATE
-    )
-    federal_rate = DEFAULT_FEDERAL_RATE
-    se_rate = SE_TAX_RATE
-    total = round(federal_rate + state_rate + se_rate, 4)
-    # Cap at 40% so we never do something absurd for a high-tax state.
-    total = min(total, 0.40)
+    """Return the blended effective tax rate breakdown for a payout.
+
+    Delegates to ``tax_engine`` for the actual math so brackets/rates can be
+    updated in one place.
+    """
+    from tax_engine import profile_from_user, per_payout_reserve_rate
+    profile = profile_from_user(user)
+    # If we know YTD gross, prefer the projected-annual method for a more
+    # accurate per-payout rate. Cold-start otherwise.
+    ytd_gross = float(user.get("_ytd_gross_hint") or 0.0)
+    ytd_ded = float(user.get("_ytd_deductions_hint") or 0.0)
+    rate = per_payout_reserve_rate(profile, ytd_gross, ytd_ded)
+    # Backward-compat keys used by existing receipts.
     return {
-        "federal": federal_rate,
-        "state": state_rate,
-        "se": se_rate,
-        "total": total,
+        "federal": rate.get("federal", DEFAULT_FEDERAL_RATE),
+        "state": rate.get("state", 0.0),
+        "se": rate.get("se", SE_TAX_RATE),
+        "total": min(rate.get("total", 0.30), 0.40),
+        "source": rate.get("source", "cold_start"),
     }
 
 
@@ -157,11 +162,24 @@ async def run_autopilot(db, user: dict, payout: dict) -> dict:
     if amount <= 0:
         raise ValueError("payout amount must be > 0")
 
+    # Feed YTD context into the tax-rate calculation so per-payout reserves
+    # reflect actual annualized income (accurate) rather than a flat estimate.
+    from datetime import datetime as _dt
+    year = _dt.now(timezone.utc).year
+    ytd_gross_agg = await db.deposits.aggregate([
+        {"$match": {"user_id": user["id"], "date": {"$regex": f"^{year}"}}},
+        {"$group": {"_id": None, "gross": {"$sum": "$amount"}}},
+    ]).to_list(1)
+    ytd_gross_hint = (ytd_gross_agg[0]["gross"] if ytd_gross_agg else 0.0) + amount
+    user_with_hint = {**user, "_ytd_gross_hint": ytd_gross_hint}
+
     steps: list[dict] = []
     running_available = amount  # everything not allocated is available to spend
 
     # ---- 1. TAX PROTECTION → Milli Tax Vault™ ---------------------------------
-    tax_rate = compute_tax_rate(user)
+    tax_rate = compute_tax_rate(user_with_hint)
+    plan = (user.get("plan") or "trial").lower()
+
     tax_reserve = 0.0
     if settings.get("tax_enabled", True):
         tax_reserve = round(amount * tax_rate["total"], 2)
@@ -187,10 +205,10 @@ async def run_autopilot(db, user: dict, payout: dict) -> dict:
             "status": "skipped",
         })
 
-    # ---- 2. RETIREMENT (from post-tax net) -----------------------------------
+    # ---- 2. RETIREMENT (Pro / Elite only) -----------------------------------
     ret_pct = float(settings.get("retirement_pct", 0.0) or 0.0)
     ret_amount = 0.0
-    if ret_pct > 0 and running_available > 0:
+    if plan in ("pro", "elite") and ret_pct > 0 and running_available > 0:
         ret_amount = round(amount * ret_pct, 2)
         if ret_amount > running_available:
             ret_amount = round(running_available, 2)
@@ -208,10 +226,10 @@ async def run_autopilot(db, user: dict, payout: dict) -> dict:
             "status": "completed",
         })
 
-    # ---- 3. INVESTING --------------------------------------------------------
+    # ---- 3. INVESTING (Pro / Elite only) ------------------------------------
     inv_pct = float(settings.get("investing_pct", 0.0) or 0.0)
     inv_amount = 0.0
-    if inv_pct > 0 and running_available > 0:
+    if plan in ("pro", "elite") and inv_pct > 0 and running_available > 0:
         inv_amount = round(amount * inv_pct, 2)
         if inv_amount > running_available:
             inv_amount = round(running_available, 2)
@@ -320,6 +338,21 @@ async def run_autopilot(db, user: dict, payout: dict) -> dict:
     receipt["hash"] = _receipt_hash(receipt)
     await db.autopilot_receipts.insert_one({**receipt})
     receipt.pop("_id", None)
+
+    # Fire a Milli AI notification for the UI to pick up.
+    try:
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "kind": "autopilot_receipt",
+            "title": f"Milli Autopilot ran on ${amount:,.2f} from {source['platform']}",
+            "body": insight,
+            "meta": {"receipt_id": receipt_id, "amount": amount},
+            "read": False,
+            "created_at": now,
+        })
+    except Exception:
+        pass
 
     # Link the receipt back onto the payout for quick lookup.
     if payout.get("id"):
@@ -498,18 +531,19 @@ async def _apply_ats_credit(db, user_id: str, amount: float) -> float:
 
 
 async def _refresh_quarterly_projection(db, user_id: str) -> dict:
-    """Compute the next quarterly estimate + which quarter it applies to."""
+    """Compute the next quarterly estimate using the Tax Engine.
+
+    Uses full YTD-to-annual projection with proper federal brackets, SE tax,
+    state tax, and QBI deduction (not a flat rate).
+    """
+    from tax_engine import profile_from_user, quarterly_plan
     year = datetime.now(timezone.utc).year
     today = date.today()
-    quarters = [
-        (date(year, 4, 15), "Q1"),
-        (date(year, 6, 15), "Q2"),
-        (date(year, 9, 15), "Q3"),
-        (date(year + 1, 1, 15), "Q4"),
-    ]
-    next_q = next((q for q in quarters if q[0] >= today), quarters[-1])
 
-    # Estimate based on YTD gross × blended tax rate ÷ 4.
+    user = await db.users.find_one({"id": user_id}) or {}
+    profile = profile_from_user(user)
+
+    # YTD income + deductions
     deposits = await db.deposits.find(
         {"user_id": user_id}, {"amount": 1, "date": 1, "_id": 0}
     ).to_list(5000)
@@ -517,17 +551,44 @@ async def _refresh_quarterly_projection(db, user_id: str) -> dict:
         (d.get("amount") or 0.0) for d in deposits
         if str(d.get("date", "")).startswith(str(year))
     )
-    user = await db.users.find_one({"id": user_id}) or {}
-    rate = compute_tax_rate(user)["total"]
-    annual_est = ytd_gross * rate
-    next_amount = round(annual_est / 4, 2)
+    trips = await db.trips.find(
+        {"user_id": user_id, "status": "completed"},
+        {"miles": 1, "purpose": 1, "start_time": 1, "_id": 0},
+    ).to_list(5000)
+    biz_miles = sum(
+        (t.get("miles") or 0.0) for t in trips
+        if str(t.get("start_time") or "").startswith(str(year))
+        and (t.get("purpose") or "business") in {"business", "delivery", "client_meeting"}
+    )
+    expenses = await db.expenses.find(
+        {"user_id": user_id}, {"amount": 1, "date": 1, "_id": 0}
+    ).to_list(5000)
+    ytd_expenses = sum(
+        (e.get("amount") or 0.0) for e in expenses
+        if str(e.get("date", "")).startswith(str(year))
+    )
+    from tax_engine import IRS_MILEAGE_RATE_BUSINESS
+    ytd_deductions = round(biz_miles * IRS_MILEAGE_RATE_BUSINESS + ytd_expenses, 2)
+
+    payments = await db.quarterly_payments.find(
+        {"user_id": user_id, "year": year}, {"_id": 0},
+    ).to_list(100)
+
+    plan = quarterly_plan(year, profile, ytd_gross, ytd_deductions, payments, today)
+
+    # Pick the next un-paid quarter (fall back to Q4 if all done).
+    next_q = next((q for q in plan.quarters if not q["paid"]), plan.quarters[-1])
+    days_until = next_q["days_until"]
+
     return {
         "year": year,
-        "next_period": next_q[1],
-        "next_due_date": next_q[0].isoformat(),
-        "next_quarterly_amount": next_amount,
-        "days_until": (next_q[0] - today).days,
-        "annual_estimate": round(annual_est, 2),
+        "next_period": next_q["period"],
+        "next_due_date": next_q["due_date"],
+        "next_quarterly_amount": next_q["amount"],
+        "days_until": days_until,
+        "annual_estimate": plan.annual_estimated_tax,
+        "remaining_owed": plan.remaining_owed,
+        "quarters": plan.quarters,
     }
 
 

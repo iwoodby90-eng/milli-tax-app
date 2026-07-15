@@ -601,6 +601,321 @@ async def delete_trip(trip_id: str, user: dict = Depends(get_current_user)):
     await db.trips.delete_one({"id": trip_id, "user_id": user["id"]})
     return {"ok": True}
 
+
+# -------------------- TRIP CLASSIFICATION --------------------
+TRIP_CATEGORIES = {"business", "personal", "medical", "charitable",
+                   "commuting", "needs_review"}
+
+
+class TripClassifyIn(BaseModel):
+    classification: str
+    vehicle_id: Optional[str] = None
+    business_purpose: Optional[str] = None
+
+
+@api.put("/trips/{trip_id}/classify")
+async def classify_trip(trip_id: str, body: TripClassifyIn,
+                        user: dict = Depends(get_current_user)):
+    if body.classification not in TRIP_CATEGORIES:
+        raise HTTPException(400, f"classification must be one of {sorted(TRIP_CATEGORIES)}")
+    from tax_engine import (
+        IRS_MILEAGE_RATE_BUSINESS,
+        IRS_MILEAGE_RATE_MEDICAL,
+        IRS_MILEAGE_RATE_CHARITABLE,
+    )
+    trip = await db.trips.find_one({"id": trip_id, "user_id": user["id"]})
+    if not trip:
+        raise HTTPException(404, "Trip not found")
+    miles = float(trip.get("miles") or 0.0)
+    rate = {
+        "business": IRS_MILEAGE_RATE_BUSINESS,
+        "medical": IRS_MILEAGE_RATE_MEDICAL,
+        "charitable": IRS_MILEAGE_RATE_CHARITABLE,
+    }.get(body.classification, 0.0)
+    deductible = round(miles * rate, 2)
+    patch = {
+        "classification": body.classification,
+        "deductible_value": deductible,
+        "reviewed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if body.vehicle_id:
+        patch["vehicle_id"] = body.vehicle_id
+    if body.business_purpose:
+        patch["business_purpose"] = body.business_purpose
+    await db.trips.update_one({"id": trip_id}, {"$set": patch})
+    updated = await db.trips.find_one({"id": trip_id}, {"_id": 0, "points": 0})
+    return updated
+
+
+@api.get("/trips/needs-review")
+async def trips_needing_review(user: dict = Depends(get_current_user)):
+    trips = await db.trips.find(
+        {"user_id": user["id"], "status": "completed",
+         "$or": [{"classification": {"$exists": False}},
+                 {"classification": "needs_review"}]},
+        {"_id": 0, "points": 0},
+    ).sort("start_time", -1).to_list(200)
+    return {"count": len(trips), "trips": trips}
+
+
+# -------------------- VEHICLES --------------------
+class VehicleIn(BaseModel):
+    nickname: str
+    make: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None
+    default: bool = False
+
+
+@api.get("/vehicles")
+async def list_vehicles(user: dict = Depends(get_current_user)):
+    v = await db.vehicles.find({"user_id": user["id"]}, {"_id": 0}).to_list(50)
+    return v
+
+
+@api.post("/vehicles")
+async def add_vehicle(body: VehicleIn, user: dict = Depends(get_current_user)):
+    if body.default:
+        await db.vehicles.update_many({"user_id": user["id"]},
+                                       {"$set": {"default": False}})
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        **body.dict(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.vehicles.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api.delete("/vehicles/{vehicle_id}")
+async def delete_vehicle(vehicle_id: str, user: dict = Depends(get_current_user)):
+    await db.vehicles.delete_one({"id": vehicle_id, "user_id": user["id"]})
+    return {"ok": True}
+
+
+# -------------------- MILEAGE SUMMARY (uses tax_engine) --------------------
+@api.get("/mileage/summary")
+async def mileage_summary(user: dict = Depends(get_current_user),
+                           year: Optional[int] = None):
+    from tax_engine import mileage_deduction
+    year = year or datetime.now(timezone.utc).year
+    trips = await db.trips.find(
+        {"user_id": user["id"], "status": "completed"},
+        {"_id": 0, "points": 0},
+    ).to_list(5000)
+    trips = [t for t in trips if (t.get("start_time") or "").startswith(str(year))]
+
+    def _bucket(t):
+        c = t.get("classification")
+        if c:
+            return c
+        # Legacy trips without classification: infer from purpose.
+        return {
+            "delivery": "business", "rideshare": "business",
+            "client_meeting": "business", "medical": "medical",
+            "charitable": "charitable", "commute": "commuting",
+        }.get(t.get("purpose"), "needs_review")
+
+    biz = sum(t["miles"] for t in trips if _bucket(t) == "business")
+    med = sum(t["miles"] for t in trips if _bucket(t) == "medical")
+    cha = sum(t["miles"] for t in trips if _bucket(t) == "charitable")
+    review_count = sum(1 for t in trips if _bucket(t) == "needs_review")
+
+    return {
+        "year": year,
+        **mileage_deduction(biz, med, cha),
+        "trips_count": len(trips),
+        "trips_needing_review": review_count,
+    }
+
+
+# -------------------- SUBSCRIPTION FEATURE GATING --------------------
+FEATURE_MATRIX = {
+    "core": {"tax_vault", "mileage", "expenses", "reports", "milli_ai",
+             "quarterly_estimates"},
+    "pro": {"retirement", "investing", "auto_contributions",
+             "guided_tax_prep"},
+    "elite": {"quarterly_payments_auto", "tax_filing", "priority_support"},
+}
+PLAN_INCLUDES = {
+    "trial": FEATURE_MATRIX["core"] | FEATURE_MATRIX["pro"] | FEATURE_MATRIX["elite"],  # trial has all
+    "basic": FEATURE_MATRIX["core"],
+    "core": FEATURE_MATRIX["core"],
+    "pro": FEATURE_MATRIX["core"] | FEATURE_MATRIX["pro"],
+    "elite": FEATURE_MATRIX["core"] | FEATURE_MATRIX["pro"] | FEATURE_MATRIX["elite"],
+}
+
+
+def require_feature(feature: str):
+    """FastAPI dependency: reject requests whose plan doesn't include ``feature``."""
+    async def _dep(user: dict = Depends(get_current_user)):
+        plan = (user.get("plan") or "trial").lower()
+        allowed = PLAN_INCLUDES.get(plan, FEATURE_MATRIX["core"])
+        if feature not in allowed:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "error": "plan_upgrade_required",
+                    "feature": feature,
+                    "current_plan": plan,
+                    "upgrade_to": _min_plan_for(feature),
+                },
+            )
+        return user
+    return _dep
+
+
+def _min_plan_for(feature: str) -> str:
+    if feature in FEATURE_MATRIX["elite"]:
+        return "elite"
+    if feature in FEATURE_MATRIX["pro"]:
+        return "pro"
+    return "core"
+
+
+@api.get("/plan/features")
+async def get_plan_features(user: dict = Depends(get_current_user)):
+    plan = (user.get("plan") or "trial").lower()
+    allowed = PLAN_INCLUDES.get(plan, FEATURE_MATRIX["core"])
+    return {
+        "current_plan": plan,
+        "allowed_features": sorted(list(allowed)),
+        "matrix": {k: sorted(list(v)) for k, v in FEATURE_MATRIX.items()},
+    }
+
+
+# -------------------- NOTIFICATIONS / MILLI AI INSIGHTS --------------------
+@api.get("/notifications")
+async def list_notifications(user: dict = Depends(get_current_user),
+                              limit: int = 50, unread_only: bool = False):
+    q: dict = {"user_id": user["id"]}
+    if unread_only:
+        q["read"] = False
+    docs = await db.notifications.find(q, {"_id": 0}).sort(
+        "created_at", -1
+    ).limit(max(1, min(int(limit), 200))).to_list(200)
+    return docs
+
+
+@api.post("/notifications/{note_id}/read")
+async def mark_notification_read(note_id: str,
+                                  user: dict = Depends(get_current_user)):
+    await db.notifications.update_one(
+        {"id": note_id, "user_id": user["id"]}, {"$set": {"read": True}},
+    )
+    return {"ok": True}
+
+
+@api.get("/ai/insights")
+async def milli_ai_insights(user: dict = Depends(get_current_user)):
+    """Deterministic proactive insights the UI can surface anywhere.
+
+    Combines Autopilot receipt highlights, missing-info flags, and quarterly
+    readiness. Does NOT call an LLM — cheap, cacheable, deterministic.
+    """
+    insights = []
+    # 1) Latest Autopilot receipt
+    latest = await db.autopilot_receipts.find_one(
+        {"user_id": user["id"]}, {"_id": 0}, sort=[("created_at", -1)],
+    )
+    if latest:
+        insights.append({
+            "kind": "autopilot_recap",
+            "priority": "info",
+            "title": "Your latest payout was handled by Milli Autopilot™",
+            "body": latest["insight"],
+            "cta": {"label": "View receipt", "route": f"/app/autopilot/{latest['id']}"},
+        })
+
+    # 2) Unclassified trips
+    unclassified = await db.trips.count_documents({
+        "user_id": user["id"], "status": "completed",
+        "$or": [{"classification": {"$exists": False}},
+                {"classification": "needs_review"}],
+    })
+    if unclassified > 0:
+        insights.append({
+            "kind": "trips_need_review",
+            "priority": "action",
+            "title": f"{unclassified} mileage trip{'s' if unclassified != 1 else ''} need review",
+            "body": "Classify them so we can lock in your deduction before quarter end.",
+            "cta": {"label": "Review trips", "route": "/app/mileage?filter=review"},
+        })
+
+    # 3) Quarterly readiness
+    try:
+        from autopilot import _refresh_quarterly_projection
+        proj = await _refresh_quarterly_projection(db, user["id"])
+        vault = await db.tax_vaults.find_one({"user_id": user["id"]}) or {}
+        vault_bal = float(vault.get("balance") or 0.0)
+        target = proj["next_quarterly_amount"]
+        if target > 0:
+            ready = min(100, round(vault_bal / target * 100))
+            if ready >= 100:
+                insights.append({
+                    "kind": "quarterly_ready",
+                    "priority": "good",
+                    "title": f"You're fully funded for {proj['next_period']}",
+                    "body": f"Your Milli Tax Vault™ covers ${target:,.2f} due in "
+                            f"{proj['days_until']} days.",
+                    "cta": {"label": "Open Milli Tax Vault™", "route": "/app/vault"},
+                })
+            elif proj["days_until"] < 30 and ready < 80:
+                insights.append({
+                    "kind": "quarterly_gap",
+                    "priority": "warn",
+                    "title": f"{proj['next_period']} estimate due in {proj['days_until']} days",
+                    "body": f"You're {ready}% funded (${vault_bal:,.2f} of ${target:,.2f}). "
+                            f"Milli will keep protecting from every payout.",
+                    "cta": {"label": "See quarterly", "route": "/app/quarterly"},
+                })
+    except Exception:
+        pass
+
+    # 4) Missing tax profile
+    if not user.get("filing_status") or user.get("filing_status") == "single":
+        if not user.get("_seen_profile_prompt"):
+            insights.append({
+                "kind": "profile_incomplete",
+                "priority": "info",
+                "title": "Confirm your tax profile for even more accurate reserves",
+                "body": "Filing status, dependents, and business type let Milli fine-tune every reserve.",
+                "cta": {"label": "Complete profile", "route": "/app/settings#tax-profile"},
+            })
+
+    return {"insights": insights, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+
+# -------------------- TAX PROFILE --------------------
+class TaxProfileIn(BaseModel):
+    filing_status: Optional[str] = None
+    business_type: Optional[str] = None
+    additional_states: Optional[List[str]] = None
+    dependents: Optional[int] = None
+    additional_income: Optional[float] = None
+    additional_withholding: Optional[float] = None
+    take_qbi: Optional[bool] = None
+
+
+@api.get("/tax/profile")
+async def get_tax_profile(user: dict = Depends(get_current_user)):
+    from tax_engine import profile_from_user
+    return profile_from_user(user).__dict__
+
+
+@api.put("/tax/profile")
+async def put_tax_profile(body: TaxProfileIn,
+                           user: dict = Depends(get_current_user)):
+    patch = {k: v for k, v in body.dict(exclude_none=True).items()}
+    if patch:
+        await db.users.update_one({"id": user["id"]}, {"$set": patch})
+    updated = await db.users.find_one({"id": user["id"]}) or {}
+    from tax_engine import profile_from_user
+    return profile_from_user(updated).__dict__
+
+
 # -------------------- EXPENSES --------------------
 @api.get("/expenses")
 async def list_expenses(user: dict = Depends(get_current_user), year: Optional[int] = None):
@@ -1169,6 +1484,18 @@ async def _smart_get(kind: str, user_id: str):
 
 @api.post("/smart/{kind}/setup")
 async def smart_setup(kind: str, body: SmartSetupIn, user: dict = Depends(get_current_user)):
+    # Gate retirement + investing to Pro / Elite plans.
+    plan = (user.get("plan") or "trial").lower()
+    if kind == "retirement" and plan not in ("trial", "pro", "elite"):
+        raise HTTPException(402, {
+            "error": "plan_upgrade_required", "feature": "retirement",
+            "current_plan": plan, "upgrade_to": "pro",
+        })
+    if kind == "investing" and plan not in ("trial", "pro", "elite"):
+        raise HTTPException(402, {
+            "error": "plan_upgrade_required", "feature": "investing",
+            "current_plan": plan, "upgrade_to": "pro",
+        })
     cfg = _smart_cfg(kind)
     existing = await _smart_get(kind, user["id"])
     if existing:
@@ -1658,6 +1985,8 @@ async def _startup():
     await db.autopilot_receipts.create_index([("user_id", 1), ("created_at", -1)])
     await db.autopilot_receipts.create_index("payout_id")
     await db.savings_transfers.create_index("user_id")
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
+    await db.vehicles.create_index("user_id")
     # Idempotent migration: apply Autopilot defaults to any user missing them.
     try:
         report = await _autopilot_migrate(db)
