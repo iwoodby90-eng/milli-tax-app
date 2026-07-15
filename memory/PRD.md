@@ -12,6 +12,43 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - Chrome M monogram logo with turquoise road accent.
 - Premium glass cards `rounded-2xl` on carbon-fibre obsidian background.
 
+## Implemented (2026-07 · Phase 2 — Financial Engine)
+### Tax Engine (`/app/backend/tax_engine.py`)
+- Pure-math module — swap-in ready behind the `TaxCalculator` integration interface
+- 2025 IRS reference: federal marginal brackets × 5 filing statuses, SE tax with SS wage-base cap ($168,600), additional Medicare tax with per-status thresholds, QBI §199A 20% deduction, standard deduction, all US state effective rates (9 no-tax states supported)
+- Public helpers: `calc_total_tax()`, `quarterly_plan()`, `mileage_deduction()` (2025 rates: $0.70 biz / $0.21 medical / $0.14 charity), `per_payout_reserve_rate()` (cold-start + projected-annual modes), `profile_from_user()`, `TaxProfile` dataclass
+
+### Autopilot upgrades (`/app/backend/autopilot.py`)
+- Now delegates all tax math to Tax Engine (projected-annual per-payout rate w/ YTD hint)
+- Feature-gates retirement + investing steps to Pro/Elite plans (Basic gets tax+savings only)
+- Writes an in-app notification for every receipt (kind=`autopilot_receipt`)
+- Quarterly projection uses full Tax Engine plan (not flat rate)
+
+### Integration Interfaces (`/app/backend/integrations.py`)
+- Protocol abstractions: `AccountAggregator`, `MoneyMover`, `TaxCalculator`, `TaxPaymentSubmitter`, `TaxFiler`, `Brokerage`, `RetirementCustodian`, `GpsProvider`, `OcrProvider`, `Notifier`
+- Concrete impls (all internal ledger): `InternalLedgerBank`, `InternalTaxCalculator`, `NullTaxPayer` (returns pending_partner), `NullTaxFiler`, `InAppNotifier` — real ACH/e-file partners drop in later without app rewrite
+- `IntegrationRegistry` bundles providers for server.py
+
+### New endpoints
+- `GET/PUT /api/tax/profile` — filing status, business type, states, dependents, additional income/withholding, QBI opt-in
+- `PUT /api/trips/{id}/classify` — one of business|personal|medical|charitable|commuting|needs_review, recomputes deduction with proper 2025 rate
+- `GET /api/trips/needs-review` — surfaces unclassified trips for review-queue UI
+- `GET /api/mileage/summary` — Tax-Engine-backed deduction totals + per-category breakdown
+- `GET|POST|DELETE /api/vehicles` — vehicle management for mileage logs
+- `GET /api/plan/features` — surfaces the current plan's feature matrix (core / pro / elite)
+- `GET /api/notifications` + `POST /api/notifications/{id}/read`
+- `GET /api/ai/insights` — deterministic proactive insights (autopilot recap, unclassified-trips action, quarterly readiness good/warn, profile-incomplete info)
+
+### Subscription gating
+- `FEATURE_MATRIX` + `PLAN_INCLUDES` + `require_feature()` FastAPI dependency
+- Retirement + Investing setup endpoints reject `basic` plans with HTTP 402 `plan_upgrade_required`
+- Trial users get everything for 3 days (per user spec)
+
+### Tests
+- `/app/backend/tests/test_phase2_engine.py` — 28 unit tests (Tax Engine + Autopilot)
+- `/app/backend/tests/test_phase2_api.py` — 20 API integration tests (added by testing agent)
+- **48/48 passing** — verified by external testing agent (see `/app/test_reports/iteration_3.json`)
+
 ## Implemented (2026-07)
 ### Milli Autopilot™ Engine (backend)
 - New `/app/backend/autopilot.py` — pure-logic pipeline module (no HTTP coupling), fully immutable receipts
