@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play, DownloadSimple, ArrowLeft, Sparkle, FilmReel } from "@phosphor-icons/react";
+import { Play, DownloadSimple, ArrowLeft, Sparkle, FilmReel, LinkSimple, Check } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -161,18 +161,59 @@ function ClipCard({ clip, index, onPlay }) {
             {clip.duration ? `${clip.duration}s` : "—"} · {clip.size || "—"}
           </div>
         </div>
-        {clip.ready && fullUrl && (
-          <a
-            href={fullUrl}
-            download={`milli-${clip.id}.mp4`}
-            data-testid={`marketing-clip-download-${clip.id}`}
-            className="px-3 py-2 border border-hairline text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:border-volt hover:text-volt"
-          >
-            <DownloadSimple size={12} weight="bold" /> MP4
-          </a>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {clip.public_url && <CopyLinkButton url={clip.public_url} clipId={clip.id} />}
+          {clip.ready && fullUrl && (
+            <a
+              href={fullUrl}
+              download={`milli-${clip.id}.mp4`}
+              data-testid={`marketing-clip-download-${clip.id}`}
+              className="px-3 py-2 border border-hairline text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:border-volt hover:text-volt"
+            >
+              <DownloadSimple size={12} weight="bold" /> MP4
+            </a>
+          )}
+        </div>
       </div>
+      {clip.public_url && (
+        <div className="px-5 pb-4 -mt-2">
+          <a
+            href={clip.public_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid={`marketing-clip-public-${clip.id}`}
+            className="block w-full text-[10px] font-mono text-zinc-500 truncate hover:text-volt"
+            title={clip.public_url}
+          >
+            🌐 {clip.public_url}
+          </a>
+        </div>
+      )}
     </motion.div>
+  );
+}
+
+function CopyLinkButton({ url, clipId }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Permanent link copied");
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+  return (
+    <button
+      onClick={copy}
+      data-testid={`marketing-clip-copy-${clipId}`}
+      className="px-3 py-2 border border-hairline text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:border-volt hover:text-volt"
+    >
+      {copied ? <Check size={12} weight="bold" /> : <LinkSimple size={12} weight="bold" />}
+      {copied ? "Copied" : "Share"}
+    </button>
   );
 }
 

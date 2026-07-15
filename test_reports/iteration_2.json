@@ -1,0 +1,21 @@
+{
+  "summary": "Verified marketing videos bug fix. Backend list endpoint returns 5 clips ordered by id with url + public_url (gofile.io). All 5 pod-hosted MP4 endpoints respond 200/206 with Content-Type video/mp4 to Range requests. All 5 gofile.io permanent URLs return HTTP 200. Frontend /marketing renders all 5 clip cards with correct data-testids (card, copy, public, download, play), each public link points to the expected gofile.io URL, and the modal player opens with a <video> element when the play overlay is clicked.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_marketing_videos.py",
+    "/app/test_reports/pytest/marketing_videos.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py exceeds 1600 lines — consider splitting the marketing router into its own module for maintainability.",
+    "list_marketing_videos infers orientation from size string prefix '720' — fragile if resolutions change; better to compare width vs height explicitly."
+  ],
+  "updated_files": ["/app/backend/tests/test_marketing_videos.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend test suite: pytest /app/backend/tests/test_marketing_videos.py -v (13 tests, all passing). Splash can be skipped via sessionStorage.milli_splash_seen='1' (addInitScript). Permanent URLs live in /app/marketing_videos/public_urls.json.",
+  "rca of the issue": "Original bug: pod-only /api/marketing/videos/*.mp4 URLs 404'd while pod was paused. Fix: uploaded all 5 clips to gofile.io (recorded in /app/marketing_videos/public_urls.json) and extended /api/marketing/videos to include a public_url field surfaced in the UI. Verified end-to-end that both channels return 200."
+}
