@@ -10,6 +10,15 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Milli Autopilot™ engine (pure logic, no HTTP coupling).
+from autopilot import (
+    run_autopilot as _run_autopilot,
+    get_or_init_settings as _get_autopilot_settings,
+    update_settings as _update_autopilot_settings,
+    get_snapshot as _autopilot_snapshot,
+    migrate_all_users as _autopilot_migrate,
+)
+
 from datetime import datetime, timezone, timedelta, date
 from typing import Optional, List, Dict, Any
 
@@ -248,6 +257,16 @@ async def register(body: RegisterIn):
         "tax_savings_balance": 0.0,
         "retirement_balance": 0.0,
         "investing_balance": 0.0,
+        "savings_balance": 0.0,
+        "available_to_spend": 0.0,
+        "autopilot_settings": {
+            "tax_enabled": True,
+            "retirement_pct": 0.05,
+            "investing_pct": 0.05,
+            "savings_pct": 0.0,
+            "version": 1,
+            "updated_at": now.isoformat(),
+        },
         "onboarding_complete": False,
         "created_at": now.isoformat(),
     }
@@ -422,10 +441,12 @@ async def _sync_item(item: dict, user: dict) -> int:
         }
         await db.deposits.insert_one(doc)
         new_deposits += 1
-        if user.get("plan") == "elite":
-            extra_savings += savings_set_aside
-    if extra_savings:
-        await db.users.update_one({"id": user["id"]}, {"$inc": {"tax_savings_balance": extra_savings}})
+        # Run Milli Autopilot™ pipeline on the new payout (immutable receipt).
+        try:
+            fresh_user = await db.users.find_one({"id": user["id"]}) or user
+            await _run_autopilot(db, fresh_user, doc)
+        except Exception as ap_err:
+            logging.warning("Autopilot failed for deposit %s: %s", doc["id"], ap_err)
     return new_deposits
 
 @api.post("/plaid/sandbox/fire-webhook")
@@ -1078,13 +1099,8 @@ async def add_manual_deposit_v2(body: dict, user: dict = Depends(get_current_use
     amount = float(body.get("amount", 0))
     if amount <= 0:
         raise HTTPException(400, "Amount must be > 0")
-    vault = await _get_vault(user["id"])
-    rule = (vault or {}).get("rule", {}) if vault else {}
-    strategy = rule.get("strategy", "balanced")
-    pct = rule.get("fixed_percentage")
-    if pct is None:
-        pct = STRATEGY_RATIOS.get(strategy, 0.25)
-    savings = round(amount * pct, 2)
+    # Milli Autopilot™ owns the allocation math — the payout row itself is a
+    # simple record of the inbound money, without pre-computed savings.
     doc = {
         "id": str(uuid.uuid4()),
         "user_id": user["id"],
@@ -1094,29 +1110,13 @@ async def add_manual_deposit_v2(body: dict, user: dict = Depends(get_current_use
         "merchant": body.get("merchant") or body.get("platform") or "Manual",
         "platform": body.get("platform") or "Manual",
         "amount": amount,
-        "savings_set_aside": savings,
-        "auto_allocated": vault is not None and not rule.get("paused") and rule.get("mode") == "auto",
+        "savings_set_aside": 0.0,
+        "auto_allocated": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.deposits.insert_one(doc)
-    # If auto-reserve + vault exists, transfer
-    if doc["auto_allocated"]:
-        new_balance = round(vault.get("balance", 0) + savings, 2)
-        await db.vault_transfers.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": user["id"],
-            "direction": "in",
-            "amount": savings,
-            "balance_after": new_balance,
-            "note": f"Auto reserve from {doc['platform']} (${amount:.2f})",
-            "source": "auto",
-            "deposit_id": doc["id"],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-        await db.tax_vaults.update_one({"user_id": user["id"]}, {"$set": {"balance": new_balance}})
-        await db.users.update_one({"id": user["id"]}, {"$set": {"tax_savings_balance": new_balance}})
-    # Smart allocations for 401k + investing accounts
-    await _smart_auto_allocate(user, doc)
+    receipt = await _run_autopilot(db, user, doc)
+    doc["autopilot_receipt"] = receipt
     doc.pop("_id", None)
     return doc
 
@@ -1341,6 +1341,8 @@ async def demo_seed():
         await db.investment_accounts.delete_many({"user_id": uid})
         await db.retirement_transfers.delete_many({"user_id": uid})
         await db.investment_transfers.delete_many({"user_id": uid})
+        await db.autopilot_receipts.delete_many({"user_id": uid})
+        await db.savings_transfers.delete_many({"user_id": uid})
     else:
         uid = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
@@ -1365,12 +1367,35 @@ async def demo_seed():
     today = date.today()
     platforms = ["DoorDash", "Uber", "Spark", "Lyft", "Instacart", "Upwork"]
     total_gross = 0.0
+
+    # Delete any prior Autopilot receipts + savings transfers for demo before seeding
+    await db.autopilot_receipts.delete_many({"user_id": uid})
+    await db.savings_transfers.delete_many({"user_id": uid})
+
+    # Ensure demo user has Autopilot settings and cleared balances before we run
+    # the pipeline, so the seeded deposits produce clean, well-ordered receipts.
+    await db.users.update_one({"id": uid}, {"$set": {
+        "autopilot_settings": {
+            "tax_enabled": True,
+            "retirement_pct": 0.08,   # demo user is aggressive
+            "investing_pct": 0.05,
+            "savings_pct": 0.02,
+            "version": 1,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+        "available_to_spend": 0.0,
+        "savings_balance": 0.0,
+        "tax_savings_balance": 0.0,
+        "retirement_balance": 0.0,
+        "investing_balance": 0.0,
+    }})
+
+    demo_deposits = []
     for i in range(40):
         plat = random.choice(platforms)
         amt = round(random.uniform(45, 285), 2)
         d_date = (today - timedelta(days=random.randint(0, 180))).isoformat()
-        savings = round(amt * 0.27, 2)
-        await db.deposits.insert_one({
+        doc = {
             "id": str(uuid.uuid4()),
             "user_id": uid,
             "transaction_id": f"demo_{uuid.uuid4()}",
@@ -1379,11 +1404,23 @@ async def demo_seed():
             "merchant": plat,
             "platform": plat,
             "amount": amt,
-            "savings_set_aside": savings,
+            "savings_set_aside": 0.0,
             "auto_allocated": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+        }
+        await db.deposits.insert_one(doc)
+        demo_deposits.append(doc)
         total_gross += amt
+
+    # Run Autopilot on every seeded deposit so the demo shows real receipts.
+    demo_user_doc = await db.users.find_one({"id": uid})
+    for dep in sorted(demo_deposits, key=lambda d: d["date"]):
+        try:
+            await _run_autopilot(db, demo_user_doc, dep)
+            # Refresh user doc so subsequent runs see updated balances
+            demo_user_doc = await db.users.find_one({"id": uid})
+        except Exception as ap_err:
+            logging.warning("Autopilot seed run failed for %s: %s", dep["id"], ap_err)
 
     # Seed mileage trips
     total_miles = 0.0
@@ -1427,79 +1464,35 @@ async def demo_seed():
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
 
-    # Seed Vault with ~80% of recommended reserve
-    vault_balance = round(total_gross * 0.27 * 0.80, 2)
-    await db.tax_vaults.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": uid,
+    # Autopilot already created the Tax Vault, Retirement, and Investing accounts
+    # with correct running balances via the per-deposit pipeline runs above.
+    # We only need to update the vault's institution name for demo display.
+    await db.tax_vaults.update_one({"user_id": uid}, {"$set": {
         "institution_name": "Milli Reserve (Demo Partner)",
-        "account_nickname": "Tax Vault",
+        "account_nickname": "Milli Tax Vault™",
         "account_number_masked": "****4821",
-        "routing_number_masked": "****0397",
-        "balance": vault_balance,
-        "interest_earned_ytd": round(vault_balance * 0.042 * 0.5, 2),
-        "rule": {"mode": "auto", "strategy": "balanced", "fixed_percentage": 0.27,
-                 "min_checking_balance": 200.0, "max_daily_transfer": 1000.0, "paused": False},
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-    # Seed 401(k) retirement at 8%
-    ret_balance = round(total_gross * 0.08, 2)
-    await db.retirement_accounts.insert_one({
-        "id": str(uuid.uuid4()), "user_id": uid, "kind": "retirement",
+    }})
+    await db.retirement_accounts.update_one({"user_id": uid}, {"$set": {
         "institution_name": "Milli Retirement (Demo Custodian)",
         "account_nickname": "Solo 401(k)",
         "account_number_masked": "****7245",
-        "balance": ret_balance,
-        "ytd_growth": round(ret_balance * 0.07, 2),
-        "rule": {"mode": "auto", "fixed_percentage": 0.08, "max_daily_transfer": 500.0, "paused": False},
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-    # Seed Investing at 5%
-    inv_balance = round(total_gross * 0.05, 2)
-    await db.investment_accounts.insert_one({
-        "id": str(uuid.uuid4()), "user_id": uid, "kind": "investing",
+    }})
+    await db.investment_accounts.update_one({"user_id": uid}, {"$set": {
         "institution_name": "Milli Invest (Demo Brokerage)",
         "account_nickname": "Brokerage Account",
         "account_number_masked": "****3318",
-        "balance": inv_balance,
-        "ytd_growth": round(inv_balance * 0.092, 2),
-        "rule": {"mode": "auto", "fixed_percentage": 0.05, "max_daily_transfer": 300.0, "paused": False},
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-    await db.users.update_one({"id": uid}, {"$set": {
-        "tax_savings_balance": vault_balance,
-        "retirement_balance": ret_balance,
-        "investing_balance": inv_balance,
     }})
 
-    # Seed retirement + investing contribution histories
-    for i in range(8):
-        ret_amt = round(random.uniform(15, 65), 2)
-        inv_amt = round(random.uniform(8, 40), 2)
-        ts = (datetime.now(timezone.utc) - timedelta(days=i*3)).isoformat()
-        plat = random.choice(platforms[:5])
-        await db.retirement_transfers.insert_one({
-            "id": str(uuid.uuid4()), "user_id": uid, "direction": "in", "amount": ret_amt,
-            "balance_after": ret_balance, "note": f"Auto from {plat} (8%)", "source": "auto", "created_at": ts,
-        })
-        await db.investment_transfers.insert_one({
-            "id": str(uuid.uuid4()), "user_id": uid, "direction": "in", "amount": inv_amt,
-            "balance_after": inv_balance, "note": f"Auto invest from {plat} (5%)", "source": "auto", "created_at": ts,
-        })
+    # Refresh totals used by the rest of the seed script
+    demo_vault = await db.tax_vaults.find_one({"user_id": uid}) or {}
+    demo_ret = await db.retirement_accounts.find_one({"user_id": uid}) or {}
+    demo_inv = await db.investment_accounts.find_one({"user_id": uid}) or {}
+    vault_balance = round(demo_vault.get("balance", 0.0), 2)
+    ret_balance = round(demo_ret.get("balance", 0.0), 2)
+    inv_balance = round(demo_inv.get("balance", 0.0), 2)
 
-    # Seed last 10 transfers
-    for i in range(10):
-        amt = round(random.uniform(35, 220), 2)
-        await db.vault_transfers.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": uid,
-            "direction": "in",
-            "amount": amt,
-            "balance_after": vault_balance,
-            "note": f"Auto reserve from {random.choice(platforms[:5])}",
-            "source": "auto",
-            "created_at": (datetime.now(timezone.utc) - timedelta(days=i*2)).isoformat(),
-        })
+    # Autopilot has already created ~40 real vault_transfers linked to receipts,
+    # so we don't seed synthetic ones. Move on to the Q1 payment record.
 
     # Record Q1 payment
     await db.quarterly_payments.insert_one({
@@ -1520,6 +1513,53 @@ async def demo_seed():
 @api.get("/")
 async def root():
     return {"name": "Milli", "ok": True}
+
+
+# -------------------- MILLI AUTOPILOT™ --------------------
+class AutopilotSettingsIn(BaseModel):
+    tax_enabled: Optional[bool] = None
+    retirement_pct: Optional[float] = None
+    investing_pct: Optional[float] = None
+    savings_pct: Optional[float] = None
+
+
+@api.get("/autopilot/settings")
+async def get_autopilot_settings(user: dict = Depends(get_current_user)):
+    return await _get_autopilot_settings(db, user["id"])
+
+
+@api.put("/autopilot/settings")
+async def put_autopilot_settings(body: AutopilotSettingsIn,
+                                 user: dict = Depends(get_current_user)):
+    return await _update_autopilot_settings(db, user["id"], body.dict(exclude_none=True))
+
+
+@api.get("/autopilot/receipts")
+async def list_autopilot_receipts(
+    user: dict = Depends(get_current_user),
+    limit: int = 50,
+):
+    cursor = db.autopilot_receipts.find(
+        {"user_id": user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).limit(max(1, min(int(limit), 200)))
+    return await cursor.to_list(length=200)
+
+
+@api.get("/autopilot/receipts/{receipt_id}")
+async def get_autopilot_receipt(receipt_id: str,
+                                 user: dict = Depends(get_current_user)):
+    receipt = await db.autopilot_receipts.find_one(
+        {"id": receipt_id, "user_id": user["id"]}, {"_id": 0}
+    )
+    if not receipt:
+        raise HTTPException(404, "Receipt not found")
+    return receipt
+
+
+@api.get("/dashboard/snapshot")
+async def dashboard_snapshot(user: dict = Depends(get_current_user)):
+    """Aggregated hero-card snapshot for the Home dashboard (Autopilot-aware)."""
+    return await _autopilot_snapshot(db, user["id"])
 
 
 # -------------------- MARKETING ASSETS --------------------
@@ -1613,6 +1653,17 @@ async def _startup():
     await db.investment_accounts.create_index("user_id", unique=True)
     await db.retirement_transfers.create_index("user_id")
     await db.investment_transfers.create_index("user_id")
+    # Milli Autopilot™
+    await db.autopilot_receipts.create_index("user_id")
+    await db.autopilot_receipts.create_index([("user_id", 1), ("created_at", -1)])
+    await db.autopilot_receipts.create_index("payout_id")
+    await db.savings_transfers.create_index("user_id")
+    # Idempotent migration: apply Autopilot defaults to any user missing them.
+    try:
+        report = await _autopilot_migrate(db)
+        logging.info("Autopilot migration: %s", report)
+    except Exception as e:
+        logging.warning("Autopilot migration skipped: %s", e)
 
 @app.on_event("shutdown")
 async def _shutdown():

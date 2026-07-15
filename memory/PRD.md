@@ -12,6 +12,30 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - Chrome M monogram logo with turquoise road accent.
 - Premium glass cards `rounded-2xl` on carbon-fibre obsidian background.
 
+## Implemented (2026-07)
+### Milli Autopilot™ Engine (backend)
+- New `/app/backend/autopilot.py` — pure-logic pipeline module (no HTTP coupling), fully immutable receipts
+- 9-step pipeline runs on every eligible payout: `Payout → Source → Tax Rate → Vault credit → Retirement → Investing → Savings → Available-to-Spend → Quarterly Projection → AI Insight → SHA-256 hashed Autopilot Receipt`
+- Wired into Plaid sync AND `/api/deposits/manual-v2` — every new payout triggers the pipeline
+- New endpoints: `GET/PUT /api/autopilot/settings`, `GET /api/autopilot/receipts[/{id}]`, `GET /api/dashboard/snapshot`
+- Idempotent startup migration: applies Autopilot defaults (Tax ON, Retirement 5%, Investing 5%, Savings 0%) to every existing user
+- New collections: `autopilot_receipts` (immutable, hashed), `savings_transfers`; existing `tax_vaults` / `retirement_accounts` / `investment_accounts` are auto-created on first payout
+- Demo seed rewritten to run Autopilot on all 40 seeded payouts (produces real receipts + coherent balances)
+- Verified: Tax Vault $2,312.59 · Retirement $505.51 · Investing $315.94 · Savings $126.37 · Available-to-Spend $3,058.13 · Tax Ready Score 100 for demo user
+
+### Brand Refresh (frontend)
+- Extracted M-runway logo + wordmark from user's approved artwork to `/app/frontend/public/brand/` (mark, wordmark, app-icon, hero-m, hero-scene)
+- Tailwind palette locked to design-system exact hex: Obsidian `#07090B` · Charcoal `#0E1114` · Surface `#161A1F` · Electric Cyan `#00E5FF` · Deep Teal `#00B4C2` · Polished Silver `#C0C0C0` · Alpine White `#FFFFFF`
+- Typography swapped Manrope → **Sora** for headings, Inter for body
+- Global CSS variables + carbon/rays/card/button classes updated to new palette
+- Title tag + favicon + description updated ("Milli — Money, Made Intelligent.")
+- `MilliLogo` component supports variant="mark" (inline SVG) and variant="hero" (approved PNG)
+
+### Login + Register split-screen redesign (frontend)
+- New `<AuthHero />` component: cinematic right pane with hero M+MILLI mark, "Money, Made Intelligent." tagline, "Every payout, on Autopilot." subtitle, and 4-icon feature grid (Automate Taxes / Track Mileage / Build Wealth / Tax Season Ready)
+- Register page rebuilt to match approved reference exactly: icon-prefixed inputs, cyan gradient START TRIAL button, trust badges (Bank-level security · PCI compliant · No commitment), silver/cyan two-tone hero headline
+- Login page rebuilt with same visual system, "Back to Autopilot." headline, matching field styling and trust badges
+
 ## Implemented (2026-02)
 ### Backend (FastAPI, MongoDB)
 - Auth: email + password JWT, configurable state on signup

@@ -8,9 +8,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Manrope"', '"Inter"', 'system-ui', 'sans-serif'],
-        display: ['"Manrope"', '"Inter"', 'system-ui', 'sans-serif'],
-        chrome: ['"Manrope"', '"Inter"', 'system-ui', 'sans-serif'],
+        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+        display: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
+        chrome: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
@@ -23,30 +23,33 @@ module.exports = {
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
-        // Brand: turquoise & polished silver
+        // Milli Brand Palette — locked to design system spec.
         volt: {
-          DEFAULT: '#13D8D1',
-          hover: '#10BFB9',
+          DEFAULT: '#00E5FF',       // Electric Cyan — primary accent
+          hover: '#00B4C2',         // Deep Teal — hover / secondary
         },
         cyan: {
-          400: '#13D8D1',
-          500: '#10BFB9',
-          600: '#087F82',
+          300: '#7AF6FF',
+          400: '#00E5FF',
+          500: '#00B4C2',
+          600: '#008593',
         },
         chrome: {
-          100: '#F7F9FA',
-          200: '#D9E0E4',
-          300: '#8B949B',
-          400: '#5B6670',
-          500: '#3A4450',
+          100: '#FFFFFF',           // Alpine White
+          200: '#E6E7EA',
+          300: '#C0C0C0',           // Polished Silver
+          400: '#8A8F98',
+          500: '#5B6068',
         },
-        obsidian: '#050607',
-        surface: '#0B0E11',
-        hairline: '#1B2027',
+        // Layered darks — matches the design system swatches exactly.
+        obsidian: '#07090B',        // Deep Black
+        charcoal: '#0E1114',        // Carbon Charcoal
+        surface: '#161A1F',         // Card surface (from the design system)
+        hairline: '#232830',        // Thin metallic border tone
         danger: '#FF5C67',
         success: '#39D98A',
         warning: '#FFB547',
-        info: '#13D8D1',
+        info: '#00E5FF',
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'
