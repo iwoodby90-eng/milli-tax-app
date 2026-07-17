@@ -22,6 +22,8 @@ struct ContentView: View {
         }
         .tabViewStyle(PageTabViewStyle())
         .background(Color.black.ignoresSafeArea())
+        .accentColor(Milli.cyan)
+        .tint(Milli.cyan)
     }
 }
 

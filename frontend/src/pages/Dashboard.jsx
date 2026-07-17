@@ -5,9 +5,13 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Bank, MapTrifold, CalendarCheck, ShieldCheck, CheckCircle, CaretRight,
-  Star, Coins, Robot, ArrowUpRight, FileText,
+  Star, Coins, Robot, ArrowUpRight, FileText, Shield, Car, ChartLineUp,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import {
+  TaxReadyGauge, FinancialTimeline, TaxVaultCard,
+  InsightRow, EliteBadge,
+} from "@/components/MilliPrimitives";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -116,22 +120,70 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Tax Ready Score */}
-      <div className="milli-card p-6 mb-4" data-testid="dashboard-tax-score-card">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="text-volt text-sm font-semibold uppercase tracking-[0.18em] mb-3">Tax Ready Score</div>
-            <div className="chrome-text font-chrome font-bold text-5xl">{score}%</div>
-            <div className="text-zinc-300 mt-3 text-sm leading-snug max-w-xs">
-              {score >= 75
-                ? "You're in great shape. Keep it up!"
-                : score >= 40
-                ? "Halfway there — log a few more items."
-                : "Let's get rolling. Connect your bank and track a trip."}
-            </div>
+      {/* Tax Ready Score — new gauge primitive */}
+      <div className="milli-card p-6 mb-4 flex flex-col lg:flex-row items-center gap-8"
+            data-testid="dashboard-tax-score-card">
+        <TaxReadyGauge score={score} />
+        <div className="flex-1 min-w-0 text-center lg:text-left">
+          <div className="text-volt text-sm font-semibold uppercase tracking-[0.24em] mb-3">
+            // Tax Ready Score™
           </div>
-          <ScoreRing value={score} />
+          <div className="text-zinc-300 text-base leading-snug max-w-md mx-auto lg:mx-0">
+            {score >= 75
+              ? "You're in great shape. Milli has protected enough to cover the next quarterly estimate."
+              : score >= 40
+              ? "Halfway there — every payout brings you closer. Log a few more items to close the gap."
+              : "Let's get rolling. Connect your bank and take a first trip to start the score."}
+          </div>
+          {isElite && (
+            <div className="mt-4 flex justify-center lg:justify-start">
+              <EliteBadge size={72} />
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Insight row */}
+      <div className="mb-4">
+        <InsightRow items={[
+          {
+            icon: Shield, title: "Tax Protection",
+            metric: money(summary?.savings_balance || 0),
+            sub: `${score}% ready for next quarter`,
+          },
+          {
+            icon: Car, title: "Miles Tracked",
+            metric: `${num(summary?.mileage?.business_miles || 0)} mi`,
+            sub: `IRS $0.70/mi · ${money(summary?.mileage?.business_deduction || 0)}`,
+          },
+          {
+            icon: ChartLineUp, title: "Projections",
+            metric: money(summary?.federal_estimated_tax || 0),
+            sub: "Annual estimated tax",
+          },
+        ]} />
+      </div>
+
+      {/* Financial Timeline */}
+      <div className="milli-card p-4 mb-4" data-testid="dashboard-timeline-card">
+        <div className="px-2 pt-2 pb-1 flex items-center justify-between">
+          <div className="text-volt text-xs font-mono uppercase tracking-[0.24em]">
+            // Payout Timeline
+          </div>
+          <Link to="/app/income" className="text-xs font-mono text-zinc-500 hover:text-volt uppercase tracking-widest inline-flex items-center gap-1">
+            All payouts <CaretRight size={10} weight="bold" />
+          </Link>
+        </div>
+        <FinancialTimeline payouts={deposits} />
+      </div>
+
+      {/* Tax Vault */}
+      <div className="mb-4" data-testid="dashboard-vault-card">
+        <TaxVaultCard
+          balance={summary?.savings_balance || 0}
+          period={"Q3"}
+          locked={!isElite && (summary?.savings_balance || 0) === 0}
+        />
       </div>
 
       {/* Quarterly checklist */}

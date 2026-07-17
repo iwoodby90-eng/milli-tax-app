@@ -12,6 +12,36 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - Chrome M monogram logo with turquoise road accent.
 - Premium glass cards `rounded-2xl` on carbon-fibre obsidian background.
 
+## Implemented (2026-07 · Final Aesthetic Lock)
+### Design System v3 — Big City Futuristic (locked)
+- `/app/frontend/src/styles/design-system.css` — canonical tokens (`--milli-noir #050607`, `--milli-cyan #00E5FF`, `--milli-silver #C0C0C0`, `--milli-muted #8B9DAF`, chrome gradients, glow presets) and 7 primitive component styles
+- Imported globally from `src/index.css`
+
+### 3D Chrome M Logo (final)
+- `/app/frontend/public/brand/milli-logo.svg` — angular chrome strokes with 5-stop metallic gradient (`#F0F0F0 → #808080 → #C0C0C0 → #F0F0F0`), perspective turquoise runway (`url(#mRoad)` cyan gradient) with 4 dashed white centerline segments + cyan endpoint dot, radial floor glow, drop shadow for depth
+- Used everywhere via `<MilliMark size={40|120|80} />` in `MilliPrimitives.jsx`
+
+### Reusable UI primitives (`src/components/MilliPrimitives.jsx`)
+- **`<TaxReadyGauge score={92} />`** — 220px→300px responsive circular gauge, 8px cyan stroke with white-center gradient, animated pulse aura, tabular-nums percentage + "Excellent/On track/Building up" status label
+- **`<FinancialTimeline payouts={[]} />`** — horizontal scrollable node track, chrome outline nodes with cyan-filled active tip, dimmer→brighter gradient rail with glow
+- **`<TaxVaultCard balance period locked />`** — glassmorphic strong panel with SVG vault icon (rotating dashed inner ring, 4 outer ticks), cyan floor glow, locked upgrade state
+- **`<InsightRow items={[]} />`** — 3-card grid with Shield / Car / Chart icons in cyan-glow chips
+- **`<EliteBadge size={72|96} />`** — chrome laurel wreath (8 mirrored ellipse leaves) with cyan star center + white outline glow, chrome-text ELITE label
+- Every primitive carries a `data-testid` for QA
+
+### Bottom Nav + Sidebar CSS
+- `.milli-tabbar` iPhone bottom nav (5-tab, safe-area-aware, cyan dot indicator under active)
+- `.milli-sidebar` iPad landscape sidebar (auto-shows at ≥1024px, 3px cyan left-bar active indicator)
+
+### Watch app cyan accent
+- `ContentView.swift` now applies `.accentColor(Milli.cyan)` + `.tint(Milli.cyan)` to the TabView
+
+### Dashboard.jsx integration
+- Hero replaced: `TaxReadyGauge` + Elite badge (auto-shows for elite users)
+- Added `InsightRow` (Tax Protection · Miles Tracked · Projections)
+- Added `FinancialTimeline` (last 12 payouts, horizontal scroll)
+- Added `TaxVaultCard`
+
 ## Implemented (2026-07 · Multi-Platform + Legal Site)
 ### Marketing site — LIVE
 - `/app/marketing_site/` — 3 pages (index / privacy / terms) + style.css + vercel.json + README
