@@ -12,6 +12,34 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - Chrome M monogram logo with turquoise road accent.
 - Premium glass cards `rounded-2xl` on carbon-fibre obsidian background.
 
+## Implemented (2026-07 · Multi-Platform + Legal Site)
+### Marketing site — LIVE
+- `/app/marketing_site/` — 3 pages (index / privacy / terms) + style.css + vercel.json + README
+- Big City Futuristic aesthetic — charcoal checker, neon cyan, glassmorphism
+- 3 core value props: **Automatic Tax Slicing · Real-time Mileage Tracking · Wealth Builder** with SVG illustrations
+- Full 3-step "How it works" (Connect → Drive → Relax)
+- Pricing tiers (Basic $19.99 / Pro $29.99 / Elite $49.99) with "Most Popular" flag on Pro
+- **Privacy Policy** — CCPA/CPRA + GDPR/UK GDPR sections, third-party disclosure table (Plaid, Apple, Stripe, OpenAI/Gemini, MongoDB), 30-day deletion
+- **Terms** — Michigan governing law, subscription/auto-renewal disclosures, "not a bank/CPA" disclaimer, $100 liability cap
+- **Live via pod FastAPI static mount** — served at:
+  - `https://<preview>/api/site/index.html`
+  - `https://<preview>/api/site/privacy.html`
+  - `https://<preview>/api/site/terms.html`
+  - Clean redirects `/api/privacy` and `/api/terms`
+- Ready to deploy verbatim to milli.tax via `npx vercel --prod` (config included)
+
+### iPad support
+- `TARGETED_DEVICE_FAMILY = "1,2"` in project.pbxproj (iPhone + iPad both)
+- Big City Futuristic CSS is already responsive; grid layouts scale automatically
+
+### Apple Watch (MilliWatch)
+- `/app/frontend/ios/MilliWatch/` — SwiftUI watchOS 10+ companion app
+- Files: `MilliWatchApp.swift`, `ContentView.swift` (3-tab UI: Live Trip / Tax Ready / Autopilot), `WatchSession.swift` (WatchConnectivity), `TripState.swift`, `TaxReadyComplication.swift` (circular/inline/corner WidgetKit families)
+- Bundle ID: `app.milli.tax.watchkitapp`, companion of `app.milli.tax`
+- Info.plist configured for `WKApplication=true`, `WKCompanionAppBundleIdentifier=app.milli.tax`
+- 15 watch icon sizes + 1024×1024 marketing master generated with cyan floor glow
+- `README_XCODE_SETUP.md` walks the owner through the 5-min Xcode target wizard (Xcode owns target creation via UUIDs in pbxproj)
+
 ## Implemented (2026-07 · iOS Build Prep for App Store)
 - **Capacitor v7 synced**: `yarn build && npx cap sync ios` — 5 plugins wired (background-geolocation, app, preferences, splash-screen, status-bar). 5.8 MB web bundle copied into iOS.
 - **Full AppIcon set**: 16 icon sizes + 1024×1024 master, generated from Milli mark artwork with cyan floor glow. Contents.json manifest validated.

@@ -1963,6 +1963,30 @@ app.add_middleware(
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# -------------------- MARKETING SITE (public) --------------------
+# Serves the /app/marketing_site static bundle at /api/site/* — every route
+# routes through the pod's ingress so we get a live public URL for the
+# App Review privacy/terms links until milli.tax DNS is switched.
+try:
+    from fastapi.staticfiles import StaticFiles
+    _site_dir = Path("/app/marketing_site")
+    if _site_dir.exists():
+        app.mount("/api/site", StaticFiles(directory=str(_site_dir), html=True),
+                   name="marketing_site")
+
+    @app.get("/api/privacy")
+    async def _privacy_redirect():
+        from fastapi.responses import FileResponse
+        return FileResponse(_site_dir / "privacy.html", media_type="text/html")
+
+    @app.get("/api/terms")
+    async def _terms_redirect():
+        from fastapi.responses import FileResponse
+        return FileResponse(_site_dir / "terms.html", media_type="text/html")
+except Exception as _site_err:
+    logging.warning("Could not mount marketing site: %s", _site_err)
+
+
 @app.on_event("startup")
 async def _startup():
     await db.users.create_index("email", unique=True)
