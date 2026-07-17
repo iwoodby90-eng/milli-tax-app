@@ -1,115 +1,176 @@
-# Milli — iOS Native Build Guide
+# Milli — iOS Build & App Store Submission Guide
 
-This wraps the existing React PWA into a real iOS binary using **Capacitor v7**.
-The web app continues to work standalone; the native shell unlocks **background GPS** for
-continuous mileage tracking while the phone is locked or in your pocket.
-
----
-
-## Prerequisites
-
-- **macOS** with Xcode 15+ (App Store)
-- **Node 20+** (already used by this project)
-- **CocoaPods**: `sudo gem install cocoapods` (or `brew install cocoapods`)
-- An Apple Developer account ($99/yr) for device installs + App Store distribution
+The Capacitor scaffold is complete. This guide takes the owner from a
+fresh Mac to a signed, uploaded App Store build in about 45 minutes.
 
 ---
 
-## 1. Clone & install
+## 0 · Prerequisites
+
+- **macOS Sonoma 14.5+** with **Xcode 15.4+**
+- **Apple Developer account** ($99/yr) with a valid team
+- **CocoaPods**: `sudo gem install cocoapods` or `brew install cocoapods`
+- **Node 20+** (matches the pod build environment)
+- A physical iPhone if you want to test background GPS (the simulator
+  fakes GPS)
+
+---
+
+## 1 · Sync the latest web build
+
+Every time the React code changes, re-copy it into the iOS project:
 
 ```bash
-git clone <your-repo>
-cd milli/frontend
-yarn install
+cd /app/frontend
+yarn install                # first time only
+yarn build                  # outputs to /app/frontend/build
+npx cap copy ios            # copies build/ → ios/App/App/public
+npx cap sync ios            # copies + syncs plugin native pods
 ```
 
-The iOS Xcode project lives at `frontend/ios/` and is checked in.
+Verify the sync log lists all 5 Capacitor plugins:
+`background-geolocation`, `app`, `preferences`, `splash-screen`, `status-bar`.
 
----
-
-## 2. Build the web assets
-
-Capacitor copies the contents of `build/` into the iOS bundle.
+## 2 · Open in Xcode
 
 ```bash
-cd frontend
-yarn build           # outputs to /app/frontend/build
-npx cap copy ios     # copies build/ -> ios/App/App/public
-npx cap sync ios     # also updates native plugins
-```
-
-Re-run `yarn build && npx cap copy ios` every time you change React code.
-
----
-
-## 3. Install CocoaPods deps (first time only)
-
-```bash
-cd frontend/ios/App
-pod install
-```
-
-This wires `@capacitor-community/background-geolocation`, `@capacitor/splash-screen`,
-`@capacitor/status-bar`, `@capacitor/app`, `@capacitor/preferences` into the Xcode workspace.
-
----
-
-## 4. Open in Xcode
-
-```bash
-cd frontend
+cd /app/frontend
 npx cap open ios
 ```
 
-This opens `ios/App/App.xcworkspace` in Xcode.
+This opens **`ios/App/App.xcworkspace`** (never open the `.xcodeproj`
+directly — Capacitor uses the workspace so CocoaPods can inject).
 
-### Configure signing
-1. Click the **App** target → **Signing & Capabilities**
-2. Select your Apple Developer **Team**
-3. Bundle identifier is preset to `app.milli.tax` — change if your team already owns it
-4. Required capabilities (already in `Info.plist`):
-   - Background Modes → **Location updates**, **Background fetch**, **Background processing**
-   - Privacy keys for location (Always + WhenInUse), motion
+## 3 · Set your Apple Developer team (one-time)
 
-### Run on a real device
-GPS in the simulator is faked — to test background mileage you **must** run on a physical iPhone.
+1. In Xcode's left sidebar, select the **App** project → the **App**
+   target → the **Signing & Capabilities** tab.
+2. **Team:** pick your Apple Developer team from the dropdown.
+3. **Bundle Identifier** is preset to `app.milli.tax`. If your team
+   already owns that identifier elsewhere, change it here.
+4. Xcode will auto-provision the signing certificate and profile.
 
-1. Plug in iPhone, trust the Mac
-2. Pick your device in the Xcode toolbar
-3. ⌘R to build and run
+The following capabilities are already declared in `Info.plist` and
+just need to appear in the Capabilities list:
+- **Background Modes** → Location updates, Background fetch, Background
+  processing (auto-enabled by the plist keys)
+- **Privacy — Location Always & When In Use** description
+- **Privacy — Location When In Use** description
+- **Privacy — Motion Usage** description
+
+## 4 · Install CocoaPods dependencies (first time only)
+
+```bash
+cd /app/frontend/ios/App
+pod install
+```
+
+This is what wires `@capacitor-community/background-geolocation` and
+friends into the Xcode workspace. Re-run this any time you upgrade a
+Capacitor plugin.
+
+## 5 · Verify project settings
+
+Confirm these values in Xcode → App target → General:
+
+| Setting | Expected |
+|---|---|
+| **Display name** | Milli |
+| **Bundle identifier** | app.milli.tax |
+| **Version** | 1.0.0 |
+| **Build** | 1 |
+| **Minimum deployments** | iOS 16.0 |
+| **iPhone orientations** | Portrait, Landscape L/R |
+| **Interface style** | Dark |
+
+## 6 · Run on your iPhone (recommended before archiving)
+
+1. Plug in the iPhone, trust the Mac when prompted.
+2. Pick the device in the Xcode toolbar (top center).
+3. **⌘R** to build and run.
+4. On first launch, iOS will prompt for location + motion permissions —
+   grant them so you can exercise the mileage engine.
+5. Start a trip from the Mileage screen, put the phone in your pocket,
+   drive for a mile, then end the trip. You should see distance +
+   deduction populated with no interaction while backgrounded.
+
+Any Swift/Info.plist issues here surface immediately in Xcode's
+Report Navigator.
+
+## 7 · Archive & upload to App Store Connect
+
+1. In Xcode's toolbar, set the destination to **Any iOS Device
+   (arm64)** (do NOT pick a simulator).
+2. **Product → Archive**. When it finishes, the Organizer window
+   opens.
+3. In Organizer, select the new archive and click **Distribute App**.
+4. Pick **App Store Connect → Upload**.
+5. Automatic signing → Next → Upload.
+6. Wait 5–10 minutes for App Store Connect to finish processing the
+   build (you'll get an email).
+
+## 8 · App Store Connect submission
+
+Everything you need to paste is in **`/app/APP_STORE_METADATA.md`**:
+- App name, subtitle, description, keywords, promo text
+- Category, age rating, encryption disclosure
+- Reviewer notes (why background location is required)
+- Suggested screenshots
+- Data collection matrix for the App Privacy section
+
+Set the processed build as the **1.0.0** release, upload 3–10
+screenshots per required device size, then hit **Submit for Review**.
+
+Typical review turnaround: 24–72 hours.
 
 ---
 
-## 5. Pointing the native shell at the API
+## Troubleshooting
 
-The web build already reads `REACT_APP_BACKEND_URL` from `frontend/.env` at build time, so the
-compiled bundle ships with the production URL baked in. Just make sure that env var points to your
-**deployed** FastAPI before `yarn build`.
-
----
-
-## 6. App Store submission checklist
-
-- [ ] Replace placeholder app icons in `ios/App/App/Assets.xcassets/AppIcon.appiconset`
-- [ ] Replace launch screen in `ios/App/App/Assets.xcassets/Splash.imageset`
-- [ ] Bump `MARKETING_VERSION` + `CURRENT_PROJECT_VERSION` in Xcode → General
-- [ ] Add a **Privacy Policy URL** in App Store Connect (required for location)
-- [ ] Justify background location use in the App Review notes — Milli needs it for
-      automatic mileage logging while the driver is on a gig run
-- [ ] Configure **Apple In-App Purchases** for the Basic / Pro / Elite plans
-      (see `IAP_INTEGRATION.md` — coming next)
+| Symptom | Fix |
+|---|---|
+| Xcode: "Provisioning profile doesn't include app.milli.tax" | Your team doesn't own that Bundle ID. Change it to `com.<yourteam>.milli` in Signing & Capabilities. |
+| CocoaPods: "Unable to find spec" | `cd ios/App && pod repo update && pod install` |
+| Background GPS not firing | Make sure the user granted **Always** (not just When In Use) — walk them into Settings → Milli → Location → Always. |
+| Archive shows an old version | Bump `CURRENT_PROJECT_VERSION` in the App target's build settings (must be greater than any previously uploaded build). |
+| "Missing Purpose String" from App Review | All 4 usage strings are already in Info.plist. If Apple flags one, edit the string and resubmit — no rebuild needed for description-only changes. |
 
 ---
 
-## Background GPS — how it works
+## What lives where
 
-`src/native/mileageTracker.js` wraps `@capacitor-community/background-geolocation`.
+```
+/app/frontend/
+├── build/                          # yarn build output (copied into iOS bundle)
+├── capacitor.config.json           # appId, appName, plugin config
+├── ios/App/
+│   ├── App.xcworkspace             # open THIS in Xcode
+│   ├── App.xcodeproj/              # do not open directly
+│   ├── App/
+│   │   ├── Info.plist              # permission strings + background modes
+│   │   ├── Base.lproj/
+│   │   │   └── LaunchScreen.storyboard   # dark noir + centered M
+│   │   ├── Assets.xcassets/
+│   │   │   └── AppIcon.appiconset/       # 16 icon sizes + 1024 master
+│   │   └── public/                       # copied React build (do not edit)
+│   └── Podfile                     # Capacitor + community plugins
+└── src/                            # React source (edit here)
+```
 
-- `startTrip(onLocation, onError)` → registers a watcher with `distanceFilter: 10m`
-  and a foreground service notification on Android / persistent indicator on iOS.
-- iOS keeps the watcher alive even when the app is suspended; the OS wakes it on
-  significant location changes.
-- `stopTrip()` removes the watcher and clears the saved id from `localStorage`.
+---
 
-The web (browser) fallback continues to use `navigator.geolocation.watchPosition`,
-which only works while the tab is open and foregrounded.
+## Summary — what the owner needs to do on the Mac
+
+1. Clone the repo, `cd frontend`, `yarn install`
+2. `yarn build && npx cap sync ios`
+3. `npx cap open ios` → set your Apple Developer team → ⌘R on device
+4. Product → Archive → Distribute App → Upload to App Store Connect
+5. Paste `/app/APP_STORE_METADATA.md` into App Store Connect, add
+   screenshots, submit for review
+
+**Everything below the water line is done: icons (16 sizes + 1024
+master), launch screen (dark + centered M), Info.plist (bundle name,
+version 1.0.0 build 1, iOS 16 minimum, dark UI, all 4 permission
+strings, Background Modes: location + fetch + processing, encryption
+exemption declared), Capacitor sync (5 plugins wired), and full
+copy-paste metadata for App Store Connect.**

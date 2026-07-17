@@ -12,6 +12,16 @@ Uber, Lyft, DoorDash, Instacart, Spark, Grubhub, Amazon Flex drivers · freelanc
 - Chrome M monogram logo with turquoise road accent.
 - Premium glass cards `rounded-2xl` on carbon-fibre obsidian background.
 
+## Implemented (2026-07 · iOS Build Prep for App Store)
+- **Capacitor v7 synced**: `yarn build && npx cap sync ios` — 5 plugins wired (background-geolocation, app, preferences, splash-screen, status-bar). 5.8 MB web bundle copied into iOS.
+- **Full AppIcon set**: 16 icon sizes + 1024×1024 master, generated from Milli mark artwork with cyan floor glow. Contents.json manifest validated.
+- **LaunchScreen.storyboard**: dark noir + centered AppIcon image (`#050607`), matches Big City Futuristic aesthetic
+- **Info.plist**: `CFBundleDisplayName=Milli`, `UIUserInterfaceStyle=Dark`, `ITSAppUsesNonExemptEncryption=false`, all 4 location/motion strings, `UIBackgroundModes: location, fetch, processing`
+- **project.pbxproj**: iOS 16.0 minimum, v1.0.0 build 1, auto-signing, bundle `app.milli.tax`
+- **`/app/APP_STORE_METADATA.md`**: 7.5 KB — copy-paste ready description (≤4000 char), keywords, subtitle, promo text, review notes, data-collection matrix, demo credentials
+- **`/app/IOS_BUILD_GUIDE.md`**: 6.8 KB — step-by-step from clone → Xcode signing → Archive → App Store Connect upload
+- **All artifacts validated**: plist parses, storyboard parses, all 16 icon files present, Podfile references all plugins, web build present in `/app/frontend/ios/App/App/public`
+
 ## Implemented (2026-07 · Phase 2 — Financial Engine)
 ### Tax Engine (`/app/backend/tax_engine.py`)
 - Pure-math module — swap-in ready behind the `TaxCalculator` integration interface
