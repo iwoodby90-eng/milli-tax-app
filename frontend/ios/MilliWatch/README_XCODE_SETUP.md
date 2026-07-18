@@ -26,8 +26,12 @@ target through Xcode's Target wizard. This takes 5 minutes.
 3. Pick **watchOS → App** (SwiftUI, watchOS 10.0 minimum).
 4. Fill in the wizard:
    - **Product Name:** `MilliWatch`
-   - **Team:** your Apple Developer team
+   - **Team:** the Milli team — Team ID `5GV6Z3S674`
+     (Apple ID `iwoodby90@gmail.com`). Xcode should preselect this
+     because the main App target is already signed with it.
    - **Bundle Identifier:** `app.milli.tax.watchkitapp`
+     (the complication extension Xcode adds will be
+     `app.milli.tax.watchkitapp.complication`)
    - **Interface:** SwiftUI
    - **Language:** Swift
    - **Include Notification Scene:** ✅

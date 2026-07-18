@@ -109,12 +109,29 @@ are provided by approved third-party partners.
 - **Marketing URL:** https://milli.tax
 - **Privacy Policy URL:** https://milli.tax/privacy *(placeholder — required for App Store review)*
 
+## Apple Developer Account
+
+| Field | Value |
+|---|---|
+| **Apple Developer Team ID** | `5GV6Z3S674` |
+| **Primary Apple ID** | `iwoodby90@gmail.com` |
+| **App Store Connect account** | `iwoodby90@gmail.com` |
+| **Main app Bundle ID** | `app.milli.tax` |
+| **Watch app Bundle ID** | `app.milli.tax.watchkitapp` |
+| **Watch complication Bundle ID** | `app.milli.tax.watchkitapp.complication` |
+| **Signing style** | Automatic (managed by Xcode) |
+
+These credentials are already injected into
+`/app/frontend/ios/App/App.xcodeproj/project.pbxproj` and
+`/app/frontend/ios/App/ExportOptions.plist`. When you open the
+workspace in Xcode, the correct team will be pre-selected.
+
 ## App Review Information
 
 - **Contact first name:** *(fill in)*
 - **Contact last name:** *(fill in)*
 - **Contact phone:** *(fill in)*
-- **Contact email:** *(fill in)*
+- **Contact email:** iwoodby90@gmail.com
 - **Demo account:**
   - Username: `jordan@milli.demo` *(or hit `POST /api/demo/seed` to generate a live one)*
   - Password: `MilliDemo!2026`

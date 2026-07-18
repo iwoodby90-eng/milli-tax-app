@@ -41,14 +41,30 @@ npx cap open ios
 This opens **`ios/App/App.xcworkspace`** (never open the `.xcodeproj`
 directly — Capacitor uses the workspace so CocoaPods can inject).
 
-## 3 · Set your Apple Developer team (one-time)
+## 3 · Apple Developer team (already wired)
+
+The owner's Apple Developer credentials are **already injected** into
+the Xcode project so you should see them pre-selected on first open:
+
+| Setting | Value |
+|---|---|
+| **Apple Developer Team ID** | `5GV6Z3S674` |
+| **Apple ID / App Store Connect** | `iwoodby90@gmail.com` |
+| **Bundle Identifier (iPhone/iPad)** | `app.milli.tax` |
+| **Bundle Identifier (Watch)** | `app.milli.tax.watchkitapp` |
+| **Bundle Identifier (Watch Complication)** | `app.milli.tax.watchkitapp.complication` |
+| **Signing style** | Automatic |
 
 1. In Xcode's left sidebar, select the **App** project → the **App**
    target → the **Signing & Capabilities** tab.
-2. **Team:** pick your Apple Developer team from the dropdown.
-3. **Bundle Identifier** is preset to `app.milli.tax`. If your team
-   already owns that identifier elsewhere, change it here.
-4. Xcode will auto-provision the signing certificate and profile.
+2. Confirm **Team** shows the account belonging to Team ID
+   `5GV6Z3S674`. If Xcode prompts you to sign in, use the Apple ID
+   `iwoodby90@gmail.com`.
+3. Xcode will auto-provision the signing certificate and profile.
+4. If the team dropdown is blank, quit Xcode, run
+   `sudo xcode-select --reset`, sign in via **Xcode → Settings →
+   Accounts** with `iwoodby90@gmail.com`, reopen the workspace, and
+   the team will populate.
 
 The following capabilities are already declared in `Info.plist` and
 just need to appear in the Capabilities list:
@@ -108,6 +124,39 @@ Report Navigator.
 5. Automatic signing → Next → Upload.
 6. Wait 5–10 minutes for App Store Connect to finish processing the
    build (you'll get an email).
+
+### Optional: command-line export using `ExportOptions.plist`
+
+The repo ships `/app/frontend/ios/App/ExportOptions.plist` pre-filled
+with Team ID `5GV6Z3S674` and the three Milli bundle identifiers, so
+you can drive the upload from a script:
+
+```bash
+cd /app/frontend/ios/App
+
+# 1. Archive
+xcodebuild -workspace App.xcworkspace \
+           -scheme App \
+           -configuration Release \
+           -destination "generic/platform=iOS" \
+           -archivePath ./build/Milli.xcarchive \
+           archive
+
+# 2. Export a signed .ipa using the pre-baked ExportOptions.plist
+xcodebuild -exportArchive \
+           -archivePath ./build/Milli.xcarchive \
+           -exportPath ./build/ipa \
+           -exportOptionsPlist ./ExportOptions.plist
+
+# 3. Upload to App Store Connect using an app-specific password.
+#    Generate one at https://appleid.apple.com → Sign-in & Security →
+#    App-Specific Passwords, then export it as APP_STORE_PASSWORD.
+xcrun altool --upload-app \
+             --type ios \
+             --file ./build/ipa/App.ipa \
+             --username iwoodby90@gmail.com \
+             --password "$APP_STORE_PASSWORD"
+```
 
 ## 8 · App Store Connect submission
 
