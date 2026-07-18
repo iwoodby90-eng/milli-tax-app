@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
-import Splash from "@/components/Splash";
+import Splash from "@/components/SplashScreen";
 
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
