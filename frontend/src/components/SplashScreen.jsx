@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Lock, MapPin, PieChart, FileCheck } from "lucide-react";
 
 const CYAN = "#00E5FF";
-const HOLD_MS = 2400;  // minimum time the splash stays on screen
+const HOLD_MS = 2400;  // when the "Tap to continue" prompt appears
 const FADE_MS = 600;
 
 // -----------------------------------------------------------------------
@@ -218,22 +218,35 @@ function FeatureIcon({ label, children, delay }) {
 }
 
 // -----------------------------------------------------------------------
-// SplashScreen
+// SplashScreen — animates in, then waits for a tap. Owner-approved
+// activation moment: `HOLD_MS` after mount we surface a pulsing
+// "TAP TO CONTINUE" affordance. Any pointer or key press dismisses.
 // -----------------------------------------------------------------------
 export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
   const [visible, setVisible] = useState(true);
+  const [readyToDismiss, setReadyToDismiss] = useState(false);
 
+  // After the intro animation lands, surface the tap prompt.
   useEffect(() => {
-    const t = setTimeout(() => setVisible(false), minDurationMs);
-    const t2 = setTimeout(
-      () => onDone && onDone(),
-      minDurationMs + FADE_MS + 50
-    );
-    return () => {
-      clearTimeout(t);
-      clearTimeout(t2);
+    const t = setTimeout(() => setReadyToDismiss(true), minDurationMs);
+    return () => clearTimeout(t);
+  }, [minDurationMs]);
+
+  const dismiss = () => {
+    if (!readyToDismiss) return;
+    setVisible(false);
+    setTimeout(() => onDone && onDone(), FADE_MS + 50);
+  };
+
+  // Any pointer or Enter/Space dismisses once the tap prompt is live.
+  useEffect(() => {
+    if (!readyToDismiss || !visible) return;
+    const onKey = (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Escape") dismiss();
     };
-  }, [minDurationMs, onDone]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [readyToDismiss, visible]);
 
   return (
     <AnimatePresence>
@@ -241,7 +254,11 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
         <motion.div
           key="milli-splash"
           data-testid="splash-screen"
-          className="fixed inset-0 z-[200] overflow-hidden"
+          role="button"
+          tabIndex={0}
+          onClick={dismiss}
+          onTouchEnd={dismiss}
+          className={`fixed inset-0 z-[200] overflow-hidden ${readyToDismiss ? "cursor-pointer" : "cursor-default"}`}
           initial={{ opacity: 1 }}
           exit={{
             opacity: 0,
@@ -378,9 +395,9 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
               </FeatureIcon>
             </div>
 
-            {/* status */}
+            {/* status + tap prompt */}
             <motion.div
-              className="flex flex-col items-center gap-2 mt-2"
+              className="flex flex-col items-center gap-3 mt-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.35, duration: 0.6 }}
@@ -399,20 +416,56 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
                   transition={{ duration: 1.4, repeat: Infinity }}
                 />
               </div>
-              <div
-                className="text-[11px] text-white/70 tracking-[0.05em]"
-                style={{ fontFamily: "Inter, system-ui, sans-serif" }}
-                data-testid="splash-status"
-              >
-                Initializing your financial command center
-                <motion.span
-                  className="inline-block ml-1"
-                  animate={{ opacity: [1, 0.2, 1] }}
-                  transition={{ duration: 1.1, repeat: Infinity }}
-                >
-                  …
-                </motion.span>
-              </div>
+
+              {/* status text — hides once the tap prompt is live */}
+              <AnimatePresence mode="wait">
+                {!readyToDismiss ? (
+                  <motion.div
+                    key="status"
+                    className="text-[11px] text-white/70 tracking-[0.05em]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    data-testid="splash-status"
+                  >
+                    Initializing your financial command center
+                    <motion.span
+                      className="inline-block ml-1"
+                      animate={{ opacity: [1, 0.2, 1] }}
+                      transition={{ duration: 1.1, repeat: Infinity }}
+                    >
+                      …
+                    </motion.span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="tap"
+                    className="flex items-center gap-2 text-white uppercase"
+                    style={{
+                      fontWeight: 500,
+                      fontSize: 12,
+                      letterSpacing: "0.15em",
+                    }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: [0, 1, 0.55, 1], y: 0 }}
+                    transition={{
+                      opacity: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
+                      y: { duration: 0.4 },
+                    }}
+                    data-testid="splash-tap-prompt"
+                  >
+                    <span>Tap to continue</span>
+                    <motion.span
+                      aria-hidden="true"
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.4, repeat: Infinity }}
+                      style={{ color: CYAN, textShadow: `0 0 8px ${CYAN}` }}
+                    >
+                      ›
+                    </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </div>
         </motion.div>
