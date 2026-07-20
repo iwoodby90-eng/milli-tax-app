@@ -1966,7 +1966,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # -------------------- MARKETING SITE (public) --------------------
 # Serves the /app/marketing_site static bundle at /api/site/* — every route
 # routes through the pod's ingress so we get a live public URL for the
-# App Review privacy/terms links until milli.tax DNS is switched.
+# App Review privacy/terms links until drivemilli.com DNS is switched.
 try:
     from fastapi.staticfiles import StaticFiles
     _site_dir = Path("/app/marketing_site")

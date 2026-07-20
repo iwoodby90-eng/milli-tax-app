@@ -1,4 +1,4 @@
-# Milli Marketing Site — milli.tax
+# Milli Marketing Site — drivemilli.com
 
 Three static pages: **`index.html`** (landing), **`privacy.html`**, **`terms.html`**.
 Written in plain HTML/CSS — no build step, no framework — so it deploys anywhere.
@@ -13,7 +13,7 @@ npx vercel --prod
 Follow the prompts (link project → deploy). Vercel will read `vercel.json`
 for security headers + friendly URLs (`/privacy`, `/terms`).
 
-Once deployed, point your `milli.tax` domain at Vercel:
+Once deployed, point your `drivemilli.com` domain at Vercel:
 
 - **A record**: `76.76.21.21`
 - **AAAA record**: `2606:4700:3033::6815:1515`
@@ -56,8 +56,8 @@ python3 -m http.server 8000
 
 Before submitting the iOS build, verify:
 
-1. `https://milli.tax/privacy` returns HTTP 200 and renders the full policy
-2. `https://milli.tax/terms` returns HTTP 200
+1. `https://drivemilli.com/privacy` returns HTTP 200 and renders the full policy
+2. `https://drivemilli.com/terms` returns HTTP 200
 3. Update the URLs in `/app/APP_STORE_METADATA.md` to point to the live domain
 4. Update the iOS `Settings → Legal` links (in the React app) to the live URLs
 

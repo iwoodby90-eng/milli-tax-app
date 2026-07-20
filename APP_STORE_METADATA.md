@@ -105,9 +105,9 @@ are provided by approved third-party partners.
 
 ## Support Text
 
-- **Support URL:** https://milli.tax/support *(placeholder — replace with live URL before submission)*
-- **Marketing URL:** https://milli.tax
-- **Privacy Policy URL:** https://milli.tax/privacy *(placeholder — required for App Store review)*
+- **Support URL:** https://drivemilli.com/support
+- **Marketing URL:** https://drivemilli.com
+- **Privacy Policy URL:** https://drivemilli.com/privacy
 
 ## Apple Developer Account
 
