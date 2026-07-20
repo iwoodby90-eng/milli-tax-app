@@ -20,7 +20,7 @@ retirement, investing, and available-to-spend before the user ever sees it.
 ## Apple Developer Account (locked in)
 | Field | Value |
 |---|---|
-| Team ID | `5GV6Z3S674` |
+| Team ID | `W5Q42XNM9V` |
 | Apple ID | `iwoodby90@gmail.com` |
 | Main Bundle ID | `app.milli.tax` |
 | Watch Bundle ID | `app.milli.tax.watchkitapp` |

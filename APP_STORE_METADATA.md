@@ -113,7 +113,7 @@ are provided by approved third-party partners.
 
 | Field | Value |
 |---|---|
-| **Apple Developer Team ID** | `5GV6Z3S674` |
+| **Apple Developer Team ID** | `W5Q42XNM9V` |
 | **Primary Apple ID** | `iwoodby90@gmail.com` |
 | **App Store Connect account** | `iwoodby90@gmail.com` |
 | **Main app Bundle ID** | `app.milli.tax` |

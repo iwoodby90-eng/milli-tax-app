@@ -48,7 +48,7 @@ the Xcode project so you should see them pre-selected on first open:
 
 | Setting | Value |
 |---|---|
-| **Apple Developer Team ID** | `5GV6Z3S674` |
+| **Apple Developer Team ID** | `W5Q42XNM9V` |
 | **Apple ID / App Store Connect** | `iwoodby90@gmail.com` |
 | **Bundle Identifier (iPhone/iPad)** | `app.milli.tax` |
 | **Bundle Identifier (Watch)** | `app.milli.tax.watchkitapp` |
@@ -58,7 +58,7 @@ the Xcode project so you should see them pre-selected on first open:
 1. In Xcode's left sidebar, select the **App** project → the **App**
    target → the **Signing & Capabilities** tab.
 2. Confirm **Team** shows the account belonging to Team ID
-   `5GV6Z3S674`. If Xcode prompts you to sign in, use the Apple ID
+   `W5Q42XNM9V`. If Xcode prompts you to sign in, use the Apple ID
    `iwoodby90@gmail.com`.
 3. Xcode will auto-provision the signing certificate and profile.
 4. If the team dropdown is blank, quit Xcode, run
@@ -128,7 +128,7 @@ Report Navigator.
 ### Optional: command-line export using `ExportOptions.plist`
 
 The repo ships `/app/frontend/ios/App/ExportOptions.plist` pre-filled
-with Team ID `5GV6Z3S674` and the three Milli bundle identifiers, so
+with Team ID `W5Q42XNM9V` and the three Milli bundle identifiers, so
 you can drive the upload from a script:
 
 ```bash

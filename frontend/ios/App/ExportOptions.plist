@@ -8,7 +8,7 @@
 
 	<!-- Apple Developer Team ID (Milli owner) -->
 	<key>teamID</key>
-	<string>5GV6Z3S674</string>
+	<string>W5Q42XNM9V</string>
 
 	<!-- Automatic signing with the Apple Developer team above -->
 	<key>signingStyle</key>
