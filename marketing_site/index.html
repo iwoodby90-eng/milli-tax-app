@@ -173,28 +173,46 @@
 
         <div class="hero-overlay">
             <div class="hero-mark" aria-hidden="true">
-                <!-- Chrome M with cyan right-stroke -->
-                <svg viewBox="0 0 200 200" width="112" height="112">
+                <!-- Chrome M with cyan road running through the center V -->
+                <svg viewBox="0 0 200 200" width="128" height="128">
                     <defs>
                         <linearGradient id="heroChrome" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#F4F5F7"/>
-                            <stop offset="35%" stop-color="#C7CDD3"/>
-                            <stop offset="55%" stop-color="#8A9096"/>
-                            <stop offset="75%" stop-color="#D8DCE1"/>
-                            <stop offset="100%" stop-color="#6F7479"/>
+                            <stop offset="0%"  stop-color="#F4F6F8"/>
+                            <stop offset="25%" stop-color="#D8DCE1"/>
+                            <stop offset="50%" stop-color="#7B8085"/>
+                            <stop offset="75%" stop-color="#C7CDD3"/>
+                            <stop offset="100%" stop-color="#5B6068"/>
                         </linearGradient>
-                        <linearGradient id="heroCyan" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#7CF6FF"/>
-                            <stop offset="45%" stop-color="#00E5FF"/>
-                            <stop offset="100%" stop-color="#0097A7"/>
+                        <linearGradient id="heroHi" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+                            <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
                         </linearGradient>
+                        <linearGradient id="heroRoad" x1="0" y1="1" x2="0" y2="0">
+                            <stop offset="0%"  stop-color="#00E5FF" stop-opacity="1"/>
+                            <stop offset="50%" stop-color="#00E5FF" stop-opacity="0.75"/>
+                            <stop offset="100%" stop-color="#00E5FF" stop-opacity="0.15"/>
+                        </linearGradient>
+                        <radialGradient id="heroOrb" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%"  stop-color="#FFFFFF" stop-opacity="1"/>
+                            <stop offset="45%" stop-color="#7CF6FF" stop-opacity="0.9"/>
+                            <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
+                        </radialGradient>
                     </defs>
-                    <path d="M28 172 L28 40 L58 40 L100 118 L96 132 L74 130 L58 96 L58 172 Z" fill="url(#heroChrome)"/>
-                    <path d="M58 40 L100 118 L142 40 L124 40 L100 84 L76 40 Z" fill="url(#heroChrome)"/>
-                    <path d="M118 74 L136 40 L152 40 L134 74 Z" fill="url(#heroCyan)"/>
-                    <rect x="122" y="74" width="18" height="98" rx="1.5" fill="url(#heroCyan)"/>
-                    <path d="M172 172 L172 40 L152 40 L152 172 Z" fill="url(#heroChrome)"/>
-                    <rect x="146" y="46" width="2" height="120" fill="#00E5FF" opacity="0.55"/>
+                    <path d="M 20 180 L 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 180 180 L 156 180 L 156 60 L 120 128 L 100 104 L 80 128 L 44 60 L 44 180 Z"
+                          fill="url(#heroChrome)" stroke="#050607" stroke-width="0.8" stroke-linejoin="round"/>
+                    <path d="M 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 156 26 L 112 112 L 100 96 L 88 112 L 44 26 Z"
+                          fill="url(#heroHi)" opacity="0.55"/>
+                    <path d="M 78 184 L 92 108 L 100 96 L 108 108 L 122 184 Z" fill="url(#heroRoad)"/>
+                    <path d="M 88 184 L 96 110 L 100 100 L 104 110 L 112 184 Z" fill="#7CF6FF" opacity="0.55"/>
+                    <rect x="99"   y="164" width="2"   height="10" fill="#FFFFFF" opacity="0.95"/>
+                    <rect x="99"   y="148" width="2"   height="8"  fill="#FFFFFF" opacity="0.8"/>
+                    <rect x="99"   y="134" width="1.6" height="6"  fill="#FFFFFF" opacity="0.65"/>
+                    <rect x="99.2" y="122" width="1.4" height="5"  fill="#FFFFFF" opacity="0.5"/>
+                    <rect x="99.4" y="112" width="1.2" height="4"  fill="#FFFFFF" opacity="0.4"/>
+                    <circle cx="100" cy="172" r="16" fill="url(#heroOrb)"/>
+                    <circle cx="100" cy="172" r="5"  fill="#FFFFFF"/>
+                    <circle cx="100" cy="172" r="3"  fill="#EAF9FD"/>
+                    <path d="M 100 92 L 95 102 L 100 99 L 105 102 Z" fill="#7CF6FF"/>
                 </svg>
             </div>
             <h1 class="hero-wordmark">MILLI</h1>

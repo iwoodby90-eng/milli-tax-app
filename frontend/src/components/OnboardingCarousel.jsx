@@ -317,7 +317,7 @@ function Slide({ index, active, headline, sub, tagline, children, testid }) {
   return (
     <div
       className="flex flex-col items-center justify-between px-6 pt-14 pb-32 h-full"
-      style={{ width: "100vw", flex: "0 0 100vw" }}
+      style={{ width: "100%", flex: "0 0 100%" }}
       data-testid={testid}
     >
       {/* visual card */}
@@ -429,7 +429,7 @@ export default function OnboardingCarousel({ onFinish }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[150] overflow-hidden"
+      className="absolute inset-0 z-[150] overflow-hidden"
       data-testid="onboarding-carousel"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -437,8 +437,9 @@ export default function OnboardingCarousel({ onFinish }) {
       transition={{ duration: 0.5 }}
       style={{
         backgroundColor: CARBON_BG,
-        fontFamily: "Inter, system-ui, sans-serif",
-        // Subtle carbon-fibre checker (matches app aesthetic)
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
+        paddingTop:    "var(--safe-top)",
+        paddingBottom: "var(--safe-bottom)",
         backgroundImage:
           "repeating-linear-gradient(45deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 6px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.010) 0 2px, transparent 2px 6px), radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,229,255,0.06), transparent 60%)",
       }}
@@ -473,9 +474,9 @@ export default function OnboardingCarousel({ onFinish }) {
           if (info.offset.x < -60 && index < last) setIndex(index + 1);
           else if (info.offset.x > 60 && index > 0) setIndex(index - 1);
         }}
-        animate={{ x: `-${index * 100}vw` }}
+        animate={{ x: `-${index * 100}%` }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        style={{ width: `${SLIDES.length * 100}vw` }}
+        style={{ width: `${SLIDES.length * 100}%` }}
       >
         {SLIDES.map((slide, i) => {
           const Visual = slide.visual;

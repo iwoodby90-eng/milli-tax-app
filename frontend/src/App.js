@@ -52,10 +52,11 @@ function App() {
     setOnboardingDone(true);
   };
   return (
-    <div className="App">
-      {!splashDone && <Splash onDone={onSplashDone} />}
-      {splashDone && !onboardingDone && <OnboardingCarousel onFinish={onOnboardingDone} />}
-      <BrowserRouter>
+    <div className="App ios-frame-outer">
+      <div className="ios-frame native-scroll">
+        {!splashDone && <Splash onDone={onSplashDone} />}
+        {splashDone && !onboardingDone && <OnboardingCarousel onFinish={onOnboardingDone} />}
+        <BrowserRouter>
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -82,6 +83,7 @@ function App() {
           <Toaster theme="dark" />
         </AuthProvider>
       </BrowserRouter>
+      </div>
     </div>
   );
 }

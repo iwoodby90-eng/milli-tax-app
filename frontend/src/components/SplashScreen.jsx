@@ -28,7 +28,9 @@ const HOLD_MS = 2400;  // when the "Tap to continue" prompt appears
 const FADE_MS = 600;
 
 // -----------------------------------------------------------------------
-// Chrome M — inline SVG so we get pixel-perfect gradients + cyan right bar
+// Chrome M with cyan road running up through the center V.
+// Signature Milli brand mark — mirrors /public/brand/milli-icon-1024.png
+// and the reference marketing shots.
 // -----------------------------------------------------------------------
 function ChromeM({ size = 132 }) {
   return (
@@ -41,73 +43,81 @@ function ChromeM({ size = 132 }) {
       role="img"
       style={{
         filter:
-          "drop-shadow(0 0 24px rgba(0, 229, 255, 0.35)) drop-shadow(0 6px 14px rgba(0,0,0,0.6))",
+          "drop-shadow(0 0 32px rgba(0, 229, 255, 0.42)) drop-shadow(0 6px 14px rgba(0,0,0,0.6))",
       }}
     >
       <defs>
-        {/* Metallic chrome for the M body */}
-        <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F4F5F7" />
-          <stop offset="35%" stopColor="#C7CDD3" />
-          <stop offset="55%" stopColor="#8A9096" />
-          <stop offset="75%" stopColor="#D8DCE1" />
-          <stop offset="100%" stopColor="#6F7479" />
+        {/* Metallic chrome — polished, deep bevel */}
+        <linearGradient id="mChrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#F4F6F8" />
+          <stop offset="25%" stopColor="#D8DCE1" />
+          <stop offset="50%" stopColor="#7B8085" />
+          <stop offset="75%" stopColor="#C7CDD3" />
+          <stop offset="100%" stopColor="#5B6068" />
         </linearGradient>
-        {/* Bevel highlight along the top edge */}
-        <linearGradient id="chromeHi" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
+        {/* Edge highlight */}
+        <linearGradient id="mHi" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
-        {/* Turquoise right stroke — the key brand element */}
-        <linearGradient id="cyanBar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#7CF6FF" />
-          <stop offset="45%" stopColor="#00E5FF" />
-          <stop offset="100%" stopColor="#0097A7" />
+        {/* Cyan road — bright at the base, fades toward the horizon */}
+        <linearGradient id="mRoad" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%"  stopColor="#00E5FF" stopOpacity="1"    />
+          <stop offset="50%" stopColor="#00E5FF" stopOpacity="0.75" />
+          <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.15" />
         </linearGradient>
+        {/* Road glow */}
+        <radialGradient id="mOrb" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#FFFFFF" stopOpacity="1"   />
+          <stop offset="45%" stopColor="#7CF6FF" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#00E5FF" stopOpacity="0"   />
+        </radialGradient>
       </defs>
 
-      {/* Left leg */}
+      {/* --- 1. Left leg + inner V (chrome M silhouette) --- */}
       <path
-        d="M28 172 L28 40 L58 40 L100 118 L96 132 L74 130 L58 96 L58 172 Z"
-        fill="url(#chrome)"
+        d="M 20 180 L 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 180 180 L 156 180 L 156 60 L 120 128 L 100 104 L 80 128 L 44 60 L 44 180 Z"
+        fill="url(#mChrome)"
+        stroke="#050607"
+        strokeWidth="0.8"
+        strokeLinejoin="round"
       />
-      {/* Center V pointing down */}
+      {/* Bevel highlight along the top of the M */}
       <path
-        d="M58 40 L100 118 L142 40 L124 40 L100 84 L76 40 Z"
-        fill="url(#chrome)"
-      />
-      {/* Bevel highlight on the V */}
-      <path
-        d="M58 40 L100 118 L142 40 L134 40 L100 100 L66 40 Z"
-        fill="url(#chromeHi)"
-        opacity="0.35"
-      />
-      {/* Cyan right vertical (accent bar) */}
-      <path
-        d="M118 74 L136 40 L152 40 L134 74 Z"
-        fill="url(#cyanBar)"
-      />
-      <rect
-        x="122"
-        y="74"
-        width="18"
-        height="98"
-        rx="1.5"
-        fill="url(#cyanBar)"
-      />
-      {/* Right chrome column — mirror of left leg */}
-      <path
-        d="M172 172 L172 40 L152 40 L152 172 Z"
-        fill="url(#chrome)"
-      />
-      {/* Thin cyan glow line along the inner edge of the right column */}
-      <rect
-        x="146"
-        y="46"
-        width="2"
-        height="120"
-        fill={CYAN}
+        d="M 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 156 26 L 112 112 L 100 96 L 88 112 L 44 26 Z"
+        fill="url(#mHi)"
         opacity="0.55"
+      />
+
+      {/* --- 2. Cyan road rising into the M valley --- */}
+      {/* Base flare (wide at bottom, narrows to the horizon point) */}
+      <path
+        d="M 78 184 L 92 108 L 100 96 L 108 108 L 122 184 Z"
+        fill="url(#mRoad)"
+      />
+      {/* Inner bright edge of the road */}
+      <path
+        d="M 88 184 L 96 110 L 100 100 L 104 110 L 112 184 Z"
+        fill="#7CF6FF"
+        opacity="0.55"
+      />
+
+      {/* --- 3. Dashed lane markers (perspective: bigger near, smaller far) --- */}
+      <rect x="99" y="164" width="2"   height="10" fill="#FFFFFF" opacity="0.95" />
+      <rect x="99" y="148" width="2"   height="8"  fill="#FFFFFF" opacity="0.8"  />
+      <rect x="99" y="134" width="1.6" height="6"  fill="#FFFFFF" opacity="0.65" />
+      <rect x="99.2" y="122" width="1.4" height="5" fill="#FFFFFF" opacity="0.5" />
+      <rect x="99.4" y="112" width="1.2" height="4" fill="#FFFFFF" opacity="0.4" />
+
+      {/* --- 4. Glowing orb at the base of the road --- */}
+      <circle cx="100" cy="172" r="16" fill="url(#mOrb)" />
+      <circle cx="100" cy="172" r="5"  fill="#FFFFFF" />
+      <circle cx="100" cy="172" r="3"  fill="#EAF9FD" />
+
+      {/* --- 5. Arrow head at the top of the road (into the horizon) --- */}
+      <path
+        d="M 100 92 L 95 102 L 100 99 L 105 102 Z"
+        fill="#7CF6FF"
       />
     </svg>
   );
@@ -258,7 +268,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
           tabIndex={0}
           onClick={dismiss}
           onTouchEnd={dismiss}
-          className={`fixed inset-0 z-[200] overflow-hidden ${readyToDismiss ? "cursor-pointer" : "cursor-default"}`}
+          className={`absolute inset-0 z-[200] overflow-hidden ${readyToDismiss ? "cursor-pointer" : "cursor-default"}`}
           initial={{ opacity: 1 }}
           exit={{
             opacity: 0,
@@ -266,7 +276,9 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
           }}
           style={{
             backgroundColor: "#0A0A0A",
-            fontFamily: "Inter, system-ui, sans-serif",
+            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
+            paddingTop:    "var(--safe-top)",
+            paddingBottom: "var(--safe-bottom)",
           }}
         >
           {/* -- concentric arcs behind the logo -- */}

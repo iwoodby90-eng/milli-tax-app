@@ -46,17 +46,22 @@ export default function MilliLogo({
       >
         <defs>
           <linearGradient id={`${id}-chrome`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="35%" stopColor="#C0C0C0" />
-            <stop offset="55%" stopColor="#5B6068" />
-            <stop offset="75%" stopColor="#B0B4BA" />
-            <stop offset="100%" stopColor="#EEF1F5" />
+            <stop offset="0%" stopColor="#F4F6F8" />
+            <stop offset="25%" stopColor="#D8DCE1" />
+            <stop offset="50%" stopColor="#7B8085" />
+            <stop offset="75%" stopColor="#C7CDD3" />
+            <stop offset="100%" stopColor="#5B6068" />
           </linearGradient>
           <linearGradient id={`${id}-cyan`} x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.15" />
-            <stop offset="60%" stopColor="#00E5FF" stopOpacity="0.75" />
-            <stop offset="100%" stopColor="#00E5FF" stopOpacity="1" />
+            <stop offset="0%" stopColor="#00E5FF" stopOpacity="1" />
+            <stop offset="50%" stopColor="#00E5FF" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.15" />
           </linearGradient>
+          <radialGradient id={`${id}-orb`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
+            <stop offset="45%" stopColor="#7CF6FF" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#00E5FF" stopOpacity="0" />
+          </radialGradient>
           <radialGradient id={`${id}-glow`} cx="50%" cy="100%" r="60%">
             <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.55" />
             <stop offset="100%" stopColor="#00E5FF" stopOpacity="0" />
@@ -77,18 +82,29 @@ export default function MilliLogo({
           strokeLinejoin="round"
         />
 
-        {/* Turquoise runway rising into the M valley */}
+        {/* Cyan runway rising into the M valley */}
         {withRoad && (
           <>
             <path
-              d="M 26 60 L 30 40 L 32 28 L 34 40 L 38 60 Z"
+              d="M 25 60 L 30 34 L 32 26 L 34 34 L 39 60 Z"
               fill={`url(#${id}-cyan)`}
             />
-            {/* runway dashes */}
-            <rect x="31.5" y="52" width="1" height="4" fill="#FFFFFF" opacity="0.95" />
-            <rect x="31.5" y="45" width="1" height="3" fill="#FFFFFF" opacity="0.7" />
-            <rect x="31.5" y="39" width="1" height="2" fill="#FFFFFF" opacity="0.45" />
-            <circle cx="32" cy="30" r="1" fill="#00E5FF" />
+            {/* Inner bright edge */}
+            <path
+              d="M 28 60 L 31 36 L 32 30 L 33 36 L 36 60 Z"
+              fill="#7CF6FF"
+              opacity="0.55"
+            />
+            {/* Perspective lane dashes */}
+            <rect x="31.6" y="52" width="0.8" height="4"   fill="#FFFFFF" opacity="0.95" />
+            <rect x="31.6" y="45" width="0.8" height="3"   fill="#FFFFFF" opacity="0.75" />
+            <rect x="31.7" y="39" width="0.6" height="2.2" fill="#FFFFFF" opacity="0.55" />
+            <rect x="31.8" y="34" width="0.5" height="1.6" fill="#FFFFFF" opacity="0.4"  />
+            {/* Glowing orb at the base of the road */}
+            <circle cx="32" cy="55" r="5"   fill={`url(#${id}-orb)`} />
+            <circle cx="32" cy="55" r="1.5" fill="#FFFFFF" />
+            {/* Arrow at the horizon */}
+            <path d="M 32 24 L 30 28 L 32 27 L 34 28 Z" fill="#7CF6FF" />
           </>
         )}
       </svg>

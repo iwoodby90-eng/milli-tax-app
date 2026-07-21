@@ -39,24 +39,124 @@
         margin: 0;
         background: #050607;
         color: #FFFFFF;
-        font-family: 'Inter', system-ui, sans-serif;
+        /* iOS-native font stack — SF Pro Display/Text on Apple, Inter fallback elsewhere */
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                     "Inter", system-ui, sans-serif;
         font-feature-settings: "tnum" 1, "ss01" 1;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        /* iOS-native touch behavior */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        overscroll-behavior-y: none;
+        touch-action: manipulation;
+    }
+    body {
+        /* Safe-area aware — full-bleed on notched devices */
+        min-height: 100vh;
+        min-height: 100dvh;
     }
     body::selection, body *::selection {
         background: #00E5FF;
         color: #050607;
     }
     code, pre, .font-mono {
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-family: "SF Mono", ui-monospace, "JetBrains Mono", monospace;
     }
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Sora', 'Inter', system-ui, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Sora", "Inter", system-ui, sans-serif;
         letter-spacing: -0.025em;
     }
-    .font-display { font-family: 'Sora', 'Inter', system-ui, sans-serif; letter-spacing: -0.025em; }
-    .font-chrome { font-family: 'Sora', 'Inter', system-ui, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .font-display { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Sora", "Inter", system-ui, sans-serif; letter-spacing: -0.025em; }
+    .font-chrome { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Sora", "Inter", system-ui, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+    /* Native-style scrolling containers */
+    .native-scroll {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    /* Buttons + links: iOS-native active feedback (no web hover states) */
+    button, a[role="button"], [data-testid$="-btn"] {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    button:active, a[role="button"]:active {
+        transform: scale(0.97);
+        transition: transform 0.08s ease-out;
+    }
+}
+
+/* ================================================================
+   iOS Safe Area — status bar (top) + home indicator (bottom)
+   ================================================================ */
+:root {
+    --safe-top:    env(safe-area-inset-top,    0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left:   env(safe-area-inset-left,   0px);
+    --safe-right:  env(safe-area-inset-right,  0px);
+}
+.pt-safe   { padding-top:    calc(var(--safe-top)    + 0px); }
+.pb-safe   { padding-bottom: calc(var(--safe-bottom) + 0px); }
+.mt-safe   { margin-top:     var(--safe-top); }
+.mb-safe   { margin-bottom:  var(--safe-bottom); }
+.h-safe-top    { height: var(--safe-top); }
+.h-safe-bottom { height: var(--safe-bottom); }
+
+/* ================================================================
+   iOS App-Frame wrapper.
+   On real phones (Capacitor + mobile Safari)  → full-bleed.
+   On desktop or wide viewports                → centered 430×932
+   phone-shell floating on the Big City backdrop, so the app never
+   looks like a stretched-out website.
+   ================================================================ */
+.ios-frame {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #050607;
+    /* Fill the viewport on real phone widths */
+}
+@media (min-width: 500px) {
+    .ios-frame-outer {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background:
+            radial-gradient(ellipse 60% 40% at 50% 15%,  rgba(0, 229, 255, 0.16), transparent 70%),
+            radial-gradient(ellipse 40% 30% at 15% 60%,  rgba(0, 229, 255, 0.09), transparent 70%),
+            radial-gradient(ellipse 40% 30% at 85% 60%,  rgba(0, 229, 255, 0.09), transparent 70%),
+            #050607;
+    }
+    .ios-frame {
+        width: 430px;
+        height: 932px;
+        max-height: calc(100vh - 40px);
+        border-radius: 44px;
+        overflow: hidden;
+        box-shadow:
+            0 0 0 6px #111417,
+            0 0 0 8px #2A2E33,
+            0 40px 120px rgba(0, 0, 0, 0.75),
+            0 0 80px rgba(0, 229, 255, 0.12);
+    }
+    /* Desktop-only faux notch pill (visual polish) */
+    .ios-frame::before {
+        content: "";
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 30px;
+        background: #000;
+        border-radius: 999px;
+        z-index: 300;
+        pointer-events: none;
+    }
 }
 
 /* ================================================================
