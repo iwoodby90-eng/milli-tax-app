@@ -27,6 +27,7 @@ import Retirement from "@/pages/Retirement";
 import Investing from "@/pages/Investing";
 import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
+import Paywall from "@/pages/Paywall";
 
 function OnboardingGate({ children }) {
   const { user } = useAuth();
@@ -79,6 +80,8 @@ function App() {
             <Route path="/app/more" element={<ProtectedRoute><AppLayout><More /></AppLayout></ProtectedRoute>} />
             <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
+            <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>

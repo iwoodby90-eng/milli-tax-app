@@ -24,8 +24,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Lock, MapPin, PieChart, FileCheck } from "lucide-react";
 
 const CYAN = "#00E5FF";
-const HOLD_MS = 2400;  // when the "Tap to continue" prompt appears
-const FADE_MS = 600;
+const HOLD_MS = 3000;  // give the cinematic fly-in room to breathe
+const FADE_MS = 700;
 
 // -----------------------------------------------------------------------
 // Chrome M with cyan road running up through the center V.
@@ -321,15 +321,46 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
 
           {/* -- main stacked content -- */}
           <div className="relative z-10 flex flex-col items-center justify-between h-full py-[9vh] px-6">
-            {/* logo + wordmark */}
+            {/* logo + wordmark — cinematic fly-in */}
             <motion.div
-              className="flex flex-col items-center gap-4"
-              initial={{ opacity: 0, y: -18, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center gap-4 relative"
+              initial={{ opacity: 0, scale: 3.6, filter: "blur(24px)", y: -80 }}
+              animate={{ opacity: 1, scale: 1,   filter: "blur(0px)",  y: 0 }}
+              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
             >
+              {/* Chrome light-sweep across the M */}
+              <motion.div
+                aria-hidden="true"
+                className="absolute pointer-events-none"
+                style={{
+                  width: 132, height: 132,
+                  background:
+                    "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 48%, transparent 62%)",
+                  mixBlendMode: "screen",
+                  WebkitMaskImage:
+                    "radial-gradient(circle at 50% 50%, #000 60%, transparent 65%)",
+                          maskImage:
+                    "radial-gradient(circle at 50% 50%, #000 60%, transparent 65%)",
+                }}
+                initial={{ x: -160, opacity: 0 }}
+                animate={{ x: 160,  opacity: [0, 0.9, 0] }}
+                transition={{ delay: 1.05, duration: 1.2, ease: "easeOut" }}
+              />
+              {/* Ambient cyan pulse ring behind the M */}
+              <motion.div
+                aria-hidden="true"
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  width: 220, height: 220,
+                  border: "1px solid rgba(0, 229, 255, 0.6)",
+                  boxShadow: "0 0 40px rgba(0, 229, 255, 0.4)",
+                }}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: [0.4, 1.4, 1.9], opacity: [0, 0.6, 0] }}
+                transition={{ delay: 0.9, duration: 1.6, ease: "easeOut" }}
+              />
               <ChromeM size={132} />
-              <div
+              <motion.div
                 className="text-[38px] leading-none"
                 style={{
                   fontWeight: 700,
@@ -340,10 +371,13 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
                   WebkitTextFillColor: "transparent",
                   textShadow: "0 0 22px rgba(0,229,255,0.18)",
                 }}
+                initial={{ opacity: 0, letterSpacing: "0.5em" }}
+                animate={{ opacity: 1, letterSpacing: "0.15em" }}
+                transition={{ delay: 0.9, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                 data-testid="splash-wordmark"
               >
                 MILLI
-              </div>
+              </motion.div>
             </motion.div>
 
             {/* tagline */}

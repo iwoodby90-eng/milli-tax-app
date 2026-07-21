@@ -11,6 +11,7 @@
     "@capacitor/preferences": "7",
     "@capacitor/splash-screen": "7",
     "@capacitor/status-bar": "7",
+    "@capgo/native-purchases": "^8.6.4",
     "@hookform/resolvers": "5.0.1",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-accordion": "1.2.8",

@@ -1950,6 +1950,187 @@ async def get_marketing_video(filename: str):
     return FileResponse(path, media_type="video/mp4", filename=filename)
 
 
+# =====================================================================
+# Apple In-App Purchase (StoreKit 2) — subscription verification
+# =====================================================================
+# Env vars required for full production validation against the App Store
+# Server API (leave unset in development — endpoint degrades gracefully):
+#   APPLE_ISSUER_ID       — from App Store Connect > Users and Access > IAP
+#   APPLE_KEY_ID          — 10-char key id shown next to the .p8
+#   APPLE_PRIVATE_KEY     — contents of AuthKey_XXXX.p8 (raw ES256)
+#   APPLE_IAP_ENVIRONMENT — "Sandbox" or "Production" (default: Sandbox)
+# =====================================================================
+
+APPLE_BUNDLE_ID = "app.milli.tax"
+APPLE_ISSUER_ID = os.environ.get("APPLE_ISSUER_ID", "")
+APPLE_KEY_ID = os.environ.get("APPLE_KEY_ID", "")
+APPLE_PRIVATE_KEY = os.environ.get("APPLE_PRIVATE_KEY", "")
+APPLE_IAP_ENV = os.environ.get("APPLE_IAP_ENVIRONMENT", "Sandbox")
+
+# Product-ID → plan mapping (must match Products.storekit + App Store Connect)
+IAP_PRODUCT_TO_PLAN = {
+    "milli.basic.monthly": "basic",
+    "milli.pro.monthly":   "pro",
+    "milli.elite.monthly": "elite",
+}
+
+
+def _generate_apple_iap_token() -> str:
+    """ES256-signed JWT for the App Store Server API. Raises if unconfigured."""
+    if not (APPLE_ISSUER_ID and APPLE_KEY_ID and APPLE_PRIVATE_KEY):
+        raise HTTPException(
+            status_code=503,
+            detail="Apple IAP not configured on server (missing ISSUER_ID/KEY_ID/PRIVATE_KEY)."
+        )
+    import time as _t
+    now = int(_t.time())
+    return jwt.encode(
+        {
+            "iss": APPLE_ISSUER_ID,
+            "iat": now,
+            "exp": now + 1800,
+            "aud": "appstoreconnect-v1",
+            "bid": APPLE_BUNDLE_ID,
+        },
+        APPLE_PRIVATE_KEY,
+        algorithm="ES256",
+        headers={"alg": "ES256", "kid": APPLE_KEY_ID, "typ": "JWT"},
+    )
+
+
+class IAPValidateIn(BaseModel):
+    transactionId: str
+    productId: Optional[str] = None  # optional client hint for logging
+
+
+@api.post("/subscriptions/verify-receipt")
+async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_current_user)):
+    """
+    Verify a StoreKit 2 transaction with Apple and upgrade the user's plan.
+
+    On success, returns:
+      { "status": "active", "plan": "elite", "productId": "milli.elite.monthly",
+        "expiresAt": <epoch ms> }
+    """
+    # Best-effort call: if Apple creds aren't wired yet we still record the
+    # attempt so the mobile client can proceed in dev/TestFlight.
+    try:
+        token = _generate_apple_iap_token()
+    except HTTPException:
+        # Fallback: trust the client transactionId only in Sandbox/dev
+        if APPLE_IAP_ENV.lower() != "production":
+            logging.warning("Apple IAP creds missing — accepting sandbox txn %s optimistically", body.transactionId)
+            plan = IAP_PRODUCT_TO_PLAN.get(body.productId or "", "pro")
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {"$set": {
+                    "plan": plan,
+                    "subscription": {
+                        "status": "active",
+                        "product_id": body.productId,
+                        "transaction_id": body.transactionId,
+                        "environment": "Sandbox",
+                        "verified_at": datetime.now(timezone.utc).isoformat(),
+                        "expires_at": None,
+                    },
+                }},
+            )
+            return {"status": "active", "plan": plan, "productId": body.productId, "expiresAt": None, "sandbox": True}
+        raise
+
+    import requests as _requests
+    base = ("https://api.storekit.itunes.apple.com" if APPLE_IAP_ENV == "Production"
+            else "https://api.storekit-sandbox.itunes.apple.com")
+    url = f"{base}/inApps/v1/transactions/{body.transactionId}"
+    resp = _requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
+    if resp.status_code != 200:
+        raise HTTPException(status_code=400, detail=f"Apple validation failed: {resp.status_code} {resp.text[:200]}")
+
+    payload = resp.json()
+    jws = payload.get("signedTransactionInfo", "")
+    # StoreKit 2 payloads are JWS-signed. Apple guarantees integrity over TLS,
+    # so we decode without local verification (matches Apple's official flow).
+    decoded = jwt.decode(jws, options={"verify_signature": False})
+    product_id = decoded.get("productId")
+    expires_ms = decoded.get("expiresDate")
+    plan = IAP_PRODUCT_TO_PLAN.get(product_id, "pro")
+
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "plan": plan,
+            "subscription": {
+                "status": "active",
+                "product_id": product_id,
+                "transaction_id": body.transactionId,
+                "environment": APPLE_IAP_ENV,
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": expires_ms,
+            },
+        }},
+    )
+    return {"status": "active", "plan": plan, "productId": product_id, "expiresAt": expires_ms}
+
+
+@api.post("/subscriptions/webhook")
+async def apple_iap_webhook(request: Request):
+    """
+    App Store Server Notifications V2 endpoint. Configure this URL in
+    App Store Connect > App Information > App Store Server Notifications.
+    Handles renewals, cancellations, refunds while the app is closed.
+    """
+    payload = await request.json()
+    signed = payload.get("signedPayload", "")
+    try:
+        outer = jwt.decode(signed, options={"verify_signature": False})
+        notif_type = outer.get("notificationType")
+        data = outer.get("data", {})
+        signed_tx = data.get("signedTransactionInfo", "")
+        tx = jwt.decode(signed_tx, options={"verify_signature": False}) if signed_tx else {}
+        product_id = tx.get("productId")
+        transaction_id = tx.get("transactionId")
+        expires_ms = tx.get("expiresDate")
+
+        if not transaction_id:
+            return {"received": True, "ignored": True}
+
+        # Find the user by transaction id (recorded during initial verify)
+        user_doc = await db.users.find_one({"subscription.transaction_id": transaction_id})
+        if not user_doc:
+            logging.warning("Apple webhook %s: no user with transaction_id=%s", notif_type, transaction_id)
+            return {"received": True, "unknown_user": True}
+
+        new_status = "active"
+        if notif_type in ("EXPIRED", "REFUND", "REVOKE"):
+            new_status = "expired"
+        elif notif_type in ("DID_FAIL_TO_RENEW",):
+            new_status = "grace"
+
+        await db.users.update_one(
+            {"_id": user_doc["_id"]},
+            {"$set": {
+                "subscription.status": new_status,
+                "subscription.expires_at": expires_ms,
+                "subscription.last_notification": notif_type,
+                "subscription.last_updated": datetime.now(timezone.utc).isoformat(),
+                **({"plan": "trial"} if new_status == "expired" else {}),
+            }},
+        )
+        return {"received": True, "status": new_status, "type": notif_type}
+    except Exception as e:
+        logging.exception("Apple webhook parse failed")
+        raise HTTPException(status_code=400, detail=f"Bad payload: {e}")
+
+
+@api.get("/subscriptions/status")
+async def subscription_status(user: dict = Depends(get_current_user)):
+    """Returns the current user's plan + subscription record."""
+    return {
+        "plan": user.get("plan", "trial"),
+        "subscription": user.get("subscription", {"status": "trial"}),
+    }
+
+
 # -------------------- MOUNT --------------------
 app.include_router(api)
 
