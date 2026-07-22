@@ -37,19 +37,25 @@ retirement, investing, and available-to-spend before the user ever sees it.
   metadata + build guide updated with real Apple credentials
 
 ## What's Mocked / Pending Real Keys
-- Plaid — sandbox
-- Stripe — test mode
-- Apple In-App Purchase (StoreKit 2) — not yet implemented
+- Plaid — LIVE wired (multi-bank connections)
+- Stripe — LIVE keys wired (Billing + portal)
+- Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
+
+## Changelog
+- **Feb 2026** — Fixed critical scroll/content-clipping bug in `AppLayout.jsx`.
+  Root cause: `position:fixed` on header/tab-bar escaped the `.ios-frame` phone
+  shell on desktop. Fix: replaced with `position:sticky` (top-0 / bottom-0) so
+  header + tab bar stay pinned within the frame's scroll container. Verified
+  across /app, /app/more, /app/settings, /app/vault, /app/income, /app/mileage
+  (100% pass, testing_agent iteration_8).
 
 ## Prioritized Roadmap
-### P0
-- **Apple IAP (StoreKit 2)** — Capacitor IAP plugin, Paywall UI
-  (Basic $19.99 / Pro $29.99 / Elite $49.99 monthly),
-  backend `/api/subscriptions/verify-receipt` endpoint,
-  `Products.storekit` local test config
+### P0 — DONE
+- Apple IAP (StoreKit 2) via `@capgo/native-purchases` + `/api/subscriptions/verify-receipt` ✅
+- AppLayout scroll/clipping fix (sticky header + tab bar) ✅ (Feb 2026)
 
 ### P1
-- Wire real banking APIs (Unit or Stripe Treasury) when production keys arrive
+- Wire real banking via Stripe Treasury when Treasury access is approved
 
 ### P2
 - Auto quarterly estimated tax payments (Elite tier)
