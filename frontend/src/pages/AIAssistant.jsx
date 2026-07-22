@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { API_BASE } from "@/lib/api";
-import { ArrowRight, Lightning } from "@phosphor-icons/react";
+import { ArrowRight, Lightning, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import WeeboAvatar from "@/components/WeeboAvatar";
+import useWeeboVoice from "@/hooks/useWeeboVoice";
 
 const SUGGESTIONS = [
   "Can I deduct my phone bill if I use it for delivery?",
@@ -80,9 +81,17 @@ export default function AIAssistant() {
 
   // Weebo state — reacts to streaming + last assistant content
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  const lastAssistantText = (lastAssistant && lastAssistant.content) || "";
+
+  // Voice — plays TTS of the final answer once streaming ends.
+  const { speaking, muted, toggleMute } = useWeeboVoice(lastAssistantText, {
+    streaming,
+    autoplay: true,
+  });
+
   const weeboState = streaming
-    ? (lastAssistant && lastAssistant.content ? "speaking" : "thinking")
-    : "idle";
+    ? (lastAssistantText ? "speaking" : "thinking")
+    : (speaking ? "speaking" : "idle");
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
@@ -118,6 +127,15 @@ export default function AIAssistant() {
           />
         </div>
         <div className="relative flex flex-col items-center py-8 px-4">
+          {/* Mute toggle — top-right corner */}
+          <button
+            data-testid="weebo-mute-toggle"
+            onClick={toggleMute}
+            aria-label={muted ? "Unmute Weebo" : "Mute Weebo"}
+            className="absolute top-3 right-3 p-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-zinc-300 hover:text-volt active:scale-95 transition"
+          >
+            {muted ? <SpeakerSlash size={14} weight="bold" /> : <SpeakerHigh size={14} weight="bold" />}
+          </button>
           <WeeboAvatar size={128} state={weeboState} />
           <div className="mt-4 text-volt font-mono text-[10px] uppercase tracking-[0.34em]">
             {weeboState === "thinking" ? "// Weebo is thinking..." :

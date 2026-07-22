@@ -42,7 +42,13 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
 
 ## Changelog
-- **Feb 22, 2026** — Big design push:
+- **Feb 22, 2026** (evening) — Voice + Referral + iOS refresh:
+  * **Weebo now talks.** `/api/ai/voice` (OpenAI TTS via emergentintegrations, `tts-1` / voice=shimmer) generates MP3 audio from her final answer. React hook `useWeeboVoice` fetches the MP3 and plays via `<audio>`, drives `weeboState="speaking"` so her mouth animates in sync. Mute toggle persisted in localStorage.
+  * **Referral system** — 3 backend endpoints (`GET /api/referral/me`, `POST /api/referral/apply`) + new `/app/referral` page. $10 vault credit both sides, unique `MILLI-XXXXXX` code per user, share/copy/redeem UI, live stats (invited count, credit earned).
+  * **Fixed WelcomePaywall tier badge overlap** (same bug pattern as `Paywall.jsx` from earlier).
+  * **iPhone 404 hardening**: added public `GET /api/health` for smoke tests; rebuilt frontend (`DISABLE_ESLINT_PLUGIN=true yarn build`) + refreshed iOS bundle at `/app/frontend/ios/App/App/public/`; verified compiled JS points at correct preview URL; new source tarball published at `/app/frontend/public/milli-source.tar.gz` (24 MB).
+- **Feb 22, 2026** — Big design push (7-slot tab bar, Weebo avatar, landing polish, private reels).
+- **Feb 2026** — Fixed AppLayout scroll clipping (position:fixed → position:sticky).
   * New 7-slot bottom nav: `[Vault][401(k)][Invest] [🅜 raised center] [Mileage][Taxes][Settings]`. All other pages moved into the side drawer.
   * Added `WeeboAvatar.jsx` — animated SVG mascot (Flubber-inspired droid): antenna pulse, chrome equator, glowing pixel eyes, blinking + speaking mouth animations, levitation halo + particles. States: `idle | thinking | speaking`.
   * Floating Weebo FAB on Home routes to `/app/ai`.

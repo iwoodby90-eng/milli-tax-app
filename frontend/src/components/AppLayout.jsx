@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Vault as VaultIcon, PiggyBank, MapTrifold, ChartLineUp, Receipt, GearSix,
-  List, Star, Sparkle, Wallet, Robot, FileText, DotsThree, SignOut, House,
+  List, Star, Sparkle, Wallet, Robot, FileText, DotsThree, SignOut, House, Gift,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import WeeboAvatar from "@/components/WeeboAvatar";
@@ -31,6 +31,7 @@ const drawerNav = [
   { to: "/app/quarterly",  icon: Receipt,     label: "Taxes / Quarterly" },
   { to: "/app/expenses",   icon: FileText,    label: "Expenses" },
   { to: "/app/ai",         icon: Robot,       label: "Milli AI" },
+  { to: "/app/referral",   icon: Gift,        label: "Invite & Earn $10" },
   { to: "/app/reports",    icon: FileText,    label: "Reports" },
   { to: "/app/settings",   icon: GearSix,     label: "Settings" },
   { to: "/app/more",       icon: DotsThree,   label: "More" },

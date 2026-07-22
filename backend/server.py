@@ -1089,6 +1089,90 @@ async def ai_chat(body: ChatIn, user: dict = Depends(get_current_user)):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
+
+# -------------------- WEEBO TTS (OpenAI) --------------------
+class WeeboVoiceIn(BaseModel):
+    text: str
+    voice: Optional[str] = "shimmer"   # bright, cheerful — matches Weebo
+    speed: Optional[float] = 1.0
+
+@api.post("/ai/voice")
+async def weebo_voice(body: WeeboVoiceIn, user: dict = Depends(get_current_user)):
+    """Convert a chunk of Weebo's answer to MP3 for lip-sync playback.
+    Keeps chunks small (<= 4096 chars per OpenAI limit) so the client can start
+    playing as text streams in."""
+    from emergentintegrations.llm.openai import OpenAITextToSpeech
+    from fastapi.responses import Response
+    txt = (body.text or "").strip()
+    if not txt:
+        raise HTTPException(status_code=400, detail="Empty text")
+    if len(txt) > 4000:
+        txt = txt[:4000]
+    tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
+    audio = await tts.generate_speech(
+        text=txt,
+        model="tts-1",             # fast — chosen for real-time chat
+        voice=body.voice or "shimmer",
+        speed=body.speed or 1.0,
+    )
+    return Response(
+        content=audio,
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "no-store", "X-Weebo-Voice": body.voice or "shimmer"},
+    )
+
+
+# -------------------- REFERRALS --------------------
+class ReferralApplyIn(BaseModel):
+    code: str
+
+def _gen_referral_code(user_id: str) -> str:
+    import hashlib
+    h = hashlib.sha256(user_id.encode()).hexdigest()[:6].upper()
+    return f"MILLI-{h}"
+
+@api.get("/referral/me")
+async def referral_me(user: dict = Depends(get_current_user)):
+    """Return the user's own referral code + tally."""
+    code = user.get("referral_code") or _gen_referral_code(str(user["id"]))
+    if not user.get("referral_code"):
+        await db.users.update_one({"id": user["id"]}, {"$set": {"referral_code": code}})
+    invited = await db.users.count_documents({"referred_by_code": code})
+    credit_cents = int(user.get("vault_credit_cents", 0))
+    return {
+        "code": code,
+        "share_url": f"https://drivemilli.com/r/{code}",
+        "invited_count": invited,
+        "reward_cents": 1000,          # $10 both sides
+        "credit_cents": credit_cents,
+    }
+
+@api.post("/referral/apply")
+async def referral_apply(body: ReferralApplyIn, user: dict = Depends(get_current_user)):
+    """Redeem a referral code. Both referrer + referred each earn $10 vault credit."""
+    code = (body.code or "").strip().upper()
+    if not code.startswith("MILLI-"):
+        raise HTTPException(status_code=400, detail="Invalid code")
+    if user.get("referred_by_code"):
+        raise HTTPException(status_code=400, detail="You've already used a referral code")
+    if user.get("referral_code") == code:
+        raise HTTPException(status_code=400, detail="You can't refer yourself")
+    referrer = await db.users.find_one({"referral_code": code})
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Referral code not found")
+
+    reward = 1000  # cents, $10
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"referred_by_code": code}, "$inc": {"vault_credit_cents": reward}},
+    )
+    await db.users.update_one(
+        {"id": referrer["id"]},
+        {"$inc": {"vault_credit_cents": reward}},
+    )
+    return {"ok": True, "reward_cents": reward}
+
+
 # -------------------- REPORTS / PDF --------------------
 def _pdf_schedule_c(user: dict, summary: dict, deposits: list, trips: list, expenses: list) -> bytes:
     buf = io.BytesIO()
@@ -1892,6 +1976,17 @@ async def demo_seed():
 @api.get("/")
 async def root():
     return {"name": "Milli", "ok": True}
+
+
+@api.get("/health")
+async def health():
+    """Public health check — used by the iOS app on boot to catch stale bundles."""
+    return {
+        "ok": True,
+        "service": "milli-api",
+        "version": os.environ.get("MILLI_API_VERSION", "1.0.0"),
+        "time": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # -------------------- MILLI AUTOPILOT™ --------------------
