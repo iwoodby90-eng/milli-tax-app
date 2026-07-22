@@ -71,22 +71,21 @@ export default function AppLayout({ children }) {
         </div>
       </header>
 
-      {/* ============ Main scroll area ============ */}
+      {/* ============ Main scroll area — natural flow, page-level scroll ============ */}
       <main
-        className="native-scroll overflow-y-auto"
+        className="native-scroll"
         style={{
-          position: "absolute",
-          top:    "calc(var(--safe-top) + 44px)",
-          bottom: "calc(var(--safe-bottom) + 64px)",
-          left: 0, right: 0,
+          paddingTop:    "calc(var(--safe-top) + 44px)",
+          paddingBottom: "calc(var(--safe-bottom) + 78px)",
+          minHeight:     "100vh",
         }}
       >
         {children}
       </main>
 
-      {/* ============ iOS-style bottom tab bar ============ */}
+      {/* ============ iOS-style bottom tab bar (fixed) ============ */}
       <nav
-        className="absolute bottom-0 inset-x-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
+        className="fixed bottom-0 inset-x-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
         style={{
           background: "rgba(5, 6, 7, 0.78)",
           paddingBottom: "var(--safe-bottom)",
