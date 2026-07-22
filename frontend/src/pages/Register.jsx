@@ -16,6 +16,7 @@ import {
   ArrowRight, User, EnvelopeSimple, Lock, MapPin, Eye, EyeSlash, Sparkle, Star,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import SignInTransition from "@/components/SignInTransition";
 
 const CYAN = "#00E5FF";
 
@@ -30,6 +31,7 @@ export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "", state: "TX" });
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [transition, setTransition] = useState(null);
   const { setSession } = useAuth();
   const nav = useNavigate();
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -59,11 +61,10 @@ export default function Register() {
         first_charge_at: plan?.first_charge_at || null,
       });
       setSession(data.token, data.user);
-      toast.success("Trial activated — welcome to Milli");
-      nav("/app");
+      // Fire the cinematic "Welcome to Milli, {first_name}." handoff
+      setTransition({ name: data.user?.name || form.name });
     } catch (err) {
       toast.error(formatApiError(err));
-    } finally {
       setSubmitting(false);
     }
   }
@@ -250,6 +251,14 @@ export default function Register() {
           Sign in <ArrowRight size={11} weight="bold" />
         </Link>
       </motion.div>
+
+      {/* Cinematic handoff — plays after successful register, then navigates */}
+      <SignInTransition
+        show={!!transition}
+        mode="welcome"
+        name={transition?.name}
+        to="/app"
+      />
     </div>
   );
 }

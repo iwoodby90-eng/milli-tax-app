@@ -15,6 +15,7 @@ import {
   ArrowRight, EnvelopeSimple, Lock, Eye, EyeSlash, Sparkle,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import SignInTransition from "@/components/SignInTransition";
 
 const CYAN = "#00E5FF";
 
@@ -23,6 +24,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [transition, setTransition] = useState(null); // { name } once auth succeeds
   const { setSession } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
@@ -33,11 +35,10 @@ export default function Login() {
     try {
       const { data } = await api.post("/auth/login", { email, password });
       setSession(data.token, data.user);
-      toast.success("Welcome back");
-      nav(loc.state?.from || "/app");
+      // Fire the cinematic handoff instead of navigating immediately
+      setTransition({ name: data.user?.name || "" });
     } catch (err) {
       toast.error(formatApiError(err));
-    } finally {
       setSubmitting(false);
     }
   }
@@ -203,6 +204,14 @@ export default function Login() {
           Start 3-day trial <ArrowRight size={11} weight="bold" />
         </Link>
       </motion.div>
+
+      {/* Cinematic handoff — plays after successful login, then navigates */}
+      <SignInTransition
+        show={!!transition}
+        mode="back"
+        name={transition?.name}
+        to={loc.state?.from || "/app"}
+      />
     </div>
   );
 }
