@@ -1946,22 +1946,13 @@ MARKETING_DIR = Path("/app/marketing_videos")
 
 
 @api.get("/marketing/videos")
-async def list_marketing_videos():
-    """List generated marketing clips, including aspect ratio + status."""
+async def list_marketing_videos(user: dict = Depends(get_current_user)):
+    """List generated marketing clips. PRIVATE — auth required, owner-only view."""
     import json as _json
     log_path = MARKETING_DIR / "generation_log.json"
     if not log_path.exists():
         return {"clips": []}
     log = _json.loads(log_path.read_text())
-
-    # Permanent public mirrors (gofile.io) — survive pod pauses.
-    public_path = MARKETING_DIR / "public_urls.json"
-    public = {}
-    if public_path.exists():
-        try:
-            public = _json.loads(public_path.read_text())
-        except Exception:
-            public = {}
 
     titles = {
         "01_cinematic_luxury": "Cinematic Luxury — Skyline",
@@ -1973,7 +1964,6 @@ async def list_marketing_videos():
     clips = []
     for cid, meta in log.items():
         ready = meta.get("status") == "done"
-        pub = public.get(cid) if isinstance(public.get(cid), dict) else {}
         clips.append({
             "id": cid,
             "title": titles.get(cid, meta.get("title", cid)),
@@ -1983,7 +1973,6 @@ async def list_marketing_videos():
             "ready": ready,
             "status": meta.get("status"),
             "url": f"/api/marketing/videos/{cid}.mp4" if ready else None,
-            "public_url": pub.get("downloadPage"),
         })
     # Stable order by id
     clips.sort(key=lambda c: c["id"])
@@ -1991,8 +1980,8 @@ async def list_marketing_videos():
 
 
 @api.get("/marketing/videos/{filename}")
-async def get_marketing_video(filename: str):
-    """Stream a generated MP4."""
+async def get_marketing_video(filename: str, user: dict = Depends(get_current_user)):
+    """Stream a generated MP4. PRIVATE — auth required."""
     from fastapi.responses import FileResponse
     if not filename.endswith(".mp4") or "/" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")

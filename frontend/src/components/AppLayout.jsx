@@ -1,50 +1,72 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Gauge, Wallet, MapTrifold, Vault as VaultIcon, DotsThree, SignOut, List, Star,
-  Sparkle, FileText, Robot, PiggyBank, ChartLineUp,
+  Vault as VaultIcon, PiggyBank, MapTrifold, ChartLineUp, Receipt, GearSix,
+  List, Star, Sparkle, Wallet, Robot, FileText, DotsThree, SignOut, House,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import WeeboAvatar from "@/components/WeeboAvatar";
 import { useState } from "react";
 
-// Bottom tab bar — 5 slots, exactly like an iOS app
-const bottomTabs = [
-  { to: "/app",         icon: Gauge,      label: "Home",    end: true, testid: "tab-home"    },
-  { to: "/app/income",  icon: Wallet,     label: "Income",             testid: "tab-income"  },
-  { to: "/app/mileage", icon: MapTrifold, label: "Mileage",            testid: "tab-mileage" },
-  { to: "/app/vault",   icon: VaultIcon,  label: "Vault",              testid: "tab-vault"   },
-  { to: "/app/more",    icon: DotsThree,  label: "More",               testid: "tab-more"    },
+// 6 side buttons + center raised M — symmetric 3 / M / 3
+const leftTabs = [
+  { to: "/app/vault",      icon: VaultIcon,   label: "Vault",     testid: "tab-vault"   },
+  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)",    testid: "tab-retire"  },
+  { to: "/app/investing",  icon: ChartLineUp, label: "Invest",    testid: "tab-invest"  },
+];
+const rightTabs = [
+  { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage",   testid: "tab-mileage" },
+  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes",     testid: "tab-taxes"   },
+  { to: "/app/settings",   icon: GearSix,     label: "Settings",  testid: "tab-settings"},
 ];
 
-// Slide-in drawer — full nav tree
+// Full navigation lives in the side drawer
 const drawerNav = [
-  { to: "/app",            icon: Gauge,       label: "Home", end: true },
+  { to: "/app",            icon: House,       label: "Home", end: true },
   { to: "/app/income",     icon: Wallet,      label: "Income" },
   { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage" },
   { to: "/app/vault",      icon: VaultIcon,   label: "Tax Vault" },
   { to: "/app/retirement", icon: PiggyBank,   label: "401(k)" },
   { to: "/app/investing",  icon: ChartLineUp, label: "Investing" },
-  { to: "/app/quarterly",  icon: Sparkle,     label: "Quarterly" },
+  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes / Quarterly" },
   { to: "/app/expenses",   icon: FileText,    label: "Expenses" },
-  { to: "/app/ai",         icon: Robot,       label: "Assistant" },
+  { to: "/app/ai",         icon: Robot,       label: "Milli AI" },
   { to: "/app/reports",    icon: FileText,    label: "Reports" },
+  { to: "/app/settings",   icon: GearSix,     label: "Settings" },
   { to: "/app/more",       icon: DotsThree,   label: "More" },
 ];
+
+function TabButton({ to, icon: Icon, label, testid, end }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      data-testid={testid}
+      className={({ isActive }) =>
+        `flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 active:opacity-60 ${
+          isActive ? "text-volt" : "text-zinc-500"
+        }`
+      }
+    >
+      <Icon size={20} weight="duotone" />
+      <span className="text-[9px] font-medium tracking-wide truncate max-w-full">{label}</span>
+    </NavLink>
+  );
+}
 
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
+  const loc = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isHome = loc.pathname === "/app" || loc.pathname === "/app/";
 
   return (
     <div className="carbon-bg text-white min-h-full flex flex-col">
-      {/* ============ iOS-style top bar (sticky within scroll container) ============ */}
+      {/* ============ iOS-style top bar (sticky) ============ */}
       <header
         className="sticky top-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
-        style={{
-          background: "rgba(5, 6, 7, 0.72)",
-          paddingTop: "var(--safe-top)",
-        }}
+        style={{ background: "rgba(5, 6, 7, 0.72)", paddingTop: "var(--safe-top)" }}
       >
         <div className="flex items-center justify-between px-5 h-11">
           <button
@@ -56,8 +78,8 @@ export default function AppLayout({ children }) {
             <List size={22} weight="bold" />
           </button>
           <NavLink to="/app" className="flex items-center gap-2 active:opacity-70" data-testid="topbar-brand">
-            <MilliLogo size={26} />
-            <span className="font-display tracking-[0.3em] chrome-text text-[15px]">MILLI</span>
+            <MilliLogo size={22} />
+            <span className="font-display tracking-[0.3em] chrome-text text-[13px]">MILLI</span>
           </NavLink>
           <NavLink
             to="/app/pricing"
@@ -70,43 +92,71 @@ export default function AppLayout({ children }) {
         </div>
       </header>
 
-      {/* ============ Main content — flows naturally, sticky header/nav reserve their own space ============ */}
+      {/* ============ Main content ============ */}
       <main className="flex-1 native-scroll" data-testid="app-main-scroll">
         {children}
-        {/* Small spacer so last card never kisses the sticky tab bar */}
-        <div aria-hidden className="h-4" />
+        <div aria-hidden className="h-6" />
+
+        {/* Floating Weebo FAB — only on Home. Sticky-zero-height trick keeps her
+            pinned above the tab bar while the page scrolls. */}
+        {isHome && (
+          <div
+            className="sticky bottom-[18px] pointer-events-none flex justify-end pr-4 z-30"
+            style={{ height: 0 }}
+          >
+            <NavLink
+              to="/app/ai"
+              data-testid="weebo-fab"
+              aria-label="Ask Milli AI"
+              className="pointer-events-auto -translate-y-[92px] block active:scale-95 transition-transform"
+              style={{
+                filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(0,229,255,0.35))",
+              }}
+            >
+              <WeeboAvatar size={58} state="idle" />
+            </NavLink>
+          </div>
+        )}
       </main>
 
-      {/* ============ iOS-style bottom tab bar (sticky within scroll container) ============ */}
+      {/* ============ Bottom tab bar — 3 tabs · raised M · 3 tabs ============ */}
       <nav
         className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
-        style={{
-          background: "rgba(5, 6, 7, 0.78)",
-          paddingBottom: "var(--safe-bottom)",
-        }}
+        style={{ background: "rgba(5, 6, 7, 0.85)", paddingBottom: "var(--safe-bottom)" }}
         data-testid="bottom-tab-bar"
       >
-        <div className="flex items-stretch justify-around h-[54px]">
-          {bottomTabs.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              end={t.end}
-              data-testid={t.testid}
-              className={({ isActive }) =>
-                `flex-1 flex flex-col items-center justify-center gap-0.5 active:opacity-60 ${
-                  isActive ? "text-volt" : "text-zinc-500"
-                }`
-              }
-            >
-              <t.icon size={22} weight="duotone" />
-              <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
-            </NavLink>
-          ))}
+        <div className="relative flex items-stretch justify-around h-[64px] px-1">
+          {leftTabs.map((t) => <TabButton key={t.to} {...t} />)}
+
+          {/* Center pocket for the raised M */}
+          <div className="w-[68px] flex-shrink-0" aria-hidden />
+
+          {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
+
+          {/* Raised MILLI-M home button */}
+          <NavLink
+            to="/app"
+            end
+            data-testid="tab-home-center"
+            className={({ isActive }) =>
+              `absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] rounded-full flex items-center justify-center active:scale-95 transition-transform ${
+                isActive ? "" : ""
+              }`
+            }
+            style={{
+              background: "radial-gradient(circle at 30% 30%, #4CDCF5 0%, #00E5FF 40%, #0B7A94 100%)",
+              boxShadow:
+                "0 0 24px rgba(0,229,255,0.65), 0 6px 16px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.25)",
+              border: "1px solid rgba(255,255,255,0.35)",
+            }}
+            aria-label="Home"
+          >
+            <MilliLogo size={30} />
+          </NavLink>
         </div>
       </nav>
 
-      {/* ============ Slide-in drawer (iOS half-sheet feel) ============ */}
+      {/* ============ Slide-in drawer ============ */}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
@@ -134,9 +184,7 @@ export default function AppLayout({ children }) {
                   onClick={() => setDrawerOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-3 text-[15px] font-medium rounded-xl active:opacity-60 ${
-                      isActive
-                        ? "bg-volt/10 text-volt"
-                        : "text-zinc-300"
+                      isActive ? "bg-volt/10 text-volt" : "text-zinc-300"
                     }`
                   }
                 >

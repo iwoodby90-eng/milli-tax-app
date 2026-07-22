@@ -42,12 +42,15 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
 
 ## Changelog
-- **Feb 2026** — Fixed critical scroll/content-clipping bug in `AppLayout.jsx`.
-  Root cause: `position:fixed` on header/tab-bar escaped the `.ios-frame` phone
-  shell on desktop. Fix: replaced with `position:sticky` (top-0 / bottom-0) so
-  header + tab bar stay pinned within the frame's scroll container. Verified
-  across /app, /app/more, /app/settings, /app/vault, /app/income, /app/mileage
-  (100% pass, testing_agent iteration_8).
+- **Feb 22, 2026** — Big design push:
+  * New 7-slot bottom nav: `[Vault][401(k)][Invest] [🅜 raised center] [Mileage][Taxes][Settings]`. All other pages moved into the side drawer.
+  * Added `WeeboAvatar.jsx` — animated SVG mascot (Flubber-inspired droid): antenna pulse, chrome equator, glowing pixel eyes, blinking + speaking mouth animations, levitation halo + particles. States: `idle | thinking | speaking`.
+  * Floating Weebo FAB on Home routes to `/app/ai`.
+  * Milli AI page: large animated Weebo hero at top with grid backdrop + scan-line sweep; state reacts to streaming ("thinking" → "speaking" → "idle"). Message rows now show Weebo as the assistant avatar.
+  * Landing page: hero CTA copy shrunk to one-line ("Start 3-day trial"), footer tagline shrunk, tier cards stacked vertically with breathing room, hero closing copy rewritten to "Taxes are inevitable. Losing to them isn't.".
+  * Pricing page: tiers stacked as full-width, generous cards with badges & CTAs.
+  * Regenerated all 5 Sora 2 marketing reels — now **PRIVATE**: `/api/marketing/videos` + `/api/marketing/videos/{file}` require auth; public gofile mirror disabled (`upload_marketing_to_public_host.py` renamed to `.bak`).
+- **Feb 2026** — Fixed AppLayout scroll clipping (position:fixed → position:sticky).
 
 ## Prioritized Roadmap
 ### P0 — DONE

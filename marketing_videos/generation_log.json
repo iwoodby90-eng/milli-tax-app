@@ -1,47 +1,47 @@
 {
-  "02_driver_pov_hud": {
-    "title": "Driver POV - Night HUD",
-    "size": "1280x720",
-    "duration": 8,
-    "status": "done",
-    "started_at": "2026-06-30T03:04:39.800775",
-    "path": "/app/marketing_videos/02_driver_pov_hud.mp4",
-    "finished_at": "2026-06-30T03:06:24.663638"
-  },
-  "04_product_kinetic_type": {
-    "title": "Product - Kinetic Typography",
-    "size": "1280x720",
-    "duration": 8,
-    "status": "done",
-    "started_at": "2026-06-30T03:06:24.813768",
-    "path": "/app/marketing_videos/04_product_kinetic_type.mp4",
-    "finished_at": "2026-06-30T03:08:40.148803"
-  },
   "01_cinematic_luxury": {
     "title": "Cinematic Luxury - City Skyline",
     "size": "720x1280",
     "duration": 8,
     "status": "done",
-    "started_at": "2026-06-30T03:09:55.130671",
+    "started_at": "2026-07-22T06:56:39.782525",
     "path": "/app/marketing_videos/01_cinematic_luxury.mp4",
-    "finished_at": "2026-06-30T03:12:11.457571"
+    "finished_at": "2026-07-22T06:58:55.117476"
+  },
+  "02_driver_pov_hud": {
+    "title": "Driver POV - Night HUD",
+    "size": "1280x720",
+    "duration": 8,
+    "status": "done",
+    "started_at": "2026-07-22T06:42:35.942768",
+    "path": "/app/marketing_videos/02_driver_pov_hud.mp4",
+    "finished_at": "2026-07-22T06:45:57.166419"
   },
   "03_lifestyle_gigworker": {
     "title": "Lifestyle - Gig Worker Smile",
     "size": "720x1280",
     "duration": 8,
     "status": "done",
-    "started_at": "2026-06-30T03:12:11.457800",
+    "started_at": "2026-07-22T06:45:57.166614",
     "path": "/app/marketing_videos/03_lifestyle_gigworker.mp4",
-    "finished_at": "2026-06-30T03:13:58.090299"
+    "finished_at": "2026-07-22T06:49:13.598709"
+  },
+  "04_product_kinetic_type": {
+    "title": "Product - Kinetic Typography",
+    "size": "1280x720",
+    "duration": 8,
+    "status": "done",
+    "started_at": "2026-07-22T06:49:13.598900",
+    "path": "/app/marketing_videos/04_product_kinetic_type.mp4",
+    "finished_at": "2026-07-22T06:51:29.291823"
   },
   "05_hero_montage": {
     "title": "Hero Brand Montage",
     "size": "720x1280",
     "duration": 8,
     "status": "done",
-    "started_at": "2026-06-30T03:17:01.247461",
+    "started_at": "2026-07-22T06:51:29.292027",
     "path": "/app/marketing_videos/05_hero_montage.mp4",
-    "finished_at": "2026-06-30T03:19:15.793499"
+    "finished_at": "2026-07-22T06:53:48.597579"
   }
 }

@@ -22,7 +22,7 @@ export default function Landing() {
             <MilliLogo size={32} />
             <div className="font-display chrome-text text-2xl tracking-[0.25em]">MILLI</div>
           </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-zinc-400 font-medium">
+          <nav className="hidden lg:flex items-center gap-6 text-sm text-zinc-400 font-medium whitespace-nowrap">
             <a href="#features" className="hover:text-white">Features</a>
             <a href="#how" className="hover:text-white">How it works</a>
             <a href="#pricing" className="hover:text-white">Pricing</a>
@@ -51,11 +51,11 @@ export default function Landing() {
               Milli connects to your accounts, identifies every gig payout, auto-reserves your tax %,
               tracks every mile, and hands you tax-ready reports. Built for Uber, DoorDash, Spark, freelancers, and creators.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Link to="/register" data-testid="hero-cta-start" className="btn-volt px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2">
-                Start 3-day free trial <CaretRight weight="bold" />
+            <div className="mt-10 flex flex-col sm:flex-row gap-3">
+              <Link to="/register" data-testid="hero-cta-start" className="btn-volt px-5 py-3 text-sm uppercase tracking-[0.15em] inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                Start 3-day trial <CaretRight weight="bold" />
               </Link>
-              <Link to="/login" data-testid="hero-cta-signin" className="btn-outline-cyan px-7 py-4 text-base uppercase tracking-wider inline-flex items-center gap-2 font-semibold">
+              <Link to="/login" data-testid="hero-cta-signin" className="btn-outline-cyan px-5 py-3 text-sm uppercase tracking-[0.15em] inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap">
                 Sign in
               </Link>
             </div>
@@ -170,26 +170,26 @@ export default function Landing() {
             </h2>
             <p className="mt-4 text-zinc-400">3-day free trial on every plan. Cancel anytime.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-6 max-w-lg mx-auto">
             {tiers.map((t) => (
-              <div key={t.id} data-testid={`pricing-tier-${t.id}`} className={`milli-card p-6 relative ${t.popular ? "milli-card-strong" : ""}`}>
+              <div key={t.id} data-testid={`pricing-tier-${t.id}`} className={`milli-card p-8 relative min-h-[420px] flex flex-col ${t.popular ? "milli-card-strong mt-2 shadow-[0_0_40px_rgba(0,229,255,0.18)]" : ""}`}>
                 {t.popular && (
-                  <div className="absolute -top-3 left-6 btn-volt !rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                  <div className="absolute -top-3 left-6 btn-volt !rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em]">
                     Most popular
                   </div>
                 )}
-                <div className="font-mono text-xs uppercase tracking-[0.3em] text-volt">{t.name}</div>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <div className="chrome-text font-chrome font-bold text-5xl">${t.price}</div>
+                <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-volt">{t.name}</div>
+                <div className="mt-5 flex items-baseline gap-2">
+                  <div className="chrome-text font-chrome font-bold text-6xl">${t.price}</div>
                   <div className="text-zinc-500 text-sm">/mo</div>
                 </div>
-                <div className="text-xs text-zinc-500 font-mono mt-1">{t.trial_days}-day free trial</div>
-                <ul className="mt-6 space-y-2.5 text-sm text-zinc-300">
+                <div className="text-[11px] text-zinc-500 font-mono mt-1 uppercase tracking-wider">{t.trial_days}-day free trial</div>
+                <ul className="mt-7 space-y-3 text-[14px] text-zinc-300 flex-1">
                   {t.features.map((f) => (
-                    <li key={f} className="flex gap-2"><CheckCircle size={16} weight="fill" className="text-volt mt-0.5 flex-shrink-0" /> {f}</li>
+                    <li key={f} className="flex gap-2.5 items-start"><CheckCircle size={16} weight="fill" className="text-volt mt-0.5 flex-shrink-0" /> {f}</li>
                   ))}
                 </ul>
-                <Link to="/register" data-testid={`pricing-cta-${t.id}`} className={`mt-6 block w-full text-center py-3 uppercase tracking-wider text-sm font-bold ${t.popular ? "btn-volt" : "btn-outline-cyan"}`}>
+                <Link to="/register" data-testid={`pricing-cta-${t.id}`} className={`mt-8 block w-full text-center py-4 uppercase tracking-[0.15em] text-sm font-bold rounded-lg ${t.popular ? "btn-volt" : "btn-outline-cyan"}`}>
                   Start trial
                 </Link>
               </div>
@@ -203,9 +203,12 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto px-5 py-24 text-center">
           <MilliLogo size={56} className="mx-auto mb-6" />
           <h2 className="font-display chrome-text text-5xl sm:text-6xl tracking-tight">
-            Tax season ends.<br />
-            <span className="text-volt">You kept your money — or you didn't.</span>
+            Taxes are inevitable.<br />
+            <span className="text-volt">Losing to them isn't.</span>
           </h2>
+          <p className="mt-5 text-zinc-400 text-base max-w-xl mx-auto leading-relaxed">
+            Every deposit protected. Every mile logged. Every deduction ready. Milli runs the math so April never surprises you again.
+          </p>
           <Link to="/register" data-testid="footer-cta-start" className="mt-10 inline-block btn-volt px-8 py-4 uppercase tracking-wider">
             Start 3-day trial
           </Link>
@@ -213,9 +216,9 @@ export default function Landing() {
       </section>
 
       <footer className="border-t border-hairline">
-        <div className="max-w-7xl mx-auto px-5 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-500">
-          <div className="flex items-center gap-2"><MilliLogo size={18} /> MILLI © 2026</div>
-          <div className="font-mono uppercase tracking-widest text-xs">Not a CPA · Not the IRS · On your side</div>
+        <div className="max-w-7xl mx-auto px-5 py-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-2 text-[11px]"><MilliLogo size={14} /> MILLI © 2026</div>
+          <div className="font-mono uppercase tracking-[0.18em] text-[9px] text-zinc-600">Not a CPA · Not the IRS · On your side</div>
         </div>
       </footer>
     </div>

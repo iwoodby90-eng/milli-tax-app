@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { API_BASE } from "@/lib/api";
-import { Robot, ArrowRight, Lightning } from "@phosphor-icons/react";
+import { ArrowRight, Lightning } from "@phosphor-icons/react";
+import WeeboAvatar from "@/components/WeeboAvatar";
 
 const SUGGESTIONS = [
   "Can I deduct my phone bill if I use it for delivery?",
@@ -77,30 +78,73 @@ export default function AIAssistant() {
     }
   }
 
+  // Weebo state — reacts to streaming + last assistant content
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  const weeboState = streaming
+    ? (lastAssistant && lastAssistant.content ? "speaking" : "thinking")
+    : "idle";
+
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
-      <div className="mb-8">
-        <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// AI Assistant</div>
-        <h1 className="font-display font-black text-4xl tracking-tighter mt-1">MILLI AI</h1>
-        <p className="text-zinc-400 mt-1">Ask anything about driver taxes — Schedule C, deductions, quarterlies.</p>
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      {/* ============ Weebo hero — large animated character at top ============ */}
+      <div
+        className="relative rounded-3xl overflow-hidden mb-4 border border-white/[0.08]"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 50% 0%, rgba(0,229,255,0.18) 0%, rgba(0,229,255,0.05) 40%, rgba(0,0,0,0) 70%), #05070A",
+        }}
+        data-testid="weebo-hero"
+      >
+        {/* Grid backdrop like Weebo's lab */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.18] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(0,229,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.35) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+            maskImage: "radial-gradient(ellipse at center, black 40%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 75%)",
+          }}
+        />
+        {/* Scan-line sweep */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="absolute inset-x-0 h-[2px] animate-[weebo-sweep_3.2s_linear_infinite]"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(0,229,255,0.65) 50%, transparent)",
+            }}
+          />
+        </div>
+        <div className="relative flex flex-col items-center py-8 px-4">
+          <WeeboAvatar size={128} state={weeboState} />
+          <div className="mt-4 text-volt font-mono text-[10px] uppercase tracking-[0.34em]">
+            {weeboState === "thinking" ? "// Weebo is thinking..." :
+             weeboState === "speaking" ? "// Weebo is responding" :
+             "// I am Weebo · Milli AI"}
+          </div>
+          <h1 className="font-display chrome-text text-2xl tracking-tight mt-1">
+            Ask me anything, driver.
+          </h1>
+          <p className="text-zinc-400 text-[13px] text-center mt-2 max-w-xs leading-relaxed">
+            Schedule C. Quarterlies. Deductions. Mileage tricks. I speak fluent IRS.
+          </p>
+        </div>
       </div>
 
-      <div className="milli-card flex flex-col" style={{ minHeight: "60vh" }}>
-        <div className="flex-1 p-6 space-y-5 overflow-y-auto">
+      <div className="milli-card flex flex-col" style={{ minHeight: "50vh" }}>
+        <div className="flex-1 p-4 sm:p-6 space-y-5 overflow-y-auto">
           {messages.length === 0 && (
-            <div className="text-center py-10">
-              <div className="w-16 h-16 bg-volt text-obsidian flex items-center justify-center mx-auto">
-                <Robot size={32} weight="fill" />
-              </div>
-              <div className="font-display font-bold mt-4 text-xl">What do you want to know?</div>
-              <div className="text-sm text-zinc-500 mt-2">Try one of these:</div>
-              <div className="mt-6 grid sm:grid-cols-2 gap-2 max-w-lg mx-auto">
+            <div className="text-center py-6">
+              <div className="font-display font-bold text-lg">Try one of these</div>
+              <div className="mt-4 grid gap-2 max-w-lg mx-auto">
                 {SUGGESTIONS.map((s, i) => (
                   <button
                     key={i}
                     data-testid={`ai-suggestion-${i}`}
                     onClick={() => send(s)}
-                    className="text-left text-sm border border-hairline p-3 hover:border-volt transition-colors"
+                    className="text-left text-sm border border-hairline rounded-xl p-3 hover:border-volt transition-colors bg-white/[0.02]"
                   >{s}</button>
                 ))}
               </div>
@@ -109,19 +153,17 @@ export default function AIAssistant() {
           {messages.map((m, i) => (
             <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
               {m.role === "assistant" && (
-                <div className="w-8 h-8 bg-volt text-obsidian flex items-center justify-center flex-shrink-0">
-                  <Robot size={16} weight="bold" />
-                </div>
+                <div className="flex-shrink-0"><WeeboAvatar size={28} state="idle" /></div>
               )}
               <div
                 data-testid={`ai-message-${m.role}-${i}`}
-                className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-[82%] px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap rounded-2xl ${
                   m.role === "user"
                     ? "bg-volt text-obsidian font-medium"
                     : "border border-hairline bg-white/[0.02]"
                 }`}
               >
-                {m.content || (streaming && i === messages.length - 1 ? <Lightning className="animate-pulse" /> : "...")}
+                {m.content || (streaming && i === messages.length - 1 ? <Lightning className="animate-pulse text-volt" /> : "...")}
               </div>
             </div>
           ))}
@@ -137,20 +179,20 @@ export default function AIAssistant() {
             onChange={(e) => setInput(e.target.value)}
             disabled={streaming}
             placeholder="Ask about deductions, quarterlies, mileage..."
-            className="flex-1 bg-transparent border border-hairline px-4 py-3 font-mono text-sm focus:outline-none focus:border-volt"
+            className="flex-1 bg-transparent border border-hairline px-4 py-3 font-mono text-sm focus:outline-none focus:border-volt rounded-xl"
           />
           <button
             data-testid="ai-send"
             type="submit"
             disabled={streaming || !input.trim()}
-            className="btn-volt px-5 py-3 font-bold uppercase tracking-wider text-sm inline-flex items-center gap-2 disabled:opacity-50"
+            className="btn-volt px-5 py-3 font-bold uppercase tracking-wider text-sm inline-flex items-center gap-2 disabled:opacity-50 rounded-xl"
           >
             {streaming ? "..." : <>Send <ArrowRight weight="bold" /></>}
           </button>
         </form>
       </div>
 
-      <div className="text-xs text-zinc-500 mt-3 font-mono">
+      <div className="text-xs text-zinc-500 mt-3 font-mono text-center">
         MILLI AI is informational only — not a substitute for a CPA.
       </div>
     </div>

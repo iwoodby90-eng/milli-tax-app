@@ -100,19 +100,19 @@ export default function Paywall() {
               }}
             >
               {tier.featured && (
-                <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest"
-                     style={{ color: CYAN }}>
-                  <Star size={11} weight="fill" /> Most popular
+                <div className="absolute -top-2.5 left-4 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                     style={{ color: "#001217", background: CYAN, boxShadow: "0 0 12px rgba(0,229,255,0.55)" }}>
+                  <Star size={10} weight="fill" /> Most popular
                 </div>
               )}
               <div className="flex items-baseline justify-between gap-4">
-                <div>
+                <div className="flex-1 min-w-0 pr-2">
                   <div className="text-[11px] uppercase tracking-[0.24em] text-white/60">Milli</div>
-                  <div className="chrome-text font-display text-[22px] leading-none mt-0.5">{tier.name}</div>
-                  <div className="text-zinc-400 text-[13px] mt-1">{tier.tagline}</div>
+                  <div className="chrome-text font-display text-[22px] leading-none mt-0.5 truncate">{tier.name}</div>
+                  <div className="text-zinc-400 text-[13px] mt-1 leading-snug">{tier.tagline}</div>
                 </div>
-                <div className="text-right">
-                  <div className="font-chrome font-bold text-white text-[22px] leading-none tabular-nums">
+                <div className="text-right flex-shrink-0">
+                  <div className="font-chrome font-bold text-white text-[22px] leading-none tabular-nums whitespace-nowrap">
                     {tier.priceDisplay}
                   </div>
                   <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">/month</div>
