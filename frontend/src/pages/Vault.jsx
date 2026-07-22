@@ -206,54 +206,65 @@ export default function Vault() {
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto">
       <Header />
 
-      <div className="milli-card-strong p-7 mb-4 relative overflow-hidden" data-testid="vault-balance-card">
+      <div className="milli-card-strong p-5 sm:p-7 mb-4 relative overflow-hidden" data-testid="vault-balance-card">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-volt to-transparent" />
-        <div className="flex items-start justify-between flex-wrap gap-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <LockKey size={14} weight="bold" className="text-volt" />
-              <span className="text-volt text-xs font-semibold uppercase tracking-[0.2em]">Milli Tax Vault</span>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <LockKey size={14} weight="bold" className="text-volt flex-shrink-0" />
+              <span className="text-volt text-[10px] font-semibold uppercase tracking-[0.2em]">Milli Tax Vault</span>
               {isPlaid && (
-                <span className="px-2 py-0.5 rounded-full bg-success/20 text-success text-[9px] font-bold uppercase tracking-wider">
-                  Plaid-Connected
+                <span className="px-2 py-0.5 rounded-full bg-success/20 text-success text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
+                  Plaid&nbsp;·&nbsp;Live
                 </span>
               )}
             </div>
-            <div className="chrome-text font-chrome font-bold text-5xl sm:text-6xl tabular-nums" data-testid="vault-balance">
+            <div
+              className="chrome-text font-chrome font-bold tabular-nums leading-none break-all"
+              style={{ fontSize: "clamp(28px, 9vw, 48px)" }}
+              data-testid="vault-balance"
+            >
               {money(vault.balance)}
             </div>
-            <div className="text-zinc-400 text-sm mt-3">
-              Reserved this year · {coverage}% of estimated {money(annualTarget)} annual taxes
+            <div className="text-zinc-400 text-[12px] mt-3 leading-relaxed">
+              Reserved this year · <span className="tabular-nums">{coverage}%</span> of estimated{" "}
+              <span className="text-white/80 font-medium tabular-nums">{money(annualTarget)}</span> tax
             </div>
             <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden max-w-md">
               <div className="h-full bg-gradient-to-r from-volt to-volt/60 rounded-full transition-all" style={{ width: `${coverage}%` }} />
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="text-xs text-zinc-500 font-mono uppercase tracking-widest">Interest YTD</div>
-            <div className="text-success font-chrome font-bold text-2xl">{money(vault.interest_earned_ytd)}</div>
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <div className="text-[9px] text-zinc-500 font-mono uppercase tracking-widest">Interest YTD</div>
+            <div className="text-success font-chrome font-bold text-[18px] tabular-nums">{money(vault.interest_earned_ytd)}</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-7">
-          <button data-testid="vault-add" onClick={() => setTransferOpen("in")} className="btn-volt px-4 py-3 text-xs uppercase tracking-wider inline-flex items-center justify-center gap-1.5">
-            <ArrowDown size={14} weight="bold" /> Add
+        <div className="grid grid-cols-2 gap-2 mt-6">
+          <button data-testid="vault-add" onClick={() => setTransferOpen("in")}
+            className="btn-volt px-3 py-3 text-[11px] uppercase tracking-[0.14em] inline-flex items-center justify-center gap-1.5 min-w-0">
+            <ArrowDown size={13} weight="bold" className="flex-shrink-0" /> <span className="truncate">Add</span>
           </button>
-          <button data-testid="vault-withdraw" onClick={() => setTransferOpen("out")} className="btn-outline-cyan px-4 py-3 text-xs uppercase tracking-wider font-semibold inline-flex items-center justify-center gap-1.5">
-            <ArrowUp size={14} weight="bold" /> Withdraw
+          <button data-testid="vault-withdraw" onClick={() => setTransferOpen("out")}
+            className="btn-outline-cyan px-3 py-3 text-[11px] uppercase tracking-[0.14em] font-semibold inline-flex items-center justify-center gap-1.5 min-w-0">
+            <ArrowUp size={13} weight="bold" className="flex-shrink-0" /> <span className="truncate">Withdraw</span>
           </button>
-          <button data-testid="vault-rule" onClick={() => setRuleOpen(true)} className="btn-outline-cyan px-4 py-3 text-xs uppercase tracking-wider font-semibold inline-flex items-center justify-center gap-1.5">
-            <Sparkle size={14} weight="bold" /> Auto-Reserve
+          <button data-testid="vault-rule" onClick={() => setRuleOpen(true)}
+            className="btn-outline-cyan px-3 py-3 text-[11px] uppercase tracking-[0.14em] font-semibold inline-flex items-center justify-center gap-1.5 min-w-0">
+            <Sparkle size={13} weight="bold" className="flex-shrink-0" /> <span className="truncate">Auto rule</span>
           </button>
-          <button data-testid="vault-pause" onClick={togglePause} className="btn-outline-cyan px-4 py-3 text-xs uppercase tracking-wider font-semibold inline-flex items-center justify-center gap-1.5">
-            {rule.paused ? <><Play size={14} weight="bold" /> Resume</> : <><Pause size={14} weight="bold" /> Pause</>}
+          <button data-testid="vault-pause" onClick={togglePause}
+            className="btn-outline-cyan px-3 py-3 text-[11px] uppercase tracking-[0.14em] font-semibold inline-flex items-center justify-center gap-1.5 min-w-0">
+            {rule.paused
+              ? <><Play size={13} weight="bold" className="flex-shrink-0" /> <span className="truncate">Resume</span></>
+              : <><Pause size={13} weight="bold" className="flex-shrink-0" /> <span className="truncate">Pause</span></>}
           </button>
         </div>
       </div>
 
       <div className="milli-card p-5 mb-4">
-        <div className="text-volt text-xs font-semibold uppercase tracking-[0.2em] mb-3">Account Details</div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="text-volt text-[10px] font-semibold uppercase tracking-[0.2em] mb-3">Account Details</div>
+        <div className="space-y-3">
           <Detail label="Account type" value={isPlaid ? "Plaid-connected savings" : "Milli Reserve savings"} />
           <Detail label="Owner" value={user?.name || "—"} />
           <Detail label="Bank" value={vault.institution_name} />
@@ -320,9 +331,11 @@ function Header() {
 
 function Detail({ label, value, mono }) {
   return (
-    <div>
-      <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500 mb-1">{label}</div>
-      <div className={`${mono ? "font-mono" : ""} text-sm font-semibold`}>{value}</div>
+    <div className="flex items-baseline justify-between gap-3 py-0.5">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500 flex-shrink-0">{label}</div>
+      <div className={`${mono ? "font-mono" : ""} text-[13px] font-semibold text-white text-right truncate min-w-0`} title={String(value ?? "")}>
+        {value || "—"}
+      </div>
     </div>
   );
 }

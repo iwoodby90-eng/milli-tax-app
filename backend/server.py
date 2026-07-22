@@ -1223,6 +1223,46 @@ async def stripe_checkout(body: CheckoutIn, request: Request, user: dict = Depen
     })
     return {"url": session.url, "session_id": session.session_id}
 
+@api.post("/stripe/portal")
+async def stripe_billing_portal(request: Request, user: dict = Depends(get_current_user)):
+    """
+    Creates a Stripe Billing Portal session so the user can manage their
+    subscription: update card, view invoices, cancel or upgrade.
+    Returns a short-lived URL to redirect / open in an in-app browser.
+    """
+    import requests as _req
+    body = await request.json() if await request.body() else {}
+    return_url = body.get("return_url") or f"{str(request.base_url).rstrip('/')}/app/settings"
+
+    # Resolve (or lazily create) the Stripe Customer for this user
+    customer_id = (user.get("stripe") or {}).get("customer_id")
+    if not customer_id:
+        r = _req.post(
+            "https://api.stripe.com/v1/customers",
+            data={"email": user.get("email"), "name": user.get("name") or user.get("email")},
+            auth=(STRIPE_API_KEY, ""), timeout=15,
+        )
+        if r.status_code >= 400:
+            raise HTTPException(502, f"Stripe customer create failed: {r.text[:200]}")
+        customer_id = r.json()["id"]
+        await db.users.update_one({"id": user["id"]}, {"$set": {"stripe.customer_id": customer_id}})
+
+    r = _req.post(
+        "https://api.stripe.com/v1/billing_portal/sessions",
+        data={"customer": customer_id, "return_url": return_url},
+        auth=(STRIPE_API_KEY, ""), timeout=15,
+    )
+    if r.status_code >= 400:
+        # Stripe requires the portal be configured once in Test Mode:
+        # https://dashboard.stripe.com/test/settings/billing/portal
+        raise HTTPException(
+            502,
+            f"Stripe portal not available: {r.json().get('error', {}).get('message', r.text[:200])}. "
+            "Configure the Customer Portal once at dashboard.stripe.com/test/settings/billing/portal."
+        )
+    return {"url": r.json()["url"]}
+
+
 @api.get("/stripe/status/{session_id}")
 async def stripe_status(session_id: str, request: Request, user: dict = Depends(get_current_user)):
     host_url = str(request.base_url).rstrip('/')

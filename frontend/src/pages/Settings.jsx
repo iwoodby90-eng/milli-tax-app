@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { ShieldCheck, Sparkle, ChartLineUp } from "@phosphor-icons/react";
 import BankConnections from "@/components/BankConnections";
+import ManageSubscription from "@/components/ManageSubscription";
 
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
@@ -72,6 +73,11 @@ export default function Settings() {
       {/* Connected banks — Plaid multi-bank manager */}
       <div className="mb-4" data-testid="settings-banks-section">
         <BankConnections />
+      </div>
+
+      {/* Manage subscription — Stripe portal + Apple ID deep-link */}
+      <div className="mb-4" data-testid="settings-subscription-section">
+        <ManageSubscription />
       </div>
 
       {/* Auto-automation toggles */}

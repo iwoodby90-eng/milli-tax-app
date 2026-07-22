@@ -323,18 +323,18 @@ function formatTime(s) {
 
 function Stat({ label, value, accent }) {
   return (
-    <div className="milli-card p-5">
-      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500">{label}</div>
-      <div className={`font-display font-black text-3xl mt-2 ${accent ? "text-volt" : ""}`}>{value}</div>
+    <div className="milli-card p-4">
+      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 truncate">{label}</div>
+      <div className={`font-display font-black text-[22px] mt-2 tabular-nums truncate ${accent ? "text-volt" : ""}`}>{value}</div>
     </div>
   );
 }
 
 function LiveStat({ label, value, accent }) {
   return (
-    <div>
-      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500">{label}</div>
-      <div className={`font-display font-black text-4xl mt-1 ${accent ? "text-volt" : ""}`}>{value}</div>
+    <div className="min-w-0">
+      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 truncate">{label}</div>
+      <div className={`font-display font-black text-[28px] mt-1 tabular-nums truncate ${accent ? "text-volt" : ""}`}>{value}</div>
     </div>
   );
 }
