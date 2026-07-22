@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Distribution method for App Store Connect upload -->
+	<key>method</key>
+	<string>app-store</string>
+
+	<!-- Apple Developer Team ID (Milli owner) -->
+	<key>teamID</key>
+	<string>W5Q42XNM9V</string>
+
+	<!-- Automatic signing with the Apple Developer team above -->
+	<key>signingStyle</key>
+	<string>automatic</string>
+
+	<!-- Include the embedded Watch + Complication bundle IDs when
+	     Xcode has generated them from the target wizard.
+	     Xcode will silently ignore any bundle IDs that don't exist
+	     yet, so it's safe to pre-declare them here. -->
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>app.milli.tax</key>
+		<string>Milli iOS App Store</string>
+		<key>app.milli.tax.watchkitapp</key>
+		<string>Milli Watch App Store</string>
+		<key>app.milli.tax.watchkitapp.complication</key>
+		<string>Milli Watch Complication App Store</string>
+	</dict>
+
+	<!-- Upload symbols so App Store Connect can symbolicate crashes -->
+	<key>uploadSymbols</key>
+	<true/>
+
+	<!-- Include Bitcode is deprecated in Xcode 14+; leave off -->
+	<key>uploadBitcode</key>
+	<false/>
+
+	<!-- Strip Swift symbols before upload (smaller download size) -->
+	<key>stripSwiftSymbols</key>
+	<true/>
+
+	<!-- Destination is the App Store, not an enterprise host -->
+	<key>destination</key>
+	<string>export</string>
+
+	<!-- Compile bitcode: not applicable in modern Xcode -->
+	<key>compileBitcode</key>
+	<false/>
+
+	<!-- Generate an App Store-signed IPA -->
+	<key>generateAppStoreInformation</key>
+	<true/>
+
+	<!-- Manage version and build number automatically. Xcode will
+	     bump the build number if it collides with an earlier upload -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<true/>
+</dict>
+</plist>

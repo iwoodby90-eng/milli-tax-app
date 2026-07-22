@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy Policy — Milli</title>
+<meta name="description" content="Milli Privacy Policy — how we collect, use, and protect your data." />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="app-background">
+
+<header class="site-header">
+    <a href="index.html" class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-word">MILLI</span>
+    </a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="glba.html">GLBA</a>
+        <a href="security.html">Security</a>
+    </nav>
+</header>
+
+<main class="legal">
+    <h1>Privacy Policy</h1>
+    <div class="updated">Effective Date · July 17, 2026</div>
+
+    <p>Milli Tax Inc. (“<strong>Milli</strong>,” “<strong>we</strong>,” “<strong>us</strong>,” or “<strong>our</strong>”) operates the Milli mobile application and website at drivemilli.com (collectively, the “<strong>Service</strong>”). This Privacy Policy explains what information we collect, how we use it, who we share it with, and the rights you have over your data.</p>
+
+    <p>By using the Service, you agree to the practices described in this policy. If you do not agree, please do not use the Service.</p>
+
+    <h2>1. Information We Collect</h2>
+
+    <h3>1.1 Information You Provide</h3>
+    <ul>
+        <li><strong>Account information</strong> — your name, email address, password (stored as a bcrypt hash), and U.S. state of residence.</li>
+        <li><strong>Tax profile</strong> — filing status, business type, dependents, additional income, additional withholding, and QBI election.</li>
+        <li><strong>Manually entered data</strong> — payouts, mileage trips, expenses, receipts, vehicles, and any notes you add.</li>
+        <li><strong>Payment information</strong> — subscription purchases go through Apple In-App Purchase (on iOS) or Stripe (on web). We never see your card number; we receive only a subscription status and an anonymized customer identifier.</li>
+    </ul>
+
+    <h3>1.2 Information Collected Automatically</h3>
+    <ul>
+        <li><strong>Precise location</strong> — with your explicit permission, the app records GPS coordinates while a trip is active so we can compute mileage. Location tracking runs only when you have opened a trip and stops the moment you end it.</li>
+        <li><strong>Device information</strong> — iOS version, device model, and app version for crash diagnostics.</li>
+        <li><strong>Usage data</strong> — screens visited, features used, and errors encountered.</li>
+    </ul>
+
+    <h3>1.3 Information from Third Parties</h3>
+    <ul>
+        <li><strong>Plaid</strong> — if you connect a bank account, Plaid returns basic account metadata (institution name, last four digits, account type) and a list of deposits so Milli can detect eligible payouts. Your bank credentials never touch Milli's servers.</li>
+        <li><strong>Photos you upload</strong> — receipt images are sent to our AI provider for text extraction (see Section 3).</li>
+    </ul>
+
+    <h2>2. How We Use Your Information</h2>
+    <ul>
+        <li>Operate and maintain the Service (authentication, dashboard, reports, notifications).</li>
+        <li>Run the Milli Autopilot™ pipeline — calculating estimated taxes and updating your internal ledger balances.</li>
+        <li>Compute IRS-standard mileage deductions and quarterly tax estimates.</li>
+        <li>Detect and prevent fraud, abuse, and security incidents.</li>
+        <li>Communicate with you about product changes, receipts, quarterly reminders, and support requests.</li>
+        <li>Comply with legal obligations and enforce our Terms of Service.</li>
+    </ul>
+
+    <h2>3. Third-Party Service Providers</h2>
+    <p>We share the minimum data necessary with the following providers, each of whom is contractually required to protect your information:</p>
+
+    <table>
+        <thead><tr><th>Provider</th><th>Purpose</th><th>Data Shared</th></tr></thead>
+        <tbody>
+            <tr><td>Plaid</td><td>Bank account aggregation</td><td>Bank access tokens, transaction data</td></tr>
+            <tr><td>Apple</td><td>In-app purchases &amp; App Store</td><td>Anonymous transaction ID</td></tr>
+            <tr><td>Stripe</td><td>Web subscription billing</td><td>Customer ID, subscription status</td></tr>
+            <tr><td>OpenAI / Google (Gemini)</td><td>AI receipt OCR and financial insights</td><td>Receipt image, anonymized query text</td></tr>
+            <tr><td>MongoDB Atlas</td><td>Encrypted database hosting</td><td>All app data (at rest, encrypted)</td></tr>
+            <tr><td>Cloud infrastructure</td><td>Backend hosting &amp; delivery</td><td>Server-side app data</td></tr>
+        </tbody>
+    </table>
+
+    <p>We do <strong>not</strong> sell your personal information. We do not share your data with advertisers or data brokers.</p>
+
+    <h2>4. Data Retention</h2>
+    <p>We retain your account data for as long as your account is active. If you delete your account, we permanently erase your personal data within 30 days, except where retention is required by law (e.g., financial records for tax authorities may be kept for up to seven years in de-identified form).</p>
+
+    <h2>5. Data Security</h2>
+    <ul>
+        <li>All connections use TLS 1.2 or higher.</li>
+        <li>Passwords are hashed with bcrypt and never stored in plaintext.</li>
+        <li>Financial data is encrypted at rest in MongoDB Atlas.</li>
+        <li>Access to production data is limited to authorized personnel with two-factor authentication.</li>
+        <li>Autopilot Receipts are cryptographically hashed (SHA-256) so tampering can be detected.</li>
+    </ul>
+
+    <h2>6. Your Rights</h2>
+
+    <h3>6.1 All Users</h3>
+    <ul>
+        <li><strong>Access</strong> — request a copy of your data by emailing <a href="mailto:privacy@drivemilli.com">privacy@drivemilli.com</a>.</li>
+        <li><strong>Correction</strong> — update your profile in the app at any time.</li>
+        <li><strong>Deletion</strong> — delete your account from Settings → Delete Account, or email us. All personal data is erased within 30 days.</li>
+        <li><strong>Portability</strong> — export your data as PDF or CSV from the Reports screen.</li>
+    </ul>
+
+    <h3>6.2 California Residents (CCPA / CPRA)</h3>
+    <p>California residents may request the specific pieces of personal information we hold, the categories of sources, business purposes, and third parties with whom we share it. You may also request deletion or opt out of any “sale” or “sharing” of your data (we do neither). You will not be discriminated against for exercising these rights.</p>
+
+    <h3>6.3 European Union / United Kingdom Residents (GDPR / UK GDPR)</h3>
+    <p>You have the rights of access, rectification, erasure, restriction, portability, and objection under the GDPR / UK GDPR. Milli acts as the data controller. To exercise any right, contact <a href="mailto:privacy@drivemilli.com">privacy@drivemilli.com</a>. You also have the right to lodge a complaint with your local data protection authority.</p>
+
+    <h2>7. Children's Privacy</h2>
+    <p>Milli is not directed to and may not be used by children under the age of 13. We do not knowingly collect personal information from children. If you believe a child has provided us with information, contact us and we will delete it.</p>
+
+    <h2>8. International Transfers</h2>
+    <p>Milli is operated from the United States. If you access the Service from outside the U.S., your information will be transferred to and processed in the U.S. Standard Contractual Clauses are used where required by law.</p>
+
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. Material changes will be announced through the app or via email at least 14 days before they take effect. The “Effective Date” at the top of this policy always shows the most recent version.</p>
+
+    <h2>10. Contact Us</h2>
+    <p>
+        <strong>Milli Tax Inc.</strong><br />
+        Privacy inquiries: <a href="mailto:privacy@drivemilli.com">privacy@drivemilli.com</a><br />
+        Support: <a href="mailto:support@drivemilli.com">support@drivemilli.com</a><br />
+        Mailing address available on request.
+    </p>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-inner">
+        <div>&copy; 2026 Milli Tax Inc. All rights reserved.</div>
+        <div class="footer-links">
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/glba">GLBA Notice</a>
+            <a href="/security">Security</a>
+            <a href="mailto:support@drivemilli.com">Support</a>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
