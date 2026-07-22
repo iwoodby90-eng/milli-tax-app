@@ -42,6 +42,7 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
 
 ## Changelog
+- **Feb 22, 2026** (late) — **Real Milli AI mascot ships.** Replaced the SVG-only Weebo with the user's reference illustration. Downloaded from job artifacts, cropped to 900×900 and 512×512, saved to `frontend/public/weebo/milli-ai-square.png` (also copied into iOS bundle at `ios/App/App/public/weebo/`). `WeeboAvatar.jsx` v3 wraps the PNG with framer-motion bob, portal levitation ring, halo pulse, scan-line sweep, speaking pulse ring, and cyan particle field. Source tarball rebuilt to 29 MB and pushed to `frontend/public/milli-source.tar.gz`. Full iOS deploy recipe delivered in-thread.
 - **Feb 22, 2026** (evening) — Voice + Referral + iOS refresh:
   * **Weebo now talks.** `/api/ai/voice` (OpenAI TTS via emergentintegrations, `tts-1` / voice=shimmer) generates MP3 audio from her final answer. React hook `useWeeboVoice` fetches the MP3 and plays via `<audio>`, drives `weeboState="speaking"` so her mouth animates in sync. Mute toggle persisted in localStorage.
   * **Referral system** — 3 backend endpoints (`GET /api/referral/me`, `POST /api/referral/apply`) + new `/app/referral` page. $10 vault credit both sides, unique `MILLI-XXXXXX` code per user, share/copy/redeem UI, live stats (invited count, credit earned).
