@@ -182,7 +182,7 @@ export default function Mileage() {
   const totalDed = trips.reduce((s, t) => s + (t.deductible_value || 0), 0);
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl">
+    <div className="p-6 lg:p-10 max-w-7xl" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       <div className="flex justify-between items-end mb-8 flex-wrap gap-4">
         <div>
           <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// Mileage</div>

@@ -355,3 +355,333 @@ body,
     88%  { opacity: 0.75; }
     100% { top: 100%; opacity: 0; }
 }
+
+/* ================================================================
+   v1.4 GLOBAL UI HARDENING — Nuclear Reset
+   Kills every remaining browser default that makes pages look "webby."
+   ================================================================ */
+
+/* === ANCHOR / LINK RESET === */
+/* The #1 offender: browser-default blue/purple links. */
+a, a:link, a:visited, a:hover, a:active, a:focus {
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+/* Restore pointer for clickable links */
+a[href], [role="link"] {
+    cursor: pointer;
+}
+
+/* === FORM ELEMENT DARK ENFORCEMENT === */
+/* Ensures no white/light backgrounds or blue highlights leak through on iOS */
+input, select, textarea, button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+input::placeholder, textarea::placeholder {
+    color: var(--milli-muted, #8B9DAF);
+    opacity: 1;
+}
+select {
+    background-color: var(--milli-checker, #0A0C0F);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+option {
+    background-color: #0A0C0F;
+    color: #FFFFFF;
+}
+/* iOS autofill override — prevents white flash on autofilled fields */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #0A0C0F inset !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    caret-color: #00E5FF;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* === FOCUS STYLING (kill browser blue outlines) === */
+*:focus {
+    outline: none;
+}
+*:focus-visible {
+    outline: 1px solid rgba(0, 229, 255, 0.5);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* === LIST RESET === */
+ul, ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* === TABLE RESET === */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+}
+th, td {
+    text-align: left;
+    vertical-align: middle;
+    color: inherit;
+}
+
+/* === HR / SEPARATORS === */
+hr {
+    border: none;
+    height: 1px;
+    background: rgba(192, 192, 192, 0.12);
+    margin: 16px 0;
+}
+
+/* ================================================================
+   iOS-NATIVE PAGE CONTAINERS
+   .ios-content — full-page wrapper with safe-area padding
+   .ios-nav-bar — top navigation bar with Bel Air chrome styling
+   .ios-section — grouped card section (like iOS Settings rows)
+   ================================================================ */
+.ios-content {
+    min-height: 100%;
+    padding: 0 20px;
+    padding-top: 0;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    max-width: 600px;
+    margin: 0 auto;
+}
+.ios-nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    padding: 0 20px;
+    background: linear-gradient(180deg,
+        rgba(192, 192, 192, 0.06) 0%,
+        rgba(5, 6, 7, 0.95) 100%);
+    border-bottom: 1px solid rgba(192, 192, 192, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+.ios-nav-bar__title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Sora", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+}
+.ios-nav-bar__back,
+.ios-nav-bar__action {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--milli-cyan, #00E5FF);
+    font-size: 14px;
+    font-weight: 600;
+}
+.ios-nav-bar__back { left: 20px; }
+.ios-nav-bar__action { right: 20px; }
+
+.ios-section {
+    background: rgba(10, 12, 15, 0.85);
+    border: 1px solid rgba(192, 192, 192, 0.12);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+.ios-section__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    min-height: 44px; /* Apple HIG touch target */
+    color: #FFFFFF;
+    transition: background-color 0.12s ease;
+}
+.ios-section__row:last-child {
+    border-bottom: none;
+}
+.ios-section__row:active {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.ios-section__row-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    color: var(--milli-cyan, #00E5FF);
+}
+.ios-section__row-label {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+}
+.ios-section__row-value {
+    font-size: 14px;
+    color: var(--milli-muted, #8B9DAF);
+}
+.ios-section__row-chevron {
+    color: rgba(192, 192, 192, 0.4);
+}
+
+/* === BUTTON PRIMITIVES === */
+.ios-button-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 50px;
+    border-radius: 14px;
+    background: #00E5FF;
+    color: #050607;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(0, 229, 255, 0.7);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        0 0 20px rgba(0, 229, 255, 0.3),
+        0 8px 24px rgba(0, 229, 255, 0.2);
+    transition: transform 0.1s ease, filter 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.ios-button-primary:active {
+    transform: scale(0.97);
+    filter: brightness(0.92);
+}
+.ios-button-primary:disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.ios-button-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 50px;
+    border-radius: 14px;
+    background: rgba(0, 229, 255, 0.06);
+    color: #00E5FF;
+    font-weight: 600;
+    font-size: 15px;
+    border: 1px solid rgba(192, 192, 192, 0.2);
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.ios-button-secondary:active {
+    transform: scale(0.97);
+    background: rgba(0, 229, 255, 0.12);
+    border-color: rgba(0, 229, 255, 0.5);
+}
+
+/* === TYPOGRAPHY HARDENING === */
+/* Ensure all heading/paragraph elements use the correct font stack */
+p, span, div, li, td, th, label, dt, dd {
+    color: inherit;
+    font-family: inherit;
+}
+/* Muted text class for consistent secondary text */
+.text-muted {
+    color: var(--milli-muted, #8B9DAF) !important;
+}
+/* Cyan link class for intentional highlight-colored clickable text */
+.link-cyan {
+    color: var(--milli-cyan, #00E5FF);
+    font-weight: 500;
+    transition: opacity 0.12s ease;
+}
+.link-cyan:active {
+    opacity: 0.7;
+}
+
+/* === WEBKIT SCROLLBAR FOR DARK PAGES === */
+* {
+    scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
+    scrollbar-width: thin;
+}
+
+/* === CAPACITOR / iOS WEBVIEW SPECIFIC === */
+/* Disable callout on long-press (prevents "Open / Copy" context menus on links) */
+body * {
+    -webkit-touch-callout: none;
+}
+/* Allow callout on form inputs where needed */
+input, textarea {
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
+}
+/* Kill iOS input zoom on focus (font-size must be >= 16px) */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="date"],
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+/* === IMG RESET — prevent broken image icons or oversized images === */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* === RANGE INPUT (sliders) — dark/cyan styling === */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(192, 192, 192, 0.15);
+    border-radius: 4px;
+    outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #00E5FF;
+    border: 2px solid #050607;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #00E5FF;
+    border: 2px solid #050607;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    cursor: pointer;
+}

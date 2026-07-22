@@ -63,7 +63,7 @@ export default function AppLayout({ children }) {
   const isHome = loc.pathname === "/app" || loc.pathname === "/app/";
 
   return (
-    <div className="carbon-bg text-white min-h-full flex flex-col">
+    <div className="carbon-bg text-white min-h-full flex flex-col" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100vh", WebkitFontSmoothing: "antialiased" }}>
       {/* ============ iOS-style top bar (sticky) ============ */}
       <header
         className="sticky top-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"

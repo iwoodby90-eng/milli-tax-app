@@ -42,14 +42,14 @@ export default function Reports() {
 
   if (!summary) {
     return (
-      <div className="p-10 font-mono text-volt text-xs uppercase tracking-[0.3em] animate-pulse">
+      <div className="p-10 font-mono text-volt text-xs uppercase tracking-[0.3em] animate-pulse" style={{ backgroundColor: "#050607", color: "#00E5FF", minHeight: "100vh" }}>
         Loading reports…
       </div>
     );
   }
 
   return (
-    <div className="px-5 py-6 max-w-[440px] mx-auto" data-testid="reports-screen">
+    <div className="px-5 py-6 max-w-[440px] mx-auto" data-testid="reports-screen" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       {/* Title */}
       <div className="mb-5">
         <div className="text-volt text-[10px] font-semibold uppercase tracking-[0.3em]">

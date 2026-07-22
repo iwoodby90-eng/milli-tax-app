@@ -42,12 +42,12 @@ export default function SmartAccount({ kind, config }) {
   }
 
   if (acct === undefined) {
-    return <div className="p-12 font-mono text-volt animate-pulse">[ LOADING {config.title.toUpperCase()}... ]</div>;
+    return <div className="p-12 font-mono text-volt animate-pulse" style={{ backgroundColor: "#050607", minHeight: "100vh" }}>[ LOADING {config.title.toUpperCase()}... ]</div>;
   }
 
   if (!acct) {
     return (
-      <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
         <Header config={config} />
         <div className="milli-card p-8 text-center" data-testid={`${kind}-empty`}>
           <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-volt/10 border border-volt/40 flex items-center justify-center">
@@ -75,7 +75,7 @@ export default function SmartAccount({ kind, config }) {
   const pct = Math.round((rule.fixed_percentage ?? config.defaultPct) * 100);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       <Header config={config} />
 
       <div className="milli-card-strong p-7 mb-4 relative overflow-hidden" data-testid={`${kind}-balance-card`}>

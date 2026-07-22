@@ -46,7 +46,7 @@ export default function Dashboard() {
   }
 
   if (!summary) {
-    return <div className="p-12 font-mono text-volt animate-pulse">[ LOADING MILLI... ]</div>;
+    return <div className="p-12 font-mono text-volt animate-pulse" style={{ backgroundColor: "#050607", color: "#00E5FF", minHeight: "100vh" }}>[ LOADING MILLI... ]</div>;
   }
 
   // Tax-ready score: 4 boxes — Income, Mileage, Expenses, Quarterly est available

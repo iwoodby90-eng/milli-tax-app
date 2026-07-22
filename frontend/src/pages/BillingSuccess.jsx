@@ -41,7 +41,7 @@ export default function BillingSuccess() {
   }, [sessionId]);
 
   return (
-    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       <div className="milli-card p-10 max-w-md text-center">
         {status === "checking" && (
           <>

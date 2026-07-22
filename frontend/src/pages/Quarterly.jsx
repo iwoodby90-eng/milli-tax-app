@@ -16,7 +16,7 @@ export default function Quarterly() {
   if (!data) return <div className="p-12 font-mono text-volt animate-pulse">[ LOADING QUARTERLY... ]</div>;
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       <div className="mb-6">
         <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// Quarterly</div>
         <h1 className="font-display text-3xl sm:text-4xl tracking-tight mt-1 chrome-text">Stay ready for every deadline.</h1>

@@ -94,7 +94,7 @@ export default function AIAssistant() {
     : (speaking ? "speaking" : "idle");
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       {/* ============ Weebo hero — large animated character at top ============ */}
       <div
         className="relative rounded-3xl overflow-hidden mb-4 border border-white/[0.08]"

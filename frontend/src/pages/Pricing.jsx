@@ -20,7 +20,7 @@ export default function Pricing() {
   }
 
   return (
-    <div className="px-4 py-6 lg:px-6">
+    <div className="px-4 py-6 lg:px-6" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       <div className="mb-6">
         <div className="text-volt font-mono text-[11px] uppercase tracking-[0.3em]">// Plans</div>
         <h1 className="font-display font-black text-3xl tracking-tighter mt-1 leading-[1.05]">Pick a plan, keep more of your money.</h1>

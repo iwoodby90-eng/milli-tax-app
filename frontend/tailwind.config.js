@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
         display: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
         chrome: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],

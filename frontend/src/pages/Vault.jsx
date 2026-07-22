@@ -83,7 +83,7 @@ export default function Vault() {
 
   if (vault === undefined) {
     return (
-      <div className="p-10 font-mono text-volt text-xs uppercase tracking-[0.3em] animate-pulse">
+      <div className="p-10 font-mono text-volt text-xs uppercase tracking-[0.3em] animate-pulse" style={{ backgroundColor: "#050607", color: "#00E5FF", minHeight: "100vh" }}>
         Loading vault…
       </div>
     );
@@ -91,7 +91,7 @@ export default function Vault() {
 
   if (!vault) {
     return (
-      <div className="px-5 py-6 max-w-[440px] mx-auto" data-testid="vault-empty-state">
+      <div className="px-5 py-6 max-w-[440px] mx-auto" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }} data-testid="vault-empty-state">
         <Header />
 
         {/* Hero card */}
@@ -203,7 +203,7 @@ export default function Vault() {
   const isPlaid = vault.provider_type === "plaid_connected";
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       <Header />
 
       <div className="milli-card-strong p-5 sm:p-7 mb-4 relative overflow-hidden" data-testid="vault-balance-card">

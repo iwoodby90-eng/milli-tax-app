@@ -1,62 +1,143 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Gear, ShieldCheck, Users, Gift, Question, Sparkle, FileText, Car, BellRinging, SignOut,
-  CaretRight,
+  Shield, Car, FileText, Receipt, Gift, Robot, ChartLineUp, PiggyBank,
+  Gear, SignOut, CaretRight, Question, Headset, Star,
 } from "@phosphor-icons/react";
+import MilliLogo from "@/components/MilliLogo";
 
-const ITEMS = [
-  { to: "/app/quarterly", icon: Sparkle, label: "Quarterly Tax Center", sub: "Deadlines, payments, readiness", testid: "more-quarterly" },
-  { to: "/app/retirement", icon: Sparkle, label: "401(k) Retirement", sub: "Auto-contribute per payout", testid: "more-retirement" },
-  { to: "/app/investing", icon: Sparkle, label: "Investing", sub: "Auto-invest a % of every payout", testid: "more-investing" },
-  { to: "/app/reports", icon: FileText, label: "Tax Vault Reports", sub: "Schedule C · SE · Mileage CSV", testid: "more-reports" },
-  { to: "/app/ai", icon: Sparkle, label: "Milli Assistant", sub: "Ask anything about your numbers", testid: "more-ai" },
-  { to: "/app/pricing", icon: Gift, label: "Plans & Billing", sub: "Essential · Pro · Elite", testid: "more-pricing" },
-  { to: "/app/settings", icon: Gear, label: "Settings", sub: "Profile, state, filing status", testid: "more-settings" },
+const sections = [
+  {
+    title: "Financial Tools",
+    items: [
+      { to: "/app/vault", icon: Shield, label: "Tax Vault", sub: "Protected tax savings" },
+      { to: "/app/retirement", icon: PiggyBank, label: "Solo 401(k)", sub: "Retirement auto-deposits" },
+      { to: "/app/investing", icon: ChartLineUp, label: "Investing", sub: "Brokerage auto-deposits" },
+      { to: "/app/mileage", icon: Car, label: "Mileage Tracker", sub: "IRS-compliant GPS logging" },
+      { to: "/app/expenses", icon: Receipt, label: "Expenses", sub: "Categorized deductions" },
+    ],
+  },
+  {
+    title: "Intelligence",
+    items: [
+      { to: "/app/ai", icon: Robot, label: "Milli AI", sub: "Tax strategy assistant" },
+      { to: "/app/reports", icon: FileText, label: "Reports & 1099s", sub: "Schedule C, SE tax" },
+      { to: "/app/quarterly", icon: Receipt, label: "Quarterly Taxes", sub: "IRS payment estimates" },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      { to: "/app/referral", icon: Gift, label: "Invite & Earn", sub: "$10 per referral" },
+      { to: "/app/pricing", icon: Star, label: "Upgrade Plan", sub: "Go Elite for full filing" },
+      { to: "/app/settings", icon: Gear, label: "Settings", sub: "Profile, banks, automation" },
+    ],
+  },
 ];
 
 export default function More() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const nav = useNavigate();
+
+  function handleSignOut() {
+    logout();
+    nav("/");
+  }
+
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// More</div>
-        <h1 className="font-display text-3xl sm:text-4xl tracking-tight mt-1 chrome-text">{user?.name || "Account"}</h1>
-        <div className="text-zinc-400 text-sm mt-1">{user?.email}</div>
-      </div>
+    <div
+      className="min-h-full"
+      style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif" }}
+    >
+      {/* Page content */}
+      <div className="px-5 pt-4 pb-8 max-w-lg mx-auto">
+        {/* Page Title */}
+        <div className="mb-6">
+          <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-zinc-500 mb-1">
+            // Navigation
+          </p>
+          <h1 className="font-display text-2xl font-bold chrome-text tracking-tight">
+            More
+          </h1>
+        </div>
 
-      <div className="milli-card p-1 mb-4 divide-y divide-hairline/60">
-        {ITEMS.map((it) => (
-          <Link key={it.to} to={it.to} data-testid={it.testid} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-volt/10 border border-volt/30 flex items-center justify-center flex-shrink-0">
-              <it.icon size={18} weight="duotone" className="text-volt" />
+        {/* Sections */}
+        {sections.map((section) => (
+          <div key={section.title} className="mb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-volt mb-2 pl-1">
+              {section.title}
+            </p>
+            <div className="ios-section">
+              {section.items.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="ios-section__row"
+                  style={{ color: "#FFFFFF", textDecoration: "none" }}
+                >
+                  <div className="ios-section__row-icon">
+                    <item.icon size={16} weight="duotone" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="ios-section__row-label">{item.label}</div>
+                    <div className="text-[12px] text-zinc-500 mt-0.5">{item.sub}</div>
+                  </div>
+                  <CaretRight size={14} weight="bold" className="ios-section__row-chevron" />
+                </Link>
+              ))}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm">{it.label}</div>
-              <div className="text-xs text-zinc-500 truncate">{it.sub}</div>
-            </div>
-            <CaretRight size={16} className="text-zinc-600" />
-          </Link>
+          </div>
         ))}
-      </div>
 
-      <div className="milli-card p-5 mb-4">
-        <div className="text-volt text-xs font-semibold uppercase tracking-[0.2em] mb-3">Coming Soon</div>
-        <ul className="space-y-2 text-sm text-zinc-400">
-          <li className="flex items-center gap-2"><Users size={14} className="text-zinc-500" /> Accountant collaboration</li>
-          <li className="flex items-center gap-2"><BellRinging size={14} className="text-zinc-500" /> Smart notifications</li>
-          <li className="flex items-center gap-2"><ShieldCheck size={14} className="text-zinc-500" /> Security center · MFA · device sessions</li>
-          <li className="flex items-center gap-2"><Gift size={14} className="text-zinc-500" /> Refer-a-driver rewards</li>
-          <li className="flex items-center gap-2"><Car size={14} className="text-zinc-500" /> Multi-vehicle management</li>
-        </ul>
-      </div>
+        {/* Support Section */}
+        <div className="mb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-volt mb-2 pl-1">
+            Support
+          </p>
+          <div className="ios-section">
+            <Link
+              to="/app/settings"
+              className="ios-section__row"
+              style={{ color: "#FFFFFF", textDecoration: "none" }}
+            >
+              <div className="ios-section__row-icon">
+                <Headset size={16} weight="duotone" />
+              </div>
+              <div className="ios-section__row-label">Help & Support</div>
+              <CaretRight size={14} weight="bold" className="ios-section__row-chevron" />
+            </Link>
+            <Link
+              to="/app/settings"
+              className="ios-section__row"
+              style={{ color: "#FFFFFF", textDecoration: "none" }}
+            >
+              <div className="ios-section__row-icon">
+                <Question size={16} weight="duotone" />
+              </div>
+              <div className="ios-section__row-label">FAQ</div>
+              <CaretRight size={14} weight="bold" className="ios-section__row-chevron" />
+            </Link>
+          </div>
+        </div>
 
-      <button
-        onClick={() => { logout(); window.location.href = "/"; }}
-        data-testid="more-signout"
-        className="w-full milli-card p-4 flex items-center justify-center gap-2 text-danger hover:bg-danger/5 transition-colors"
-      ><SignOut size={16} weight="bold" /> Sign out</button>
+        {/* Sign Out */}
+        <button
+          onClick={handleSignOut}
+          className="w-full mt-4 flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/[0.02] text-zinc-400 active:bg-white/[0.05] transition-colors"
+          data-testid="more-sign-out"
+          style={{ color: "#a1a1aa" }}
+        >
+          <SignOut size={18} weight="bold" />
+          <span className="font-semibold text-sm tracking-wide">Sign Out</span>
+        </button>
+
+        {/* Brand footer */}
+        <div className="mt-8 flex flex-col items-center gap-2 opacity-40">
+          <MilliLogo size={20} />
+          <p className="text-[10px] font-mono tracking-[0.2em] uppercase">Milli v1.4</p>
+        </div>
+      </div>
     </div>
   );
 }

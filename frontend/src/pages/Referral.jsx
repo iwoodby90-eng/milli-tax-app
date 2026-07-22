@@ -62,7 +62,7 @@ export default function Referral() {
   const creditDollars = data.credit_cents / 100;
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-5">
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-5" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100%" }}>
       {/* Header */}
       <div>
         <div className="text-volt font-mono text-[11px] uppercase tracking-[0.3em]">// Referrals</div>
