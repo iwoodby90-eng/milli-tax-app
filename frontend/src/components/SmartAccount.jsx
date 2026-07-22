@@ -100,17 +100,17 @@ export default function SmartAccount({ kind, config }) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-7">
-          <button data-testid={`${kind}-add`} onClick={() => setTransferOpen("in")} className="btn-volt px-4 py-3 text-xs uppercase tracking-wider inline-flex items-center justify-center gap-1.5">
-            <ArrowDown size={14} weight="bold" /> Contribute
+          <button data-testid={`${kind}-add`} onClick={() => setTransferOpen("in")} className="btn-volt px-2 py-2.5 text-[10px] uppercase tracking-[0.08em] inline-flex items-center justify-center gap-1 whitespace-nowrap">
+            <ArrowDown size={12} weight="bold" /> Contribute
           </button>
-          <button data-testid={`${kind}-withdraw`} onClick={() => setTransferOpen("out")} className="btn-outline-cyan px-4 py-3 text-xs uppercase tracking-wider font-semibold inline-flex items-center justify-center gap-1.5">
-            <ArrowUp size={14} weight="bold" /> Withdraw
+          <button data-testid={`${kind}-withdraw`} onClick={() => setTransferOpen("out")} className="btn-outline-cyan px-2 py-2.5 text-[10px] uppercase tracking-[0.08em] font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap">
+            <ArrowUp size={12} weight="bold" /> Withdraw
           </button>
-          <button data-testid={`${kind}-rule`} onClick={() => setRuleOpen(true)} className="btn-outline-cyan px-4 py-3 text-xs uppercase tracking-wider font-semibold inline-flex items-center justify-center gap-1.5">
-            <Sparkle size={14} weight="bold" /> Auto-Rule
+          <button data-testid={`${kind}-rule`} onClick={() => setRuleOpen(true)} className="btn-outline-cyan px-2 py-2.5 text-[10px] uppercase tracking-[0.08em] font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap">
+            <Sparkle size={12} weight="bold" /> Auto-Rule
           </button>
-          <button data-testid={`${kind}-pause`} onClick={togglePause} className="btn-outline-cyan px-4 py-3 text-xs uppercase tracking-wider font-semibold inline-flex items-center justify-center gap-1.5">
-            {rule.paused ? <><Play size={14} weight="bold" /> Resume</> : <><Pause size={14} weight="bold" /> Pause</>}
+          <button data-testid={`${kind}-pause`} onClick={togglePause} className="btn-outline-cyan px-2 py-2.5 text-[10px] uppercase tracking-[0.08em] font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap">
+            {rule.paused ? <><Play size={12} weight="bold" /> Resume</> : <><Pause size={12} weight="bold" /> Pause</>}
           </button>
         </div>
       </div>
