@@ -1,7 +1,10 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-export const API_BASE = `${BACKEND_URL}/api`;
+// HARDCODED — do NOT parameterize. The iOS Capacitor build loads at
+// capacitor://localhost so relative URLs and window.location.origin cannot
+// resolve to the backend. This constant guarantees every request goes to the
+// production preview backend regardless of build target.
+export const API_BASE = "https://driver-tax-mileage.preview.emergentagent.com/api";
 
 export const api = axios.create({ baseURL: API_BASE });
 
