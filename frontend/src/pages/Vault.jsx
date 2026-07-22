@@ -82,45 +82,115 @@ export default function Vault() {
   }
 
   if (vault === undefined) {
-    return <div className="p-12 font-mono text-volt animate-pulse">[ LOADING VAULT... ]</div>;
+    return (
+      <div className="p-10 font-mono text-volt text-xs uppercase tracking-[0.3em] animate-pulse">
+        Loading vault…
+      </div>
+    );
   }
 
   if (!vault) {
     return (
-      <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto">
+      <div className="px-5 py-6 max-w-[440px] mx-auto" data-testid="vault-empty-state">
         <Header />
-        <div className="milli-card p-8 text-center" data-testid="vault-empty-state">
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-volt/10 border border-volt/40 flex items-center justify-center">
-            <ShieldCheck size={32} weight="duotone" className="text-volt" />
+
+        {/* Hero card */}
+        <div
+          className="mt-4 rounded-3xl overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(0,229,255,0.06) 0%, rgba(255,255,255,0) 100%)",
+            border: "1px solid rgba(0,229,255,0.28)",
+            boxShadow:
+              "0 0 24px rgba(0,229,255,0.14), inset 0 1px 0 rgba(255,255,255,0.05)",
+          }}
+        >
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+                 style={{
+                   background: "linear-gradient(180deg, rgba(0,229,255,0.15), rgba(0,229,255,0.03))",
+                   border: "1px solid rgba(0,229,255,0.45)",
+                   boxShadow: "0 0 18px rgba(0,229,255,0.28)",
+                 }}>
+              <LockKey size={28} weight="duotone" className="text-volt" />
+            </div>
+            <h2 className="font-display font-black chrome-text text-[24px] leading-[1.1] tracking-tight">
+              Your tax money.<br />Held in your name.
+            </h2>
+            <p className="text-zinc-400 text-[13.5px] mt-3 leading-relaxed">
+              A user-owned savings account. Milli auto-pulls your reserve % from every payout — you keep full control.
+            </p>
           </div>
-          <div className="font-display text-2xl mb-2">Your savings account. Your tax money.</div>
-          <div className="text-zinc-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            The Tax Vault is a <strong className="text-white">user-owned savings account</strong>. Connect your existing
-            high-yield savings (Ally, Marcus, Capital One 360, etc.) via Plaid — or open a new Milli Reserve
-            account through our banking partner. Either way, Milli auto-pulls your tax % from every payout.
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3 max-w-md mx-auto">
+
+          {/* Two full-width iOS-style option cards, stacked */}
+          <div className="px-4 pb-4 flex flex-col gap-2.5">
             <button
               onClick={startPlaidConnect}
               disabled={loadingLink}
               data-testid="vault-connect-plaid"
-              className="btn-volt px-4 py-3 uppercase tracking-wider text-xs inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full flex items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.985] transition-transform disabled:opacity-60"
+              style={{
+                background: "linear-gradient(180deg, #00E5FF 0%, #00B8D4 100%)",
+                color: "#001217",
+                boxShadow: "0 0 22px rgba(0,229,255,0.4), 0 0 50px rgba(0,229,255,0.18)",
+              }}
             >
-              <Plug size={14} weight="bold" /> {loadingLink ? "Loading..." : "Connect existing savings"}
+              <div className="w-10 h-10 rounded-xl bg-black/15 flex items-center justify-center flex-shrink-0">
+                <Plug size={18} weight="bold" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-[14px] uppercase tracking-[0.14em] leading-none">
+                  {loadingLink ? "Opening Plaid…" : "Connect via Plaid"}
+                </div>
+                <div className="text-[11px] mt-1 opacity-80">
+                  Link your Ally, Marcus, Capital One 360 or any bank
+                </div>
+              </div>
+              <ArrowUp size={14} weight="bold" className="rotate-45 flex-shrink-0" />
             </button>
+
             <button
               onClick={setupMilliReserve}
               disabled={busy}
               data-testid="vault-setup-btn"
-              className="btn-outline-cyan px-4 py-3 uppercase tracking-wider text-xs font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full flex items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.985] transition-transform disabled:opacity-60"
+              style={{
+                background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0))",
+                border: "1px solid rgba(192,192,192,0.22)",
+              }}
             >
-              <Bank size={14} weight="bold" /> {busy ? "Opening..." : "Open Milli Reserve"}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                   style={{
+                     background: "linear-gradient(180deg, rgba(0,229,255,0.10), rgba(0,229,255,0.02))",
+                     border: "1px solid rgba(0,229,255,0.35)",
+                   }}>
+                <Bank size={18} weight="duotone" className="text-volt" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-white text-[14px] uppercase tracking-[0.14em] leading-none">
+                  {busy ? "Opening…" : "Open a Milli Reserve"}
+                </div>
+                <div className="text-[11px] text-zinc-400 mt-1">
+                  New high-yield savings via our banking partner
+                </div>
+              </div>
+              <ArrowUp size={14} weight="bold" className="rotate-45 text-zinc-500 flex-shrink-0" />
             </button>
           </div>
-          <div className="mt-6 text-[10px] text-zinc-500 max-w-md mx-auto leading-relaxed">
-            <Info size={10} className="inline mr-1" /> Plaid uses read-only connections by default. You own the account.
-            Milli is a technology platform — not a bank. FDIC and partner-specific disclosures will be shown once a production
-            banking partner is connected.
+        </div>
+
+        {/* Disclosure — larger, well-spaced */}
+        <div className="mt-5 mx-1 rounded-2xl p-4"
+             style={{
+               background: "rgba(255,255,255,0.025)",
+               border: "1px solid rgba(255,255,255,0.06)",
+             }}>
+          <div className="flex items-start gap-2">
+            <Info size={13} className="text-zinc-500 flex-shrink-0 mt-0.5" />
+            <p className="text-[11.5px] text-zinc-400 leading-[1.55]">
+              Plaid uses read-only connections by default — you own the account. Milli is a technology platform, not a bank.
+              FDIC and partner-specific disclosures appear once a production banking partner is connected.
+            </p>
           </div>
         </div>
       </div>
