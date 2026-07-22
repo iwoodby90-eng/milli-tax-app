@@ -136,11 +136,11 @@ export default function AIAssistant() {
           >
             {muted ? <SpeakerSlash size={14} weight="bold" /> : <SpeakerHigh size={14} weight="bold" />}
           </button>
-          <WeeboAvatar size={128} state={weeboState} />
-          <div className="mt-4 text-volt font-mono text-[10px] uppercase tracking-[0.34em]">
-            {weeboState === "thinking" ? "// Weebo is thinking..." :
-             weeboState === "speaking" ? "// Weebo is responding" :
-             "// I am Weebo · Milli AI"}
+          <WeeboAvatar size={140} state={weeboState} />
+          <div className="mt-4 h-4 text-volt font-mono text-[10px] uppercase tracking-[0.34em]">
+            {weeboState === "thinking" ? "// analyzing..." :
+             weeboState === "speaking" ? "// responding" :
+             ""}
           </div>
           <h1 className="font-display chrome-text text-2xl tracking-tight mt-1">
             Ask me anything, driver.

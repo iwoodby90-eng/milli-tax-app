@@ -99,7 +99,7 @@ export default function WelcomePaywall({ onSelected }) {
               onClick={() => setSelected(t.id)}
               data-testid={`welcome-tier-${t.plan}`}
               whileTap={{ scale: 0.985 }}
-              className="relative text-left rounded-2xl overflow-hidden transition-all"
+              className="relative text-left rounded-2xl transition-all"
               style={{
                 background: isActive
                   ? "linear-gradient(180deg, rgba(0,229,255,0.10), rgba(0,229,255,0.02))"
