@@ -1,0 +1,23 @@
+{
+  "summary": "Verified CapgoNativePurchases podspec patch fix and backend regression. All 7 checks passed: patch file valid, package.json has postinstall + devDeps, vendored podspec free of has_storekit_265_sdk, patch reapplies cleanly on fresh yarn install, yarn build succeeds (exit 0, index.html + main.59fec4ea.js present), tarball served HTTP 200 and contains patch + postinstall hook, all 5 Plaid/subscription endpoints return 401 unauthorized as expected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (out of scope)"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Patch fix verified. Note: pod install itself can only be validated on macOS. yarn install triggers patch-package postinstall which cleanly re-applies patch; verified by removing node_modules/@capgo/native-purchases and running yarn install --check-files.",
+  "detailed_results": {
+    "patch_file_content": "PASS - removes has_storekit_265_sdk? method and replaces OTHER_SWIFT_FLAGS with plain '$(inherited)'",
+    "package_json_postinstall": "PASS - scripts.postinstall=patch-package, devDeps include patch-package ^8.0.1 and postinstall-postinstall ^2.1.0",
+    "vendored_podspec_clean": "PASS - grep count of 'has_storekit_265' = 0",
+    "patch_reapply_fresh": "PASS - deleted node_modules/@capgo/native-purchases, yarn install output '@capgo/native-purchases@8.5.0 ✔'",
+    "yarn_build": "PASS - exit 0 in 16.32s, build/index.html and build/static/js/main.59fec4ea.js present",
+    "tarball_served": "PASS - HTTP 200, contains frontend/patches/@capgo+native-purchases+8.5.0.patch, archived package.json has postinstall hook and ~8.5.0 pin",
+    "backend_regression": "PASS - all 5 endpoints return 401 without bearer token"
+  }
+}
