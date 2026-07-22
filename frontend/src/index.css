@@ -136,7 +136,9 @@
         height: 932px;
         max-height: calc(100vh - 40px);
         border-radius: 44px;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
         box-shadow:
             0 0 0 6px #111417,
             0 0 0 8px #2A2E33,

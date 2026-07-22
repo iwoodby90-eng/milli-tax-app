@@ -37,13 +37,14 @@ export default function AppLayout({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="relative w-full h-full min-h-screen carbon-bg text-white overflow-hidden">
+    <div className="relative w-full min-h-full carbon-bg text-white">
       {/* ============ iOS-style top bar (fixed, safe-area aware) ============ */}
       <header
-        className="absolute top-0 inset-x-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
+        className="fixed top-0 inset-x-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
         style={{
           background: "rgba(5, 6, 7, 0.72)",
           paddingTop: "var(--safe-top)",
+          left: 0, right: 0,
         }}
       >
         <div className="flex items-center justify-between px-5 h-11">
@@ -115,12 +116,12 @@ export default function AppLayout({ children }) {
       {/* ============ Slide-in drawer (iOS half-sheet feel) ============ */}
       {drawerOpen && (
         <div
-          className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
           onClick={() => setDrawerOpen(false)}
           data-testid="drawer-overlay"
         >
           <div
-            className="absolute top-0 left-0 bottom-0 w-72 carbon-bg border-r border-white/10 overflow-y-auto native-scroll"
+            className="fixed top-0 left-0 bottom-0 w-72 carbon-bg border-r border-white/10 overflow-y-auto native-scroll"
             style={{
               paddingTop:    "calc(var(--safe-top) + 20px)",
               paddingBottom: "calc(var(--safe-bottom) + 20px)",
