@@ -37,14 +37,13 @@ export default function AppLayout({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="relative w-full min-h-full carbon-bg text-white">
-      {/* ============ iOS-style top bar (fixed, safe-area aware) ============ */}
+    <div className="carbon-bg text-white min-h-full flex flex-col">
+      {/* ============ iOS-style top bar (sticky within scroll container) ============ */}
       <header
-        className="fixed top-0 inset-x-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
+        className="sticky top-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
         style={{
           background: "rgba(5, 6, 7, 0.72)",
           paddingTop: "var(--safe-top)",
-          left: 0, right: 0,
         }}
       >
         <div className="flex items-center justify-between px-5 h-11">
@@ -71,21 +70,16 @@ export default function AppLayout({ children }) {
         </div>
       </header>
 
-      {/* ============ Main scroll area — natural flow, page-level scroll ============ */}
-      <main
-        className="native-scroll"
-        style={{
-          paddingTop:    "calc(var(--safe-top) + 44px)",
-          paddingBottom: "calc(var(--safe-bottom) + 78px)",
-          minHeight:     "100vh",
-        }}
-      >
+      {/* ============ Main content — flows naturally, sticky header/nav reserve their own space ============ */}
+      <main className="flex-1 native-scroll" data-testid="app-main-scroll">
         {children}
+        {/* Small spacer so last card never kisses the sticky tab bar */}
+        <div aria-hidden className="h-4" />
       </main>
 
-      {/* ============ iOS-style bottom tab bar (fixed) ============ */}
+      {/* ============ iOS-style bottom tab bar (sticky within scroll container) ============ */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
+        className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
         style={{
           background: "rgba(5, 6, 7, 0.78)",
           paddingBottom: "var(--safe-bottom)",
