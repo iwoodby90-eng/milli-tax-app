@@ -3,6 +3,7 @@ import { api, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { ShieldCheck, Sparkle, ChartLineUp } from "@phosphor-icons/react";
+import BankConnections from "@/components/BankConnections";
 
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
@@ -26,7 +27,7 @@ export default function Settings() {
         api.get("/smart/investing").catch(() => ({ data: null })),
       ]);
       setVault(v.data); setRetire(r.data); setInvest(i.data);
-    } catch {}
+    } catch (_) { /* accounts optional — silent fallback */ }
   }
   useEffect(() => { loadAccounts(); }, []);
 
@@ -66,6 +67,11 @@ export default function Settings() {
         <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// Settings</div>
         <h1 className="font-display chrome-text text-3xl sm:text-4xl tracking-tight mt-1">Profile & automation</h1>
         <p className="text-zinc-400 mt-1 text-sm">Toggle auto-pull and auto-deposit rules across your accounts.</p>
+      </div>
+
+      {/* Connected banks — Plaid multi-bank manager */}
+      <div className="mb-4" data-testid="settings-banks-section">
+        <BankConnections />
       </div>
 
       {/* Auto-automation toggles */}

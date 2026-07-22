@@ -1,14 +1,23 @@
+/**
+ * Login — premium iOS-native sign-in screen.
+ *
+ * Single-column phone-first layout: cinematic chrome-M hero at the top,
+ * floating-label inputs with cyan focus glow, big cyan CTA, and compact
+ * trust footer. Wrapped in framer-motion for a Wallet-app-caliber entrance.
+ */
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { api, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
   ArrowRight, EnvelopeSimple, Lock, Eye, EyeSlash,
-  Shield, CheckCircle, CurrencyDollar,
+  ShieldCheck, LockKey, Sparkle,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
-import AuthHero from "@/components/AuthHero";
+
+const CYAN = "#00E5FF";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -35,153 +44,248 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen carbon-bg text-white flex flex-col lg:flex-row">
-      {/* LEFT — sign in form */}
-      <div className="w-full lg:w-1/2 flex flex-col px-6 py-10 lg:px-16 lg:py-14 max-w-2xl mx-auto lg:mx-0">
-        <Link
-          to="/"
-          className="flex items-center gap-3 mb-14"
-          data-testid="login-logo"
-        >
-          <MilliLogo size={38} withRoad />
-          <span className="font-display chrome-text text-2xl lg:text-[26px] tracking-[0.24em]">
-            MILLI
-          </span>
-        </Link>
+    <div
+      className="relative w-full min-h-full overflow-y-auto native-scroll text-white"
+      data-testid="login-screen"
+      style={{
+        paddingTop:    "calc(var(--safe-top) + 20px)",
+        paddingBottom: "calc(var(--safe-bottom) + 40px)",
+        backgroundColor: "#050607",
+        backgroundImage:
+          "radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,229,255,0.20), transparent 65%)," +
+          "radial-gradient(ellipse 40% 30% at 10% 80%, rgba(0,229,255,0.08), transparent 70%)," +
+          "radial-gradient(ellipse 40% 30% at 90% 60%, rgba(0,229,255,0.08), transparent 70%)," +
+          "repeating-linear-gradient(45deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 6px)," +
+          "repeating-linear-gradient(-45deg, rgba(255,255,255,0.010) 0 2px, transparent 2px 6px)",
+      }}
+    >
+      {/* corner brackets — brand */}
+      <div className="absolute top-3 left-3 w-5 h-5 border-l border-t"
+           style={{ borderColor: "rgba(0,229,255,0.4)" }} />
+      <div className="absolute bottom-3 right-3 w-5 h-5 border-r border-b"
+           style={{ borderColor: "rgba(0,229,255,0.4)" }} />
 
-        <div className="text-volt font-mono text-[11px] uppercase tracking-[0.32em]">
-          // Sign in
+      {/* Hero — chrome M with pulsing halo */}
+      <motion.div
+        className="flex flex-col items-center px-6 pt-4"
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="relative">
+          <motion.div
+            aria-hidden="true"
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: "radial-gradient(circle, rgba(0,229,255,0.35), transparent 70%)",
+              filter: "blur(10px)",
+            }}
+            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <MilliLogo size={80} className="relative" />
         </div>
-        <h1 className="font-display font-black text-5xl lg:text-6xl tracking-tight mt-3 leading-[1.05]">
-          <span className="chrome-text">Back to</span>
-          <br />
-          <span className="text-volt">Autopilot.</span>
+        <div className="chrome-text font-display text-[26px] tracking-[0.24em] mt-3">MILLI</div>
+      </motion.div>
+
+      {/* Title */}
+      <motion.div
+        className="px-6 mt-6 text-center"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] uppercase tracking-[0.28em] font-semibold mb-3"
+             style={{ background: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.32)", color: CYAN }}>
+          <Sparkle size={10} weight="fill" /> Welcome back
+        </div>
+        <h1 className="font-display font-black text-[34px] leading-[1.05] tracking-tight">
+          <span className="chrome-text">Back to</span>{" "}
+          <span style={{ color: CYAN, textShadow: "0 0 22px rgba(0,229,255,0.4)" }}>Autopilot.</span>
         </h1>
-        <p className="text-zinc-400 mt-4 text-[15px]">
+        <p className="text-zinc-400 mt-2 text-[13.5px] max-w-[300px] mx-auto">
           Pick up where you left off. Your money kept moving.
         </p>
+      </motion.div>
 
-        <form onSubmit={onSubmit} className="mt-10 space-y-5">
-          <IconField
-            label="Email"
-            id="login-email"
-            icon={EnvelopeSimple}
-            type="email"
-            required
-            value={email}
-            placeholder="Email address"
-            autoComplete="email"
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <IconField
-            label="Password"
-            id="login-password"
-            icon={Lock}
-            type={showPw ? "text" : "password"}
-            required
-            value={password}
-            placeholder="Your password"
-            autoComplete="current-password"
-            onChange={(e) => setPassword(e.target.value)}
-            trailing={
-              <button
-                type="button"
-                onClick={() => setShowPw((v) => !v)}
-                className="text-zinc-500 hover:text-white transition-colors"
-                data-testid="login-toggle-pw"
-                aria-label={showPw ? "Hide password" : "Show password"}
-              >
-                {showPw ? <EyeSlash size={18} /> : <Eye size={18} />}
-              </button>
-            }
-          />
+      {/* Form */}
+      <motion.form
+        onSubmit={onSubmit}
+        className="mt-8 px-5 flex flex-col gap-4"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <FloatingField
+          id="login-email"
+          label="Email address"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          icon={EnvelopeSimple}
+          autoComplete="email"
+          required
+        />
 
-          <button
-            type="submit"
-            disabled={submitting}
-            data-testid="login-submit"
-            className="btn-volt w-full py-4 rounded-2xl uppercase tracking-[0.24em] text-sm font-bold inline-flex items-center justify-center gap-3 disabled:opacity-60"
-          >
-            {submitting ? "Signing in..." : (
-              <>
-                Sign in <ArrowRight size={16} weight="bold" />
-              </>
-            )}
-          </button>
-        </form>
+        <FloatingField
+          id="login-password"
+          label="Password"
+          type={showPw ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          icon={Lock}
+          autoComplete="current-password"
+          required
+          trailing={
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="text-zinc-500 active:opacity-60"
+              data-testid="login-toggle-pw"
+              aria-label={showPw ? "Hide password" : "Show password"}
+            >
+              {showPw ? <EyeSlash size={18} /> : <Eye size={18} />}
+            </button>
+          }
+        />
 
-        <div className="mt-6 text-sm text-zinc-400">
-          No account?{" "}
+        <div className="flex justify-end -mt-1">
           <Link
-            to="/register"
-            className="text-volt font-semibold inline-flex items-center gap-1"
-            data-testid="login-link-register"
+            to="/forgot"
+            className="text-[12px] text-white/55 active:text-white"
+            data-testid="login-forgot"
           >
-            Start 3-day trial <ArrowRight size={12} weight="bold" />
+            Forgot password?
           </Link>
         </div>
 
-        <div className="mt-auto pt-12 grid grid-cols-3 gap-3">
-          <TrustBadge icon={Shield} title="Bank-level security" sub="256-bit encryption" />
-          <TrustBadge icon={CheckCircle} title="PCI compliant" sub="Your data is protected" />
-          <TrustBadge icon={CurrencyDollar} title="Autopilot on" sub="Every payout, protected" />
-        </div>
-      </div>
+        <motion.button
+          type="submit"
+          disabled={submitting}
+          data-testid="login-submit"
+          whileTap={{ scale: 0.985 }}
+          className="mt-2 relative w-full py-4 rounded-full uppercase tracking-[0.24em] text-[13px] font-bold inline-flex items-center justify-center gap-3 disabled:opacity-60 overflow-hidden"
+          style={{
+            background: "linear-gradient(180deg, #00E5FF 0%, #00B8D4 100%)",
+            color: "#001217",
+            boxShadow: "0 0 26px rgba(0,229,255,0.55), 0 0 60px rgba(0,229,255,0.22)",
+          }}
+        >
+          <motion.span
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)",
+            }}
+            initial={{ x: "-120%" }}
+            animate={{ x: "120%" }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+          />
+          <span className="relative flex items-center gap-2">
+            {submitting ? "Signing in…" : (<>Sign in <ArrowRight size={14} weight="bold" /></>)}
+          </span>
+        </motion.button>
+      </motion.form>
 
-      {/* RIGHT — hero */}
-      <div
-        className="hidden lg:block lg:w-1/2 min-h-screen relative"
-        data-testid="login-hero-panel"
+      {/* Register CTA */}
+      <motion.div
+        className="mt-6 px-5 text-center text-[13px] text-zinc-400"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55, duration: 0.6 }}
       >
-        <AuthHero />
-      </div>
-      <div className="lg:hidden h-[52vh] w-full order-first" data-testid="login-hero-mobile">
-        <AuthHero />
-      </div>
+        New to Milli?{" "}
+        <Link
+          to="/register"
+          data-testid="login-link-register"
+          className="font-semibold inline-flex items-center gap-1 active:opacity-70"
+          style={{ color: CYAN, textShadow: "0 0 12px rgba(0,229,255,0.35)" }}
+        >
+          Start 3-day trial <ArrowRight size={11} weight="bold" />
+        </Link>
+      </motion.div>
+
+      {/* Trust footer */}
+      <motion.div
+        className="mt-10 px-5 flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.22em] text-white/45"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7, duration: 0.7 }}
+      >
+        <span className="inline-flex items-center gap-1.5"><LockKey size={11} weight="fill" style={{ color: CYAN }} /> 256-bit</span>
+        <span className="w-px h-3 bg-white/15" />
+        <span className="inline-flex items-center gap-1.5"><ShieldCheck size={11} weight="fill" style={{ color: CYAN }} /> PCI</span>
+        <span className="w-px h-3 bg-white/15" />
+        <span>SOC 2</span>
+      </motion.div>
     </div>
   );
 }
 
-function IconField({ label, id, icon: Icon, trailing, ...props }) {
+/* ------------------------------------------------------------------
+ * FloatingField — iOS-native input with an animated floating label,
+ * cyan focus glow, and glassmorphic surface.
+ * ------------------------------------------------------------------ */
+function FloatingField({ id, label, icon: Icon, trailing, value, onChange, ...props }) {
+  const [focused, setFocused] = useState(false);
+  const filled = String(value ?? "").length > 0;
+  const active = focused || filled;
+
   return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-[11px] font-mono uppercase tracking-[0.24em] text-zinc-500 mb-2"
+    <div className="relative">
+      <div
+        className="relative rounded-2xl transition-all"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
+          border: `1px solid ${focused ? "rgba(0,229,255,0.75)" : "rgba(192,192,192,0.16)"}`,
+          boxShadow: focused
+            ? "0 0 22px rgba(0,229,255,0.22), inset 0 1px 0 rgba(255,255,255,0.05)"
+            : "inset 0 1px 0 rgba(255,255,255,0.04)",
+        }}
       >
-        {label}
-      </label>
-      <div className="relative">
-        <Icon
-          size={18}
-          weight="regular"
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
-        />
+        {Icon && (
+          <Icon
+            size={17}
+            weight="regular"
+            className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors"
+            style={{ color: focused ? CYAN : "rgba(255,255,255,0.4)" }}
+          />
+        )}
+        <label
+          htmlFor={id}
+          className="absolute pointer-events-none transition-all"
+          style={{
+            left: Icon ? 44 : 16,
+            top: active ? 8 : "50%",
+            transform: active ? "translateY(0)" : "translateY(-50%)",
+            fontSize: active ? 10 : 14,
+            letterSpacing: active ? "0.2em" : "0.02em",
+            textTransform: active ? "uppercase" : "none",
+            color: focused ? CYAN : "rgba(255,255,255,0.42)",
+            fontWeight: active ? 600 : 400,
+          }}
+        >
+          {label}
+        </label>
         <input
           id={id}
           data-testid={id}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           {...props}
-          className="w-full bg-charcoal/60 border border-hairline rounded-2xl pl-11 pr-10 py-3.5 text-white placeholder:text-zinc-600 font-medium focus:outline-none focus:border-volt focus:ring-1 focus:ring-volt/60 transition-colors"
+          className="w-full bg-transparent outline-none text-white text-[15px] font-medium"
+          style={{
+            paddingLeft:  Icon ? 44 : 16,
+            paddingRight: trailing ? 44 : 16,
+            paddingTop: active ? 22 : 15,
+            paddingBottom: active ? 10 : 15,
+          }}
         />
         {trailing && (
-          <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-            {trailing}
-          </div>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">{trailing}</div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function TrustBadge({ icon: Icon, title, sub }) {
-  return (
-    <div className="flex items-start gap-2.5">
-      <div className="w-8 h-8 rounded-lg bg-volt/8 border border-volt/20 flex items-center justify-center shrink-0">
-        <Icon size={14} weight="fill" className="text-volt" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-[11px] font-bold text-white leading-tight">{title}</div>
-        <div className="text-[10px] text-zinc-500 leading-tight mt-0.5">{sub}</div>
       </div>
     </div>
   );

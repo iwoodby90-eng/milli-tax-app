@@ -228,35 +228,43 @@ function FeatureIcon({ label, children, delay }) {
 }
 
 // -----------------------------------------------------------------------
-// SplashScreen — animates in, then waits for a tap. Owner-approved
-// activation moment: `HOLD_MS` after mount we surface a pulsing
-// "TAP TO CONTINUE" affordance. Any pointer or key press dismisses.
+// SplashScreen — animates in, then either waits for a tap (returning
+// users) OR auto-fades into the next flow (first launch).
 // -----------------------------------------------------------------------
-export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
+export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade = false }) {
   const [visible, setVisible] = useState(true);
   const [readyToDismiss, setReadyToDismiss] = useState(false);
 
-  // After the intro animation lands, surface the tap prompt.
+  // After the intro animation lands, either auto-fade or surface the tap prompt.
   useEffect(() => {
-    const t = setTimeout(() => setReadyToDismiss(true), minDurationMs);
+    const t = setTimeout(() => {
+      setReadyToDismiss(true);
+      if (autoFade) {
+        // Give the wordmark a beat to breathe, then dissolve into the next flow
+        setTimeout(() => {
+          setVisible(false);
+          setTimeout(() => onDone && onDone(), FADE_MS + 50);
+        }, 900);
+      }
+    }, minDurationMs);
     return () => clearTimeout(t);
-  }, [minDurationMs]);
+  }, [minDurationMs, autoFade, onDone]);
 
   const dismiss = () => {
-    if (!readyToDismiss) return;
+    if (!readyToDismiss || autoFade) return;
     setVisible(false);
     setTimeout(() => onDone && onDone(), FADE_MS + 50);
   };
 
   // Any pointer or Enter/Space dismisses once the tap prompt is live.
   useEffect(() => {
-    if (!readyToDismiss || !visible) return;
+    if (!readyToDismiss || !visible || autoFade) return;
     const onKey = (e) => {
       if (e.key === "Enter" || e.key === " " || e.key === "Escape") dismiss();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [readyToDismiss, visible]);
+  }, [readyToDismiss, visible, autoFade]);
 
   return (
     <AnimatePresence>
@@ -463,9 +471,9 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS }) {
                 />
               </div>
 
-              {/* status text — hides once the tap prompt is live */}
+              {/* status text — hides once the tap prompt is live (or stays if auto-fading) */}
               <AnimatePresence mode="wait">
-                {!readyToDismiss ? (
+                {(!readyToDismiss || autoFade) ? (
                   <motion.div
                     key="status"
                     className="text-[11px] text-white/70 tracking-[0.05em]"

@@ -7,6 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Splash from "@/components/SplashScreen";
 import OnboardingCarousel from "@/components/OnboardingCarousel";
+import WelcomePaywall from "@/components/WelcomePaywall";
 
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -40,23 +41,37 @@ function App() {
   const [splashDone, setSplashDone] = useState(() => {
     try { return sessionStorage.getItem("milli_splash_seen") === "1"; } catch { return false; }
   });
+  // Tier must be selected before onboarding is unlocked (persistent).
+  const [planSelected, setPlanSelected] = useState(() => {
+    try { return !!localStorage.getItem("milli_selected_plan"); } catch { return true; }
+  });
   // Onboarding: persistent across sessions — only shown once ever
   const [onboardingDone, setOnboardingDone] = useState(() => {
     try { return localStorage.getItem("milli_onboarding_complete") === "true"; } catch { return true; }
   });
+
+  // First launch = user has never picked a plan. In that case the splash
+  // auto-fades directly into the Welcome Paywall (no tap required).
+  const firstLaunch = !planSelected;
+
   const onSplashDone = () => {
     try { sessionStorage.setItem("milli_splash_seen", "1"); } catch (_) { /* noop */ }
     setSplashDone(true);
   };
+  const onPlanSelected = () => { setPlanSelected(true); };
   const onOnboardingDone = () => {
     try { localStorage.setItem("milli_onboarding_complete", "true"); } catch (_) { /* noop */ }
     setOnboardingDone(true);
   };
+
   return (
     <div className="App ios-frame-outer">
       <div className="ios-frame native-scroll">
-        {!splashDone && <Splash onDone={onSplashDone} />}
-        {splashDone && !onboardingDone && <OnboardingCarousel onFinish={onOnboardingDone} />}
+        {!splashDone && <Splash onDone={onSplashDone} autoFade={firstLaunch} />}
+        {splashDone && !planSelected && <WelcomePaywall onSelected={onPlanSelected} />}
+        {splashDone && planSelected && !onboardingDone && (
+          <OnboardingCarousel onFinish={onOnboardingDone} />
+        )}
         <BrowserRouter>
         <AuthProvider>
           <Routes>
