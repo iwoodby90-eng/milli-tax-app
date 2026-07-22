@@ -2074,7 +2074,7 @@ async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_cur
             logging.warning("Apple IAP creds missing — accepting sandbox txn %s optimistically", body.transactionId)
             plan = IAP_PRODUCT_TO_PLAN.get(body.productId or "", "pro")
             await db.users.update_one(
-                {"_id": user["_id"]},
+                {"id": user["id"]},
                 {"$set": {
                     "plan": plan,
                     "subscription": {
@@ -2108,7 +2108,7 @@ async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_cur
     plan = IAP_PRODUCT_TO_PLAN.get(product_id, "pro")
 
     await db.users.update_one(
-        {"_id": user["_id"]},
+        {"id": user["id"]},
         {"$set": {
             "plan": plan,
             "subscription": {

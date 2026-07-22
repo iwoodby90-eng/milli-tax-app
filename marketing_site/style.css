@@ -55,7 +55,15 @@ ul { list-style: none; }
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: transparent;
 }
-.site-header nav { display: flex; gap: 28px; font-size: 14px; color: #8B9DAF; }
+.site-header nav {
+    display: flex; gap: 24px; font-size: 14px; color: #8B9DAF;
+    flex-wrap: nowrap; align-items: center;
+}
+.site-header nav a {
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+.site-header nav a:hover { color: #00E5FF; }
 
 /* ---------------- Hero ---------------- */
 .hero { padding: min(140px, 12vw) max(24px, 5vw) 80px; }
@@ -197,9 +205,17 @@ h1 {
     color: #6E7A87; line-height: 1.6; }
 
 @media (max-width: 640px) {
-    .site-header { padding: 16px 20px; }
-    .site-header nav { gap: 16px; font-size: 13px; }
+    .site-header { padding: 14px 16px; }
+    .site-header nav { gap: 14px; font-size: 12px; }
+    .brand-word { font-size: 17px; letter-spacing: 0.18em; }
+    .brand-mark { width: 24px; height: 24px; }
     .footer-inner { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 440px) {
+    .site-header { padding: 12px 14px; }
+    .site-header nav { gap: 12px; font-size: 11px; }
+    .brand-word { font-size: 15px; letter-spacing: 0.16em; }
+    .brand { gap: 8px; }
 }
 
 /* ---------- v2 additions: value-props / how / final-cta ---------- */
