@@ -126,18 +126,23 @@ export default function AIAssistant() {
             }}
           />
         </div>
-        <div className="relative flex flex-col items-center py-8 px-4">
+        <div className="relative flex flex-col items-center pt-6 pb-6 px-4">
           {/* Mute toggle — top-right corner */}
           <button
             data-testid="weebo-mute-toggle"
             onClick={toggleMute}
             aria-label={muted ? "Unmute Weebo" : "Mute Weebo"}
-            className="absolute top-3 right-3 p-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-zinc-300 hover:text-volt active:scale-95 transition"
+            className="absolute top-3 right-3 p-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-zinc-300 hover:text-volt active:scale-95 transition z-10"
           >
             {muted ? <SpeakerSlash size={14} weight="bold" /> : <SpeakerHigh size={14} weight="bold" />}
           </button>
-          <WeeboAvatar size={140} state={weeboState} />
-          <div className="mt-4 h-4 text-volt font-mono text-[10px] uppercase tracking-[0.34em]">
+
+          {/* Roaming stage — she wanders across this area */}
+          <div className="w-full flex justify-center">
+            <WeeboAvatar size={180} state={weeboState} />
+          </div>
+
+          <div className="h-4 mt-2 text-volt font-mono text-[10px] uppercase tracking-[0.34em]">
             {weeboState === "thinking" ? "// analyzing..." :
              weeboState === "speaking" ? "// responding" :
              ""}
