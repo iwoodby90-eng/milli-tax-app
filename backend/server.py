@@ -1142,6 +1142,18 @@ def _pdf_schedule_c(user: dict, summary: dict, deposits: list, trips: list, expe
 
 @api.get("/reports/schedule-c.pdf")
 async def report_schedule_c(user: dict = Depends(get_current_user), year: Optional[int] = None):
+    # Plan gate — Schedule C PDF is a Pro+/Elite feature.
+    plan = (user.get("plan") or "trial").lower()
+    if plan in ("trial", "basic"):
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "plan_upgrade_required",
+                "feature": "schedule_c_pdf",
+                "required_plan": "pro",
+                "message": "Schedule C PDF export is a Pro feature. Upgrade to download.",
+            },
+        )
     summary = await tax_summary(user, year)
     deposits = await db.deposits.find({"user_id": user["id"]}, {"_id": 0}).to_list(5000)
     trips = await db.trips.find({"user_id": user["id"], "status": "completed"}, {"_id": 0, "points": 0}).to_list(5000)

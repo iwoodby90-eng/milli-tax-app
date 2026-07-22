@@ -12,8 +12,7 @@ import { api, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
-  ArrowRight, EnvelopeSimple, Lock, Eye, EyeSlash,
-  ShieldCheck, LockKey, Sparkle,
+  ArrowRight, EnvelopeSimple, Lock, Eye, EyeSlash, Sparkle,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 
@@ -203,20 +202,6 @@ export default function Login() {
         >
           Start 3-day trial <ArrowRight size={11} weight="bold" />
         </Link>
-      </motion.div>
-
-      {/* Trust footer */}
-      <motion.div
-        className="mt-10 px-5 flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.22em] text-white/45"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7, duration: 0.7 }}
-      >
-        <span className="inline-flex items-center gap-1.5"><LockKey size={11} weight="fill" style={{ color: CYAN }} /> 256-bit</span>
-        <span className="w-px h-3 bg-white/15" />
-        <span className="inline-flex items-center gap-1.5"><ShieldCheck size={11} weight="fill" style={{ color: CYAN }} /> PCI</span>
-        <span className="w-px h-3 bg-white/15" />
-        <span>SOC 2</span>
       </motion.div>
     </div>
   );
