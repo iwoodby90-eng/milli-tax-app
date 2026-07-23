@@ -1,0 +1,57 @@
+/**
+ * native-ios.css — Loaded in the Capacitor webview.
+ * NUCLEAR overrides to prevent any blue-link, white-bg, unstyled states.
+ * This file is referenced from index.html and loads before React.
+ */
+
+/* Force dark mode regardless of system setting */
+:root { color-scheme: dark; }
+
+/* Prevent ANY light backgrounds */
+html, body, #root, .App, div, section, main, aside, header, footer, nav {
+  background-color: #050607 !important;
+  color: #FFFFFF !important;
+}
+
+/* Kill ALL blue/purple links */
+a, a:link, a:visited, a:hover, a:active,
+.link, [role="link"] {
+  color: #00E5FF !important;
+  text-decoration: none !important;
+}
+
+/* Form inputs always dark */
+input, select, textarea {
+  background: rgba(13, 17, 23, 0.8) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  border-radius: 12px !important;
+  font-size: 16px !important; /* Prevents iOS zoom on focus */
+}
+
+/* iOS-specific overrides */
+input[type="email"], input[type="password"], input[type="text"] {
+  font-size: 16px !important;
+  -webkit-appearance: none !important;
+}
+
+/* Prevent rubber-banding */
+body {
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+#root {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Prevent text selection on interactive elements */
+button, a, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Disable long-press callout */
+img, a { -webkit-touch-callout: none; }

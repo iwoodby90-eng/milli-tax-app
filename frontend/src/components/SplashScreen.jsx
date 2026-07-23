@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Lock, MapPin, PieChart, FileCheck } from "lucide-react";
 
 const CYAN = "#00E5FF";
-const HOLD_MS = 3000;  // give the cinematic fly-in room to breathe
+const HOLD_MS = 4000;  // 4s — cinematic reveal per Ian  // give the cinematic fly-in room to breathe
 const FADE_MS = 700;
 
 // -----------------------------------------------------------------------
@@ -332,9 +332,9 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
             {/* logo + wordmark — cinematic fly-in */}
             <motion.div
               className="flex flex-col items-center gap-4 relative"
-              initial={{ opacity: 0, scale: 3.6, filter: "blur(24px)", y: -80 }}
+              initial={{ opacity: 0, scale: 5, filter: "blur(32px)", y: -100 }}
               animate={{ opacity: 1, scale: 1,   filter: "blur(0px)",  y: 0 }}
-              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 2.0, ease: [0.16, 1, 0.3, 1] }}
             >
               {/* Chrome light-sweep across the M */}
               <motion.div

@@ -1,112 +1,138 @@
 <!doctype html>
 <html lang="en" style="background-color:#050607;min-height:100%;margin:0;">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-        <meta name="theme-color" content="#050607" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Milli" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="description" content="Milli — Money, Made Intelligent. Every payout, on Autopilot. Automatic tax protection, mileage tracking, and wealth allocation for the self-employed." />
-        <link rel="icon" type="image/png" href="%PUBLIC_URL%/brand/milli-app-icon.png" />
-        <link rel="apple-touch-icon" href="%PUBLIC_URL%/brand/milli-app-icon.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <title>Milli — Money, Made Intelligent.</title>
-        <style>/* Critical inline reset — kills blue links before CSS loads */
-        *{margin:0;padding:0;box-sizing:border-box}
-        a,a:link,a:visited,a:hover,a:active{color:inherit;text-decoration:none}
-        body{background:#050607;color:#FFF;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Sora",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-        input,select,textarea,button{font:inherit;color:inherit;background:transparent;border:none;outline:none;-webkit-appearance:none}
-        </style>
-        <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
-        <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
-    </head>
-    <body style="margin:0;padding:0;background-color:#050607;color:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,SF Pro Display,Sora,system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;">
-        <noscript>You need to enable JavaScript to run this app.</noscript>
-        <div id="root"></div>
-        <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#050607" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Milli" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="Milli — Tax Autopilot for Gig Workers. Every payout, protected." />
+    <link rel="icon" type="image/png" href="%PUBLIC_URL%/brand/milli-app-icon.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/brand/milli-app-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Milli — Tax Autopilot</title>
+    <link rel="stylesheet" href="%PUBLIC_URL%/native-ios.css" />
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body style="margin:0;padding:0;background-color:#050607;color:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,SF Pro Display,Sora,system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;"> tag.
+    <!-- =================================================================
+         CRITICAL INLINE CSS
+         This block ensures the app NEVER shows blue links, white backgrounds,
+         or unstyled text — even if React JS fails to load or external CSS
+         is blocked. This is the nuclear option for iOS Capacitor webviews.
+         ================================================================= -->
+    <style>
+    /* === HARD RESET === */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { 
+      min-height: 100vh; min-height: 100dvh;
+      background: #050607 !important; 
+      color: #FFFFFF !important; 
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Sora", "Inter", system-ui, sans-serif !important;
+      -webkit-font-smoothing: antialiased; 
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-                <script>
-            !(function (t, e) {
-                var o, n, p, r;
-                e.__SV ||
-                    ((window.posthog = e),
-                    (e._i = []),
-                    (e.init = function (i, s, a) {
-                        function g(t, e) {
-                            var o = e.split(".");
-                            2 == o.length && ((t = t[o[0]]), (e = o[1])),
-                                (t[e] = function () {
-                                    t.push(
-                                        [e].concat(
-                                            Array.prototype.slice.call(
-                                                arguments,
-                                                0,
-                                            ),
-                                        ),
-                                    );
-                                });
-                        }
-                        ((p = t.createElement("script")).type =
-                            "text/javascript"),
-                            (p.crossOrigin = "anonymous"),
-                            (p.async = !0),
-                            (p.src =
-                                s.api_host.replace(
-                                    ".i.posthog.com",
-                                    "-assets.i.posthog.com",
-                                ) + "/static/array.js"),
-                            (r =
-                                t.getElementsByTagName(
-                                    "script",
-                                )[0]).parentNode.insertBefore(p, r);
-                        var u = e;
-                        for (
-                            void 0 !== a ? (u = e[a] = []) : (a = "posthog"),
-                                u.people = u.people || [],
-                                u.toString = function (t) {
-                                    var e = "posthog";
-                                    return (
-                                        "posthog" !== a && (e += "." + a),
-                                        t || (e += " (stub)"),
-                                        e
-                                    );
-                                },
-                                u.people.toString = function () {
-                                    return u.toString(1) + ".people (stub)";
-                                },
-                                o =
-                                    "init me ws ys ps bs capture je Di ks register register_once register_for_session unregister unregister_for_session Ps getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Es $s createPersonProfile Is opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Ss debug xs getPageViewId captureTraceFeedback captureTraceMetric".split(
-                                        " ",
-                                    ),
-                                n = 0;
-                            n < o.length;
-                            n++
-                        )
-                            g(u, o[n]);
-                        e._i.push([i, s, a]);
-                    }),
-                    (e.__SV = 1));
-            })(document, window.posthog || []);
-            posthog.init("phc_xAvL2Iq4tFmANRE7kzbKwaSqp1HJjN7x48s3vr0CMjs", {
-                api_host: "https://us.i.posthog.com",
-                person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well,
-                session_recording: {
-                    recordCrossOriginIframes: true,
-                    capturePerformance: false,
-                },
-            });
-        </script>
-    </body>
+    /* === KILL BLUE LINKS EVERYWHERE === */
+    a, a:link, a:visited, a:hover, a:active,
+    button, input, select, textarea, label, span, div, p, h1, h2, h3, h4, h5, h6 {
+      color: inherit !important;
+      text-decoration: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* === FORM ELEMENTS === */
+    input, select, textarea, button {
+      font: inherit;
+      color: #FFFFFF !important;
+      background: rgba(13, 17, 23, 0.8);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: 12px;
+      padding: 14px 16px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+    }
+    input:focus, textarea:focus {
+      border-color: #00E5FF;
+      box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.15);
+    }
+    input::placeholder { color: rgba(139, 157, 175, 0.6) !important; }
+    button {
+      cursor: pointer;
+      background: #00E5FF;
+      color: #050607 !important;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 24px;
+      transition: opacity 0.2s;
+    }
+    button:active { opacity: 0.8; }
+
+    /* === NATIVE-FEEL SCROLLING === */
+    .native-scroll { 
+      -webkit-overflow-scrolling: touch; 
+      overscroll-behavior: none;
+    }
+
+    /* === iOS SAFE AREA === */
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
+    .ios-frame-outer {
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      min-height: 100vh; min-height: 100dvh;
+    }
+
+    /* === GLASSMORPHISM CARDS === */
+    .glass-card {
+      background: rgba(13, 17, 23, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(192, 192, 192, 0.12);
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    /* === PREVENT CONTENT FLASH === */
+    #root:empty::after {
+      content: '';
+      display: block;
+      width: 48px; height: 48px;
+      margin: 40vh auto;
+      border: 3px solid rgba(0, 229, 255, 0.2);
+      border-top-color: #00E5FF;
+      border-radius: 50%;
+      animation: milli-spin 0.8s linear infinite;
+    }
+    @keyframes milli-spin { to { transform: rotate(360deg); } }
+
+    /* === ERROR FALLBACK === */
+    .milli-error-fallback {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 32px; text-align: center;
+      background: #050607; color: #FFFFFF;
+    }
+    .milli-error-fallback h2 { font-size: 20px; margin-bottom: 12px; color: #00E5FF; }
+    .milli-error-fallback p { font-size: 14px; color: #8B9DAF; max-width: 300px; }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#050607;color:#FFFFFF;">
+    <noscript>
+      <div class="milli-error-fallback">
+        <h2>Milli</h2>
+        <p>Enable JavaScript to use Milli.</p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+</body>
 </html>
