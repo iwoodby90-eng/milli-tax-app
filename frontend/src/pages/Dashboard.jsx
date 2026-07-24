@@ -12,6 +12,9 @@ import {
   TaxReadyGauge, FinancialTimeline, TaxVaultCard,
   InsightRow, EliteBadge,
 } from "@/components/MilliPrimitives";
+import MilliCentsWidget from "@/components/MilliCentsWidget";
+import { Gauge } from "@phosphor-icons/react";
+
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -20,6 +23,7 @@ export default function Dashboard() {
   const [trips, setTrips] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [syncing, setSyncing] = useState(false);
+  const [showMilliCents, setShowMilliCents] = useState(false);
 
   async function load() {
     try {
@@ -232,7 +236,29 @@ export default function Dashboard() {
         <Kpi label="Savings" value={money(summary.savings_balance)} icon={ShieldCheck} accent testid="kpi-savings" />
       </div>
 
-      {/* Quick links */}
+
+      {/* Milli-Cents Profitability Engine — Pro/Elite only */}
+      {(user?.plan === "pro" || user?.plan === "elite") && (
+        <>
+          <button
+            onClick={() => setShowMilliCents(true)}
+            data-testid="dashboard-milli-cents-cta"
+            className="milli-card p-5 mb-4 w-full flex items-center gap-4 hover:border-volt/50 transition-colors group text-left"
+          >
+            <div className="w-12 h-12 rounded-2xl border border-volt/30 bg-zinc-900 flex items-center justify-center flex-shrink-0">
+              <Gauge size={24} weight="duotone" className="text-volt" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-white">Milli-Cents Calculator</div>
+              <div className="text-xs text-zinc-500 font-mono">Instant offer profitability · fuel + tax analysis</div>
+            </div>
+            <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
+          </button>
+          {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
+        </>
+      )}
+
+      {/* Quick links */
       <div className="grid sm:grid-cols-2 gap-3">
         <Link
           to="/app/ai"
