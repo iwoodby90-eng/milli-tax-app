@@ -1,5 +1,5 @@
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ServerStatus from "@/components/ServerStatus";
+import ConnectionIndicator from "@/components/ServerStatus";
 import "@/App.css";
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -69,7 +69,6 @@ function App() {
 
   return (
     <ErrorBoundary>
-    <ServerStatus />
     <div className="App ios-frame-outer">
       <div className="ios-frame native-scroll">
         {!splashDone && <Splash onDone={onSplashDone} autoFade={firstLaunch} />}
@@ -79,6 +78,9 @@ function App() {
         )}
         <BrowserRouter>
         <AuthProvider>
+          {/* Non-blocking connection indicator — shown only when an API call
+              fails (event-driven). Never blocks the Splash or Paywall. */}
+          <ConnectionIndicator />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/marketing" element={<MarketingStudio />} />
