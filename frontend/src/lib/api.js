@@ -3,14 +3,18 @@ import axios from "axios";
 /**
  * BACKEND URL — HARDCODED.
  *
- * The FastAPI backend mounts routes at the ROOT level (e.g. /health,
- * /auth/login) — NOT under /api/*. The Capacitor iOS webview runs at
- * capacitor://localhost so no dynamic resolution is possible.
+ * The FastAPI backend mounts all routes under /api/* prefix:
+ *   api = APIRouter(prefix="/api")  →  /api/health, /api/auth/login, etc.
  *
- * DO NOT add "/api" suffix. DO NOT use env vars or window.location.
+ * Capacitor iOS webview runs at capacitor://localhost, so no dynamic
+ * URL resolution is possible. This literal string is the ONLY correct value.
+ *
+ * NOTE: During cold-start (pod waking from sleep), the backend takes 5-8s
+ * to bind. During this window, /api/* routes may 502/404 via Cloudflare.
+ * The ServerStatus overlay handles this gracefully.
  */
 export const BACKEND_URL = "https://driver-tax-mileage.preview.emergentagent.com";
-export const API_BASE = BACKEND_URL;  // routes are at root, NOT /api
+export const API_BASE = `${BACKEND_URL}/api`;
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -46,10 +50,11 @@ api.interceptors.response.use(
 
 /**
  * Health check — verify backend is reachable.
+ * Hits /api/health (the actual backend route).
  */
 export async function checkBackendHealth() {
   try {
-    const res = await axios.get(`${BACKEND_URL}/health`, { timeout: 8000 });
+    const res = await axios.get(`${API_BASE}/health`, { timeout: 8000 });
     return { ok: true, data: res.data };
   } catch (e) {
     return { ok: false, reason: e.message || "Backend unreachable" };
