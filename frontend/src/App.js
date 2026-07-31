@@ -71,7 +71,7 @@ function App() {
     <ErrorBoundary>
     <div className="App ios-frame-outer">
       <div className="ios-frame native-scroll">
-        {!splashDone && <Splash onDone={onSplashDone} autoFade={firstLaunch} />}
+        {!splashDone && <Splash onDone={onSplashDone} />}
         {splashDone && !planSelected && <WelcomePaywall onSelected={onPlanSelected} />}
         {splashDone && planSelected && !onboardingDone && (
           <OnboardingCarousel onFinish={onOnboardingDone} />
