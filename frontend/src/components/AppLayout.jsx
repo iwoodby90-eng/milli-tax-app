@@ -55,6 +55,134 @@ function TabButton({ to, icon: Icon, label, testid, end }) {
   );
 }
 
+// -----------------------------------------------------------------------
+// ChromeDialM — The rebuilt center nav button.
+// A 3D hardware component: chrome specular highlights, obsidian milled edge,
+// recessed dial shadow, and a neon cyan-aura M monogram.
+// Designed to feel like a physical gauge knob milled from billet aluminum.
+// -----------------------------------------------------------------------
+function ChromeDialM({ isActive }) {
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{
+        width: 62,
+        height: 62,
+      }}
+    >
+      {/* Outer recessed shadow — makes it look set INTO the chrome bar */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          boxShadow:
+            "0px 4px 12px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.6), inset 0px 2px 4px rgba(0,0,0,0.5)",
+        }}
+      />
+
+      {/* Chrome body — specular gradient simulating light hitting polished metal */}
+      <div
+        className="absolute inset-[1px] rounded-full"
+        style={{
+          background:
+            "conic-gradient(from 135deg, #3A3D42 0deg, #E8ECEF 45deg, #FAFBFC 90deg, #B8BEC4 135deg, #5B6068 180deg, #2A2D32 225deg, #7B8085 270deg, #D8DCE1 315deg, #3A3D42 360deg)",
+          border: "1px solid #1A1D21",
+        }}
+      />
+
+      {/* Inner ring bevel — secondary specular highlight (inner shadow) */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          inset: 5,
+          background:
+            "radial-gradient(ellipse 80% 60% at 35% 25%, rgba(255,255,255,0.45) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 65% 75%, rgba(0,0,0,0.35) 0%, transparent 50%), linear-gradient(165deg, #4A4E54 0%, #1A1D21 40%, #0D0F12 70%, #2A2E33 100%)",
+          border: "1px solid #1A1D21",
+          boxShadow:
+            "inset 0 2px 6px rgba(255,255,255,0.12), inset 0 -2px 8px rgba(0,0,0,0.7)",
+        }}
+      />
+
+      {/* Neon cyan aura glow (subtle, breathes life into the dial) */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          inset: 8,
+          boxShadow: isActive
+            ? "0 0 16px rgba(0,229,255,0.55), 0 0 32px rgba(0,229,255,0.2), inset 0 0 12px rgba(0,229,255,0.15)"
+            : "0 0 10px rgba(0,229,255,0.3), 0 0 20px rgba(0,229,255,0.1)",
+          border: "1px solid rgba(0,229,255,0.25)",
+          background: "transparent",
+          transition: "box-shadow 0.3s ease",
+        }}
+      />
+
+      {/* The M monogram — rendered as SVG with cyan glow aura */}
+      <div
+        className="relative z-10 flex items-center justify-center"
+        style={{
+          filter: isActive
+            ? "drop-shadow(0 0 6px rgba(0,229,255,0.7)) drop-shadow(0 0 14px rgba(0,229,255,0.35))"
+            : "drop-shadow(0 0 4px rgba(0,229,255,0.5)) drop-shadow(0 0 10px rgba(0,229,255,0.2))",
+          transition: "filter 0.3s ease",
+        }}
+      >
+        <svg
+          width={26}
+          height={26}
+          viewBox="0 0 64 64"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="nav-m-chrome" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="30%" stopColor="#E8ECEF" />
+              <stop offset="60%" stopColor="#B0B5BB" />
+              <stop offset="100%" stopColor="#7B8085" />
+            </linearGradient>
+            <linearGradient id="nav-m-road" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="#00E5FF" stopOpacity="1" />
+              <stop offset="70%" stopColor="#00E5FF" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+          {/* M body */}
+          <path
+            d="M 6 58 L 6 10 L 16 6 L 27 30 L 32 20 L 37 30 L 48 6 L 58 10 L 58 58 L 48 58 L 48 24 L 38 42 L 32 34 L 26 42 L 16 24 L 16 58 Z"
+            fill="url(#nav-m-chrome)"
+            stroke="rgba(0,229,255,0.3)"
+            strokeWidth="0.5"
+            strokeLinejoin="round"
+          />
+          {/* Cyan road */}
+          <path
+            d="M 25 60 L 30 34 L 32 26 L 34 34 L 39 60 Z"
+            fill="url(#nav-m-road)"
+          />
+          <path
+            d="M 28 60 L 31 36 L 32 30 L 33 36 L 36 60 Z"
+            fill="#7CF6FF"
+            opacity="0.5"
+          />
+        </svg>
+      </div>
+
+      {/* Top specular highlight — final "wet" chrome reflection */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          top: 3,
+          left: "20%",
+          right: "20%",
+          height: "30%",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 60%, transparent 100%)",
+          borderRadius: "50% 50% 40% 40%",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
@@ -98,8 +226,7 @@ export default function AppLayout({ children }) {
         {children}
         <div aria-hidden className="h-6" />
 
-        {/* Floating Weebo FAB — only on Home. Sticky-zero-height trick keeps her
-            pinned above the tab bar while the page scrolls. */}
+        {/* Floating Weebo FAB — only on Home */}
         {isHome && (
           <div
             className="sticky bottom-[18px] pointer-events-none flex justify-end pr-4 z-30"
@@ -120,39 +247,36 @@ export default function AppLayout({ children }) {
         )}
       </main>
 
-      {/* ============ Bottom tab bar — 3 tabs · raised M · 3 tabs ============ */}
+      {/* ============ Bottom tab bar — 1954 Bel Air dashboard chrome ============ */}
       <nav
-        className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
-        style={{ background: "rgba(5, 6, 7, 0.85)", paddingBottom: "var(--safe-bottom)" }}
+        className="sticky bottom-0 z-40"
+        style={{
+          background: "linear-gradient(180deg, rgba(26,29,33,0.95) 0%, rgba(13,15,18,0.98) 100%)",
+          borderTop: "1px solid rgba(192,192,192,0.12)",
+          boxShadow: "0 -2px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+          backdropFilter: "blur(20px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+          paddingBottom: "var(--safe-bottom)",
+        }}
         data-testid="bottom-tab-bar"
       >
         <div className="relative flex items-stretch justify-around h-[64px] px-1">
           {leftTabs.map((t) => <TabButton key={t.to} {...t} />)}
 
-          {/* Center pocket for the raised M */}
+          {/* Center pocket for the raised M dial */}
           <div className="w-[68px] flex-shrink-0" aria-hidden />
 
           {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
 
-          {/* Raised MILLI-M home button */}
+          {/* Raised Chrome Dial M — the centerpiece hardware button */}
           <NavLink
             to="/app"
             end
             data-testid="tab-home-center"
-            className={({ isActive }) =>
-              `absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] rounded-full flex items-center justify-center active:scale-95 transition-transform ${
-                isActive ? "" : ""
-              }`
-            }
-            style={{
-              background: "radial-gradient(circle at 30% 30%, #4CDCF5 0%, #00E5FF 40%, #0B7A94 100%)",
-              boxShadow:
-                "0 0 24px rgba(0,229,255,0.65), 0 6px 16px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.25)",
-              border: "1px solid rgba(255,255,255,0.35)",
-            }}
+            className="absolute left-1/2 -translate-x-1/2 -top-[18px] active:scale-95 transition-transform"
             aria-label="Home"
           >
-            <MilliLogo size={30} />
+            {({ isActive }) => <ChromeDialM isActive={isActive} />}
           </NavLink>
         </div>
       </nav>

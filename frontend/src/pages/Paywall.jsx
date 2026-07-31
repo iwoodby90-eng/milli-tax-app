@@ -1,6 +1,7 @@
 /**
  * Paywall — 3-tier Apple IAP subscription screen.
  * Big City Futuristic + iOS-native pixel choices.
+ * v1.9.2 — Executive Curve, Matte Charcoal, Obsidian borders, Elite glow.
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +13,33 @@ import { useStoreKit } from "@/hooks/useStoreKit";
 import { useAuth } from "@/context/AuthContext";
 
 const CYAN = "#00E5FF";
+
+const CARD_BASE = {
+  borderRadius: "22px",
+  background: "#0D0F12",
+  border: "1px solid #1A1D21",
+};
+
+const CARD_ACTIVE = {
+  borderRadius: "22px",
+  background: "linear-gradient(180deg, rgba(0,229,255,0.08), rgba(0,229,255,0.02))",
+  border: "1px solid rgba(0,229,255,0.7)",
+  boxShadow: "0 0 24px rgba(0,229,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
+const CARD_ELITE = {
+  borderRadius: "22px",
+  background: "#0D0F12",
+  border: "1px solid rgba(0, 229, 255, 0.55)",
+  boxShadow: "inset 0 0 20px rgba(0, 229, 255, 0.15)",
+};
+
+const CARD_ELITE_ACTIVE = {
+  borderRadius: "22px",
+  background: "linear-gradient(180deg, rgba(0,229,255,0.12), rgba(0,229,255,0.03))",
+  border: "1px solid rgba(0,229,255,0.85)",
+  boxShadow: "0 0 32px rgba(0,229,255,0.25), inset 0 0 20px rgba(0, 229, 255, 0.15)",
+};
 
 export default function Paywall() {
   const nav = useNavigate();
@@ -47,6 +75,14 @@ export default function Paywall() {
     }
   }
 
+  function getCardStyle(tier, isActive) {
+    const isElite = tier.featured || tier.plan === "elite";
+    if (isElite && isActive) return CARD_ELITE_ACTIVE;
+    if (isElite) return CARD_ELITE;
+    if (isActive) return CARD_ACTIVE;
+    return CARD_BASE;
+  }
+
   return (
     <div className="relative w-full min-h-full carbon-bg text-white overflow-y-auto native-scroll"
          style={{ paddingTop: "calc(var(--safe-top) + 8px)", paddingBottom: "calc(var(--safe-bottom) + 120px)" }}
@@ -65,12 +101,12 @@ export default function Paywall() {
       {/* Hero */}
       <div className="flex flex-col items-center px-6 pt-6 pb-4 text-center">
         <MilliLogo size={72} />
-        <div className="chrome-text font-display text-3xl tracking-[0.2em] mt-3">MILLI</div>
+        <div style={{ fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }} className="chrome-text text-3xl tracking-[0.2em] mt-3 font-bold">MILLI</div>
         <p className="text-white/85 text-[15px] mt-4 max-w-[320px]">
           <span className="chrome-text font-semibold">Every payout.</span>{" "}
           <span style={{ color: CYAN }}>On autopilot.</span>
         </p>
-        <p className="text-zinc-400 text-[13px] mt-2 max-w-[320px]">
+        <p className="text-zinc-400 text-[13px] mt-2 max-w-[320px]" style={{ fontFamily: "'Sora', sans-serif" }}>
           Pick the plan that fits how you earn. Cancel anytime from your Apple ID settings.
         </p>
       </div>
@@ -80,6 +116,7 @@ export default function Paywall() {
         {products.map((tier) => {
           const isActive = selected === tier.id;
           const isCurrent = user?.plan === tier.plan;
+          const cardStyle = getCardStyle(tier, isActive);
           return (
             <motion.button
               key={tier.id}
@@ -87,15 +124,9 @@ export default function Paywall() {
               onClick={() => setSelected(tier.id)}
               data-testid={`paywall-tier-${tier.plan}`}
               whileTap={{ scale: 0.985 }}
-              className="relative text-left rounded-2xl overflow-hidden transition-all"
+              className="relative text-left overflow-hidden transition-all"
               style={{
-                background: isActive
-                  ? "linear-gradient(180deg, rgba(0,229,255,0.08), rgba(0,229,255,0.02))"
-                  : "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0))",
-                border: `1px solid ${isActive ? "rgba(0,229,255,0.7)" : "rgba(192,192,192,0.16)"}`,
-                boxShadow: isActive
-                  ? "0 0 24px rgba(0,229,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)"
-                  : "inset 0 1px 0 rgba(255,255,255,0.04)",
+                ...cardStyle,
                 padding: 16,
               }}
             >
@@ -107,12 +138,12 @@ export default function Paywall() {
               )}
               <div className="flex items-baseline justify-between gap-4">
                 <div className="flex-1 min-w-0 pr-2">
-                  <div className="text-[11px] uppercase tracking-[0.24em] text-white/60">Milli</div>
-                  <div className="chrome-text font-display text-[22px] leading-none mt-0.5 truncate">{tier.name}</div>
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-white/60" style={{ fontFamily: "'Sora', sans-serif" }}>Milli</div>
+                  <div style={{ fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", fontWeight: 700 }} className="chrome-text text-[22px] leading-none mt-0.5 truncate">{tier.name}</div>
                   <div className="text-zinc-400 text-[13px] mt-1 leading-snug">{tier.tagline}</div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className="font-chrome font-bold text-white text-[22px] leading-none tabular-nums whitespace-nowrap">
+                  <div style={{ fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", fontWeight: 700 }} className="text-white text-[22px] leading-none tabular-nums whitespace-nowrap">
                     {tier.priceDisplay}
                   </div>
                   <div className="text-[10px] uppercase tracking-widest text-white/40 mt-1">/month</div>
@@ -134,11 +165,6 @@ export default function Paywall() {
                   <ShieldCheck size={12} weight="fill" /> Your current plan
                 </div>
               )}
-
-              {/* Radio bubble */}
-              <div className="absolute top-4 left-4 pointer-events-none opacity-0" aria-hidden="true">
-                {/* offset placeholder — real selection indicated by border/glow above */}
-              </div>
             </motion.button>
           );
         })}

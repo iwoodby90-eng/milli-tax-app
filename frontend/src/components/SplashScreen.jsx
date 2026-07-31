@@ -14,17 +14,18 @@
  *   5. Four outline feature icons: PROTECT · TRACK · GROW · PREPARE
  *   6. "Initializing your financial command center…"
  *
- * Non-negotiable brand elements enforced here:
- *   • Right-hand vertical stroke of the M is cyan (#00E5FF)
- *   • "FOR YOU." is cyan (#00E5FF)
- *   • Solid #0A0A0A background — no gradients that dilute the black
+ * v1.9.2 — Final Design Hardening:
+ *   • Initial scale 10 (more dramatic fly-in)
+ *   • Background #050607 (Pure Noir)
+ *   • Hardware Texture overlay (subtle scanlines + noise)
+ *   • Faster, punchier M logo reveal (1.2s duration)
  */
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Lock, MapPin, PieChart, FileCheck } from "lucide-react";
 
 const CYAN = "#00E5FF";
-const HOLD_MS = 4000;  // 4s — cinematic reveal per Ian  // give the cinematic fly-in room to breathe
+const HOLD_MS = 4000;  // 4s — cinematic reveal per Ian
 const FADE_MS = 700;
 
 // -----------------------------------------------------------------------
@@ -228,6 +229,36 @@ function FeatureIcon({ label, children, delay }) {
 }
 
 // -----------------------------------------------------------------------
+// Hardware Texture Overlay — subtle scanlines + noise for cinematic depth
+// -----------------------------------------------------------------------
+function HardwareTexture() {
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none z-[1]"
+      aria-hidden="true"
+      style={{ mixBlendMode: "overlay" }}
+    >
+      {/* Scanlines */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px)",
+        }}
+      />
+      {/* Noise texture via inline SVG data URI */}
+      <div
+        className="absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+        }}
+      />
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
 // SplashScreen — animates in, then either waits for a tap (returning
 // users) OR auto-fades into the next flow (first launch).
 // -----------------------------------------------------------------------
@@ -283,12 +314,15 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
             transition: { duration: FADE_MS / 1000, ease: "easeInOut" },
           }}
           style={{
-            backgroundColor: "#0A0A0A",
+            backgroundColor: "#050607",
             fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
             paddingTop:    "var(--safe-top)",
             paddingBottom: "var(--safe-bottom)",
           }}
         >
+          {/* Hardware Texture overlay — scanlines + noise */}
+          <HardwareTexture />
+
           {/* -- concentric arcs behind the logo -- */}
           <svg
             className="absolute inset-x-0 top-0 mx-auto pointer-events-none"
@@ -322,19 +356,19 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                 filter={i === 0 ? "url(#arcGlow)" : undefined}
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ delay: 0.15 + i * 0.15, duration: 1.6, ease: "easeOut" }}
+                transition={{ delay: 0.1 + i * 0.1, duration: 1.0, ease: "easeOut" }}
               />
             ))}
           </svg>
 
           {/* -- main stacked content -- */}
           <div className="relative z-10 flex flex-col items-center justify-between h-full py-[9vh] px-6">
-            {/* logo + wordmark — cinematic fly-in */}
+            {/* logo + wordmark — cinematic fly-in (v1.9.2: scale 10, 1.2s punch) */}
             <motion.div
               className="flex flex-col items-center gap-4 relative"
-              initial={{ opacity: 0, scale: 5, filter: "blur(32px)", y: -100 }}
+              initial={{ opacity: 0, scale: 10, filter: "blur(32px)", y: -100 }}
               animate={{ opacity: 1, scale: 1,   filter: "blur(0px)",  y: 0 }}
-              transition={{ duration: 2.0, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             >
               {/* Chrome light-sweep across the M */}
               <motion.div
@@ -352,7 +386,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                 }}
                 initial={{ x: -160, opacity: 0 }}
                 animate={{ x: 160,  opacity: [0, 0.9, 0] }}
-                transition={{ delay: 1.05, duration: 1.2, ease: "easeOut" }}
+                transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
               />
               {/* Ambient cyan pulse ring behind the M */}
               <motion.div
@@ -365,7 +399,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                 }}
                 initial={{ scale: 0.4, opacity: 0 }}
                 animate={{ scale: [0.4, 1.4, 1.9], opacity: [0, 0.6, 0] }}
-                transition={{ delay: 0.9, duration: 1.6, ease: "easeOut" }}
+                transition={{ delay: 0.5, duration: 1.2, ease: "easeOut" }}
               />
               <ChromeM size={132} />
               <motion.div
@@ -381,7 +415,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                 }}
                 initial={{ opacity: 0, letterSpacing: "0.5em" }}
                 animate={{ opacity: 1, letterSpacing: "0.15em" }}
-                transition={{ delay: 0.9, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: 0.6, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 data-testid="splash-wordmark"
               >
                 MILLI

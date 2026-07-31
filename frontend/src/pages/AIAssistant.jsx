@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { API_BASE } from "@/lib/api";
-import { ArrowRight, Lightning, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
+import { PaperPlaneRight, Lightning, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import WeeboAvatar from "@/components/WeeboAvatar";
 import useWeeboVoice from "@/hooks/useWeeboVoice";
 
@@ -137,7 +137,7 @@ export default function AIAssistant() {
             {muted ? <SpeakerSlash size={14} weight="bold" /> : <SpeakerHigh size={14} weight="bold" />}
           </button>
 
-          {/* Roaming stage — she wanders across this area */}
+          {/* Roaming stage */}
           <div className="w-full flex justify-center">
             <WeeboAvatar size={180} state={weeboState} />
           </div>
@@ -192,26 +192,62 @@ export default function AIAssistant() {
           ))}
           <div ref={endRef} />
         </div>
+
+        {/* ============ Native iOS-style input — full width, send arrow inside ============ */}
         <form
           onSubmit={(e) => { e.preventDefault(); send(); }}
-          className="border-t border-hairline p-4 flex gap-2"
+          className="p-3 sm:p-4"
+          data-testid="ai-input-form"
         >
-          <input
-            data-testid="ai-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={streaming}
-            placeholder="Ask about deductions, quarterlies, mileage..."
-            className="flex-1 bg-transparent border border-hairline px-4 py-3 font-mono text-sm focus:outline-none focus:border-volt rounded-xl"
-          />
-          <button
-            data-testid="ai-send"
-            type="submit"
-            disabled={streaming || !input.trim()}
-            className="btn-volt px-5 py-3 font-bold uppercase tracking-wider text-sm inline-flex items-center gap-2 disabled:opacity-50 rounded-xl"
+          <div
+            className="relative flex items-center w-full"
+            style={{
+              background: "rgba(13, 15, 18, 0.6)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "18px",
+              backdropFilter: "blur(20px) saturate(1.2)",
+              WebkitBackdropFilter: "blur(20px) saturate(1.2)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.3)",
+            }}
           >
-            {streaming ? "..." : <>Send <ArrowRight weight="bold" /></>}
-          </button>
+            <input
+              data-testid="ai-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={streaming}
+              placeholder="Ask about deductions, quarterlies, mileage..."
+              className="flex-1 bg-transparent px-5 py-4 text-[15px] text-white placeholder:text-zinc-500 focus:outline-none disabled:opacity-50"
+              style={{
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif",
+                minHeight: "52px",
+              }}
+            />
+            <button
+              data-testid="ai-send"
+              type="submit"
+              disabled={streaming || !input.trim()}
+              className="flex-shrink-0 flex items-center justify-center mr-2 transition-all active:scale-90 disabled:opacity-30"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: "12px",
+                background: (streaming || !input.trim())
+                  ? "rgba(0, 229, 255, 0.1)"
+                  : "linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%)",
+                boxShadow: (streaming || !input.trim())
+                  ? "none"
+                  : "0 0 12px rgba(0,229,255,0.4), 0 2px 6px rgba(0,0,0,0.3)",
+              }}
+            >
+              <PaperPlaneRight
+                size={18}
+                weight="fill"
+                style={{
+                  color: (streaming || !input.trim()) ? "rgba(0,229,255,0.4)" : "#050607",
+                }}
+              />
+            </button>
+          </div>
         </form>
       </div>
 
