@@ -1,95 +1,135 @@
 /**
- * glass-polish.css — Global card & surface polish for Milli 1.0
+ * glass-polish.css v2 — "Seamless Elite" Hardening
  *
- * Scrubs all blocky opaque backgrounds and enforces the Industrial-Noir
- * glassmorphic standard across every screen.
+ * Rules:
+ * - NO solid backgrounds on any card/container
+ * - All surfaces: rgba(13,15,18,0.4) + backdrop-filter: blur(28px) brightness(1.2)
+ * - 22px squircle radius on ALL containers
+ * - Invisible transition to noir bg — only a 1px "Obsidian" edge separates them
+ * - No hard box-shadows. Only ultra-soft diffuse.
  */
 
-/* === All cards/panels: glassmorphic, no opaque blocks === */
+:root {
+  --glass-bg: rgba(13, 15, 18, 0.4);
+  --glass-blur: blur(28px) brightness(1.2);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.04);
+  --glass-radius: 22px;
+  --obsidian-edge: 1px solid rgba(40, 44, 52, 0.8);
+  --noir-bg: #050607;
+}
+
+/* === NUCLEAR: Every possible card/container selector === */
 .glass-card,
 [class*="Card"],
 [class*="card"],
 [class*="panel"],
 [class*="Panel"],
-.milli-card {
-  background: rgba(13, 15, 18, 0.7) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(192, 192, 192, 0.08) !important;
-  border-radius: 20px !important;
-  box-shadow: 
-    0 4px 24px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+[class*="section"],
+[class*="container"],
+.milli-card,
+.dashboard-card,
+.vault-card,
+.insight-card,
+.stat-card,
+.mileage-card,
+.expense-card,
+.income-card,
+article,
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: var(--obsidian-edge) !important;
+  border-radius: var(--glass-radius) !important;
+  box-shadow: none !important;
 }
 
-/* === Eliminate any solid/opaque dark backgrounds on containers === */
-.dashboard-section,
-.income-section,
-.mileage-section,
-.expenses-section,
-.settings-section,
-main > div,
-.page-container {
-  background: transparent !important;
+/* === Direct style overrides for inline-styled React components === */
+div[style*="background: rgb"],
+div[style*="background-color: rgb"],
+div[style*="backgroundColor"],
+div[style*="background: #"],
+div[style*="background-color: #"] {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
 }
 
-/* === Form cards (login, register, etc.) === */
-form,
-.auth-card,
-.login-card,
-.register-card {
-  background: rgba(13, 15, 18, 0.75) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(0, 229, 255, 0.08) !important;
-  border-radius: 24px !important;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.02) !important;
-}
-
-/* === NO blocky box-shadows (replace with soft/diffuse only) === */
-[style*="box-shadow: 0px"],
-[style*="box-shadow: 0 0"],
-.shadow-lg, .shadow-xl, .shadow-2xl {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* === Buttons: retain their colors but ensure no blocky appearance === */
-button:not([class*="ghost"]):not([class*="outline"]) {
-  border-radius: 12px !important;
-  border: none !important;
-  box-shadow: 0 2px 12px rgba(0, 229, 255, 0.15) !important;
-}
-
-/* === Input fields: consistent dark glass look === */
-input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+/* === Exempt certain elements from glass treatment === */
+button,
+input,
+select,
 textarea,
-select {
-  background: rgba(5, 6, 7, 0.8) !important;
-  border: 1px solid rgba(0, 229, 255, 0.12) !important;
-  border-radius: 12px !important;
+nav,
+.splash-screen,
+.onboarding-carousel,
+[class*="Splash"],
+[class*="Paywall"],
+[class*="Logo"],
+svg,
+img,
+video {
+  background: revert !important;
+  backdrop-filter: revert !important;
+  -webkit-backdrop-filter: revert !important;
+  border-radius: revert !important;
+}
+
+/* === Re-apply specific styles for nav/buttons === */
+button {
+  background: #00E5FF !important;
+  color: #050607 !important;
+  border: none !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.2) !important;
+}
+button[class*="ghost"],
+button[class*="outline"],
+button[class*="secondary"] {
+  background: transparent !important;
+  color: #00E5FF !important;
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+  box-shadow: none !important;
+}
+
+/* === Inputs: dark recessed look === */
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+textarea, select {
+  background: rgba(3, 4, 5, 0.7) !important;
+  border: 1px solid rgba(0, 229, 255, 0.08) !important;
+  border-radius: 14px !important;
   color: #FFFFFF !important;
-  transition: border-color 0.2s, box-shadow 0.2s !important;
+  padding: 14px 16px !important;
+  font-size: 16px !important;
 }
 input:focus, textarea:focus, select:focus {
-  border-color: rgba(0, 229, 255, 0.4) !important;
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.08) !important;
+  border-color: rgba(0, 229, 255, 0.35) !important;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.06) !important;
   outline: none !important;
 }
 
-/* === Eliminate any white/light borders that look "blocky" === */
-[style*="border: 1px solid rgb(2"],
-[style*="border: 1px solid #e"],
-[style*="border: 1px solid #d"],
-[style*="border: 1px solid #c"] {
-  border-color: rgba(192, 192, 192, 0.08) !important;
+/* === Navigation bar: titanium finish === */
+nav, .tabbar, .nav-bar, .bottom-nav, [role="navigation"] {
+  background: linear-gradient(180deg, 
+    rgba(28, 32, 38, 0.95) 0%, 
+    rgba(18, 20, 24, 0.98) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.03) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* === Tab bars / navigation: transparent glass === */
-nav, .tabbar, .nav-bar, .bottom-nav, [role="navigation"] {
-  background: rgba(5, 6, 7, 0.85) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+/* === Page/screen backgrounds: pure noir === */
+.App, #root, main, body, html,
+[class*="page"], [class*="Page"],
+[class*="screen"], [class*="Screen"] {
+  background: var(--noir-bg) !important;
 }
+
+/* === Scrollbar === */
+::-webkit-scrollbar { width: 0; height: 0; }
