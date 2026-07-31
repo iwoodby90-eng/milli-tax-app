@@ -258,7 +258,7 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* Quick links */
+      {/* Quick links */}
       <div className="grid sm:grid-cols-2 gap-3">
         <Link
           to="/app/ai"
