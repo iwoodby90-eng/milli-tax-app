@@ -1,79 +1,92 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import MilliLogo from "./MilliLogo";
 
 /**
- * SplashScreen v1.9.5 — Cinematic Video Splash.
+ * SplashScreen v1.9.6 — Definitive Cinematic Splash.
  *
- * Plays the "White Flash Take-off" video full-screen on launch.
- * Zero-touch: auto-transitions when video ends or after 5s (whichever first).
- * Fallback: if video fails to load, shows a CSS animation instead.
+ * Plays the 'Perfect' baked video (~10s) full-screen, zero touch.
+ * On video end: seamless cross-fade to static cyan-gradient wordmark hold frame.
+ * Holds wordmark for 2.5s, then auto-fades into Login. Zero touch required.
+ * Fallback: if video fails, CSS streaks + wordmark hold, then same exit flow.
  */
 
-const VIDEO_URL = "https://customer-assets-7cd3h4nn.emergentagent.net/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/videos/4e47ac04c33127f9.mp4";
-const MAX_DURATION = 5500; // failsafe: auto-dismiss after 5.5s even if video stalls
+const VIDEO_URL =
+  "https://customer-assets-7cd3h4nn.emergentagent.net/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/videos/319e22928c08311a.mp4";
+
+const WORDMARK_URL =
+  "https://static.prod-images.emergentagent.com/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/images/61ceebd0bc76de271d00f038dea4e525bf651e63f42c027195dfa419dbfc3dc9.jpeg";
+
+const WORDMARK_HOLD_MS = 2500;  // hold the wordmark frame before exiting
+const CROSSFADE_DURATION = 0.8; // video→wordmark crossfade in seconds
+const MAX_DURATION = 14000;     // failsafe: force-advance after 14s
 
 export default function SplashScreen({ onDone }) {
-  const [exiting, setExiting] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
-  const [showLogo, setShowLogo] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const videoRef = useRef(null);
-  const timerRef = useRef(null);
+  const exitScheduled = useRef(false);
 
-  // Failsafe timer: always dismiss after MAX_DURATION
-  useEffect(() => {
-    timerRef.current = setTimeout(() => dismiss(), MAX_DURATION);
-    return () => clearTimeout(timerRef.current);
-  }, []);
-
-  // Show logo near end of video or on fallback
-  useEffect(() => {
-    const logoTimer = setTimeout(() => setShowLogo(true), 3800);
-    return () => clearTimeout(logoTimer);
-  }, []);
-
-  const dismiss = () => {
-    if (exiting) return;
-    setExiting(true);
-    setTimeout(() => onDone?.(), 600);
+  // Schedules the full-screen fade-out → onDone, called once only.
+  const triggerExit = () => {
+    if (exitScheduled.current) return;
+    exitScheduled.current = true;
+    setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => onDone?.(), 700);
+    }, WORDMARK_HOLD_MS);
   };
 
-  const handleVideoEnd = () => dismiss();
-  
+  // Failsafe: force-advance if the video never ends
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setVideoEnded(true);
+      triggerExit();
+    }, MAX_DURATION);
+    return () => clearTimeout(t);
+  }, []);
+
   const handleVideoLoaded = () => {
     setVideoLoaded(true);
-    // Attempt autoplay
     videoRef.current?.play().catch(() => {
-      // Autoplay blocked — use fallback
+      // Autoplay blocked — show fallback immediately
       setVideoFailed(true);
+      setVideoEnded(true);
+      triggerExit();
     });
   };
 
-  const handleVideoError = () => setVideoFailed(true);
+  const handleVideoEnd = () => {
+    setVideoEnded(true);
+    triggerExit();
+  };
+
+  const handleVideoError = () => {
+    setVideoFailed(true);
+    setVideoEnded(true);
+    triggerExit();
+  };
 
   return (
     <AnimatePresence>
-      {!exiting ? (
+      {!exiting && (
         <motion.div
           key="splash-screen"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 100000,
             background: "#050607",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
             overflow: "hidden",
           }}
         >
-          {/* === VIDEO LAYER === */}
+          {/* === VIDEO LAYER — fades out as video ends === */}
           {!videoFailed && (
-            <video
+            <motion.video
               ref={videoRef}
               src={VIDEO_URL}
               muted
@@ -82,22 +95,50 @@ export default function SplashScreen({ onDone }) {
               onLoadedData={handleVideoLoaded}
               onEnded={handleVideoEnd}
               onError={handleVideoError}
+              animate={{ opacity: videoEnded ? 0 : videoLoaded ? 1 : 0 }}
+              transition={{ duration: CROSSFADE_DURATION, ease: "easeInOut" }}
               style={{
                 position: "absolute",
                 inset: 0,
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                opacity: videoLoaded ? 1 : 0,
-                transition: "opacity 0.3s",
               }}
             />
           )}
 
-          {/* === FALLBACK: CSS Animation (if video fails) === */}
+          {/* === WORDMARK HOLD FRAME — cross-fades in as video fades out === */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: videoEnded ? 1 : 0 }}
+            transition={{ duration: CROSSFADE_DURATION, ease: "easeInOut" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#050607",
+            }}
+          >
+            <img
+              src={WORDMARK_URL}
+              alt="Milli"
+              draggable={false}
+              style={{
+                maxWidth: "72%",
+                maxHeight: "38%",
+                objectFit: "contain",
+                userSelect: "none",
+                WebkitUserSelect: "none",
+                pointerEvents: "none",
+              }}
+            />
+          </motion.div>
+
+          {/* === FALLBACK CSS ANIMATION (if video fails to load) === */}
           {videoFailed && (
             <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-              {/* Streaking light lines */}
               {Array.from({ length: 8 }).map((_, i) => (
                 <motion.div
                   key={i}
@@ -115,74 +156,26 @@ export default function SplashScreen({ onDone }) {
                   }}
                 />
               ))}
-              {/* Central bloom */}
               <motion.div
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: [0, 0.8, 0], scale: [0, 3, 4] }}
                 transition={{ duration: 2, delay: 2.5 }}
                 style={{
                   position: "absolute",
-                  top: "50%", left: "50%",
-                  width: 100, height: 100,
-                  marginLeft: -50, marginTop: -50,
+                  top: "50%",
+                  left: "50%",
+                  width: 100,
+                  height: 100,
+                  marginLeft: -50,
+                  marginTop: -50,
                   borderRadius: "50%",
-                  background: "radial-gradient(circle, rgba(0,229,255,0.5), transparent 70%)",
+                  background:
+                    "radial-gradient(circle, rgba(0,229,255,0.5), transparent 70%)",
                 }}
               />
             </div>
           )}
-
-          {/* === LOGO REVEAL (appears at 3.8s, overlaid on video ending) === */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.7, filter: "blur(12px)" }}
-            animate={{
-              opacity: showLogo ? 1 : 0,
-              scale: showLogo ? 1 : 0.7,
-              filter: showLogo ? "blur(0px)" : "blur(12px)",
-            }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              position: "relative",
-              zIndex: 10,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
-            <MilliLogo size={90} />
-            <motion.h1
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: showLogo ? 1 : 0, y: showLogo ? 0 : 8 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              style={{
-                fontSize: 28,
-                fontWeight: 700,
-                letterSpacing: "0.2em",
-                background: "linear-gradient(135deg, #9CA3AF, #F9FAFB, #D1D5DB)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                margin: 0,
-                fontFamily: '-apple-system, "SF Pro Display", "Sora", system-ui, sans-serif',
-              }}
-            >
-              MILLI
-            </motion.h1>
-          </motion.div>
         </motion.div>
-      ) : (
-        /* Exit: brief black frame to clean transition */
-        <motion.div
-          key="splash-exit"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          style={{
-            position: "fixed", inset: 0, zIndex: 99999,
-            background: "#050607",
-          }}
-        />
       )}
     </AnimatePresence>
   );
