@@ -237,26 +237,29 @@ export default function Dashboard() {
       </div>
 
 
-      {/* Milli-Cents Profitability Engine — Pro/Elite only */}
-      {(user?.plan === "pro" || user?.plan === "elite") && (
-        <>
-          <button
-            onClick={() => setShowMilliCents(true)}
-            data-testid="dashboard-milli-cents-cta"
-            className="milli-card p-5 mb-4 w-full flex items-center gap-4 hover:border-volt/50 transition-colors group text-left"
-          >
-            <div className="w-12 h-12 rounded-2xl border border-volt/30 bg-zinc-900 flex items-center justify-center flex-shrink-0">
-              <Gauge size={24} weight="duotone" className="text-volt" />
+      {/* Milli-Cents Profitability Engine — visible to ALL users during launch */}
+      <>
+        <button
+          onClick={() => setShowMilliCents(true)}
+          data-testid="dashboard-milli-cents-cta"
+          className="milli-card p-5 mb-4 w-full flex items-center gap-4 hover:border-volt/50 transition-colors group text-left"
+        >
+          <div className="w-12 h-12 rounded-2xl border border-volt/30 bg-zinc-900 flex items-center justify-center flex-shrink-0">
+            <Gauge size={24} weight="duotone" className="text-volt" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-white flex items-center gap-2">
+              Milli-Cents Calculator
+              {user?.plan !== "pro" && user?.plan !== "elite" && (
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,229,255,0.15)", color: "#00E5FF", border: "1px solid rgba(0,229,255,0.3)" }}>PRO</span>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-white">Milli-Cents Calculator</div>
-              <div className="text-xs text-zinc-500 font-mono">Instant offer profitability · fuel + tax analysis</div>
-            </div>
-            <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
-          </button>
-          {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
-        </>
-      )}
+            <div className="text-xs text-zinc-500 font-mono">Instant offer profitability · fuel + tax analysis</div>
+          </div>
+          <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
+        </button>
+        {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
+      </>
 
       {/* Quick links */}
       <div className="grid sm:grid-cols-2 gap-3">
