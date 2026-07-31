@@ -1,8 +1,6 @@
 #!/bin/bash
-# Milli backend keepalive — hits /api/health every 4 minutes so supervisor
-# and the k8s liveness probe stay warm. If the process crashed, supervisor
-# will autorestart before the next probe.
+# Aggressive keep-alive: hits backend every 60 seconds
 while true; do
-    curl -s -m 5 -o /dev/null http://localhost:8001/api/health || true
-    sleep 240
+    curl -s -o /dev/null --max-time 5 http://localhost:8001/api/health || true
+    sleep 60
 done
