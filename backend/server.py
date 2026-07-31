@@ -333,7 +333,10 @@ async def plaid_link_token(user: dict = Depends(get_current_user)):
         client_name="TaxHaul",
         country_codes=[CountryCode("US")],
         language="en",
-        user=LinkTokenCreateRequestUser(client_user_id=user["id"]),
+        user=LinkTokenCreateRequestUser(
+            client_user_id=str(user["id"]),
+            phone_number=user.get("phone") or None,
+        ),
     )
     try:
         resp = plaid_client.link_token_create(req)

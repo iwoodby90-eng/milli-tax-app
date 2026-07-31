@@ -1,0 +1,95 @@
+/**
+ * glass-polish.css — Global card & surface polish for Milli 1.0
+ *
+ * Scrubs all blocky opaque backgrounds and enforces the Industrial-Noir
+ * glassmorphic standard across every screen.
+ */
+
+/* === All cards/panels: glassmorphic, no opaque blocks === */
+.glass-card,
+[class*="Card"],
+[class*="card"],
+[class*="panel"],
+[class*="Panel"],
+.milli-card {
+  background: rgba(13, 15, 18, 0.7) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(192, 192, 192, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* === Eliminate any solid/opaque dark backgrounds on containers === */
+.dashboard-section,
+.income-section,
+.mileage-section,
+.expenses-section,
+.settings-section,
+main > div,
+.page-container {
+  background: transparent !important;
+}
+
+/* === Form cards (login, register, etc.) === */
+form,
+.auth-card,
+.login-card,
+.register-card {
+  background: rgba(13, 15, 18, 0.75) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(0, 229, 255, 0.08) !important;
+  border-radius: 24px !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02) !important;
+}
+
+/* === NO blocky box-shadows (replace with soft/diffuse only) === */
+[style*="box-shadow: 0px"],
+[style*="box-shadow: 0 0"],
+.shadow-lg, .shadow-xl, .shadow-2xl {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* === Buttons: retain their colors but ensure no blocky appearance === */
+button:not([class*="ghost"]):not([class*="outline"]) {
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(0, 229, 255, 0.15) !important;
+}
+
+/* === Input fields: consistent dark glass look === */
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  background: rgba(5, 6, 7, 0.8) !important;
+  border: 1px solid rgba(0, 229, 255, 0.12) !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(0, 229, 255, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.08) !important;
+  outline: none !important;
+}
+
+/* === Eliminate any white/light borders that look "blocky" === */
+[style*="border: 1px solid rgb(2"],
+[style*="border: 1px solid #e"],
+[style*="border: 1px solid #d"],
+[style*="border: 1px solid #c"] {
+  border-color: rgba(192, 192, 192, 0.08) !important;
+}
+
+/* === Tab bars / navigation: transparent glass === */
+nav, .tabbar, .nav-bar, .bottom-nav, [role="navigation"] {
+  background: rgba(5, 6, 7, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+}

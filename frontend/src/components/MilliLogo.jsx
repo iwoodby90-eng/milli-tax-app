@@ -1,204 +1,215 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 
 /**
- * MilliLogo — Senior Staff hardware-grade component.
+ * MilliLogo v2 — Zero-artifact hardware component.
  *
- * Renders the Milli "M" as a seamless, transparent-background mark with:
- * - Multi-stage chrome gradient (5 stops, metallic sheen)
- * - Cyan right-stroke accent with inner glow
- * - 3D specular highlight layer with subtle parallax on device motion
- * - CSS mask-image compositing (no rectangular container, no block artifacts)
- * - Blends perfectly into any dark background
+ * The M is rendered as pure SVG strokes with NO container, NO background,
+ * NO box-shadow, NO rectangular divs. It exists as geometry only.
  *
- * Props:
- *   size   - height in px (default 80)
- *   glow   - enable ambient cyan glow (default true)
- *   motion - enable parallax specular highlight (default true)
+ * - Left/center strokes: 5-stop chrome metallic gradient
+ * - Right vertical stroke: separate element, neon cyan (#00E5FF) with SVG glow
+ * - Edge highlights: thin bright strokes simulate light catching metal edges
+ * - Specular sweep: animated gradient masked to the M path (no rectangle)
+ * - Container: display:contents-like, zero visual footprint
  */
 export default function MilliLogo({ size = 80, glow = true, motion = true }) {
-  const containerRef = useRef(null);
+  const ref = useRef(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-  // Parallax: device orientation or mouse move
   useEffect(() => {
     if (!motion) return;
     let raf;
-
-    const handleOrientation = (e) => {
-      const x = Math.max(-15, Math.min(15, (e.gamma || 0) * 0.5));
-      const y = Math.max(-15, Math.min(15, (e.beta || 0) * 0.3 - 10));
-      raf = requestAnimationFrame(() => setTilt({ x, y }));
+    const handler = (e) => {
+      if (e.gamma != null) {
+        // Device orientation (mobile)
+        const x = Math.max(-20, Math.min(20, e.gamma * 0.6));
+        const y = Math.max(-20, Math.min(20, (e.beta - 45) * 0.4));
+        raf = requestAnimationFrame(() => setTilt({ x, y }));
+      }
     };
-
-    const handleMouse = (e) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+    const mouseHandler = (e) => {
+      if (!ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-      const x = ((e.clientX - cx) / rect.width) * 12;
-      const y = ((e.clientY - cy) / rect.height) * 12;
+      const x = ((e.clientX - cx) / (window.innerWidth / 2)) * 20;
+      const y = ((e.clientY - cy) / (window.innerHeight / 2)) * 20;
       raf = requestAnimationFrame(() => setTilt({ x, y }));
     };
 
-    if (window.DeviceOrientationEvent && "ontouchstart" in window) {
-      window.addEventListener("deviceorientation", handleOrientation, { passive: true });
+    if ("ontouchstart" in window) {
+      window.addEventListener("deviceorientation", handler, { passive: true });
     } else {
-      window.addEventListener("mousemove", handleMouse, { passive: true });
+      window.addEventListener("mousemove", mouseHandler, { passive: true });
     }
-
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("deviceorientation", handleOrientation);
-      window.removeEventListener("mousemove", handleMouse);
+      window.removeEventListener("deviceorientation", handler);
+      window.removeEventListener("mousemove", mouseHandler);
     };
   }, [motion]);
 
-  const w = size;
-  const h = size;
-  const strokeW = Math.max(2, size * 0.09);
+  // M geometry (all values in 0-100 viewBox)
+  const sw = 9; // stroke width as % of viewBox
+  const mPath = "M 12 85 L 12 15 L 50 45 L 88 15 L 88 85"; // full M
+  const leftPath = "M 12 85 L 12 15 L 50 45 L 88 15"; // left portion (chrome)
+  const rightStroke = { x: 88, y1: 15, y2: 85 }; // right vertical (cyan)
 
-  // M path (angular, architectural)
-  const buildMPath = () => {
-    const pad = strokeW;
-    const left = pad;
-    const right = w - pad;
-    const top = pad + h * 0.1;
-    const bottom = h - pad - h * 0.1;
-    const midX = w / 2;
-    const peakY = top + (bottom - top) * 0.35;
-    return `M ${left} ${bottom} L ${left} ${top} L ${midX} ${peakY} L ${right} ${top} L ${right} ${bottom}`;
-  };
-
-  const mPath = buildMPath();
+  // Specular angle from tilt
+  const specAngle = useMemo(() => 135 + (tilt.x || 0) * 0.8, [tilt.x]);
 
   return (
     <div
-      ref={containerRef}
+      ref={ref}
       style={{
+        /* ZERO visual footprint: no bg, no border, no shadow, no outline */
+        width: size,
+        height: size,
         position: "relative",
-        width: w,
-        height: h,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        /* NO background, NO border, NO rectangular container */
+        display: "inline-block",
         background: "transparent",
         border: "none",
-        borderRadius: 0,
+        outline: "none",
+        boxShadow: "none",
+        padding: 0,
+        margin: 0,
+        lineHeight: 0,
         overflow: "visible",
       }}
     >
-      {/* Ambient glow (behind everything) */}
-      {glow && (
-        <div
-          style={{
-            position: "absolute",
-            inset: "-20%",
-            background: "radial-gradient(ellipse at center, rgba(0,229,255,0.12) 0%, transparent 70%)",
-            filter: "blur(8px)",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
-      {/* Main M SVG */}
       <svg
-        viewBox={`0 0 ${w} ${h}`}
-        width={w}
-        height={h}
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ position: "relative", zIndex: 2 }}
+        style={{ display: "block", overflow: "visible" }}
       >
         <defs>
-          {/* Chrome gradient — 5-stop metallic */}
-          <linearGradient id="milli-chrome" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#9CA3AF" />
-            <stop offset="25%" stopColor="#E5E7EB" />
-            <stop offset="50%" stopColor="#D1D5DB" />
-            <stop offset="75%" stopColor="#F9FAFB" />
-            <stop offset="100%" stopColor="#9CA3AF" />
+          {/* 5-stop chrome metallic gradient */}
+          <linearGradient id={`ml-chrome-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#7A7F87" />
+            <stop offset="22%" stopColor="#E8ECF0" />
+            <stop offset="45%" stopColor="#B8BCC2" />
+            <stop offset="70%" stopColor="#F4F6F8" />
+            <stop offset="100%" stopColor="#8A8F96" />
           </linearGradient>
 
-          {/* Cyan accent gradient */}
-          <linearGradient id="milli-cyan-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          {/* Darker chrome for shadow depth */}
+          <linearGradient id={`ml-chrome-dark-${size}`} x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#4A4E54" />
+            <stop offset="50%" stopColor="#6A6E74" />
+            <stop offset="100%" stopColor="#4A4E54" />
+          </linearGradient>
+
+          {/* Cyan vertical gradient for right stroke */}
+          <linearGradient id={`ml-cyan-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#00FFEA" />
-            <stop offset="50%" stopColor="#00E5FF" />
-            <stop offset="100%" stopColor="#00BCD4" />
+            <stop offset="40%" stopColor="#00E5FF" />
+            <stop offset="100%" stopColor="#0097A7" />
           </linearGradient>
 
-          {/* Specular highlight gradient */}
-          <linearGradient id="milli-specular" x1="0%" y1="0%" x2="100%" y2="100%">
+          {/* Specular highlight gradient (moves with tilt) */}
+          <linearGradient id={`ml-spec-${size}`} x1="0%" y1="0%" x2="100%" y2="100%"
+            gradientTransform={`rotate(${specAngle} 0.5 0.5)`}>
             <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-            <stop offset="40%" stopColor="rgba(255,255,255,0.35)" />
-            <stop offset="60%" stopColor="rgba(255,255,255,0.1)" />
+            <stop offset="35%" stopColor="rgba(255,255,255,0)" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.4)" />
+            <stop offset="65%" stopColor="rgba(255,255,255,0)" />
             <stop offset="100%" stopColor="rgba(255,255,255,0)" />
           </linearGradient>
 
-          {/* Glow filter for cyan stroke */}
-          <filter id="milli-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+          {/* Cyan glow filter */}
+          <filter id={`ml-glow-${size}`} x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur1" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur2" />
             <feMerge>
-              <feMergeNode in="blur" />
+              <feMergeNode in="blur1" />
+              <feMergeNode in="blur2" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+
+          {/* Soft shadow filter */}
+          <filter id={`ml-shadow-${size}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="1.5" dy="2" stdDeviation="2" floodColor="rgba(0,0,0,0.6)" />
+          </filter>
         </defs>
 
-        {/* Shadow layer */}
+        {/* Layer 1: Drop shadow (subtle depth) */}
         <path
           d={mPath}
-          stroke="rgba(0,0,0,0.4)"
-          strokeWidth={strokeW + 2}
+          stroke="rgba(0,0,0,0.5)"
+          strokeWidth={sw + 1.5}
           strokeLinecap="round"
           strokeLinejoin="round"
-          transform="translate(1.5, 2)"
+          transform="translate(0.8, 1.2)"
         />
 
-        {/* Main chrome M (left 3 strokes) */}
+        {/* Layer 2: Dark chrome base (gives depth to metallic) */}
         <path
-          d={mPath}
-          stroke="url(#milli-chrome)"
-          strokeWidth={strokeW}
+          d={leftPath}
+          stroke={`url(#ml-chrome-dark-${size})`}
+          strokeWidth={sw + 0.5}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {/* Cyan right-stroke overlay (only the rightmost vertical) */}
+        {/* Layer 3: Main chrome M (left 3 strokes) */}
+        <path
+          d={leftPath}
+          stroke={`url(#ml-chrome-${size})`}
+          strokeWidth={sw}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter={`url(#ml-shadow-${size})`}
+        />
+
+        {/* Layer 4: Edge highlight (top edge of chrome, simulates light) */}
+        <path
+          d={leftPath}
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          transform="translate(-0.5, -0.8)"
+        />
+
+        {/* Layer 5: Right vertical stroke — NEON CYAN (separate, glowing) */}
         <line
-          x1={w - strokeW}
-          y1={strokeW + h * 0.1}
-          x2={w - strokeW}
-          y2={h - strokeW - h * 0.1}
-          stroke="url(#milli-cyan-grad)"
-          strokeWidth={strokeW}
+          x1={rightStroke.x}
+          y1={rightStroke.y1}
+          x2={rightStroke.x}
+          y2={rightStroke.y2}
+          stroke={`url(#ml-cyan-${size})`}
+          strokeWidth={sw}
           strokeLinecap="round"
-          filter="url(#milli-glow)"
+          filter={glow ? `url(#ml-glow-${size})` : undefined}
         />
-      </svg>
 
-      {/* Specular highlight layer with parallax */}
-      {motion && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 3,
-            pointerEvents: "none",
-            background: `linear-gradient(${135 + tilt.x}deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%)`,
-            transform: `translate(${tilt.x * 0.3}px, ${tilt.y * 0.3}px)`,
-            transition: "transform 0.1s ease-out, background 0.1s ease-out",
-            maskImage: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'><path d='${mPath}' stroke='white' stroke-width='${strokeW}' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>`)}")`,
-            WebkitMaskImage: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'><path d='${mPath}' stroke='white' stroke-width='${strokeW}' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>`)}")`,
-            maskSize: "contain",
-            WebkitMaskSize: "contain",
-            maskRepeat: "no-repeat",
-            WebkitMaskRepeat: "no-repeat",
-            maskPosition: "center",
-            WebkitMaskPosition: "center",
-          }}
+        {/* Layer 6: Cyan edge highlight (bright top edge) */}
+        <line
+          x1={rightStroke.x - 0.5}
+          y1={rightStroke.y1}
+          x2={rightStroke.x - 0.5}
+          y2={rightStroke.y2}
+          stroke="rgba(0,255,234,0.3)"
+          strokeWidth={1}
+          strokeLinecap="round"
         />
-      )}
+
+        {/* Layer 7: Specular sweep (masked to full M path) */}
+        {motion && (
+          <path
+            d={mPath}
+            stroke={`url(#ml-spec-${size})`}
+            strokeWidth={sw - 1}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ transition: "stroke 0.15s ease-out" }}
+          />
+        )}
+      </svg>
     </div>
   );
 }
