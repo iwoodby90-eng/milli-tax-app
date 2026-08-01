@@ -3,7 +3,7 @@
   "appName": "Milli",
   "webDir": "build",
   "bundledWebRuntime": false,
-  "loggingBehavior": "debug",
+  "loggingBehavior": "none",
   "server": {
     "cleartext": false,
     "androidScheme": "https",
