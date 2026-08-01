@@ -1,10 +1,13 @@
 /**
- * Register — premium iOS-native sign-up screen (v2.3 ARCHITECTURAL LOCK).
+ * Register — premium iOS-native sign-up screen (v2.3.1 ABSOLUTE TIER LOCK).
  *
- * CRITICAL FIX: Plan reader now CROSS-VALIDATES the stored localStorage
- * data against the canonical IAP_PRODUCTS list. If a mismatch is detected
- * (e.g., product_id says "elite" but price_display says "$29.99"), the
- * canonical source of truth wins. Also passes stripe_price_id to backend.
+ * v2.3.1 changes:
+ * - verifyStoredPlan now returns null for ANY unrecognisable data (was
+ *   returning the raw payload as-is when product_id was missing).
+ * - When plan is null, renders an explicit "Choose your plan" selector
+ *   (IAP_PRODUCTS cards) instead of silently proceeding with no tier.
+ * - Banner displays "Milli Elite · $49.99/mo" correctly via price_display
+ *   from verified canonical data.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,7 +16,7 @@ import { api, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
-  ArrowRight, User, EnvelopeSimple, Lock, MapPin, Eye, EyeSlash, Sparkle, Star,
+  ArrowRight, User, EnvelopeSimple, Lock, MapPin, Eye, EyeSlash, Sparkle, Star, Check,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import SignInTransition from "@/components/SignInTransition";
@@ -30,44 +33,67 @@ const STATES = [
 
 /**
  * Cross-validate stored plan data against canonical IAP_PRODUCTS.
- * Returns the VERIFIED plan record. If the stored data has mismatches
- * (e.g., product_id="milli.elite.monthly" but price="29.99"), the
- * canonical product data wins.
+ * Returns the VERIFIED plan record, or null if data is absent/unrecognisable.
+ *
+ * v2.3.1: Also returns null when stored JSON is present but has no
+ * recognisable product_id or plan — prevents silent Pro fallback.
  */
 function verifyStoredPlan(raw) {
   if (!raw) return null;
   try {
     const stored = JSON.parse(raw);
-    if (!stored || !stored.product_id) return null;
+    if (!stored || typeof stored !== "object") return null;
 
-    // Find canonical product by product_id (primary key)
-    const canonical = IAP_PRODUCTS.find((p) => p.id === stored.product_id);
-    if (!canonical) {
-      // Fallback: try matching by plan name
-      const byPlan = IAP_PRODUCTS.find((p) => p.plan === stored.plan);
-      if (!byPlan) return stored; // can't verify, return as-is
-      return {
-        ...stored,
-        product_id: byPlan.id,
-        plan: byPlan.plan,
-        price: byPlan.price,
-        price_display: byPlan.priceDisplay,
-        stripe_price_id: byPlan.stripe_price_id,
-      };
+    // Primary key: product_id (dot-format IAP identifier)
+    if (stored.product_id) {
+      const canonical = IAP_PRODUCTS.find((p) => p.id === stored.product_id);
+      if (canonical) {
+        return {
+          ...stored,
+          product_id: canonical.id,
+          plan: canonical.plan,
+          price: canonical.price,
+          price_display: canonical.priceDisplay,
+          stripe_price_id: canonical.stripe_price_id,
+        };
+      }
     }
 
-    // CROSS-VALIDATE: canonical product is the source of truth for pricing
-    return {
-      ...stored,
-      product_id: canonical.id,
-      plan: canonical.plan,
-      price: canonical.price,
-      price_display: canonical.priceDisplay,
-      stripe_price_id: canonical.stripe_price_id,
-    };
+    // Secondary key: plan name (elite | pro | basic)
+    if (stored.plan) {
+      const byPlan = IAP_PRODUCTS.find((p) => p.plan === stored.plan);
+      if (byPlan) {
+        return {
+          ...stored,
+          product_id: byPlan.id,
+          plan: byPlan.plan,
+          price: byPlan.price,
+          price_display: byPlan.priceDisplay,
+          stripe_price_id: byPlan.stripe_price_id,
+        };
+      }
+    }
+
+    // Nothing matched — do NOT silently default; return null
+    return null;
   } catch (_) {
     return null;
   }
+}
+
+/** Build a canonical plan record from an IAP_PRODUCTS entry. */
+function buildPlanRecord(iap) {
+  const chargeDate = new Date();
+  chargeDate.setDate(chargeDate.getDate() + 3);
+  return {
+    product_id: iap.id,
+    plan: iap.plan,
+    price: iap.price,
+    price_display: iap.priceDisplay,
+    stripe_price_id: iap.stripe_price_id,
+    trial_started_at: new Date().toISOString(),
+    first_charge_at: chargeDate.toISOString(),
+  };
 }
 
 export default function Register() {
@@ -79,7 +105,7 @@ export default function Register() {
   const nav = useNavigate();
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Pull and VERIFY the tier the user picked on the WelcomePaywall
+  // Pull and VERIFY the tier the user picked (WelcomePaywall or Landing CTA)
   const [plan, setPlan] = useState(null);
   useEffect(() => {
     const raw = localStorage.getItem("milli_selected_plan");
@@ -91,6 +117,13 @@ export default function Register() {
     if (!plan?.first_charge_at) return null;
     return new Date(plan.first_charge_at).toLocaleDateString("en-US", { month: "long", day: "numeric" });
   }, [plan]);
+
+  /** User chose a plan inline — store it and update local state. */
+  function choosePlan(iap) {
+    const record = buildPlanRecord(iap);
+    try { localStorage.setItem("milli_selected_plan", JSON.stringify(record)); } catch (_) {}
+    setPlan(record);
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -108,7 +141,6 @@ export default function Register() {
       setTransition({ name: data.user?.name || form.name });
     } catch (err) {
       const msg = formatApiError(err);
-      // Friendly error for unregistered accounts trying to hit prod
       if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no account")) {
         toast.error("Account not found. Please register for the production server.");
       } else {
@@ -177,8 +209,13 @@ export default function Register() {
         </p>
       </motion.div>
 
-      {/* Selected plan pill — uses VERIFIED data */}
-      {plan && (
+      {/* ── PLAN SECTION ──────────────────────────────────────────────────────
+          When a plan IS verified → show the confirmation banner.
+          When plan is NULL → show an explicit plan-chooser so the user is
+          never silently defaulted to a tier they didn't pick.
+      ─────────────────────────────────────────────────────────────────────── */}
+      {plan ? (
+        /* Verified plan banner */
         <motion.div
           className="mx-5 mt-5 rounded-2xl px-4 py-3 flex items-center gap-3"
           initial={{ opacity: 0, y: 8 }}
@@ -203,14 +240,57 @@ export default function Register() {
               </div>
             )}
           </div>
-          <Link
-            to="/"
+          <button
+            type="button"
             data-testid="register-change-plan"
+            onClick={() => setPlan(null)}
             className="text-[11px] uppercase tracking-[0.18em] font-semibold active:opacity-60"
             style={{ color: CYAN }}
           >
             Change
-          </Link>
+          </button>
+        </motion.div>
+      ) : (
+        /* No plan in localStorage — show explicit chooser */
+        <motion.div
+          className="mx-5 mt-5"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          data-testid="register-plan-chooser"
+        >
+          <div className="text-[10px] uppercase tracking-[0.22em] text-white/60 mb-3 font-semibold">
+            Choose your plan
+          </div>
+          <div className="flex flex-col gap-2">
+            {IAP_PRODUCTS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                data-testid={`register-choose-plan-${p.plan}`}
+                onClick={() => choosePlan(p)}
+                className="w-full text-left px-4 py-3 rounded-2xl transition-all active:opacity-70"
+                style={{
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0))",
+                  border: "1px solid rgba(192,192,192,0.16)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[13px] font-semibold text-white">
+                    Milli {p.name}
+                  </div>
+                  <div className="text-[13px] font-bold tabular-nums" style={{ color: CYAN }}>
+                    {p.priceDisplay}/mo
+                  </div>
+                </div>
+                <div className="text-[11px] text-white/50 mt-0.5 flex items-center gap-1">
+                  <Check size={10} weight="bold" style={{ color: CYAN }} />
+                  {p.tagline}
+                </div>
+              </button>
+            ))}
+          </div>
         </motion.div>
       )}
 

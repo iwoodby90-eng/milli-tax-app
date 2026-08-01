@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import {
@@ -6,12 +6,55 @@ import {
   CurrencyDollar, Clock, ArrowUpRight, CheckCircle, Star,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
+import { IAP_PRODUCTS } from "@/hooks/useStoreKit";
 
 const PLATFORMS = ["UBER", "DOORDASH", "SPARK", "LYFT", "INSTACART", "AMAZON FLEX", "GRUBHUB", "SHIPT"];
 
 export default function Landing() {
   const [tiers, setTiers] = useState([]);
+  const nav = useNavigate();
+
   useEffect(() => { api.get("/pricing/tiers").then(({ data }) => setTiers(data)).catch(() => {}); }, []);
+
+  /**
+   * ABSOLUTE TIER LOCK (v2.3.1): map backend tier → IAP_PRODUCTS canonical
+   * record, write to localStorage, then navigate to /register.
+   *
+   * Backend tier.id == IAP plan name ("basic" | "pro" | "elite").
+   * IAP_PRODUCTS.plan === tier.id  →  IAP_PRODUCTS.id is the dot-format
+   * productIdentifier (e.g. "milli.elite.monthly").
+   */
+  function handleSelectPlan(tier) {
+    const iap = IAP_PRODUCTS.find((p) => p.plan === tier.id);
+    const chargeDate = new Date();
+    chargeDate.setDate(chargeDate.getDate() + (tier.trial_days || 3));
+
+    const record = iap
+      ? {
+          product_id: iap.id,           // "milli.elite.monthly"
+          plan: iap.plan,               // "elite"
+          price: iap.price,             // 49.99
+          price_display: iap.priceDisplay, // "$49.99"
+          stripe_price_id: iap.stripe_price_id,
+          trial_started_at: new Date().toISOString(),
+          first_charge_at: chargeDate.toISOString(),
+        }
+      : {
+          // Defensive fallback — construct dot-format id from tier name
+          product_id: `milli.${tier.id}.monthly`,
+          plan: tier.id,
+          price: tier.price,
+          price_display: `$${tier.price}`,
+          trial_started_at: new Date().toISOString(),
+          first_charge_at: chargeDate.toISOString(),
+        };
+
+    try {
+      localStorage.setItem("milli_selected_plan", JSON.stringify(record));
+    } catch (_) { /* localStorage unavailable — proceed */ }
+
+    nav("/register");
+  }
 
   return (
     <div className="min-h-screen carbon-bg text-white">
@@ -189,9 +232,15 @@ export default function Landing() {
                     <li key={f} className="flex gap-2.5 items-start"><CheckCircle size={16} weight="fill" className="text-volt mt-0.5 flex-shrink-0" /> {f}</li>
                   ))}
                 </ul>
-                <Link to="/register" data-testid={`pricing-cta-${t.id}`} className={`mt-8 block w-full text-center py-4 uppercase tracking-[0.15em] text-sm font-bold rounded-lg ${t.popular ? "btn-volt" : "btn-outline-cyan"}`}>
+                {/* ABSOLUTE TIER LOCK: button with onClick writes plan to localStorage */}
+                <button
+                  type="button"
+                  data-testid={`pricing-cta-${t.id}`}
+                  onClick={() => handleSelectPlan(t)}
+                  className={`mt-8 block w-full text-center py-4 uppercase tracking-[0.15em] text-sm font-bold rounded-lg ${t.popular ? "btn-volt" : "btn-outline-cyan"}`}
+                >
                   Start trial
-                </Link>
+                </button>
               </div>
             ))}
           </div>

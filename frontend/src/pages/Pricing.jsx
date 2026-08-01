@@ -31,12 +31,12 @@ function isNativeIOS() {
 
 /**
  * StoreKit 2 purchase flow via @capgo/native-purchases plugin.
- * Product IDs map: pro → milli_pro_monthly, elite → milli_elite_monthly
+ * Product IDs map: pro → milli.pro.monthly, elite → milli.elite.monthly
  */
 async function purchaseNativeIAP(tier) {
   try {
     const { NativePurchases } = await import("@capgo/native-purchases");
-    const productId = tier === "elite" ? "milli_elite_monthly" : "milli_pro_monthly";
+    const productId = tier === "elite" ? "milli.elite.monthly" : "milli.pro.monthly";
     const result = await NativePurchases.purchaseProduct({ productIdentifier: productId });
     if (result && result.transactionId) {
       // Verify receipt server-side
