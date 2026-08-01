@@ -13,7 +13,7 @@ import axios from "axios";
  * to bind. During this window, /api/* routes may 502/404 via Cloudflare.
  * The ServerStatus overlay handles this gracefully.
  */
-export const BACKEND_URL = "https://driver-tax-mileage.preview.emergentagent.com";
+export const BACKEND_URL = "https://worker-finance-api.preview.emergentagent.com";
 export const API_BASE = `${BACKEND_URL}/api`;
 
 export const api = axios.create({
