@@ -1,21 +1,16 @@
 /**
- * MilliLogo v3 — Definitive 1.0 build.
+ * MilliLogo v3.1 — Definitive build + optional neon cyan outline for nav dial.
  *
  * 3-segment architectural M, matching the segmented blueprint exactly:
  *   Segment 1 (Left):   Thick brushed silver vertical blade
  *   Segment 2 (Middle): V-shaped brushed silver blade (two diagonals meeting at bottom)
  *   Segment 3 (Right):  DETACHED glowing neon cyan vertical bar
  *
- * Rules:
- *   - Three SEPARATE SVG shapes, NOT a connected M path
- *   - Visible gap between middle-V and right cyan bar
- *   - Cyan bar has CSS filter drop-shadow glow; silver segments do NOT
- *   - Zero rectangular background, zero container artifacts
- *   - Pure transparent SVG
+ * Props:
+ *   size        px (default 80)
+ *   glowOutline boolean — when true, adds subtle neon cyan outline to all segments
  */
-export default function MilliLogo({ size = 80 }) {
-  // All coordinates in a 100x100 viewBox
-  // Blade width (thickness of each segment)
+export default function MilliLogo({ size = 80, glowOutline = false }) {
   const bw = 12;
 
   return (
@@ -68,7 +63,6 @@ export default function MilliLogo({ size = 80 }) {
         </defs>
 
         {/* ===== SEGMENT 1: Left vertical blade ===== */}
-        {/* A thick vertical rectangle, slightly tapered at top */}
         <path
           d={`
             M 10 12
@@ -78,6 +72,8 @@ export default function MilliLogo({ size = 80 }) {
             Z
           `}
           fill="url(#milli-silver)"
+          stroke={glowOutline ? "rgba(0, 229, 255, 0.6)" : "none"}
+          strokeWidth={glowOutline ? "1.2" : "0"}
         />
         {/* Left edge highlight */}
         <line
@@ -87,7 +83,6 @@ export default function MilliLogo({ size = 80 }) {
         />
 
         {/* ===== SEGMENT 2: V-shaped middle blade ===== */}
-        {/* Two diagonals meeting at bottom center, forming a V/chevron */}
         <path
           d={`
             M ${10 + bw + 2} 12
@@ -97,6 +92,8 @@ export default function MilliLogo({ size = 80 }) {
             Z
           `}
           fill="url(#milli-silver)"
+          stroke={glowOutline ? "rgba(0, 229, 255, 0.6)" : "none"}
+          strokeWidth={glowOutline ? "1.2" : "0"}
         />
         <path
           d={`
@@ -107,6 +104,8 @@ export default function MilliLogo({ size = 80 }) {
             Z
           `}
           fill="url(#milli-silver)"
+          stroke={glowOutline ? "rgba(0, 229, 255, 0.6)" : "none"}
+          strokeWidth={glowOutline ? "1.2" : "0"}
         />
         {/* V inner edge highlights */}
         <line
@@ -121,7 +120,6 @@ export default function MilliLogo({ size = 80 }) {
         />
 
         {/* ===== SEGMENT 3: Right vertical cyan bar (DETACHED) ===== */}
-        {/* Visible gap from the V. This is the glowing element. */}
         <g style={{ filter: "drop-shadow(0 0 10px rgba(0, 229, 255, 0.4)) drop-shadow(0 0 4px rgba(0, 229, 255, 0.6))" }}>
           <rect
             x={90 - bw}
@@ -131,6 +129,8 @@ export default function MilliLogo({ size = 80 }) {
             rx="1.5"
             ry="1.5"
             fill="url(#milli-cyan-bar)"
+            stroke={glowOutline ? "rgba(0, 229, 255, 0.8)" : "none"}
+            strokeWidth={glowOutline ? "1.5" : "0"}
           />
           {/* Cyan inner highlight */}
           <line

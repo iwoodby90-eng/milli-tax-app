@@ -1,19 +1,19 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Plus, X } from "@phosphor-icons/react";
 
 /**
  * GigConnections — "Automated Payout Slicing" panel.
  *
- * Shows connected gig platforms detected via Plaid bank transactions.
- * If a bank is linked, platforms are shown as "Active via [Bank Name]".
- * Industrial-Noir aesthetic: glassmorphic card, neon cyan accents.
+ * v2.1: Only shows CONNECTED platforms in the main grid.
+ * Unconnected platforms are accessed via a "Connect New Platform" modal.
  *
  * Props:
- *   bankConnected - boolean (is Plaid linked?)
- *   bankName      - string (e.g., "Chase", "Capital One")
- *   platforms     - array of detected platform names (optional override)
+ *   bankConnected     - boolean (is Plaid linked?)
+ *   bankName          - string (e.g., "Chase", "Capital One")
+ *   connectedPlatforms - array of platform IDs that are active (e.g. ["uber", "doordash"])
  */
 
-const PLATFORMS = [
+const ALL_PLATFORMS = [
   {
     id: "uber",
     name: "Uber",
@@ -58,13 +58,75 @@ const PLATFORMS = [
       </svg>
     ),
   },
+  {
+    id: "grubhub",
+    name: "Grubhub",
+    color: "#F63440",
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+        <rect width="24" height="24" rx="6" fill="#F63440" />
+        <text x="12" y="16" textAnchor="middle" fontSize="9" fontWeight="700" fill="#FFF">GH</text>
+      </svg>
+    ),
+  },
+  {
+    id: "instacart",
+    name: "Instacart",
+    color: "#43B02A",
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+        <rect width="24" height="24" rx="6" fill="#43B02A" />
+        <text x="12" y="16" textAnchor="middle" fontSize="9" fontWeight="700" fill="#FFF">IC</text>
+      </svg>
+    ),
+  },
+  {
+    id: "amazon_flex",
+    name: "Amazon Flex",
+    color: "#FF9900",
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+        <rect width="24" height="24" rx="6" fill="#FF9900" />
+        <text x="12" y="16" textAnchor="middle" fontSize="9" fontWeight="700" fill="#FFF">AF</text>
+      </svg>
+    ),
+  },
+  {
+    id: "shipt",
+    name: "Shipt",
+    color: "#00A650",
+    icon: (
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+        <rect width="24" height="24" rx="6" fill="#00A650" />
+        <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="700" fill="#FFF">Sh</text>
+      </svg>
+    ),
+  },
 ];
 
-export default function GigConnections({ bankConnected = false, bankName = "Bank" }) {
+export default function GigConnections({
+  bankConnected = false,
+  bankName = "Bank",
+  connectedPlatforms = [],
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const statusText = useMemo(() => {
     if (bankConnected) return `Active via ${bankName}`;
     return "Connect bank to activate";
   }, [bankConnected, bankName]);
+
+  // Only show connected platforms in primary grid
+  const connected = useMemo(
+    () => ALL_PLATFORMS.filter((p) => connectedPlatforms.includes(p.id)),
+    [connectedPlatforms]
+  );
+
+  // Unconnected platforms shown in the modal
+  const unconnected = useMemo(
+    () => ALL_PLATFORMS.filter((p) => !connectedPlatforms.includes(p.id)),
+    [connectedPlatforms]
+  );
 
   return (
     <div
@@ -123,61 +185,98 @@ export default function GigConnections({ bankConnected = false, bankName = "Bank
         </div>
       </div>
 
-      {/* Platform grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 10,
-      }}>
-        {PLATFORMS.map((p) => (
-          <div
-            key={p.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "12px 14px",
-              borderRadius: 14,
-              background: "rgba(5, 6, 7, 0.6)",
-              border: `1px solid ${bankConnected ? "rgba(0,229,255,0.1)" : "rgba(255,255,255,0.04)"}`,
-              transition: "border-color 0.2s",
-            }}
-          >
-            {/* Platform icon */}
-            <div style={{
-              width: 28, height: 28, borderRadius: 6, overflow: "hidden",
-              flexShrink: 0,
-              opacity: bankConnected ? 1 : 0.4,
-              transition: "opacity 0.2s",
-            }}>
-              {p.icon}
-            </div>
-            {/* Platform info */}
-            <div style={{ minWidth: 0 }}>
+      {/* Connected platform grid */}
+      {connected.length > 0 ? (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 10,
+        }}>
+          {connected.map((p) => (
+            <div
+              key={p.id}
+              data-testid={`gig-platform-${p.id}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "12px 14px",
+                borderRadius: 14,
+                background: "rgba(5, 6, 7, 0.6)",
+                border: `1px solid ${bankConnected ? "rgba(0,229,255,0.1)" : "rgba(255,255,255,0.04)"}`,
+                transition: "border-color 0.2s",
+              }}
+            >
               <div style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: bankConnected ? "#FFFFFF" : "#8B9DAF",
+                width: 28, height: 28, borderRadius: 6, overflow: "hidden",
+                flexShrink: 0,
+                opacity: bankConnected ? 1 : 0.4,
               }}>
-                {p.name}
+                {p.icon}
               </div>
-              <div style={{
-                fontSize: 10,
-                color: bankConnected ? "rgba(0,229,255,0.7)" : "#5A6573",
-                marginTop: 1,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}>
-                {statusText}
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: bankConnected ? "#FFFFFF" : "#8B9DAF",
+                }}>
+                  {p.name}
+                </div>
+                <div style={{
+                  fontSize: 10,
+                  color: bankConnected ? "rgba(0,229,255,0.7)" : "#5A6573",
+                  marginTop: 1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>
+                  {statusText}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          textAlign: "center",
+          padding: "20px 16px",
+          color: "#5A6573",
+          fontSize: 13,
+        }}>
+          No platforms connected yet. Link a bank account and connect your gig platforms below.
+        </div>
+      )}
+
+      {/* Connect New Platform button */}
+      <button
+        data-testid="connect-new-platform-btn"
+        onClick={() => setModalOpen(true)}
+        style={{
+          all: "unset",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          width: "100%",
+          marginTop: 14,
+          padding: "12px 0",
+          borderRadius: 12,
+          background: "rgba(0, 229, 255, 0.06)",
+          border: "1px solid rgba(0, 229, 255, 0.2)",
+          color: "#00E5FF",
+          fontSize: 13,
+          fontWeight: 600,
+          letterSpacing: "0.02em",
+          transition: "background 0.2s, border-color 0.2s",
+        }}
+      >
+        <Plus size={14} weight="bold" />
+        Connect New Platform
+      </button>
 
       {/* Bottom note */}
-      {bankConnected && (
+      {bankConnected && connected.length > 0 && (
         <p style={{
           fontSize: 11,
           color: "#5A6573",
@@ -187,6 +286,89 @@ export default function GigConnections({ bankConnected = false, bankName = "Bank
         }}>
           Milli automatically identifies gig payouts and applies your tax slicing rules.
         </p>
+      )}
+
+      {/* Connect New Platform Modal */}
+      {modalOpen && (
+        <div
+          data-testid="connect-platform-modal"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            style={{
+              background: "#0D0F12",
+              borderRadius: 22,
+              border: "1px solid rgba(0,229,255,0.15)",
+              padding: "28px 24px",
+              width: "90%",
+              maxWidth: 380,
+              maxHeight: "70vh",
+              overflowY: "auto",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 32px rgba(0,229,255,0.08)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", margin: 0 }}>
+                Connect a Platform
+              </h3>
+              <button
+                onClick={() => setModalOpen(false)}
+                style={{ all: "unset", cursor: "pointer", padding: 4, color: "#8B9DAF" }}
+                aria-label="Close"
+              >
+                <X size={18} weight="bold" />
+              </button>
+            </div>
+
+            {unconnected.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {unconnected.map((p) => (
+                  <button
+                    key={p.id}
+                    data-testid={`connect-platform-${p.id}`}
+                    style={{
+                      all: "unset",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "14px 16px",
+                      borderRadius: 14,
+                      background: "rgba(5, 6, 7, 0.8)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      transition: "border-color 0.2s, background 0.2s",
+                    }}
+                  >
+                    <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+                      {p.icon}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF" }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: "#5A6573", marginTop: 2 }}>Tap to connect</div>
+                    </div>
+                    <Plus size={14} weight="bold" style={{ color: "#00E5FF" }} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", padding: 20, color: "#5A6573", fontSize: 13 }}>
+                All available platforms are connected.
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

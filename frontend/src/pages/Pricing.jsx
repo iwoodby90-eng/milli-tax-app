@@ -188,7 +188,7 @@ export default function Pricing() {
                 ) : loading === t.id ? (
                   "Processing..."
                 ) : native ? (
-                  <><AppleLogo size={16} weight="fill" /> Subscribe with Apple</>
+                  <>Subscribe</>
                 ) : (
                   <>Choose {t.name} <Lightning weight="fill" size={16} /></>
                 )}

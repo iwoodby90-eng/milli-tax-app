@@ -335,7 +335,6 @@ async def plaid_link_token(user: dict = Depends(get_current_user)):
         language="en",
         user=LinkTokenCreateRequestUser(
             client_user_id=str(user["id"]),
-            phone_number=user.get("phone") or None,
         ),
     )
     try:

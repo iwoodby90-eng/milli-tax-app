@@ -393,7 +393,11 @@ export default function Dashboard() {
           GIG CONNECTIONS — Base of Dashboard
          ═══════════════════════════════════════════════════════ */}
       <div className="mb-4" data-testid="dashboard-gig-connections">
-        <GigConnections bankConnected={deposits.length > 0} bankName="Connected Bank" />
+        <GigConnections
+          bankConnected={deposits.length > 0}
+          bankName="Connected Bank"
+          connectedPlatforms={[...new Set(deposits.map(d => (d.platform || '').toLowerCase().replace(/\s+/g, '_')).filter(Boolean))]}
+        />
       </div>
 
       {/* Quick links */}

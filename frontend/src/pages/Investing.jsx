@@ -5,12 +5,15 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import {
   ChartLineUp, ArrowUpRight, TrendUp, Wallet, Info, CaretRight,
-  ArrowDown, ArrowUp, Pause, Play, Sparkle, Bank,
+  ArrowDown, ArrowUp, Pause, Play, Sparkle, Bank, MagnifyingGlass,
 } from "@phosphor-icons/react";
 
 /**
  * Investing.jsx — Wealth Engine: Automated Portfolio Growth
- * AESTHETIC: 28px blur glassmorphism, #0D0F12 base, neon cyan charts
+ * v2.1 ELITE HARDENING:
+ *   + Live Market View (Neon Cyan candlestick/line chart)
+ *   + Search the Market bar
+ *   + Daily Movers (Top 5 Gainers / Losers)
  */
 
 const PORTFOLIO_DATA = [
@@ -32,10 +35,47 @@ const HOLDINGS = [
   { name: "VTIP — Inflation Protected", allocation: 5, gain: "+2.9%" },
 ];
 
+// Mock market data for Live Market View
+const MARKET_CANDLES = [
+  { o: 445, h: 452, l: 440, c: 448 },
+  { o: 448, h: 455, l: 446, c: 453 },
+  { o: 453, h: 458, l: 449, c: 451 },
+  { o: 451, h: 460, l: 448, c: 458 },
+  { o: 458, h: 462, l: 454, c: 456 },
+  { o: 456, h: 463, l: 452, c: 461 },
+  { o: 461, h: 468, l: 457, c: 465 },
+  { o: 465, h: 470, l: 460, c: 463 },
+  { o: 463, h: 471, l: 459, c: 469 },
+  { o: 469, h: 475, l: 466, c: 472 },
+  { o: 472, h: 478, l: 468, c: 470 },
+  { o: 470, h: 476, l: 465, c: 474 },
+  { o: 474, h: 480, l: 471, c: 478 },
+  { o: 478, h: 484, l: 474, c: 476 },
+  { o: 476, h: 482, l: 472, c: 481 },
+];
+
+const DAILY_GAINERS = [
+  { symbol: "NVDA", name: "NVIDIA Corp", change: "+4.82%", price: "$892.40" },
+  { symbol: "SMCI", name: "Super Micro", change: "+3.91%", price: "$734.20" },
+  { symbol: "META", name: "Meta Platforms", change: "+2.67%", price: "$528.15" },
+  { symbol: "AMZN", name: "Amazon.com", change: "+2.14%", price: "$198.70" },
+  { symbol: "TSLA", name: "Tesla Inc", change: "+1.89%", price: "$264.30" },
+];
+
+const DAILY_LOSERS = [
+  { symbol: "PFE", name: "Pfizer Inc", change: "-3.21%", price: "$26.40" },
+  { symbol: "BA", name: "Boeing Co", change: "-2.88%", price: "$172.50" },
+  { symbol: "INTC", name: "Intel Corp", change: "-2.45%", price: "$31.80" },
+  { symbol: "NKE", name: "Nike Inc", change: "-1.97%", price: "$74.20" },
+  { symbol: "DIS", name: "Walt Disney", change: "-1.54%", price: "$101.30" },
+];
+
 export default function Investing() {
   const { user } = useAuth();
   const [acct, setAcct] = useState(undefined);
   const [busy, setBusy] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [moversTab, setMoversTab] = useState("gainers");
 
   async function load() {
     try {
@@ -101,6 +141,41 @@ export default function Investing() {
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto" style={{ backgroundColor: "#0D0F12", color: "#FFFFFF", minHeight: "100%" }}>
       <PageHeader />
 
+      {/* Search the Market */}
+      <div className="mb-5" data-testid="market-search">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 16px",
+            borderRadius: 16,
+            background: "rgba(13, 15, 18, 0.6)",
+            border: "1px solid rgba(255, 255, 255, 0.06)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <MagnifyingGlass size={16} weight="bold" style={{ color: "#5A6573", flexShrink: 0 }} />
+          <input
+            data-testid="market-search-input"
+            type="text"
+            placeholder="Search the Market"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              all: "unset",
+              flex: 1,
+              fontSize: 14,
+              color: "#FFFFFF",
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Live Market View (Candlestick Chart) */}
+      <LiveMarketView candles={MARKET_CANDLES} />
+
       {/* Balance Hero */}
       <div
         className="p-7 mb-5 relative overflow-hidden rounded-[22px]"
@@ -131,7 +206,10 @@ export default function Investing() {
         </div>
       </div>
 
-      {/* Neon Cyan Chart */}
+      {/* Daily Movers */}
+      <DailyMovers tab={moversTab} onTabChange={setMoversTab} />
+
+      {/* Portfolio Chart */}
       <div
         className="p-5 mb-5 rounded-[22px]"
         style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
@@ -207,6 +285,8 @@ export default function Investing() {
   );
 }
 
+/* =================== SUB-COMPONENTS =================== */
+
 function PageHeader() {
   return (
     <div className="mb-6">
@@ -215,6 +295,202 @@ function PageHeader() {
         Build wealth on autopilot.
       </h1>
       <p className="text-zinc-400 mt-1 text-sm">Auto-invest a % from every payout into a diversified portfolio.</p>
+    </div>
+  );
+}
+
+function LiveMarketView({ candles }) {
+  const W = 340, H = 140;
+  const padL = 5, padR = 5, padT = 15, padB = 5;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const allPrices = candles.flatMap((c) => [c.h, c.l]);
+  const minP = Math.min(...allPrices);
+  const maxP = Math.max(...allPrices);
+  const range = maxP - minP || 1;
+
+  const candleW = chartW / candles.length;
+  const bodyW = candleW * 0.5;
+
+  function yPos(price) {
+    return padT + chartH - ((price - minP) / range) * chartH;
+  }
+
+  return (
+    <div
+      className="p-5 mb-5 rounded-[22px]"
+      style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
+      data-testid="live-market-view"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>// Live Market · S&P 500</div>
+        <div className="flex items-center gap-2">
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#34D399", boxShadow: "0 0 6px rgba(52,211,153,0.6)" }} />
+          <span className="text-[10px] text-zinc-500 font-mono uppercase">Live</span>
+        </div>
+      </div>
+      <div style={{ width: "100%", maxWidth: W, margin: "0 auto" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="auto" style={{ display: "block" }}>
+          <defs>
+            <filter id="candle-glow">
+              <feGaussianBlur stdDeviation="1.5" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Grid lines */}
+          {[0.25, 0.5, 0.75].map((frac) => (
+            <line
+              key={frac}
+              x1={padL}
+              y1={padT + chartH * (1 - frac)}
+              x2={padL + chartW}
+              y2={padT + chartH * (1 - frac)}
+              stroke="rgba(255,255,255,0.03)"
+              strokeWidth="1"
+            />
+          ))}
+
+          {/* Candlesticks */}
+          {candles.map((c, i) => {
+            const cx = padL + (i + 0.5) * candleW;
+            const bullish = c.c >= c.o;
+            const color = bullish ? "#00E5FF" : "#FF4D6A";
+            const bodyTop = yPos(Math.max(c.o, c.c));
+            const bodyBot = yPos(Math.min(c.o, c.c));
+            const bodyH = Math.max(bodyBot - bodyTop, 1);
+
+            return (
+              <g key={i} filter="url(#candle-glow)">
+                {/* Wick */}
+                <line
+                  x1={cx} y1={yPos(c.h)}
+                  x2={cx} y2={yPos(c.l)}
+                  stroke={color}
+                  strokeWidth="1"
+                  opacity="0.6"
+                />
+                {/* Body */}
+                <rect
+                  x={cx - bodyW / 2}
+                  y={bodyTop}
+                  width={bodyW}
+                  height={bodyH}
+                  fill={bullish ? color : color}
+                  rx="1"
+                  opacity="0.9"
+                />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[10px] text-zinc-500 font-mono">15 periods</span>
+        <span className="text-[11px] font-mono font-semibold" style={{ color: "#00E5FF" }}>
+          $481.00
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DailyMovers({ tab, onTabChange }) {
+  const movers = tab === "gainers" ? DAILY_GAINERS : DAILY_LOSERS;
+
+  return (
+    <div
+      className="p-5 mb-5 rounded-[22px]"
+      style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
+      data-testid="daily-movers"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>// Daily Movers</div>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button
+            data-testid="movers-gainers-tab"
+            onClick={() => onTabChange("gainers")}
+            style={{
+              all: "unset",
+              cursor: "pointer",
+              fontSize: 10,
+              fontWeight: 600,
+              padding: "4px 10px",
+              borderRadius: 8,
+              background: tab === "gainers" ? "rgba(0,229,255,0.1)" : "transparent",
+              border: tab === "gainers" ? "1px solid rgba(0,229,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
+              color: tab === "gainers" ? "#00E5FF" : "#5A6573",
+            }}
+          >
+            Gainers
+          </button>
+          <button
+            data-testid="movers-losers-tab"
+            onClick={() => onTabChange("losers")}
+            style={{
+              all: "unset",
+              cursor: "pointer",
+              fontSize: 10,
+              fontWeight: 600,
+              padding: "4px 10px",
+              borderRadius: 8,
+              background: tab === "losers" ? "rgba(255,77,106,0.1)" : "transparent",
+              border: tab === "losers" ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(255,255,255,0.06)",
+              color: tab === "losers" ? "#FF4D6A" : "#5A6573",
+            }}
+          >
+            Losers
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {movers.map((m, i) => (
+          <div
+            key={m.symbol}
+            data-testid={`mover-${m.symbol}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 12px",
+              borderRadius: 12,
+              background: "rgba(5, 6, 7, 0.6)",
+              border: "1px solid rgba(255,255,255,0.04)",
+            }}
+          >
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: tab === "gainers" ? "rgba(0,229,255,0.08)" : "rgba(255,77,106,0.08)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              {tab === "gainers"
+                ? <ArrowUp size={14} weight="bold" style={{ color: "#00E5FF" }} />
+                : <ArrowDown size={14} weight="bold" style={{ color: "#FF4D6A" }} />
+              }
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{m.symbol}</div>
+              <div style={{ fontSize: 10, color: "#5A6573", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#E8E8E8", fontFamily: "monospace" }}>{m.price}</div>
+              <div style={{
+                fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                color: tab === "gainers" ? "#00E5FF" : "#FF4D6A",
+                marginTop: 1,
+              }}>
+                {m.change}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

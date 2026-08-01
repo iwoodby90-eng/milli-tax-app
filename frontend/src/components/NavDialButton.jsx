@@ -5,19 +5,21 @@ import MilliLogo from "./MilliLogo";
  *
  * Three layers simulate a milled metal volume knob recessed into titanium:
  *   Layer 1 (Base): Concave chrome dial with radial gradient (milled metal)
- *   Layer 2 (Logo): 3-segment SVG logo centered
+ *   Layer 2 (Logo): 3-blade architectural M monogram — centered with neon cyan glow
  *   Layer 3 (Specular): 45° white-to-transparent gloss layer (top reflection)
  *
- * Looks like it's physically part of the bar, not floating on top.
+ * v2.1 — Re-injects the 3-blade architectural monogram with subtle neon cyan outline.
  */
 export default function NavDialButton({ size = 56, onClick }) {
   const outerRing = size + 4; // outer bezel
+  const logoSize = size * 0.48;
 
   return (
     <button
       onClick={onClick}
+      data-testid="nav-dial-button"
+      aria-label="Home"
       style={{
-        /* Reset all button defaults */
         all: "unset",
         cursor: "pointer",
         WebkitTapHighlightColor: "transparent",
@@ -27,7 +29,6 @@ export default function NavDialButton({ size = 56, onClick }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        /* Push it up to feel recessed into the bar */
         marginTop: -14,
         zIndex: 10,
       }}
@@ -80,7 +81,7 @@ export default function NavDialButton({ size = 56, onClick }) {
         }}
       />
 
-      {/* === LAYER 2: Logo (3-segment architectural M) === */}
+      {/* === LAYER 2: 3-Blade Architectural M Monogram with Neon Cyan Glow === */}
       <div
         style={{
           position: "relative",
@@ -88,9 +89,10 @@ export default function NavDialButton({ size = 56, onClick }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          filter: "drop-shadow(0 0 4px rgba(0, 229, 255, 0.6)) drop-shadow(0 0 8px rgba(0, 229, 255, 0.3))",
         }}
       >
-        <MilliLogo size={size * 0.48} />
+        <MilliLogo size={logoSize} glowOutline />
       </div>
 
       {/* === LAYER 3: Specular gloss (45° highlight) === */}
@@ -117,8 +119,8 @@ export default function NavDialButton({ size = 56, onClick }) {
           position: "absolute",
           inset: -2,
           borderRadius: "50%",
-          border: "1px solid rgba(0, 229, 255, 0.15)",
-          boxShadow: "0 0 8px rgba(0, 229, 255, 0.1)",
+          border: "1px solid rgba(0, 229, 255, 0.25)",
+          boxShadow: "0 0 10px rgba(0, 229, 255, 0.15), 0 0 20px rgba(0, 229, 255, 0.05)",
           pointerEvents: "none",
         }}
       />

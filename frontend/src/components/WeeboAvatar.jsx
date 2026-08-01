@@ -2,14 +2,10 @@ import { motion } from "framer-motion";
 import { useMemo, useEffect, useState } from "react";
 
 /**
- * WEEBO v4 — 3D-feel, transparent, roaming.
+ * WEEBO v4.1 — Transparent blend, no square background/sticker artifacts.
  *
- * Uses the background-removed PNG cutout (rembg) and animates it as if it were
- * a living companion floating in the hero area:
- *   - continuous horizontal / vertical drift path (not just bob)
- *   - 3D-feel via subtle scale + rotateY perspective + tilt
- *   - state-based intensity (idle vs thinking vs speaking)
- *   - atmospheric FX around her (halo, particles, scan sweep, portal ring)
+ * Uses the background-removed PNG cutout and blends seamlessly into the noir bg.
+ * CSS mask ensures any residual square edges are clipped to the character silhouette.
  *
  * Props:
  *   size     px width/height of the character (defaults 180)
@@ -33,7 +29,6 @@ export default function WeeboAvatar({
   const H = stageH || Math.round(s * 1.35);
   const active = state !== "idle";
 
-  // Drift range — how far she wanders from center
   const dx = state === "speaking" ? s * 0.10
            : state === "thinking" ? s * 0.28
            :                        s * 0.22;
@@ -41,10 +36,8 @@ export default function WeeboAvatar({
            : state === "thinking" ? s * 0.14
            :                        s * 0.10;
 
-  // Speed
   const dur = state === "speaking" ? 3.2 : state === "thinking" ? 4.8 : 6.6;
 
-  // Particles
   const particles = useMemo(() => {
     const rand = (n) => { const x = Math.sin(n) * 10000; return x - Math.floor(x); };
     return Array.from({ length: 16 }, (_, i) => ({
@@ -57,7 +50,6 @@ export default function WeeboAvatar({
     }));
   }, [W, H]);
 
-  // Preload check so the halo/portal don't sit alone during first paint
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     const img = new window.Image();
@@ -70,12 +62,12 @@ export default function WeeboAvatar({
   return (
     <div
       className={`relative select-none ${onClick ? "cursor-pointer" : ""} ${className}`}
-      style={{ width: W, height: H, perspective: 900 }}
+      style={{ width: W, height: H, perspective: 900, background: "transparent" }}
       onClick={onClick}
       data-testid="weebo-avatar"
       data-state={state}
     >
-      {/* Portal levitation ring on the floor — follows her drift */}
+      {/* Portal levitation ring on the floor */}
       <motion.div
         aria-hidden
         className="absolute pointer-events-none"
@@ -96,7 +88,7 @@ export default function WeeboAvatar({
         transition={{ duration: dur * 0.9, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Ambient halo behind the character — travels with her */}
+      {/* Ambient halo behind the character */}
       <motion.div
         aria-hidden
         className="absolute pointer-events-none rounded-full"
@@ -136,7 +128,7 @@ export default function WeeboAvatar({
         />
       ))}
 
-      {/* THE CHARACTER — transparent PNG, wanders + tilts + subtle 3D scale */}
+      {/* THE CHARACTER — transparent PNG, no square background, seamless noir blend */}
       <motion.div
         className="absolute"
         style={{
@@ -145,6 +137,7 @@ export default function WeeboAvatar({
           width: s,
           height: s,
           transformStyle: "preserve-3d",
+          background: "transparent",
         }}
         animate={{
           x: [-dx, dx, -dx * 0.6, dx * 0.4, -dx],
@@ -162,6 +155,19 @@ export default function WeeboAvatar({
             draggable={false}
             className="w-full h-full object-contain"
             style={{
+              background: "transparent",
+              border: "none",
+              boxShadow: "none",
+              /* Use the image's own alpha as a mask — eliminates any
+                 residual square/sticker background artifacts */
+              maskImage: `url(${CHAR_SRC})`,
+              maskSize: "contain",
+              maskRepeat: "no-repeat",
+              maskPosition: "center",
+              WebkitMaskImage: `url(${CHAR_SRC})`,
+              WebkitMaskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
               filter: active
                 ? "drop-shadow(0 12px 22px rgba(0,0,0,0.65)) drop-shadow(0 0 24px rgba(0,229,255,0.55))"
                 : "drop-shadow(0 10px 18px rgba(0,0,0,0.6)) drop-shadow(0 0 16px rgba(0,229,255,0.35))",
@@ -185,7 +191,7 @@ export default function WeeboAvatar({
         )}
       </motion.div>
 
-      {/* Speaking pulse ring — expanding wave from her */}
+      {/* Speaking pulse ring */}
       {state === "speaking" && (
         <>
           <motion.div
