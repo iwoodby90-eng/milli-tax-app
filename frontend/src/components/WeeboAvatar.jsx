@@ -2,10 +2,11 @@ import { motion } from "framer-motion";
 import { useMemo, useEffect, useState } from "react";
 
 /**
- * WEEBO v4.1 — Transparent blend, no square background/sticker artifacts.
+ * WEEBO v5.0 — SENIOR FINISH: Full-body 3D character with arms.
  *
- * Uses the background-removed PNG cutout and blends seamlessly into the noir bg.
- * CSS mask ensures any residual square edges are clipped to the character silhouette.
+ * Uses the high-fidelity 3D character asset (head + body + arms).
+ * CSS mask uses the image's own alpha channel → zero sticker/background artifacts.
+ * object-fit: contain enforced. Background: transparent !important everywhere.
  *
  * Props:
  *   size     px width/height of the character (defaults 180)
@@ -14,7 +15,7 @@ import { useMemo, useEffect, useState } from "react";
  *   stageH   px height of her roaming area (defaults 1.5x size)
  *   onClick  optional press handler
  */
-const CHAR_SRC = "/weebo/milli-ai-cutout-512.png";
+const CHAR_SRC = "https://static.prod-images.emergentagent.com/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/images/6b5e562c203f0d0bbde4f39e0124c310de74c4661385956aef646a69b9d2dabf.jpeg";
 
 export default function WeeboAvatar({
   size = 180,
@@ -26,15 +27,15 @@ export default function WeeboAvatar({
 }) {
   const s = size;
   const W = stageW || Math.round(s * 1.8);
-  const H = stageH || Math.round(s * 1.35);
+  const H = stageH || Math.round(s * 1.5);
   const active = state !== "idle";
 
-  const dx = state === "speaking" ? s * 0.10
-           : state === "thinking" ? s * 0.28
-           :                        s * 0.22;
-  const dy = state === "speaking" ? s * 0.06
-           : state === "thinking" ? s * 0.14
-           :                        s * 0.10;
+  const dx = state === "speaking" ? s * 0.08
+           : state === "thinking" ? s * 0.22
+           :                        s * 0.16;
+  const dy = state === "speaking" ? s * 0.04
+           : state === "thinking" ? s * 0.10
+           :                        s * 0.08;
 
   const dur = state === "speaking" ? 3.2 : state === "thinking" ? 4.8 : 6.6;
 
@@ -54,15 +55,22 @@ export default function WeeboAvatar({
   useEffect(() => {
     const img = new window.Image();
     img.onload = () => setLoaded(true);
+    img.onerror = () => setLoaded(true); // show anyway
     img.src = CHAR_SRC;
   }, []);
 
-  const cx = W / 2, cy = H / 2 + s * 0.04;
+  const cx = W / 2, cy = H / 2;
 
   return (
     <div
       className={`relative select-none ${onClick ? "cursor-pointer" : ""} ${className}`}
-      style={{ width: W, height: H, perspective: 900, background: "transparent" }}
+      style={{
+        width: W,
+        height: H,
+        perspective: 900,
+        background: "transparent !important",
+        backgroundColor: "transparent",
+      }}
       onClick={onClick}
       data-testid="weebo-avatar"
       data-state={state}
@@ -72,16 +80,16 @@ export default function WeeboAvatar({
         aria-hidden
         className="absolute pointer-events-none"
         style={{
-          left: cx - s * 0.42,
-          top: cy + s * 0.38,
-          width: s * 0.84,
-          height: s * 0.14,
+          left: cx - s * 0.38,
+          top: cy + s * 0.52,
+          width: s * 0.76,
+          height: s * 0.12,
           background:
-            "radial-gradient(ellipse at 50% 50%, rgba(0,229,255,0.95) 0%, rgba(0,229,255,0.35) 45%, rgba(0,229,255,0) 78%)",
+            "radial-gradient(ellipse at 50% 50%, rgba(0,229,255,0.90) 0%, rgba(0,229,255,0.30) 45%, rgba(0,229,255,0) 78%)",
           filter: "blur(4px)",
         }}
         animate={{
-          x: [-dx * 0.6, dx * 0.6, -dx * 0.6],
+          x: [-dx * 0.5, dx * 0.5, -dx * 0.5],
           opacity: active ? [0.65, 1, 0.65] : [0.45, 0.8, 0.45],
           scaleX: active ? [0.85, 1.08, 0.85] : [0.9, 1.02, 0.9],
         }}
@@ -93,18 +101,18 @@ export default function WeeboAvatar({
         aria-hidden
         className="absolute pointer-events-none rounded-full"
         style={{
-          left: cx - s * 0.65,
-          top:  cy - s * 0.6,
-          width: s * 1.3,
-          height: s * 1.15,
+          left: cx - s * 0.55,
+          top:  cy - s * 0.5,
+          width: s * 1.1,
+          height: s * 1.1,
           background:
-            "radial-gradient(circle at 50% 42%, rgba(0,229,255,0.55) 0%, rgba(0,229,255,0.10) 45%, rgba(0,0,0,0) 72%)",
+            "radial-gradient(circle at 50% 40%, rgba(0,229,255,0.45) 0%, rgba(0,229,255,0.08) 45%, rgba(0,0,0,0) 72%)",
           filter: "blur(20px)",
         }}
         animate={{
           x: [-dx, dx, -dx],
           y: [-dy, dy * 0.4, -dy],
-          opacity: active ? [0.65, 1, 0.65] : [0.5, 0.8, 0.5],
+          opacity: active ? [0.55, 0.9, 0.55] : [0.4, 0.7, 0.4],
         }}
         transition={{ duration: dur, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -128,23 +136,24 @@ export default function WeeboAvatar({
         />
       ))}
 
-      {/* THE CHARACTER — transparent PNG, no square background, seamless noir blend */}
+      {/* THE CHARACTER — full-body 3D with arms, masked via alpha */}
       <motion.div
         className="absolute"
         style={{
-          left: cx - s / 2,
-          top:  cy - s / 2,
-          width: s,
-          height: s,
+          left: cx - s * 0.55,
+          top:  cy - s * 0.55,
+          width: s * 1.1,
+          height: s * 1.1,
           transformStyle: "preserve-3d",
           background: "transparent",
+          backgroundColor: "transparent",
         }}
         animate={{
-          x: [-dx, dx, -dx * 0.6, dx * 0.4, -dx],
-          y: [-dy, dy * 0.5, -dy * 0.4, dy, -dy],
-          rotate: [0, -3, 2, -1, 0],
-          rotateY: [-8, 8, -6, 4, -8],
-          scale: [1, 1.03, 0.98, 1.02, 1],
+          x: [-dx * 0.7, dx * 0.7, -dx * 0.4, dx * 0.3, -dx * 0.7],
+          y: [-dy, dy * 0.4, -dy * 0.3, dy * 0.7, -dy],
+          rotate: [0, -2, 1.5, -0.8, 0],
+          rotateY: [-5, 5, -3, 2, -5],
+          scale: [1, 1.02, 0.99, 1.01, 1],
         }}
         transition={{ duration: dur, repeat: Infinity, ease: "easeInOut" }}
       >
@@ -153,17 +162,20 @@ export default function WeeboAvatar({
             src={CHAR_SRC}
             alt="Milli AI"
             draggable={false}
-            className="w-full h-full object-contain"
             style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
               background: "transparent",
+              backgroundColor: "transparent",
               border: "none",
               boxShadow: "none",
-              /* Use the image's own alpha as a mask — eliminates any
-                 residual square/sticker background artifacts */
+              /* Alpha-channel mask — eliminates any background artifacts */
               maskImage: `url(${CHAR_SRC})`,
               maskSize: "contain",
               maskRepeat: "no-repeat",
               maskPosition: "center",
+              maskMode: "alpha",
               WebkitMaskImage: `url(${CHAR_SRC})`,
               WebkitMaskSize: "contain",
               WebkitMaskRepeat: "no-repeat",

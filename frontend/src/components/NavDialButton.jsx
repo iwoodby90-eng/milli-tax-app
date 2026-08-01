@@ -3,16 +3,17 @@ import MilliLogo from "./MilliLogo";
 /**
  * NavDialButton — Physical 3D hardware center button for the nav bar.
  *
+ * v2.2 SENIOR FINISH — Logo z-index set to 5 (above specular layer 3).
+ * logoSize bumped to 30px minimum for clear visibility.
+ *
  * Three layers simulate a milled metal volume knob recessed into titanium:
  *   Layer 1 (Base): Concave chrome dial with radial gradient (milled metal)
- *   Layer 2 (Logo): 3-blade architectural M monogram — centered with neon cyan glow
- *   Layer 3 (Specular): 45° white-to-transparent gloss layer (top reflection)
- *
- * v2.1 — Re-injects the 3-blade architectural monogram with subtle neon cyan outline.
+ *   Layer 2 (Logo): 3-blade architectural M monogram — HIGH z-index, centered
+ *   Layer 3 (Specular): 45° white-to-transparent gloss layer (pointer-events none)
  */
 export default function NavDialButton({ size = 56, onClick }) {
-  const outerRing = size + 4; // outer bezel
-  const logoSize = size * 0.48;
+  const outerRing = size + 4;
+  const logoSize = Math.max(size * 0.5, 30);
 
   return (
     <button
@@ -57,6 +58,7 @@ export default function NavDialButton({ size = 56, onClick }) {
             inset 0 -1px 0 rgba(0, 0, 0, 0.3)
           `,
           border: "none",
+          zIndex: 0,
         }}
       />
 
@@ -78,24 +80,27 @@ export default function NavDialButton({ size = 56, onClick }) {
             inset 0 -1px 3px rgba(255, 255, 255, 0.04),
             0 1px 3px rgba(0, 0, 0, 0.4)
           `,
+          zIndex: 1,
         }}
       />
 
-      {/* === LAYER 2: 3-Blade Architectural M Monogram with Neon Cyan Glow === */}
+      {/* === LAYER 2: 3-Blade Architectural M Monogram — HIGHEST z-index === */}
       <div
         style={{
           position: "relative",
-          zIndex: 2,
+          zIndex: 5,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          filter: "drop-shadow(0 0 4px rgba(0, 229, 255, 0.6)) drop-shadow(0 0 8px rgba(0, 229, 255, 0.3))",
+          width: logoSize,
+          height: logoSize,
+          filter: "drop-shadow(0 0 5px rgba(0, 229, 255, 0.7)) drop-shadow(0 0 10px rgba(0, 229, 255, 0.4))",
         }}
       >
         <MilliLogo size={logoSize} glowOutline />
       </div>
 
-      {/* === LAYER 3: Specular gloss (45° highlight) === */}
+      {/* === LAYER 3: Specular gloss (45° highlight) — pointer-events none === */}
       <div
         style={{
           position: "absolute",
@@ -103,13 +108,13 @@ export default function NavDialButton({ size = 56, onClick }) {
           borderRadius: "50%",
           background: `linear-gradient(
             135deg,
-            rgba(255, 255, 255, 0.12) 0%,
-            rgba(255, 255, 255, 0.04) 30%,
+            rgba(255, 255, 255, 0.10) 0%,
+            rgba(255, 255, 255, 0.03) 30%,
             transparent 55%,
             transparent 100%
           )`,
           pointerEvents: "none",
-          zIndex: 3,
+          zIndex: 4,
         }}
       />
 
@@ -122,6 +127,7 @@ export default function NavDialButton({ size = 56, onClick }) {
           border: "1px solid rgba(0, 229, 255, 0.25)",
           boxShadow: "0 0 10px rgba(0, 229, 255, 0.15), 0 0 20px rgba(0, 229, 255, 0.05)",
           pointerEvents: "none",
+          zIndex: 0,
         }}
       />
     </button>

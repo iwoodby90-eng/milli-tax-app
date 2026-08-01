@@ -291,10 +291,10 @@ function PlanSelector({ selected, onSelect }) {
                 {isActive && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#00E5FF" }} />}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: isActive ? "#FFFFFF" : "#A1A1AA" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: isActive ? "#F4F6F8" : "#F4F6F8" }}>
                   {plan.label}
                 </div>
-                <div style={{ fontSize: 11, color: "#5A6573", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "#8B9DAF", marginTop: 2 }}>
                   {plan.desc}
                 </div>
               </div>

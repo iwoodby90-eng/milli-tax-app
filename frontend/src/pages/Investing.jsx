@@ -155,7 +155,7 @@ export default function Investing() {
             backdropFilter: "blur(20px)",
           }}
         >
-          <MagnifyingGlass size={16} weight="bold" style={{ color: "#5A6573", flexShrink: 0 }} />
+          <MagnifyingGlass size={16} weight="bold" style={{ color: "#8B9DAF", flexShrink: 0 }} />
           <input
             data-testid="market-search-input"
             type="text"
@@ -423,7 +423,7 @@ function DailyMovers({ tab, onTabChange }) {
               borderRadius: 8,
               background: tab === "gainers" ? "rgba(0,229,255,0.1)" : "transparent",
               border: tab === "gainers" ? "1px solid rgba(0,229,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
-              color: tab === "gainers" ? "#00E5FF" : "#5A6573",
+              color: tab === "gainers" ? "#00E5FF" : "#8B9DAF",
             }}
           >
             Gainers
@@ -440,7 +440,7 @@ function DailyMovers({ tab, onTabChange }) {
               borderRadius: 8,
               background: tab === "losers" ? "rgba(255,77,106,0.1)" : "transparent",
               border: tab === "losers" ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(255,255,255,0.06)",
-              color: tab === "losers" ? "#FF4D6A" : "#5A6573",
+              color: tab === "losers" ? "#FF4D6A" : "#8B9DAF",
             }}
           >
             Losers
@@ -476,7 +476,7 @@ function DailyMovers({ tab, onTabChange }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{m.symbol}</div>
-              <div style={{ fontSize: 10, color: "#5A6573", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+              <div style={{ fontSize: 10, color: "#8B9DAF", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#E8E8E8", fontFamily: "monospace" }}>{m.price}</div>

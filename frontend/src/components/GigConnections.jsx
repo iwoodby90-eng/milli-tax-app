@@ -4,13 +4,8 @@ import { Plus, X } from "@phosphor-icons/react";
 /**
  * GigConnections — "Automated Payout Slicing" panel.
  *
- * v2.1: Only shows CONNECTED platforms in the main grid.
- * Unconnected platforms are accessed via a "Connect New Platform" modal.
- *
- * Props:
- *   bankConnected     - boolean (is Plaid linked?)
- *   bankName          - string (e.g., "Chase", "Capital One")
- *   connectedPlatforms - array of platform IDs that are active (e.g. ["uber", "doordash"])
+ * v2.2 SENIOR FINISH — Modal z-index: 9999. Backdrop blur. Viewport centered.
+ * Text contrast hardened (no dark-on-dark).
  */
 
 const ALL_PLATFORMS = [
@@ -116,13 +111,11 @@ export default function GigConnections({
     return "Connect bank to activate";
   }, [bankConnected, bankName]);
 
-  // Only show connected platforms in primary grid
   const connected = useMemo(
     () => ALL_PLATFORMS.filter((p) => connectedPlatforms.includes(p.id)),
     [connectedPlatforms]
   );
 
-  // Unconnected platforms shown in the modal
   const unconnected = useMemo(
     () => ALL_PLATFORMS.filter((p) => !connectedPlatforms.includes(p.id)),
     [connectedPlatforms]
@@ -143,30 +136,15 @@ export default function GigConnections({
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
-          <h3 style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: "#FFFFFF",
-            margin: 0,
-            letterSpacing: "0.01em",
-          }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: "#FFFFFF", margin: 0, letterSpacing: "0.01em" }}>
             Automated Payout Slicing
           </h3>
-          <p style={{
-            fontSize: 12,
-            color: "#8B9DAF",
-            margin: "4px 0 0",
-          }}>
+          <p style={{ fontSize: 12, color: "#8B9DAF", margin: "4px 0 0" }}>
             Deposits detected and auto-taxed
           </p>
         </div>
-        {/* Status indicator */}
         <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "4px 10px",
-          borderRadius: 20,
+          display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 20,
           background: bankConnected ? "rgba(0,229,255,0.08)" : "rgba(139,157,175,0.08)",
           border: `1px solid ${bankConnected ? "rgba(0,229,255,0.2)" : "rgba(139,157,175,0.15)"}`,
         }}>
@@ -175,11 +153,7 @@ export default function GigConnections({
             background: bankConnected ? "#00E5FF" : "#8B9DAF",
             boxShadow: bankConnected ? "0 0 6px rgba(0,229,255,0.5)" : "none",
           }} />
-          <span style={{
-            fontSize: 11,
-            color: bankConnected ? "#00E5FF" : "#8B9DAF",
-            fontWeight: 500,
-          }}>
+          <span style={{ fontSize: 11, color: bankConnected ? "#00E5FF" : "#8B9DAF", fontWeight: 500 }}>
             {bankConnected ? "LIVE" : "INACTIVE"}
           </span>
         </div>
@@ -187,62 +161,25 @@ export default function GigConnections({
 
       {/* Connected platform grid */}
       {connected.length > 0 ? (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 10,
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {connected.map((p) => (
-            <div
-              key={p.id}
-              data-testid={`gig-platform-${p.id}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "12px 14px",
-                borderRadius: 14,
-                background: "rgba(5, 6, 7, 0.6)",
-                border: `1px solid ${bankConnected ? "rgba(0,229,255,0.1)" : "rgba(255,255,255,0.04)"}`,
-                transition: "border-color 0.2s",
-              }}
-            >
-              <div style={{
-                width: 28, height: 28, borderRadius: 6, overflow: "hidden",
-                flexShrink: 0,
-                opacity: bankConnected ? 1 : 0.4,
-              }}>
+            <div key={p.id} data-testid={`gig-platform-${p.id}`} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 14,
+              background: "rgba(5, 6, 7, 0.6)",
+              border: `1px solid ${bankConnected ? "rgba(0,229,255,0.1)" : "rgba(255,255,255,0.04)"}`,
+            }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0, opacity: bankConnected ? 1 : 0.4 }}>
                 {p.icon}
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: bankConnected ? "#FFFFFF" : "#8B9DAF",
-                }}>
-                  {p.name}
-                </div>
-                <div style={{
-                  fontSize: 10,
-                  color: bankConnected ? "rgba(0,229,255,0.7)" : "#5A6573",
-                  marginTop: 1,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}>
-                  {statusText}
-                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: bankConnected ? "#FFFFFF" : "#8B9DAF" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: bankConnected ? "rgba(0,229,255,0.7)" : "#8B9DAF", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{statusText}</div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div style={{
-          textAlign: "center",
-          padding: "20px 16px",
-          color: "#5A6573",
-          fontSize: 13,
-        }}>
+        <div style={{ textAlign: "center", padding: "20px 16px", color: "#8B9DAF", fontSize: 13 }}>
           No platforms connected yet. Link a bank account and connect your gig platforms below.
         </div>
       )}
@@ -252,23 +189,10 @@ export default function GigConnections({
         data-testid="connect-new-platform-btn"
         onClick={() => setModalOpen(true)}
         style={{
-          all: "unset",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          width: "100%",
-          marginTop: 14,
-          padding: "12px 0",
-          borderRadius: 12,
-          background: "rgba(0, 229, 255, 0.06)",
-          border: "1px solid rgba(0, 229, 255, 0.2)",
-          color: "#00E5FF",
-          fontSize: 13,
-          fontWeight: 600,
-          letterSpacing: "0.02em",
-          transition: "background 0.2s, border-color 0.2s",
+          all: "unset", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          gap: 8, width: "100%", marginTop: 14, padding: "12px 0", borderRadius: 12,
+          background: "rgba(0, 229, 255, 0.06)", border: "1px solid rgba(0, 229, 255, 0.2)",
+          color: "#00E5FF", fontSize: 13, fontWeight: 600, letterSpacing: "0.02em",
         }}
       >
         <Plus size={14} weight="bold" />
@@ -277,36 +201,32 @@ export default function GigConnections({
 
       {/* Bottom note */}
       {bankConnected && connected.length > 0 && (
-        <p style={{
-          fontSize: 11,
-          color: "#5A6573",
-          margin: "14px 0 0",
-          textAlign: "center",
-          lineHeight: 1.4,
-        }}>
+        <p style={{ fontSize: 11, color: "#8B9DAF", margin: "14px 0 0", textAlign: "center", lineHeight: 1.4 }}>
           Milli automatically identifies gig payouts and applies your tax slicing rules.
         </p>
       )}
 
-      {/* Connect New Platform Modal */}
+      {/* === MODAL: z-index 9999, viewport-centered, backdrop blur === */}
       {modalOpen && (
         <div
           data-testid="connect-platform-modal"
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 100,
+            zIndex: 9999,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "rgba(0,0,0,0.75)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
+            backgroundColor: "rgba(0,0,0,0.82)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
           }}
           onClick={() => setModalOpen(false)}
         >
           <div
             style={{
+              position: "relative",
+              zIndex: 10000,
               background: "#0D0F12",
               borderRadius: 22,
               border: "1px solid rgba(0,229,255,0.15)",
@@ -320,14 +240,8 @@ export default function GigConnections({
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", margin: 0 }}>
-                Connect a Platform
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                style={{ all: "unset", cursor: "pointer", padding: 4, color: "#8B9DAF" }}
-                aria-label="Close"
-              >
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", margin: 0 }}>Connect a Platform</h3>
+              <button onClick={() => setModalOpen(false)} style={{ all: "unset", cursor: "pointer", padding: 4, color: "#8B9DAF" }} aria-label="Close">
                 <X size={18} weight="bold" />
               </button>
             </div>
@@ -335,35 +249,22 @@ export default function GigConnections({
             {unconnected.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {unconnected.map((p) => (
-                  <button
-                    key={p.id}
-                    data-testid={`connect-platform-${p.id}`}
-                    style={{
-                      all: "unset",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "14px 16px",
-                      borderRadius: 14,
-                      background: "rgba(5, 6, 7, 0.8)",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      transition: "border-color 0.2s, background 0.2s",
-                    }}
-                  >
-                    <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
-                      {p.icon}
-                    </div>
+                  <button key={p.id} data-testid={`connect-platform-${p.id}`} style={{
+                    all: "unset", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+                    padding: "14px 16px", borderRadius: 14, background: "rgba(5, 6, 7, 0.8)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>{p.icon}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF" }}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: "#5A6573", marginTop: 2 }}>Tap to connect</div>
+                      <div style={{ fontSize: 11, color: "#8B9DAF", marginTop: 2 }}>Tap to connect</div>
                     </div>
                     <Plus size={14} weight="bold" style={{ color: "#00E5FF" }} />
                   </button>
                 ))}
               </div>
             ) : (
-              <div style={{ textAlign: "center", padding: 20, color: "#5A6573", fontSize: 13 }}>
+              <div style={{ textAlign: "center", padding: 20, color: "#8B9DAF", fontSize: 13 }}>
                 All available platforms are connected.
               </div>
             )}

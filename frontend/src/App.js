@@ -2,15 +2,13 @@ import "@/styles/glass-polish.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ConnectionIndicator from "@/components/ServerStatus";
 import "@/App.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
-import Splash from "@/components/SplashScreen";
-import OnboardingCarousel from "@/components/OnboardingCarousel";
-import WelcomePaywall from "@/components/WelcomePaywall";
+import SplashScreen from "@/components/SplashScreen";
 
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -34,54 +32,61 @@ import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
 import Paywall from "@/pages/Paywall";
 
+/**
+ * App v2.2 — ZERO-SCROLL Startup Flow.
+ *
+ * Returning user flow (zero-touch):
+ *   1. SplashScreen plays the 'Perfect' car video full-screen.
+ *   2. Video ends → crossfade into 'Welcome back, [Name]'.
+ *   3. 2-second hold → auto-fade into Dashboard.
+ *
+ * NO onboarding carousel, NO paywall gate blocks the view.
+ * NO manual scrolling required at any point.
+ *
+ * First-time users still see /login → /register flow via routing.
+ */
+
 function OnboardingGate({ children }) {
   const { user } = useAuth();
   if (user && user.onboarding_complete === false) return <Navigate to="/onboarding" replace />;
   return children;
 }
 
+/**
+ * SplashWrapper — reads user name from AuthContext for the welcome screen.
+ * Fixed-position overlay that auto-dismisses. Zero scroll involvement.
+ */
+function SplashWrapper({ onDone }) {
+  const { user } = useAuth();
+  const userName = user?.name || user?.first_name || user?.full_name || "";
+  return <SplashScreen onDone={onDone} userName={userName} />;
+}
+
 function App() {
-  // Show splash only on first session entry (per browser session)
+  // Show splash only once per browser session
   const [splashDone, setSplashDone] = useState(() => {
     try { return sessionStorage.getItem("milli_splash_seen") === "1"; } catch { return false; }
   });
-  // Tier must be selected before onboarding is unlocked (persistent).
-  const [planSelected, setPlanSelected] = useState(() => {
-    try { return !!localStorage.getItem("milli_selected_plan"); } catch { return true; }
-  });
-  // Onboarding: persistent across sessions — only shown once ever
-  const [onboardingDone, setOnboardingDone] = useState(() => {
-    try { return localStorage.getItem("milli_onboarding_complete") === "true"; } catch { return true; }
-  });
-
-  // First launch = user has never picked a plan. In that case the splash
-  // auto-fades directly into the Welcome Paywall (no tap required).
-  const firstLaunch = !planSelected;
 
   const onSplashDone = () => {
-    try { sessionStorage.setItem("milli_splash_seen", "1"); } catch (_) { /* noop */ }
+    try { sessionStorage.setItem("milli_splash_seen", "1"); } catch (_) {}
     setSplashDone(true);
-  };
-  const onPlanSelected = () => { setPlanSelected(true); };
-  const onOnboardingDone = () => {
-    try { localStorage.setItem("milli_onboarding_complete", "true"); } catch (_) { /* noop */ }
-    setOnboardingDone(true);
   };
 
   return (
     <ErrorBoundary>
-    <div className="App ios-frame-outer">
-      <div className="ios-frame native-scroll">
-        {!splashDone && <Splash onDone={onSplashDone} />}
-        {splashDone && !planSelected && <WelcomePaywall onSelected={onPlanSelected} />}
-        {splashDone && planSelected && !onboardingDone && (
-          <OnboardingCarousel onFinish={onOnboardingDone} />
-        )}
-        <BrowserRouter>
+      <BrowserRouter>
         <AuthProvider>
-          {/* Non-blocking connection indicator — shown only when an API call
-              fails (event-driven). Never blocks the Splash or Paywall. */}
+          {/* 
+            SPLASH: Fixed-position overlay, z-index 100000.
+            Sits ABOVE everything. No scroll needed — it's viewport-locked.
+            Auto-dismisses after video + 2s welcome hold.
+          */}
+          {!splashDone && <SplashWrapper onDone={onSplashDone} />}
+
+          {/* Non-blocking connection indicator */}
           <ConnectionIndicator />
+
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/marketing" element={<MarketingStudio />} />
@@ -89,6 +94,8 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/billing/success" element={<BillingSuccess />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
+            <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
 
             <Route path="/app" element={<ProtectedRoute><OnboardingGate><AppLayout><Dashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/income" element={<ProtectedRoute><OnboardingGate><AppLayout><Income /></AppLayout></OnboardingGate></ProtectedRoute>} />
@@ -104,14 +111,10 @@ function App() {
             <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
-            <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
-            <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>
       </BrowserRouter>
-      </div>
-    </div>
     </ErrorBoundary>
   );
 }
