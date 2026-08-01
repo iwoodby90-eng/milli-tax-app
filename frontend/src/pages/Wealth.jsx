@@ -1,17 +1,13 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { PiggyBank, ChartLineUp, Gauge, CaretRight, Sparkle } from "@phosphor-icons/react";
-import MilliCentsWidget from "@/components/MilliCentsWidget";
+import { PiggyBank, ChartLineUp, CaretRight, Sparkle } from "@phosphor-icons/react";
 
 export default function Wealth() {
-  const [showMilliCents, setShowMilliCents] = useState(false);
-
   return (
     <div className="wealth-page">
       <section className="wealth-hero">
         <div className="wealth-kicker"><Sparkle size={12} weight="fill" /> Milli Wealth</div>
         <h1>Build wealth from every payout.</h1>
-        <p>Retirement, investing, and smarter profitability tools designed for gig workers.</p>
+        <p>Retirement and investing designed around variable gig income, with clear controls and automatic contributions.</p>
       </section>
 
       <section className="wealth-grid" aria-label="Wealth tools">
@@ -20,7 +16,7 @@ export default function Wealth() {
           <div className="wealth-card-copy">
             <div className="wealth-card-eyebrow">Long-term security</div>
             <h2>Retirement</h2>
-            <p>Set contributions and build a retirement plan around variable income.</p>
+            <p>Set contribution targets and build a retirement plan around variable income.</p>
           </div>
           <CaretRight size={18} weight="bold" className="wealth-card-arrow" />
         </Link>
@@ -34,19 +30,7 @@ export default function Wealth() {
           </div>
           <CaretRight size={18} weight="bold" className="wealth-card-arrow" />
         </Link>
-
-        <button type="button" className="wealth-card wealth-card-button" onClick={() => setShowMilliCents(true)} data-testid="wealth-milli-cents">
-          <div className="wealth-card-icon"><Gauge size={24} weight="duotone" /></div>
-          <div className="wealth-card-copy">
-            <div className="wealth-card-eyebrow">Profitability engine</div>
-            <h2>Milli Cents</h2>
-            <p>Estimate net value after mileage, fuel, taxes, and unpaid driving distance.</p>
-          </div>
-          <CaretRight size={18} weight="bold" className="wealth-card-arrow" />
-        </button>
       </section>
-
-      {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
     </div>
   );
 }
