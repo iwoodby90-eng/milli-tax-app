@@ -1,4 +1,5 @@
 import "@/styles/glass-polish.css";
+import "@/styles/wealth-polish.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ConnectionIndicator from "@/components/ServerStatus";
 import "@/App.css";
