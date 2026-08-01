@@ -1,5 +1,6 @@
 import "@/styles/glass-polish.css";
 import "@/styles/wealth-polish.css";
+import "@/styles/milli-cents-dashboard.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ConnectionIndicator from "@/components/ServerStatus";
 import "@/App.css";
@@ -15,6 +16,7 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
+import MilliCentsDashboard from "@/pages/MilliCentsDashboard";
 import Income from "@/pages/Income";
 import Mileage from "@/pages/Mileage";
 import Expenses from "@/pages/Expenses";
@@ -78,7 +80,8 @@ function App() {
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
             <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
 
-            <Route path="/app" element={<ProtectedAppScreen><Dashboard /></ProtectedAppScreen>} />
+            <Route path="/app" element={<ProtectedAppScreen><MilliCentsDashboard /></ProtectedAppScreen>} />
+            <Route path="/app/overview" element={<ProtectedAppScreen><Dashboard /></ProtectedAppScreen>} />
             <Route path="/app/income" element={<ProtectedAppScreen><Income /></ProtectedAppScreen>} />
             <Route path="/app/mileage" element={<ProtectedAppScreen><Mileage /></ProtectedAppScreen>} />
             <Route path="/app/expenses" element={<ProtectedAppScreen><Expenses /></ProtectedAppScreen>} />
