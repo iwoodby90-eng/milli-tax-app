@@ -2,59 +2,56 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Vault as VaultIcon, PiggyBank, MapTrifold, ChartLineUp, Receipt, GearSix,
-  List, Star, Sparkle, Wallet, Robot, FileText, DotsThree, SignOut, House, Gift,
+  List, Star, Wallet, Robot, FileText, DotsThree, SignOut, House, Gift,
+  X, CaretRight, Sparkle,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
-import NavDialButton from "@/components/NavDialButton";
-import WeeboAvatar from "@/components/WeeboAvatar";
 import { useState } from "react";
 
-// 6 side buttons + center raised M — symmetric 3 / M / 3
-const leftTabs = [
-  { to: "/app/vault",      icon: VaultIcon,   label: "Vault",     testid: "tab-vault"   },
-  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)",    testid: "tab-retire"  },
-  { to: "/app/investing",  icon: ChartLineUp, label: "Invest",    testid: "tab-invest"  },
-];
-const rightTabs = [
-  { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage",   testid: "tab-mileage" },
-  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes",     testid: "tab-taxes"   },
-  { to: "/app/settings",   icon: GearSix,     label: "Settings",  testid: "tab-settings"},
+const primaryTabs = [
+  { to: "/app", icon: House, label: "Home", testid: "tab-home", end: true },
+  { to: "/app/income", icon: Wallet, label: "Payouts", testid: "tab-payouts" },
+  { to: "/app/vault", icon: VaultIcon, label: "Tax Vault", testid: "tab-vault" },
+  { to: "/app/mileage", icon: MapTrifold, label: "Mileage", testid: "tab-mileage" },
+  { to: "/app/wealth", icon: ChartLineUp, label: "Wealth", testid: "tab-wealth" },
 ];
 
-// Full navigation lives in the side drawer
-const drawerNav = [
-  { to: "/app",            icon: House,       label: "Home", end: true },
-  { to: "/app/income",     icon: Wallet,      label: "Income" },
-  { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage" },
-  { to: "/app/vault",      icon: VaultIcon,   label: "Tax Vault" },
-  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)" },
-  { to: "/app/investing",  icon: ChartLineUp, label: "Investing" },
-  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes / Quarterly" },
-  { to: "/app/expenses",   icon: FileText,    label: "Expenses" },
-  { to: "/app/ai",         icon: Robot,       label: "Milli AI" },
-  { to: "/app/referral",   icon: Gift,        label: "Invite & Earn $10" },
-  { to: "/app/reports",    icon: FileText,    label: "Reports" },
-  { to: "/app/settings",   icon: GearSix,     label: "Settings" },
-  { to: "/app/more",       icon: DotsThree,   label: "More" },
+const drawerGroups = [
+  {
+    label: "Money",
+    items: [
+      { to: "/app/expenses", icon: FileText, label: "Expenses" },
+      { to: "/app/quarterly", icon: Receipt, label: "Quarterly Taxes" },
+      { to: "/app/reports", icon: FileText, label: "Reports & Documents" },
+    ],
+  },
+  {
+    label: "Build Wealth",
+    items: [
+      { to: "/app/wealth", icon: Sparkle, label: "Milli Wealth" },
+      { to: "/app/retirement", icon: PiggyBank, label: "Retirement" },
+      { to: "/app/investing", icon: ChartLineUp, label: "Investing" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { to: "/app/referral", icon: Gift, label: "Invite & Earn" },
+      { to: "/app/settings", icon: GearSix, label: "Settings" },
+      { to: "/app/more", icon: DotsThree, label: "More" },
+    ],
+  },
 ];
 
 function TabButton({ to, icon: Icon, label, testid, end }) {
   return (
-    <NavLink
-      to={to}
-      end={end}
-      data-testid={testid}
-      className={({ isActive }) =>
-        `flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 active:opacity-60 ${
-          isActive ? "text-volt" : "text-zinc-500"
-        }`
-      }
-      style={{ all: "unset", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 2, minWidth: 0 }}
-    >
+    <NavLink to={to} end={end} data-testid={testid} aria-label={label} className="milli-tab">
       {({ isActive }) => (
         <>
-          <Icon size={20} weight="duotone" style={{ color: isActive ? "#00E5FF" : "#71717a" }} />
-          <span style={{ fontSize: 9, fontWeight: 500, letterSpacing: "0.03em", color: isActive ? "#00E5FF" : "#71717a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{label}</span>
+          <span className={`milli-tab-icon ${isActive ? "is-active" : ""}`}>
+            <Icon size={22} weight={isActive ? "fill" : "regular"} />
+          </span>
+          <span className={`milli-tab-label ${isActive ? "is-active" : ""}`}>{label}</span>
         </>
       )}
     </NavLink>
@@ -64,141 +61,84 @@ function TabButton({ to, icon: Icon, label, testid, end }) {
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
-  const loc = useLocation();
+  const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const isHome = loc.pathname === "/app" || loc.pathname === "/app/";
+
+  const pageTitle = primaryTabs.find((item) =>
+    item.end ? location.pathname === "/app" || location.pathname === "/app/" : location.pathname.startsWith(item.to)
+  )?.label || "Milli";
 
   return (
-    <div className="carbon-bg text-white min-h-full flex flex-col" style={{ backgroundColor: "#050607", color: "#FFFFFF", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Sora', system-ui, sans-serif", minHeight: "100vh", WebkitFontSmoothing: "antialiased" }}>
-      {/* ============ iOS-style top bar (sticky) ============ */}
-      <header
-        className="sticky top-0 z-40"
-        style={{ background: "rgba(5, 6, 7, 0.72)", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingTop: "var(--safe-top)" }}
-      >
-        <div className="flex items-center justify-between px-5 h-11">
-          <button
-            data-testid="mobile-menu-btn"
-            onClick={() => setDrawerOpen(true)}
-            style={{ all: "unset", cursor: "pointer", padding: 8, marginLeft: -8, color: "#e4e4e7" }}
-            aria-label="Open menu"
-          >
+    <div className="milli-shell">
+      <header className="milli-topbar">
+        <div className="milli-topbar-inner">
+          <button type="button" data-testid="mobile-menu-btn" onClick={() => setDrawerOpen(true)} className="milli-icon-button" aria-label="Open menu">
             <List size={22} weight="bold" />
           </button>
-          <NavLink to="/app" className="flex items-center gap-2 active:opacity-70" data-testid="topbar-brand" style={{ textDecoration: "none" }}>
-            <MilliLogo size={22} />
-            <span style={{ fontFamily: "'Sora', sans-serif", letterSpacing: "0.3em", fontSize: 13, background: "linear-gradient(135deg, #E8E8E8, #808080)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>MILLI</span>
+          <NavLink to="/app" className="milli-brand" data-testid="topbar-brand" aria-label="Milli Home">
+            <MilliLogo size={23} />
+            <span>MILLI</span>
           </NavLink>
-          <NavLink
-            to="/app/pricing"
-            data-testid="mobile-plan-badge"
-            style={{ all: "unset", cursor: "pointer", padding: "4px 10px", fontSize: 11, fontWeight: 600, borderRadius: 8, border: "1px solid rgba(0,229,255,0.3)", color: "#00E5FF", display: "inline-flex", alignItems: "center", gap: 4 }}
-          >
+          <NavLink to="/app/pricing" data-testid="mobile-plan-badge" className="milli-plan-pill">
             <Star size={11} weight="fill" />
-            {(user?.plan === "trial" || !user?.plan) ? "Trial" : String(user.plan).toUpperCase()}
+            {(user?.plan === "trial" || !user?.plan) ? "Trial" : String(user.plan)}
           </NavLink>
         </div>
+        <div className="milli-page-context" aria-hidden="true">{pageTitle}</div>
       </header>
 
-      {/* ============ Main content ============ */}
-      <main className="flex-1 native-scroll" data-testid="app-main-scroll">
+      <main className="milli-main native-scroll" data-testid="app-main-scroll">
         {children}
-        <div aria-hidden className="h-6" />
-
-        {/* Floating Weebo FAB */}
-        {isHome && (
-          <div className="sticky bottom-[18px] pointer-events-none flex justify-end pr-4 z-30" style={{ height: 0 }}>
-            <NavLink
-              to="/app/ai"
-              data-testid="weebo-fab"
-              aria-label="Ask Milli AI"
-              className="pointer-events-auto -translate-y-[92px] block active:scale-95 transition-transform"
-              style={{ filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(0,229,255,0.35))" }}
-            >
-              <WeeboAvatar size={58} state="idle" />
-            </NavLink>
-          </div>
-        )}
+        <div aria-hidden className="h-5" />
       </main>
 
-      {/* ============ Bottom Tab Bar — Brushed Titanium + 3D Hardware Dial ============ */}
-      <nav
-        className="sticky bottom-0 z-40"
-        style={{
-          background: "linear-gradient(180deg, rgba(22,24,28,0.97) 0%, rgba(12,14,16,0.99) 100%)",
-          backdropFilter: "blur(24px) saturate(1.3)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
-          borderTop: "1px solid rgba(255,255,255,0.04)",
-          boxShadow: "0 -4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
-          paddingBottom: "var(--safe-bottom)",
-        }}
-        data-testid="bottom-tab-bar"
-      >
-        {/* Specular top edge — hardware feel */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)" }} />
+      <NavLink to="/app/ai" className="milli-ai-fab" data-testid="milli-ai-fab" aria-label="Open Milli AI">
+        <Robot size={22} weight="fill" />
+        <span>Ask Milli</span>
+      </NavLink>
 
-        <div className="relative flex items-stretch justify-around h-[64px] px-1">
-          {leftTabs.map((t) => <TabButton key={t.to} {...t} />)}
-
-          {/* Center pocket for the 3D Hardware Dial */}
-          <div style={{ width: 68, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} aria-hidden>
-            <NavDialButton size={56} onClick={() => nav("/app")} />
-          </div>
-
-          {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
+      <nav className="milli-bottom-bar" data-testid="bottom-tab-bar" aria-label="Primary navigation">
+        <div className="milli-bottom-bar-inner">
+          {primaryTabs.map((tab) => <TabButton key={tab.to} {...tab} />)}
         </div>
       </nav>
 
-      {/* ============ Slide-in drawer ============ */}
       {drawerOpen && (
-        <div
-          className="fixed inset-0 z-50"
-          style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
-          onClick={() => setDrawerOpen(false)}
-          data-testid="drawer-overlay"
-        >
-          <div
-            className="fixed top-0 left-0 bottom-0 w-72 overflow-y-auto native-scroll"
-            style={{
-              backgroundColor: "#050607",
-              borderRight: "1px solid rgba(255,255,255,0.06)",
-              paddingTop: "calc(var(--safe-top) + 20px)",
-              paddingBottom: "calc(var(--safe-bottom) + 20px)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 px-6 mb-8">
-              <MilliLogo size={30} />
-              <div style={{ fontFamily: "'Sora', sans-serif", letterSpacing: "0.25em", background: "linear-gradient(135deg, #E8E8E8, #808080)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>MILLI</div>
+        <div className="milli-drawer-overlay" onClick={() => setDrawerOpen(false)} data-testid="drawer-overlay">
+          <aside className="milli-drawer" onClick={(event) => event.stopPropagation()} aria-label="More navigation">
+            <div className="milli-drawer-header">
+              <div className="milli-brand milli-brand-large"><MilliLogo size={32} /><span>MILLI</span></div>
+              <button type="button" onClick={() => setDrawerOpen(false)} className="milli-icon-button" aria-label="Close menu"><X size={20} weight="bold" /></button>
             </div>
-            <nav className="space-y-1 px-3">
-              {drawerNav.map((it) => (
-                <NavLink
-                  key={it.label}
-                  to={it.to}
-                  end={it.end}
-                  onClick={() => setDrawerOpen(false)}
-                  style={{ textDecoration: "none" }}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-3 text-[15px] font-medium rounded-xl active:opacity-60 ${
-                      isActive ? "bg-volt/10 text-volt" : "text-zinc-300"
-                    }`
-                  }
-                >
-                  <it.icon size={18} weight="duotone" />
-                  {it.label}
-                </NavLink>
+
+            <div className="milli-account-summary">
+              <div className="milli-account-avatar">{(user?.name || user?.email || "M").slice(0, 1).toUpperCase()}</div>
+              <div className="min-w-0">
+                <div className="milli-account-name">{user?.name || "Milli Member"}</div>
+                <div className="milli-account-plan">{user?.plan ? `${String(user.plan).toUpperCase()} PLAN` : "TRIAL PLAN"}</div>
+              </div>
+              <NavLink to="/app/settings" onClick={() => setDrawerOpen(false)} className="milli-drawer-chevron" aria-label="Open account settings"><CaretRight size={17} weight="bold" /></NavLink>
+            </div>
+
+            <nav className="milli-drawer-nav">
+              {drawerGroups.map((group) => (
+                <section key={group.label} className="milli-drawer-group">
+                  <div className="milli-drawer-group-title">{group.label}</div>
+                  {group.items.map((item) => (
+                    <NavLink key={item.to} to={item.to} onClick={() => setDrawerOpen(false)} className={({ isActive }) => `milli-drawer-link ${isActive ? "is-active" : ""}`}>
+                      <item.icon size={19} weight="duotone" />
+                      <span>{item.label}</span>
+                      <CaretRight size={14} className="ml-auto opacity-40" />
+                    </NavLink>
+                  ))}
+                </section>
               ))}
             </nav>
-            <div className="px-6 pt-6">
-              <button
-                onClick={() => { logout(); nav("/"); }}
-                style={{ all: "unset", cursor: "pointer", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 0", fontSize: 14, color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}
-                data-testid="drawer-logout"
-              >
-                <SignOut size={16} weight="bold" /> Sign Out
-              </button>
-            </div>
-          </div>
+
+            <button type="button" onClick={() => { logout(); nav("/"); }} className="milli-signout" data-testid="drawer-logout">
+              <SignOut size={17} weight="bold" /> Sign Out
+            </button>
+          </aside>
         </div>
       )}
     </div>

@@ -61,6 +61,7 @@ export default function Vault() {
       setLinkToken(null);
       await load(); await refresh();
     } catch (e) { toast.error(formatApiError(e)); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { open, ready } = usePlaidLink({

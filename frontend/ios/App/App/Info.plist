@@ -24,19 +24,21 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Milli uses the camera only when you choose to scan a receipt for expense records.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to securely unlock Milli and protect your financial information.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location to track drives for mileage deductions.</string>
+	<string>Milli uses your location while you drive to calculate business mileage and potential tax deductions.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli tracks your drives in the background to automatically log tax-deductible mileage.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Milli tracks your drives in the background to automatically log tax-deductible mileage.</string>
+	<string>When you enable automatic mileage tracking, Milli uses background location to detect and record business drives even when the app is not open.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Milli uses motion data to detect when you start and stop driving.</string>
+	<string>When automatic mileage tracking is enabled, Milli uses motion activity to distinguish driving from other movement and reduce unnecessary location use.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Milli accesses only the receipt image you select for an expense record.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
-		<string>fetch</string>
-		<string>processing</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -46,15 +48,9 @@
 	<string>UIStatusBarStyleLightContent</string>
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>armv7</string>
-	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>

@@ -41,13 +41,11 @@ from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchan
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from plaid.model.sandbox_item_fire_webhook_request import SandboxItemFireWebhookRequest
 
-# Stripe via emergentintegrations
-from emergentintegrations.payments.stripe.checkout import (
-    StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse
+# Production compat layer (replaces emergentintegrations)
+from compat import (
+    StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse,
+    LlmChat, UserMessage, ImageContent, OpenAITextToSpeech, TextDelta, StreamDone,
 )
-
-# LLM (Gemini 3 Flash)
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 # PDF
 from reportlab.lib.pagesizes import letter
@@ -969,7 +967,6 @@ async def scan_receipt(file: UploadFile = File(...), user: dict = Depends(get_cu
     msg = UserMessage(text="Parse this receipt. Return JSON only.", file_contents=[img])
     text = ""
     try:
-        from emergentintegrations.llm.chat import TextDelta, StreamDone
         async for ev in chat.stream_message(msg):
             if isinstance(ev, TextDelta):
                 text += ev.content
@@ -1074,7 +1071,6 @@ async def ai_chat(body: ChatIn, user: dict = Depends(get_current_user)):
     ).with_model("gemini", "gemini-3-flash-preview")
 
     async def gen():
-        from emergentintegrations.llm.chat import TextDelta, StreamDone
         try:
             async for ev in chat.stream_message(UserMessage(text=body.message)):
                 if isinstance(ev, TextDelta):
@@ -1103,7 +1099,6 @@ async def weebo_voice(body: WeeboVoiceIn, user: dict = Depends(get_current_user)
     """Convert a chunk of Weebo's answer to MP3 for lip-sync playback.
     Keeps chunks small (<= 4096 chars per OpenAI limit) so the client can start
     playing as text streams in."""
-    from emergentintegrations.llm.openai import OpenAITextToSpeech
     from fastapi.responses import Response
     txt = (body.text or "").strip()
     if not txt:

@@ -41,6 +41,7 @@ export default function Mileage() {
       if (watchIdRef.current && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
       if (tickRef.current) clearInterval(tickRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function startTicker() {

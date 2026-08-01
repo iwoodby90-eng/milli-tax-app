@@ -3,21 +3,31 @@
   "appName": "Milli",
   "webDir": "build",
   "bundledWebRuntime": false,
+  "loggingBehavior": "none",
   "server": {
     "cleartext": false,
     "androidScheme": "https",
-    "iosScheme": "capacitor"
+    "iosScheme": "milli",
+    "allowNavigation": []
   },
   "ios": {
-    "contentInset": "always",
-    "backgroundColor": "#000000",
-    "limitsNavigationsToAppBoundDomains": false
+    "contentInset": "automatic",
+    "backgroundColor": "#050607",
+    "limitsNavigationsToAppBoundDomains": false,
+    "preferredContentMode": "mobile"
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 1500,
-      "backgroundColor": "#000000",
-      "showSpinner": false
+      "launchShowDuration": 450,
+      "launchAutoHide": true,
+      "backgroundColor": "#050607",
+      "showSpinner": false,
+      "fadeOutDuration": 200
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#050607",
+      "overlaysWebView": true
     }
   }
 }

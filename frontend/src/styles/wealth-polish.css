@@ -1,0 +1,159 @@
+.milli-ai-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(82px + var(--safe-bottom));
+  z-index: 44;
+  min-height: 44px;
+  padding: 0 15px 0 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  color: #06282d;
+  background: linear-gradient(145deg, #b7f8ff 0%, #00e5ff 72%, #00b4c2 100%);
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42), 0 0 20px rgba(0, 229, 255, 0.16);
+  font-size: 12px;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.milli-ai-fab:active {
+  transform: scale(0.96);
+}
+
+.wealth-page {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 18px 18px 112px;
+}
+
+.wealth-hero {
+  padding: 22px 4px 24px;
+}
+
+.wealth-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #94f5ff;
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.wealth-hero h1 {
+  max-width: 560px;
+  margin: 12px 0 10px;
+  color: #f8fafc;
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: clamp(30px, 8vw, 46px);
+  font-weight: 760;
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+}
+
+.wealth-hero p {
+  max-width: 590px;
+  margin: 0;
+  color: #9ea6b0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.wealth-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.wealth-card {
+  width: 100%;
+  min-height: 142px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 24px;
+  align-items: start;
+  gap: 14px;
+  border-radius: 22px;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  background: linear-gradient(180deg, rgba(22, 26, 31, 0.94), rgba(13, 16, 20, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.24);
+}
+
+.wealth-card-button {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.wealth-card:active {
+  transform: scale(0.985);
+  background: linear-gradient(180deg, rgba(25, 30, 35, 0.97), rgba(15, 18, 22, 0.97));
+}
+
+.wealth-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8ff4ff;
+  background: rgba(0, 229, 255, 0.065);
+  border: 1px solid rgba(0, 229, 255, 0.13);
+}
+
+.wealth-card-copy {
+  min-width: 0;
+}
+
+.wealth-card-eyebrow {
+  margin-bottom: 5px;
+  color: #6f7882;
+  font-size: 9px;
+  font-weight: 720;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wealth-card h2 {
+  margin: 0;
+  color: #f5f7f9;
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 19px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+}
+
+.wealth-card p {
+  margin: 7px 0 0;
+  color: #979fa9;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.wealth-card-arrow {
+  align-self: center;
+  color: #65707a;
+}
+
+@media (min-width: 700px) {
+  .wealth-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wealth-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .milli-ai-fab,
+  .wealth-card {
+    transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  }
+}
