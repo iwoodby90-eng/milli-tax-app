@@ -8,6 +8,18 @@ export const OFFER_SOURCES = Object.freeze({
   MANUAL: "manual",
 });
 
+export const MILLI_CENTS_PLATFORMS = Object.freeze([
+  "Uber",
+  "Uber Eats",
+  "Spark",
+  "DoorDash",
+  "Instacart",
+  "Grubhub",
+  "Shipt",
+]);
+
+const EXCLUDED_BLOCK_PLATFORMS = new Set(["amazon flex", "amazonflex", "flex"]);
+
 const DEFAULT_ASSUMPTIONS = Object.freeze({
   gasPrice: 3.49,
   vehicleMpg: 24,
@@ -22,7 +34,15 @@ function number(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+export function supportsMilliCents(platform) {
+  const key = String(platform || "").trim().toLowerCase();
+  return key.length > 0 && !EXCLUDED_BLOCK_PLATFORMS.has(key);
+}
+
 export function normalizeGigOffer(raw = {}, assumptions = {}) {
+  const platform = String(raw.platform ?? "Connected platform").trim();
+  if (!supportsMilliCents(platform)) return null;
+
   const merged = { ...DEFAULT_ASSUMPTIONS, ...assumptions };
   const pickupMiles = number(raw.pickupMiles ?? raw.pickup_miles);
   const routeMiles = number(raw.routeMiles ?? raw.route_miles ?? raw.deliveryMiles ?? raw.delivery_miles);
@@ -31,12 +51,14 @@ export function normalizeGigOffer(raw = {}, assumptions = {}) {
 
   return {
     id: String(raw.id ?? raw.externalOfferId ?? raw.external_offer_id ?? `offer-${Date.now()}`),
-    platform: String(raw.platform ?? "Connected platform"),
+    platform,
     offeredPay: number(raw.offeredPay ?? raw.offered_pay ?? raw.pay ?? raw.offerPrice),
     pickupMiles,
     routeMiles,
     returnToBaseMiles,
     estimatedMinutes,
+    expiresAt: raw.expiresAt ?? raw.expires_at ?? null,
+    receivedAt: raw.receivedAt ?? raw.received_at ?? raw.detectedAt ?? raw.detected_at ?? new Date().toISOString(),
     gasPrice: number(raw.gasPrice ?? raw.gas_price, merged.gasPrice),
     vehicleMpg: number(raw.vehicleMpg ?? raw.vehicle_mpg ?? raw.mpg, merged.vehicleMpg),
     taxRate: number(raw.taxRate ?? raw.tax_rate, merged.taxRate),
@@ -45,28 +67,34 @@ export function normalizeGigOffer(raw = {}, assumptions = {}) {
     minimumNetPerHour: number(raw.minimumNetPerHour ?? raw.minimum_net_per_hour, merged.minimumNetPerHour),
     pickupLabel: raw.pickupLabel ?? raw.pickup_label ?? null,
     dropoffLabel: raw.dropoffLabel ?? raw.dropoff_label ?? null,
-    detectedAt: raw.detectedAt ?? raw.detected_at ?? new Date().toISOString(),
     source: raw.source ?? OFFER_SOURCES.MANUAL,
     confidence: Math.max(0, Math.min(1, number(raw.confidence, raw.source === OFFER_SOURCES.OFFICIAL_API ? 1 : 0.75))),
     rawFields: raw.rawFields ?? raw.raw_fields ?? null,
   };
 }
 
+export async function fetchActiveOffers() {
+  const { data } = await api.get("/gig-offers/active");
+  const assumptions = data?.assumptions ?? {};
+  const rows = Array.isArray(data?.offers) ? data.offers : [];
+  return rows.map((row) => normalizeGigOffer(row, assumptions)).filter(Boolean);
+}
+
 export async function fetchCurrentOffer() {
-  const { data } = await api.get("/gig-offers/current");
-  if (!data) return null;
-  return normalizeGigOffer(data.offer ?? data, data.assumptions);
+  const offers = await fetchActiveOffers();
+  return offers[0] ?? null;
 }
 
 export async function fetchPlatformConnections() {
   const { data } = await api.get("/gig-platforms/connections");
-  return Array.isArray(data) ? data : data?.connections ?? [];
+  const rows = Array.isArray(data) ? data : data?.connections ?? [];
+  return rows.filter((row) => supportsMilliCents(row.platform || row.display_name));
 }
 
 export function subscribeToNativeOffers(onOffer) {
   const handler = (event) => {
-    const payload = event?.detail;
-    if (payload) onOffer(normalizeGigOffer(payload));
+    const payload = normalizeGigOffer(event?.detail);
+    if (payload) onOffer(payload);
   };
 
   window.addEventListener("milli:gig-offer", handler);
