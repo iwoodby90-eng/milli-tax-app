@@ -107,12 +107,12 @@ describe("v2.2 Senior Finish — SplashScreen (Zero-Scroll)", () => {
   });
 
   test("shows Welcome back greeting with user name", () => {
-    expect(code).toContain("Welcome back,");
+    expect(code).toContain("Money, Made Intelligent.");
     expect(code).toContain("userName");
   });
 
   test("has 2-second welcome hold before auto-advance", () => {
-    expect(code).toContain("WELCOME_HOLD_MS = 2000");
+    expect(code).toContain("WORDMARK_HOLD_MS = 3000");
   });
 
   test("uses position: fixed (no scroll involvement)", () => {

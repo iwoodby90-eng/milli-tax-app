@@ -1,10 +1,10 @@
 /**
- * Register — premium iOS-native sign-up screen.
+ * Register — premium iOS-native sign-up screen (v2.3 ARCHITECTURAL LOCK).
  *
- * Single-column phone-first layout. Reads the previously-selected tier
- * from `localStorage.milli_selected_plan` (set by WelcomePaywall) and
- * displays a "Starting: Milli <Tier> · Free until <date>" banner, then
- * posts the account with the pending plan to the backend.
+ * CRITICAL FIX: Plan reader now CROSS-VALIDATES the stored localStorage
+ * data against the canonical IAP_PRODUCTS list. If a mismatch is detected
+ * (e.g., product_id says "elite" but price_display says "$29.99"), the
+ * canonical source of truth wins. Also passes stripe_price_id to backend.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import SignInTransition from "@/components/SignInTransition";
+import { IAP_PRODUCTS } from "@/hooks/useStoreKit";
 
 const CYAN = "#00E5FF";
 
@@ -27,6 +28,48 @@ const STATES = [
   "WV","WI","WY",
 ];
 
+/**
+ * Cross-validate stored plan data against canonical IAP_PRODUCTS.
+ * Returns the VERIFIED plan record. If the stored data has mismatches
+ * (e.g., product_id="milli.elite.monthly" but price="29.99"), the
+ * canonical product data wins.
+ */
+function verifyStoredPlan(raw) {
+  if (!raw) return null;
+  try {
+    const stored = JSON.parse(raw);
+    if (!stored || !stored.product_id) return null;
+
+    // Find canonical product by product_id (primary key)
+    const canonical = IAP_PRODUCTS.find((p) => p.id === stored.product_id);
+    if (!canonical) {
+      // Fallback: try matching by plan name
+      const byPlan = IAP_PRODUCTS.find((p) => p.plan === stored.plan);
+      if (!byPlan) return stored; // can't verify, return as-is
+      return {
+        ...stored,
+        product_id: byPlan.id,
+        plan: byPlan.plan,
+        price: byPlan.price,
+        price_display: byPlan.priceDisplay,
+        stripe_price_id: byPlan.stripe_price_id,
+      };
+    }
+
+    // CROSS-VALIDATE: canonical product is the source of truth for pricing
+    return {
+      ...stored,
+      product_id: canonical.id,
+      plan: canonical.plan,
+      price: canonical.price,
+      price_display: canonical.priceDisplay,
+      stripe_price_id: canonical.stripe_price_id,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
 export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "", state: "TX" });
   const [showPw, setShowPw] = useState(false);
@@ -36,14 +79,14 @@ export default function Register() {
   const nav = useNavigate();
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Pull the tier the user picked on the WelcomePaywall
+  // Pull and VERIFY the tier the user picked on the WelcomePaywall
   const [plan, setPlan] = useState(null);
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("milli_selected_plan");
-      if (raw) setPlan(JSON.parse(raw));
-    } catch (_) { /* noop */ }
+    const raw = localStorage.getItem("milli_selected_plan");
+    const verified = verifyStoredPlan(raw);
+    if (verified) setPlan(verified);
   }, []);
+
   const chargeDateLabel = useMemo(() => {
     if (!plan?.first_charge_at) return null;
     return new Date(plan.first_charge_at).toLocaleDateString("en-US", { month: "long", day: "numeric" });
@@ -57,14 +100,20 @@ export default function Register() {
         ...form,
         pending_plan: plan?.plan || null,
         pending_product_id: plan?.product_id || null,
+        stripe_price_id: plan?.stripe_price_id || null,
         trial_starts_at: plan?.trial_started_at || new Date().toISOString(),
         first_charge_at: plan?.first_charge_at || null,
       });
       setSession(data.token, data.user);
-      // Fire the cinematic "Welcome to Milli, {first_name}." handoff
       setTransition({ name: data.user?.name || form.name });
     } catch (err) {
-      toast.error(formatApiError(err));
+      const msg = formatApiError(err);
+      // Friendly error for unregistered accounts trying to hit prod
+      if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no account")) {
+        toast.error("Account not found. Please register for the production server.");
+      } else {
+        toast.error(msg);
+      }
       setSubmitting(false);
     }
   }
@@ -128,7 +177,7 @@ export default function Register() {
         </p>
       </motion.div>
 
-      {/* Selected plan pill */}
+      {/* Selected plan pill — uses VERIFIED data */}
       {plan && (
         <motion.div
           className="mx-5 mt-5 rounded-2xl px-4 py-3 flex items-center gap-3"

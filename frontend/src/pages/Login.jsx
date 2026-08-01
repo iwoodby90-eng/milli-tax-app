@@ -38,7 +38,12 @@ export default function Login() {
       // Fire the cinematic handoff instead of navigating immediately
       setTransition({ name: data.user?.name || "" });
     } catch (err) {
-      toast.error(formatApiError(err));
+      const msg = formatApiError(err);
+      if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no account") || msg.toLowerCase().includes("invalid")) {
+        toast.error("Account not found. Please register for the production server.");
+      } else {
+        toast.error(msg);
+      }
       setSubmitting(false);
     }
   }

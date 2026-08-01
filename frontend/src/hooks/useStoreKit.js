@@ -16,6 +16,7 @@ export const IAP_PRODUCTS = [
     name: "Basic",
     price: 19.99,
     priceDisplay: "$19.99",
+    stripe_price_id: "price_1TvrNCGaLE4ZdjeBcaxzuWjf",
     tagline: "Track everything.",
     features: [
       "Auto mileage tracking",
@@ -31,6 +32,7 @@ export const IAP_PRODUCTS = [
     name: "Pro",
     price: 29.99,
     priceDisplay: "$29.99",
+    stripe_price_id: "price_1TvrNBGaLE4ZdjeBAu4C7ZPa",
     tagline: "Full autopilot.",
     featured: true,
     features: [
@@ -47,6 +49,7 @@ export const IAP_PRODUCTS = [
     name: "Elite",
     price: 49.99,
     priceDisplay: "$49.99",
+    stripe_price_id: "price_1TvrNBGaLE4ZdjeBBOfoHXgn",
     tagline: "Done-for-you filing.",
     features: [
       "Everything in Pro",
@@ -108,10 +111,8 @@ export function useStoreKit() {
         if (isNative) {
           const plugin = await getPlugin();
           await plugin.purchaseProduct({ productIdentifier: productId });
-          // Listener wired below handles /verify-receipt + acknowledge
         } else {
           // Web fallback — dev-only shortcut that still hits the backend
-          // to prove the /verify-receipt route works end-to-end.
           await api.post("/subscriptions/verify-receipt", {
             transactionId: `web-mock-${Date.now()}`,
             productId,
@@ -161,7 +162,6 @@ export function useStoreKit() {
             transactionId: tx.transactionId,
             productId: tx.productIdentifier,
           });
-          // Acknowledge so Apple stops re-delivering this event on cold start
           await plugin.acknowledgePurchase({ transactionId: tx.transactionId });
         } catch (e) {
           setError(e.message || String(e));

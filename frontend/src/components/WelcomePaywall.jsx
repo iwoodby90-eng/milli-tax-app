@@ -1,20 +1,15 @@
 /**
- * WelcomePaywall — pre-auth tier-selection gate.
+ * WelcomePaywall — pre-auth tier-selection gate (v2.3 ARCHITECTURAL LOCK).
  *
- * Rendered as an overlay after the splash auto-fades, BEFORE the user
- * ever hits the onboarding carousel or the auth screens. Enforces the
- * product rule: nobody uses Milli without picking a subscription first.
+ * CRITICAL FIX (v2.3): Eliminated stale-closure race condition where
+ * AnimatePresence mode="wait" button could fire handleStart with the
+ * previous tier's data. Now uses a ref to guarantee the latest selection
+ * is always read at call time.
  *
- * The user isn't authenticated yet, so this component does NOT call
- * StoreKit or the backend. It only:
- *   1. Records the intended tier + trial start date in localStorage
- *   2. Displays the 3-day-free-trial disclosure with the exact date
- *      they'll be charged and the exact amount
- *
- * The actual native purchase happens after they finish onboarding +
- * create an account (which reads `milli_selected_plan` from storage).
+ * Also adds stripe_price_id to the localStorage record for correct
+ * backend billing mapping.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Star, ShieldCheck } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
@@ -22,7 +17,6 @@ import { IAP_PRODUCTS } from "@/hooks/useStoreKit";
 
 const CYAN = "#00E5FF";
 
-// Same 3 tiers the native paywall uses — priced identically.
 const TIERS = IAP_PRODUCTS;
 
 function formatChargeDate(d) {
@@ -31,26 +25,45 @@ function formatChargeDate(d) {
 
 export default function WelcomePaywall({ onSelected }) {
   const [selected, setSelected] = useState("milli.pro.monthly");
+  const selectedRef = useRef(selected);
+
+  // Keep ref in sync — guarantees handleStart always reads latest
+  const updateSelected = (id) => {
+    selectedRef.current = id;
+    setSelected(id);
+  };
+
   const chargeDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 3);
     return d;
   }, []);
+
   const tier = TIERS.find((t) => t.id === selected) || TIERS[1];
 
   function handleStart() {
+    // CRITICAL: Read from ref, NOT from closure, to prevent stale-closure race
+    const currentId = selectedRef.current;
+    const currentTier = TIERS.find((t) => t.id === currentId);
+
+    if (!currentTier) {
+      console.error("[WelcomePaywall] No tier found for:", currentId);
+      return;
+    }
+
     try {
       const record = {
-        product_id: selected,
-        plan: tier.plan,
-        price: tier.price,
-        price_display: tier.priceDisplay,
+        product_id: currentTier.id,
+        plan: currentTier.plan,
+        price: currentTier.price,
+        price_display: currentTier.priceDisplay,
+        stripe_price_id: currentTier.stripe_price_id,
         trial_started_at: new Date().toISOString(),
         first_charge_at: chargeDate.toISOString(),
       };
       localStorage.setItem("milli_selected_plan", JSON.stringify(record));
     } catch (_) { /* localStorage unavailable — proceed anyway */ }
-    onSelected && onSelected(tier);
+    onSelected && onSelected(currentTier);
   }
 
   return (
@@ -96,7 +109,7 @@ export default function WelcomePaywall({ onSelected }) {
             <motion.button
               key={t.id}
               type="button"
-              onClick={() => setSelected(t.id)}
+              onClick={() => updateSelected(t.id)}
               data-testid={`welcome-tier-${t.plan}`}
               whileTap={{ scale: 0.985 }}
               className="relative text-left rounded-2xl transition-all"
@@ -149,7 +162,7 @@ export default function WelcomePaywall({ onSelected }) {
         })}
       </div>
 
-      {/* Sticky CTA */}
+      {/* Sticky CTA — NO AnimatePresence, single stable button to prevent stale closure */}
       <div
         className="fixed left-0 right-0 z-40 px-4 pt-3"
         style={{
@@ -160,36 +173,30 @@ export default function WelcomePaywall({ onSelected }) {
         }}
       >
         <div className="max-w-[430px] mx-auto flex flex-col gap-2">
-          <AnimatePresence mode="wait">
-            <motion.button
-              key={selected}
-              type="button"
-              onClick={handleStart}
-              data-testid="welcome-start-trial-btn"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.25 }}
-              className="w-full py-4 rounded-full font-bold uppercase tracking-[0.22em] text-[13px] relative overflow-hidden active:scale-[0.985]"
+          <motion.button
+            type="button"
+            onClick={handleStart}
+            data-testid="welcome-start-trial-btn"
+            whileTap={{ scale: 0.985 }}
+            className="w-full py-4 rounded-full font-bold uppercase tracking-[0.22em] text-[13px] relative overflow-hidden active:scale-[0.985]"
+            style={{
+              background: "linear-gradient(180deg, #00E5FF 0%, #00B8D4 100%)",
+              color: "#001217",
+              boxShadow: "0 0 26px rgba(0,229,255,0.55), 0 0 60px rgba(0,229,255,0.22)",
+            }}
+          >
+            <motion.span
+              className="absolute inset-0 pointer-events-none"
               style={{
-                background: "linear-gradient(180deg, #00E5FF 0%, #00B8D4 100%)",
-                color: "#001217",
-                boxShadow: "0 0 26px rgba(0,229,255,0.55), 0 0 60px rgba(0,229,255,0.22)",
+                background:
+                  "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)",
               }}
-            >
-              <motion.span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)",
-                }}
-                initial={{ x: "-120%" }}
-                animate={{ x: "120%" }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "linear", repeatDelay: 0.8 }}
-              />
-              <span className="relative">Start 3-Day Free Trial</span>
-            </motion.button>
-          </AnimatePresence>
+              initial={{ x: "-120%" }}
+              animate={{ x: "120%" }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "linear", repeatDelay: 0.8 }}
+            />
+            <span className="relative">Start 3-Day Free Trial</span>
+          </motion.button>
 
           {/* Trial disclosure — exact billing date + amount */}
           <p
