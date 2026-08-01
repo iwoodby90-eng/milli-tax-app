@@ -1,0 +1,70 @@
+name: Milli CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend build and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+      - run: corepack enable
+      - run: yarn install --frozen-lockfile
+      - run: CI=true yarn test --watchAll=false
+      - run: yarn build
+
+  backend:
+    name: Backend validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q .
+      - run: pytest -q
+        env:
+          MONGO_URL: mongodb://localhost:27017
+          DB_NAME: milli_test
+          JWT_SECRET: ci-only-secret
+          PLAID_CLIENT_ID: ci-placeholder
+          PLAID_SECRET: ci-placeholder
+          PLAID_ENV: sandbox
+          EMERGENT_LLM_KEY: ci-placeholder
+          STRIPE_API_KEY: sk_test_placeholder
+          APPLE_IAP_ENVIRONMENT: Sandbox
+
+  ios-config:
+    name: iOS configuration guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required Apple files
+        run: |
+          test -f frontend/ios/App/App/Info.plist
+          test -f frontend/ios/App/App/PrivacyInfo.xcprivacy
+          test -f frontend/ios/App/App/App.entitlements
+          grep -q "NSFaceIDUsageDescription" frontend/ios/App/App/Info.plist
+          grep -q "NSLocationAlwaysAndWhenInUseUsageDescription" frontend/ios/App/App/Info.plist
+          grep -q "NSPrivacyTracking" frontend/ios/App/App/PrivacyInfo.xcprivacy
