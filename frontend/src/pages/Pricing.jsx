@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, money, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { ShieldCheck, Lightning, Star, Crown } from "@phosphor-icons/react";
+import { ShieldCheck, Lightning, Star, Crown, AppleLogo } from "@phosphor-icons/react";
 
 const CYAN = "#00E5FF";
 
@@ -20,19 +20,65 @@ const ELITE_STYLES = {
   boxShadow: "0 0 32px rgba(0,229,255,0.2), 0 0 60px rgba(0,229,255,0.08), inset 0 0 24px rgba(0,229,255,0.1), 0 4px 24px rgba(0,0,0,0.4)",
 };
 
+/**
+ * Detect if running in Capacitor (native iOS) for StoreKit 2 IAP.
+ */
+function isNativeIOS() {
+  try {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  } catch { return false; }
+}
+
+/**
+ * StoreKit 2 purchase flow via @capgo/native-purchases plugin.
+ * Product IDs map: pro → milli_pro_monthly, elite → milli_elite_monthly
+ */
+async function purchaseNativeIAP(tier) {
+  try {
+    const { NativePurchases } = await import("@capgo/native-purchases");
+    const productId = tier === "elite" ? "milli_elite_monthly" : "milli_pro_monthly";
+    const result = await NativePurchases.purchaseProduct({ productIdentifier: productId });
+    if (result && result.transactionId) {
+      // Verify receipt server-side
+      await api.post("/iap/verify", {
+        platform: "apple",
+        transaction_id: result.transactionId,
+        product_id: productId,
+        receipt: result.receipt || "",
+      });
+      toast.success("Subscription activated via Apple");
+      return true;
+    }
+  } catch (e) {
+    if (e?.code === "USER_CANCELLED") {
+      toast("Purchase cancelled");
+    } else {
+      toast.error("Purchase failed. Try again or use card payment.");
+    }
+  }
+  return false;
+}
+
 export default function Pricing() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(null);
+  const native = isNativeIOS();
 
   useEffect(() => { api.get("/pricing/tiers").then(({ data }) => setTiers(data)).catch(() => {}); }, []);
 
   async function subscribe(tier) {
     setLoading(tier);
     try {
-      const { data } = await api.post("/stripe/checkout", { tier, origin_url: window.location.origin });
-      window.location.href = data.url;
-    } catch (e) { toast.error(formatApiError(e)); setLoading(null); }
+      if (native) {
+        const ok = await purchaseNativeIAP(tier);
+        if (ok) await refresh();
+      } else {
+        const { data } = await api.post("/stripe/checkout", { tier, origin_url: window.location.origin });
+        window.location.href = data.url;
+      }
+    } catch (e) { toast.error(formatApiError(e)); }
+    finally { setLoading(null); }
   }
 
   return (
@@ -46,6 +92,12 @@ export default function Pricing() {
             <> · trial ends {new Date(user.trial_end).toLocaleDateString()}</>
           )}
         </p>
+        {native && (
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500">
+            <AppleLogo size={12} weight="fill" />
+            <span className="font-mono uppercase tracking-wider">Apple In-App Purchase enabled</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-6">
@@ -60,7 +112,6 @@ export default function Pricing() {
               className="relative overflow-hidden flex flex-col"
               style={{ ...cardStyle, padding: "32px 28px" }}
             >
-              {/* Elite: MEMBER OF DISTINCTION badge */}
               {isElite && (
                 <div
                   className="absolute -top-px left-0 right-0 h-[3px]"
@@ -78,18 +129,12 @@ export default function Pricing() {
                   </span>
                 </div>
               )}
-              {!isElite && t.popular && (
-                <div className="absolute -top-3 left-6 bg-volt text-obsidian text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full">
-                  Most popular
-                </div>
-              )}
               {isCurrent && (
                 <div className="absolute -top-3 right-6 bg-success text-obsidian text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full">
                   Current
                 </div>
               )}
 
-              {/* Plan name — Sora */}
               <div
                 className="text-[11px] uppercase tracking-[0.3em] text-zinc-500"
                 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 500 }}
@@ -97,7 +142,6 @@ export default function Pricing() {
                 {t.name}
               </div>
 
-              {/* Price — SF Pro Display */}
               <div className="mt-5 flex items-baseline gap-2">
                 <div
                   className="text-6xl chrome-text"
@@ -110,7 +154,6 @@ export default function Pricing() {
 
               <div className="text-[11px] text-zinc-500 font-mono mt-1.5 uppercase tracking-wider">{t.trial_days}-day free trial</div>
 
-              {/* Features */}
               <ul className="mt-7 space-y-3 text-[14px] flex-1">
                 {t.features.map((f) => (
                   <li key={f} className="flex gap-2.5 items-start">
@@ -120,7 +163,6 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              {/* CTA Button */}
               <button
                 data-testid={`tier-subscribe-${t.id}`}
                 disabled={isCurrent || loading === t.id}
@@ -144,7 +186,9 @@ export default function Pricing() {
                 {isCurrent ? (
                   <><ShieldCheck size={16} weight="fill" /> Current plan</>
                 ) : loading === t.id ? (
-                  "Loading..."
+                  "Processing..."
+                ) : native ? (
+                  <><AppleLogo size={16} weight="fill" /> Subscribe with Apple</>
                 ) : (
                   <>Choose {t.name} <Lightning weight="fill" size={16} /></>
                 )}
@@ -155,7 +199,7 @@ export default function Pricing() {
       </div>
 
       <div className="mt-8 text-[10px] text-zinc-600 font-mono uppercase tracking-wider text-center">
-        Powered by Stripe · Secure checkout
+        {native ? "Managed by Apple · StoreKit 2" : "Powered by Stripe · Secure checkout"}
       </div>
     </div>
   );

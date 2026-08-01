@@ -1,11 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { calculateProfit, verdict } from "@/lib/milli-cents";
-import { Gauge, CurrencyDollar, GasPump, Car, Percent, MapPin, ArrowRight } from "@phosphor-icons/react";
+import { Gauge, CurrencyDollar, GasPump, Car, Percent, MapPin, ArrowRight, Plugs, CheckCircle, Lightning } from "@phosphor-icons/react";
 
 /**
- * Milli-Cents Profitability Widget
- * Style: Industrial-Noir with Bel Air Gauge (circular chrome speedo aesthetic)
- * Gated: Pro/Elite users only (gating enforced at route level in Dashboard)
+ * Milli-Cents Profitability Widget v2.0
+ * NEW: 'Connect Gig Account' flow + Live Offer Detection + Auto-ACCEPT
  */
 
 const VERDICT_COLORS = {
@@ -14,7 +13,19 @@ const VERDICT_COLORS = {
   DECLINE: { ring: "#FF3B5C", glow: "rgba(255,59,92,0.30)", label: "DECLINE", bg: "rgba(255,59,92,0.06)" },
 };
 
+const GIG_APPS = [
+  { id: "uber", name: "Uber", color: "#000" },
+  { id: "lyft", name: "Lyft", color: "#FF00BF" },
+  { id: "doordash", name: "DoorDash", color: "#FF3008" },
+  { id: "spark", name: "Spark", color: "#0071CE" },
+];
+
 export default function MilliCentsWidget({ onClose }) {
+  const [gigConnected, setGigConnected] = useState(false);
+  const [connectingGig, setConnectingGig] = useState(null);
+  const [liveOffer, setLiveOffer] = useState(null);
+  const [autoVerdict, setAutoVerdict] = useState(null);
+
   const [form, setForm] = useState({
     offerPrice: "",
     tripDistance: "",
@@ -36,47 +47,163 @@ export default function MilliCentsWidget({ onClose }) {
   const result = useMemo(() => calculateProfit(parsed), [parsed]);
   const vrd = verdict(result);
   const colors = VERDICT_COLORS[vrd];
-
   const hasInput = parsed.offerPrice > 0 && parsed.tripDistance > 0;
+
+  // Simulate gig connection
+  function connectGig(app) {
+    setConnectingGig(app.id);
+    setTimeout(() => {
+      setConnectingGig(null);
+      setGigConnected(true);
+      // Simulate live offer detection after connection
+      setTimeout(() => {
+        const offerData = { price: 28.50, distance: 12.3, deadhead: 2.1, platform: app.name };
+        setLiveOffer(offerData);
+        // Auto-calc verdict
+        const autoResult = calculateProfit({
+          offerPrice: offerData.price,
+          tripDistance: offerData.distance,
+          deadheadDistance: offerData.deadhead,
+          gasPrice: 3.49,
+          vehicleMpg: 28,
+          taxSlice: 0.25,
+        });
+        setAutoVerdict({ result: autoResult, verdict: verdict(autoResult) });
+      }, 1500);
+    }, 2000);
+  }
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.85)" }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.88)" }}>
       <div
-        className="w-full max-w-md rounded-3xl border border-zinc-800 overflow-hidden"
-        style={{ backgroundColor: "#0a0b0d", boxShadow: "0 0 80px rgba(0,229,255,0.06)" }}
+        className="w-full max-w-md rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto"
+        style={{ backgroundColor: "#0a0b0d", border: "1px solid rgba(40,44,52,0.8)", boxShadow: "0 0 80px rgba(0,229,255,0.06)" }}
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-zinc-800/60">
+        <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b" style={{ borderColor: "rgba(40,44,52,0.6)" }}>
           <div className="flex items-center gap-3">
-            <Gauge size={22} weight="duotone" className="text-volt" />
+            <Gauge size={22} weight="duotone" style={{ color: "#00E5FF" }} />
             <div>
               <div className="font-display text-sm tracking-[0.2em] text-white uppercase">Milli-Cents</div>
-              <div className="text-[10px] text-zinc-500 font-mono tracking-wider">// PROFITABILITY ENGINE v1.9</div>
+              <div className="text-[10px] text-zinc-500 font-mono tracking-wider">// PROFITABILITY ENGINE v2.0</div>
             </div>
           </div>
           {onClose && (
             <button
               onClick={onClose}
-              className="text-zinc-500 hover:text-white text-lg font-mono transition-colors"
+              className="text-zinc-500 hover:text-white text-lg font-mono"
+              style={{ all: "unset", cursor: "pointer", color: "#8B9DAF", fontSize: 18 }}
               aria-label="Close"
             >
-              ✕
+              &times;
             </button>
           )}
         </div>
 
+        {/* ─── Connect Gig Account UI ─── */}
+        {!gigConnected && (
+          <div className="px-6 py-5" style={{ borderBottom: "1px solid rgba(40,44,52,0.4)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Plugs size={16} weight="duotone" style={{ color: "#00E5FF" }} />
+              <span className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: "#00E5FF" }}>Connect Gig Account</span>
+            </div>
+            <p className="text-xs text-zinc-400 mb-4">Link a platform for live offer detection & auto-verdicts.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {GIG_APPS.map((app) => (
+                <button
+                  key={app.id}
+                  onClick={() => connectGig(app)}
+                  disabled={!!connectingGig}
+                  data-testid={`connect-gig-${app.id}`}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left"
+                  style={{
+                    all: "unset",
+                    cursor: connectingGig ? "wait" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px 12px",
+                    borderRadius: 12,
+                    background: "rgba(5,6,7,0.6)",
+                    border: connectingGig === app.id ? "1px solid rgba(0,229,255,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                    opacity: connectingGig && connectingGig !== app.id ? 0.4 : 1,
+                    transition: "all 0.2s",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: app.color, flexShrink: 0 }} />
+                  {connectingGig === app.id ? "Linking..." : app.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─── Live Offer Detected ─── */}
+        {gigConnected && liveOffer && (
+          <div className="px-6 py-5" style={{ background: "rgba(0,229,255,0.03)", borderBottom: "1px solid rgba(0,229,255,0.1)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Lightning size={16} weight="fill" style={{ color: "#00E5FF" }} />
+              <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: "#00E5FF" }}>Live Offer Detected</span>
+              <span className="ml-auto text-[10px] text-zinc-500 font-mono">{liveOffer.platform}</span>
+            </div>
+            <div className="flex items-center gap-4 mb-3">
+              <div>
+                <div className="font-chrome font-bold text-3xl text-white">${liveOffer.price.toFixed(2)}</div>
+                <div className="text-[10px] text-zinc-500 font-mono">{liveOffer.distance} mi + {liveOffer.deadhead} mi deadhead</div>
+              </div>
+              {autoVerdict && (
+                <div className="ml-auto text-center">
+                  <div
+                    className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-[0.2em] font-mono"
+                    style={{
+                      backgroundColor: VERDICT_COLORS[autoVerdict.verdict].bg,
+                      color: VERDICT_COLORS[autoVerdict.verdict].ring,
+                      border: `1px solid ${VERDICT_COLORS[autoVerdict.verdict].ring}40`,
+                      boxShadow: `0 0 12px ${VERDICT_COLORS[autoVerdict.verdict].glow}`,
+                    }}
+                    data-testid="auto-verdict-badge"
+                  >
+                    {autoVerdict.verdict}
+                  </div>
+                  <div className="text-[9px] text-zinc-500 mt-1 font-mono">
+                    Net: ${autoVerdict.result.profit.toFixed(2)}
+                  </div>
+                </div>
+              )}
+            </div>
+            {autoVerdict?.verdict === "ACCEPT" && (
+              <div className="flex items-center gap-2 text-xs" style={{ color: "#00E5FF" }}>
+                <CheckCircle size={14} weight="fill" />
+                <span className="font-mono uppercase tracking-wider">Auto-accepted by Milli-Cents formula</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Gig Connected indicator */}
+        {gigConnected && !liveOffer && (
+          <div className="px-6 py-4 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(40,44,52,0.4)" }}>
+            <CheckCircle size={16} weight="fill" style={{ color: "#34D399" }} />
+            <span className="text-xs font-medium" style={{ color: "#34D399" }}>Gig account connected</span>
+            <span className="text-[10px] text-zinc-500 ml-auto font-mono">Scanning for offers...</span>
+          </div>
+        )}
+
         {/* Bel Air Gauge */}
-        <div className="flex justify-center py-8">
-          <BelAirGauge margin={hasInput ? result.profitMargin : 0} colors={colors} active={hasInput} />
+        <div className="flex justify-center py-6">
+          <BelAirGauge margin={hasInput ? result.profitMargin : (autoVerdict ? autoVerdict.result.profitMargin : 0)} colors={autoVerdict ? VERDICT_COLORS[autoVerdict.verdict] : colors} active={hasInput || !!autoVerdict} />
         </div>
 
-        {/* Verdict */}
+        {/* Manual Verdict */}
         {hasInput && (
-          <div className="text-center -mt-4 mb-6">
+          <div className="text-center -mt-2 mb-5">
             <span
               className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.25em] font-mono"
               style={{ backgroundColor: colors.bg, color: colors.ring, border: `1px solid ${colors.ring}40` }}
@@ -84,7 +211,7 @@ export default function MilliCentsWidget({ onClose }) {
               {colors.label}
             </span>
             <div className="mt-2 text-zinc-400 text-sm font-mono">
-              Net Profit: <span className="text-white font-semibold">${result.profit.toFixed(2)}</span>
+              Net: <span className="text-white font-semibold">${result.profit.toFixed(2)}</span>
               <span className="text-zinc-600 mx-2">|</span>
               Fuel: <span className="text-zinc-300">${result.fuelCost.toFixed(2)}</span>
               <span className="text-zinc-600 mx-2">|</span>
@@ -93,61 +220,18 @@ export default function MilliCentsWidget({ onClose }) {
           </div>
         )}
 
-        {/* Input Form */}
+        {/* Manual Input Form */}
         <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-          <InputField
-            icon={CurrencyDollar}
-            label="Offer $"
-            value={form.offerPrice}
-            onChange={update("offerPrice")}
-            placeholder="12.50"
-            testid="mc-offer"
-          />
-          <InputField
-            icon={MapPin}
-            label="Trip mi"
-            value={form.tripDistance}
-            onChange={update("tripDistance")}
-            placeholder="8.2"
-            testid="mc-trip"
-          />
-          <InputField
-            icon={ArrowRight}
-            label="Deadhead mi"
-            value={form.deadheadDistance}
-            onChange={update("deadheadDistance")}
-            placeholder="3.0"
-            testid="mc-deadhead"
-          />
-          <InputField
-            icon={GasPump}
-            label="Gas $/gal"
-            value={form.gasPrice}
-            onChange={update("gasPrice")}
-            placeholder="3.49"
-            testid="mc-gas"
-          />
-          <InputField
-            icon={Car}
-            label="MPG"
-            value={form.vehicleMpg}
-            onChange={update("vehicleMpg")}
-            placeholder="28"
-            testid="mc-mpg"
-          />
-          <InputField
-            icon={Percent}
-            label="Tax %"
-            value={form.taxSlice}
-            onChange={update("taxSlice")}
-            placeholder="25"
-            testid="mc-tax"
-          />
+          <InputField icon={CurrencyDollar} label="Offer $" value={form.offerPrice} onChange={update("offerPrice")} placeholder="12.50" testid="mc-offer" />
+          <InputField icon={MapPin} label="Trip mi" value={form.tripDistance} onChange={update("tripDistance")} placeholder="8.2" testid="mc-trip" />
+          <InputField icon={ArrowRight} label="Deadhead mi" value={form.deadheadDistance} onChange={update("deadheadDistance")} placeholder="3.0" testid="mc-deadhead" />
+          <InputField icon={GasPump} label="Gas $/gal" value={form.gasPrice} onChange={update("gasPrice")} placeholder="3.49" testid="mc-gas" />
+          <InputField icon={Car} label="MPG" value={form.vehicleMpg} onChange={update("vehicleMpg")} placeholder="28" testid="mc-mpg" />
+          <InputField icon={Percent} label="Tax %" value={form.taxSlice} onChange={update("taxSlice")} placeholder="25" testid="mc-tax" />
         </div>
 
-        {/* Cost per mile footer */}
         {hasInput && (
-          <div className="px-6 pb-6 flex items-center justify-between text-xs text-zinc-500 font-mono border-t border-zinc-800/60 pt-4">
+          <div className="px-6 pb-6 flex items-center justify-between text-xs text-zinc-500 font-mono border-t pt-4" style={{ borderColor: "rgba(40,44,52,0.6)" }}>
             <span>Cost/mile: <span className="text-zinc-300">${result.costPerMile.toFixed(2)}</span></span>
             <span>Total miles: <span className="text-zinc-300">{result.totalMiles}</span></span>
           </div>
@@ -157,37 +241,22 @@ export default function MilliCentsWidget({ onClose }) {
   );
 }
 
-/**
- * Bel Air Gauge — Circular chrome speedometer inspired by 1954 Chevy Bel Air.
- * Shows profit margin 0-100% with gradient arc and needle.
- */
 function BelAirGauge({ margin, colors, active }) {
   const clampedMargin = Math.max(-100, Math.min(100, margin));
-  // Map -100..100 to 0..1 for the arc (center at 0.5 for 0%)
   const normalized = active ? (clampedMargin + 100) / 200 : 0;
-
-  // Arc geometry: 240-degree sweep (-210 to 30 degrees)
   const startAngle = -210;
   const endAngle = 30;
-  const sweepTotal = endAngle - startAngle; // 240
+  const sweepTotal = endAngle - startAngle;
   const needleAngle = startAngle + normalized * sweepTotal;
-
   const r = 70;
   const cx = 90;
   const cy = 90;
-
-  // Arc path for background
   const arcPath = describeArc(cx, cy, r, startAngle, endAngle);
-  // Arc path for filled portion
   const filledEnd = startAngle + normalized * sweepTotal;
   const filledPath = normalized > 0 ? describeArc(cx, cy, r, startAngle, filledEnd) : "";
-
-  // Needle endpoint
   const needleR = r - 18;
   const nx = cx + needleR * Math.cos((needleAngle * Math.PI) / 180);
   const ny = cy + needleR * Math.sin((needleAngle * Math.PI) / 180);
-
-  // Tick marks
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((pct) => {
     const angle = startAngle + pct * sweepTotal;
     const outerR = r + 6;
@@ -202,78 +271,30 @@ function BelAirGauge({ margin, colors, active }) {
 
   return (
     <div className="relative w-[180px] h-[180px]">
-      {/* Chrome bezel ring */}
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: "conic-gradient(from 0deg, #2a2a2a, #555, #2a2a2a, #444, #2a2a2a)",
-          padding: "4px",
-        }}
-      >
+      <div className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(from 0deg, #2a2a2a, #555, #2a2a2a, #444, #2a2a2a)", padding: 4 }}>
         <div className="w-full h-full rounded-full" style={{ backgroundColor: "#0a0b0d" }} />
       </div>
-
-      {/* SVG gauge face */}
       <svg width="180" height="180" viewBox="0 0 180 180" className="absolute inset-0">
-        {/* Tick marks */}
         {ticks.map((t, i) => (
           <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#555" strokeWidth="2" strokeLinecap="round" />
         ))}
-
-        {/* Background arc */}
         <path d={arcPath} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" strokeLinecap="round" />
-
-        {/* Filled arc */}
         {filledPath && (
-          <path
-            d={filledPath}
-            fill="none"
-            stroke={colors.ring}
-            strokeWidth="6"
-            strokeLinecap="round"
-            style={{
-              filter: `drop-shadow(0 0 6px ${colors.glow})`,
-              transition: "d 600ms cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-          />
+          <path d={filledPath} fill="none" stroke={colors.ring} strokeWidth="6" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${colors.glow})`, transition: "d 600ms cubic-bezier(0.4, 0, 0.2, 1)" }} />
         )}
-
-        {/* Needle */}
         {active && (
           <>
-            <line
-              x1={cx}
-              y1={cy}
-              x2={nx}
-              y2={ny}
-              stroke={colors.ring}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              style={{
-                filter: `drop-shadow(0 0 4px ${colors.glow})`,
-                transition: "all 600ms cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            />
-            {/* Needle hub */}
+            <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={colors.ring} strokeWidth="2.5" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 4px ${colors.glow})`, transition: "all 600ms cubic-bezier(0.4, 0, 0.2, 1)" }} />
             <circle cx={cx} cy={cy} r="5" fill="#1a1a1a" stroke={colors.ring} strokeWidth="1.5" />
           </>
         )}
-
-        {/* Center chrome dot */}
         <circle cx={cx} cy={cy} r="3" fill="#666" />
       </svg>
-
-      {/* Center readout */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-6">
-        <div
-          className="font-chrome font-bold text-2xl"
-          style={{ color: active ? colors.ring : "#444", transition: "color 400ms" }}
-        >
+        <div className="font-chrome font-bold text-2xl" style={{ color: active ? colors.ring : "#444", transition: "color 400ms" }}>
           {active ? `${Math.round(clampedMargin)}%` : "—"}
         </div>
-        <div className="text-[9px] font-mono uppercase tracking-[0.3em] text-zinc-500 mt-0.5">
-          margin
-        </div>
+        <div className="text-[9px] font-mono uppercase tracking-[0.3em] text-zinc-500 mt-0.5">margin</div>
       </div>
     </div>
   );
@@ -283,7 +304,7 @@ function InputField({ icon: Icon, label, value, onChange, placeholder, testid })
   return (
     <div className="relative">
       <label className="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-500 mb-1 block">{label}</label>
-      <div className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 focus-within:border-volt/40 transition-colors">
+      <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(5,6,7,0.6)", border: "1px solid rgba(40,44,52,0.6)" }}>
         <Icon size={14} weight="duotone" className="text-zinc-500 flex-shrink-0" />
         <input
           type="number"
@@ -293,15 +314,13 @@ function InputField({ icon: Icon, label, value, onChange, placeholder, testid })
           placeholder={placeholder}
           data-testid={testid}
           className="bg-transparent text-white text-sm font-mono w-full outline-none placeholder:text-zinc-700"
+          style={{ background: "transparent", border: "none", padding: 0 }}
         />
       </div>
     </div>
   );
 }
 
-/**
- * SVG arc path utility for the Bel Air Gauge.
- */
 function describeArc(cx, cy, r, startAngle, endAngle) {
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);

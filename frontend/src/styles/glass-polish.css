@@ -1,11 +1,12 @@
 /**
- * glass-polish.css v2 — "Seamless Elite" Hardening
+ * glass-polish.css v3 — "Nuclear" Glassmorphism + Hardware Nav
+ * v2.0 DEFINITIVE — 28px blur everywhere, titanium nav, noir base.
  *
  * Rules:
  * - NO solid backgrounds on any card/container
  * - All surfaces: rgba(13,15,18,0.4) + backdrop-filter: blur(28px) brightness(1.2)
  * - 22px squircle radius on ALL containers
- * - Invisible transition to noir bg — only a 1px "Obsidian" edge separates them
+ * - Invisible transition to noir bg — only a 1px "Obsidian" edge
  * - No hard box-shadows. Only ultra-soft diffuse.
  */
 
@@ -16,28 +17,20 @@
   --glass-radius: 22px;
   --obsidian-edge: 1px solid rgba(40, 44, 52, 0.8);
   --noir-bg: #050607;
+  --titanium-gradient: linear-gradient(180deg, rgba(28, 32, 38, 0.97) 0%, rgba(12, 14, 16, 0.99) 100%);
 }
 
-/* === NUCLEAR: Every possible card/container selector === */
+/* === NUCLEAR: Every card/container selector === */
 .glass-card,
-[class*="Card"],
-[class*="card"],
-[class*="panel"],
-[class*="Panel"],
-[class*="section"],
-[class*="container"],
 .milli-card,
+.milli-card-strong,
 .dashboard-card,
 .vault-card,
 .insight-card,
 .stat-card,
 .mileage-card,
 .expense-card,
-.income-card,
-article,
-.rounded-xl,
-.rounded-2xl,
-.rounded-3xl {
+.income-card {
   background: var(--glass-bg) !important;
   backdrop-filter: var(--glass-blur) !important;
   -webkit-backdrop-filter: var(--glass-blur) !important;
@@ -46,90 +39,119 @@ article,
   box-shadow: none !important;
 }
 
-/* === Direct style overrides for inline-styled React components === */
-div[style*="background: rgb"],
-div[style*="background-color: rgb"],
-div[style*="backgroundColor"],
-div[style*="background: #"],
-div[style*="background-color: #"] {
-  background: var(--glass-bg) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
+/* Stronger card variant */
+.milli-card-strong {
+  background: rgba(13, 15, 18, 0.55) !important;
+  border: 1px solid rgba(0, 229, 255, 0.08) !important;
 }
 
-/* === Exempt certain elements from glass treatment === */
-button,
-input,
-select,
-textarea,
-nav,
-.splash-screen,
-.onboarding-carousel,
-[class*="Splash"],
-[class*="Paywall"],
-[class*="Logo"],
-svg,
-img,
-video {
-  background: revert !important;
-  backdrop-filter: revert !important;
-  -webkit-backdrop-filter: revert !important;
-  border-radius: revert !important;
+/* === Page/screen backgrounds: pure noir === */
+.App, #root, main, body, html {
+  background: var(--noir-bg) !important;
 }
 
-/* === Re-apply specific styles for nav/buttons === */
-button {
+/* === Scrollbar removal === */
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* === Native scroll behavior === */
+.native-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+}
+
+/* === Carbon background helper === */
+.carbon-bg {
+  background: var(--noir-bg);
+}
+
+/* === Chrome text gradient === */
+.chrome-text {
+  background: linear-gradient(135deg, #E8E8E8 0%, #808080 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Volt accent color === */
+.text-volt { color: #00E5FF !important; }
+.bg-volt { background-color: #00E5FF !important; }
+.border-volt { border-color: #00E5FF !important; }
+
+/* === Success / Warning === */
+.text-success { color: #34D399 !important; }
+.text-warning { color: #FFB800 !important; }
+
+/* === Buttons: Volt primary === */
+.btn-volt {
   background: #00E5FF !important;
   color: #050607 !important;
   border: none !important;
   border-radius: 14px !important;
-  font-weight: 600 !important;
-  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.2) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 12px rgba(0, 229, 255, 0.25) !important;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
-button[class*="ghost"],
-button[class*="outline"],
-button[class*="secondary"] {
+.btn-volt:hover { opacity: 0.9; }
+.btn-volt:disabled { opacity: 0.5 !important; cursor: not-allowed; }
+
+/* === Outline cyan button === */
+.btn-outline-cyan {
   background: transparent !important;
   color: #00E5FF !important;
-  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
   box-shadow: none !important;
+  cursor: pointer;
+}
+.btn-outline-cyan:hover {
+  background: rgba(0, 229, 255, 0.06) !important;
 }
 
-/* === Inputs: dark recessed look === */
-input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
-textarea, select {
-  background: rgba(3, 4, 5, 0.7) !important;
-  border: 1px solid rgba(0, 229, 255, 0.08) !important;
-  border-radius: 14px !important;
-  color: #FFFFFF !important;
-  padding: 14px 16px !important;
-  font-size: 16px !important;
+/* === Dividers === */
+.divider-tick {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.04);
 }
-input:focus, textarea:focus, select:focus {
-  border-color: rgba(0, 229, 255, 0.35) !important;
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.06) !important;
-  outline: none !important;
+.divide-hairline > * + * {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* === Navigation bar: titanium finish === */
-nav, .tabbar, .nav-bar, .bottom-nav, [role="navigation"] {
-  background: linear-gradient(180deg, 
-    rgba(28, 32, 38, 0.95) 0%, 
-    rgba(18, 20, 24, 0.98) 100%
-  ) !important;
-  backdrop-filter: blur(20px) saturate(1.2) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.03) !important;
-  border-radius: 0 !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4) !important;
+/* === Font families === */
+.font-display { font-family: 'Sora', 'Inter', -apple-system, sans-serif; }
+.font-chrome { font-family: 'Sora', 'Inter', -apple-system, sans-serif; }
+.font-mono { font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace; }
+
+/* === iOS safe area vars (set by Capacitor or fallback) === */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* === Page/screen backgrounds: pure noir === */
-.App, #root, main, body, html,
-[class*="page"], [class*="Page"],
-[class*="screen"], [class*="Screen"] {
-  background: var(--noir-bg) !important;
+/* === Obsidian surface === */
+.bg-obsidian { background: rgba(5, 6, 7, 0.7); }
+
+/* === Hairline border === */
+.border-hairline { border-color: rgba(255, 255, 255, 0.06); }
+
+/* === iOS frame (for web preview) === */
+.ios-frame-outer {
+  min-height: 100vh;
+  background: var(--noir-bg);
+}
+.ios-frame {
+  min-height: 100vh;
+  max-width: 100%;
 }
 
-/* === Scrollbar === */
-::-webkit-scrollbar { width: 0; height: 0; }
+/* === Animate pulse (for trip indicator) === */
+@keyframes ping {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+.animate-ping { animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
