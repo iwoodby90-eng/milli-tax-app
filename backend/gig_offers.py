@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-
 ALLOWED_SOURCES = {
     "official_api",
     "android_notification",
@@ -13,6 +12,20 @@ ALLOWED_SOURCES = {
     "ios_ocr",
     "manual",
 }
+
+SUPPORTED_DECISION_PLATFORMS = {
+    "uber",
+    "uber eats",
+    "spark",
+    "walmart spark",
+    "doordash",
+    "door dash",
+    "instacart",
+    "grubhub",
+    "shipt",
+}
+
+EXCLUDED_BLOCK_PLATFORMS = {"amazon flex", "amazonflex", "flex"}
 
 
 class GigConnectionIn(BaseModel):
@@ -39,6 +52,18 @@ class GigOfferIn(BaseModel):
     expires_at: Optional[str] = None
 
 
+def _platform_key(value: str) -> str:
+    return (value or "").strip().lower()
+
+
+def _assert_supported_platform(platform: str) -> None:
+    key = _platform_key(platform)
+    if key in EXCLUDED_BLOCK_PLATFORMS:
+        raise HTTPException(status_code=422, detail="Milli Cents is for time-limited selectable offers, not scheduled block platforms")
+    if key not in SUPPORTED_DECISION_PLATFORMS:
+        raise HTTPException(status_code=422, detail="Platform is not currently supported by Milli Cents")
+
+
 def build_gig_offer_router(db, get_current_user: Callable):
     router = APIRouter(tags=["gig-offers"])
 
@@ -48,11 +73,12 @@ def build_gig_offer_router(db, get_current_user: Callable):
             {"user_id": user["id"]},
             {"_id": 0, "oauth_tokens": 0, "credentials": 0},
         ).to_list(length=50)
-        return {"connections": rows}
+        return {"connections": [row for row in rows if _platform_key(row.get("platform")) in SUPPORTED_DECISION_PLATFORMS]}
 
     @router.post("/gig-platforms/connections")
     async def upsert_connection(body: GigConnectionIn, user: dict = Depends(get_current_user)):
-        platform_key = body.platform.strip().lower()
+        _assert_supported_platform(body.platform)
+        platform_key = _platform_key(body.platform)
         now = datetime.now(timezone.utc).isoformat()
         document = {
             "id": f"{user['id']}:{platform_key}",
@@ -74,11 +100,12 @@ def build_gig_offer_router(db, get_current_user: Callable):
 
     @router.post("/gig-offers/ingest")
     async def ingest_offer(body: GigOfferIn, user: dict = Depends(get_current_user)):
+        _assert_supported_platform(body.platform)
         if body.source not in ALLOWED_SOURCES:
             raise HTTPException(status_code=400, detail="Unsupported offer source")
 
         now = datetime.now(timezone.utc).isoformat()
-        offer_id = body.external_offer_id or f"{body.platform.lower()}:{user['id']}:{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        offer_id = body.external_offer_id or f"{_platform_key(body.platform)}:{user['id']}:{int(datetime.now(timezone.utc).timestamp() * 1000)}"
         document = {
             "id": offer_id,
             "external_offer_id": body.external_offer_id,
@@ -105,29 +132,42 @@ def build_gig_offer_router(db, get_current_user: Callable):
         )
         return {"offer": {k: v for k, v in document.items() if k != "user_id"}}
 
-    @router.get("/gig-offers/current")
-    async def current_offer(user: dict = Depends(get_current_user)):
-        offer = await db.gig_offers.find_one(
+    @router.get("/gig-offers/active")
+    async def active_offers(user: dict = Depends(get_current_user)):
+        now = datetime.now(timezone.utc)
+        rows = await db.gig_offers.find(
             {"user_id": user["id"], "status": "active"},
             {"_id": 0, "user_id": 0},
-            sort=[("detected_at", -1)],
-        )
-        if not offer:
-            return {"offer": None, "assumptions": _assumptions(user)}
+        ).sort("detected_at", -1).to_list(length=25)
 
-        expires_at = offer.get("expires_at")
-        if expires_at:
-            try:
-                if datetime.fromisoformat(expires_at.replace("Z", "+00:00")) < datetime.now(timezone.utc):
-                    await db.gig_offers.update_one(
-                        {"user_id": user["id"], "id": offer["id"]},
-                        {"$set": {"status": "expired"}},
-                    )
-                    return {"offer": None, "assumptions": _assumptions(user)}
-            except ValueError:
-                pass
+        active = []
+        expired_ids = []
+        for offer in rows:
+            if _platform_key(offer.get("platform")) not in SUPPORTED_DECISION_PLATFORMS:
+                continue
+            expires_at = offer.get("expires_at")
+            if expires_at:
+                try:
+                    if datetime.fromisoformat(expires_at.replace("Z", "+00:00")) <= now:
+                        expired_ids.append(offer["id"])
+                        continue
+                except ValueError:
+                    pass
+            active.append(offer)
 
-        return {"offer": offer, "assumptions": _assumptions(user)}
+        if expired_ids:
+            await db.gig_offers.update_many(
+                {"user_id": user["id"], "id": {"$in": expired_ids}},
+                {"$set": {"status": "expired", "expired_at": now.isoformat()}},
+            )
+
+        active.sort(key=lambda row: row.get("expires_at") or "9999-12-31T23:59:59+00:00")
+        return {"offers": active, "assumptions": _assumptions(user)}
+
+    @router.get("/gig-offers/current")
+    async def current_offer(user: dict = Depends(get_current_user)):
+        payload = await active_offers(user)
+        return {"offer": payload["offers"][0] if payload["offers"] else None, "assumptions": payload["assumptions"]}
 
     @router.post("/gig-offers/{offer_id}/dismiss")
     async def dismiss_offer(offer_id: str, user: dict = Depends(get_current_user)):
