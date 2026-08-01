@@ -5,27 +5,13 @@ from typing import Any, Callable, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-ALLOWED_SOURCES = {
-    "official_api",
-    "android_notification",
-    "ios_share",
-    "ios_ocr",
-    "manual",
-}
-
+ALLOWED_SOURCES = {"official_api", "android_notification", "ios_share", "ios_ocr", "manual"}
 SUPPORTED_DECISION_PLATFORMS = {
-    "uber",
-    "uber eats",
-    "spark",
-    "walmart spark",
-    "doordash",
-    "door dash",
-    "instacart",
-    "grubhub",
-    "shipt",
+    "uber", "uber eats", "spark", "walmart spark", "doordash", "door dash",
+    "instacart", "grubhub", "shipt",
 }
-
 EXCLUDED_BLOCK_PLATFORMS = {"amazon flex", "amazonflex", "flex"}
+MILLI_CENTS_PLANS = {"pro", "elite"}
 
 
 class GigConnectionIn(BaseModel):
@@ -56,6 +42,20 @@ def _platform_key(value: str) -> str:
     return (value or "").strip().lower()
 
 
+def _require_milli_cents_plan(user: dict) -> None:
+    plan = (user.get("plan") or "trial").strip().lower()
+    if plan not in MILLI_CENTS_PLANS:
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "plan_upgrade_required",
+                "feature": "milli_cents",
+                "current_plan": plan,
+                "upgrade_to": "pro",
+            },
+        )
+
+
 def _assert_supported_platform(platform: str) -> None:
     key = _platform_key(platform)
     if key in EXCLUDED_BLOCK_PLATFORMS:
@@ -69,6 +69,7 @@ def build_gig_offer_router(db, get_current_user: Callable):
 
     @router.get("/gig-platforms/connections")
     async def list_connections(user: dict = Depends(get_current_user)):
+        _require_milli_cents_plan(user)
         rows = await db.gig_platform_connections.find(
             {"user_id": user["id"]},
             {"_id": 0, "oauth_tokens": 0, "credentials": 0},
@@ -77,6 +78,7 @@ def build_gig_offer_router(db, get_current_user: Callable):
 
     @router.post("/gig-platforms/connections")
     async def upsert_connection(body: GigConnectionIn, user: dict = Depends(get_current_user)):
+        _require_milli_cents_plan(user)
         _assert_supported_platform(body.platform)
         platform_key = _platform_key(body.platform)
         now = datetime.now(timezone.utc).isoformat()
@@ -100,6 +102,7 @@ def build_gig_offer_router(db, get_current_user: Callable):
 
     @router.post("/gig-offers/ingest")
     async def ingest_offer(body: GigOfferIn, user: dict = Depends(get_current_user)):
+        _require_milli_cents_plan(user)
         _assert_supported_platform(body.platform)
         if body.source not in ALLOWED_SOURCES:
             raise HTTPException(status_code=400, detail="Unsupported offer source")
@@ -134,6 +137,7 @@ def build_gig_offer_router(db, get_current_user: Callable):
 
     @router.get("/gig-offers/active")
     async def active_offers(user: dict = Depends(get_current_user)):
+        _require_milli_cents_plan(user)
         now = datetime.now(timezone.utc)
         rows = await db.gig_offers.find(
             {"user_id": user["id"], "status": "active"},
@@ -171,6 +175,7 @@ def build_gig_offer_router(db, get_current_user: Callable):
 
     @router.post("/gig-offers/{offer_id}/dismiss")
     async def dismiss_offer(offer_id: str, user: dict = Depends(get_current_user)):
+        _require_milli_cents_plan(user)
         result = await db.gig_offers.update_one(
             {"user_id": user["id"], "id": offer_id},
             {"$set": {"status": "dismissed", "dismissed_at": datetime.now(timezone.utc).isoformat()}},
