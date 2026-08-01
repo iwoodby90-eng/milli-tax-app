@@ -1,5 +1,381 @@
 .App {
   min-height: 100vh;
-  background: #0A0A0A;
+  background: #07090b;
   color: #ffffff;
+}
+
+:root {
+  --milli-bg: #07090b;
+  --milli-surface: rgba(18, 21, 25, 0.84);
+  --milli-surface-strong: rgba(23, 27, 31, 0.96);
+  --milli-border: rgba(255, 255, 255, 0.075);
+  --milli-border-strong: rgba(255, 255, 255, 0.12);
+  --milli-cyan: #00e5ff;
+  --milli-text: #f7f8f9;
+  --milli-secondary: #a3a9b2;
+  --milli-tertiary: #6f7680;
+  --milli-radius: 22px;
+  --milli-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--milli-bg);
+}
+
+body {
+  color: var(--milli-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.milli-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--milli-text);
+  background:
+    radial-gradient(circle at 50% -8%, rgba(0, 229, 255, 0.075), transparent 32rem),
+    linear-gradient(180deg, #090b0e 0%, var(--milli-bg) 28%, #060709 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+}
+
+.milli-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding-top: var(--safe-top);
+  background: rgba(7, 9, 11, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(26px) saturate(1.2);
+  -webkit-backdrop-filter: blur(26px) saturate(1.2);
+}
+
+.milli-topbar-inner {
+  height: 48px;
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+}
+
+.milli-icon-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d9dde2;
+  background: transparent;
+  cursor: pointer;
+}
+
+.milli-icon-button:active {
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(0.96);
+}
+
+.milli-brand {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #f7f8fa;
+  text-decoration: none;
+}
+
+.milli-brand span {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.26em;
+  background: linear-gradient(180deg, #ffffff 0%, #a6adb6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.milli-brand-large {
+  justify-self: auto;
+}
+
+.milli-brand-large span {
+  font-size: 15px;
+}
+
+.milli-plan-pill {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #aef5ff;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  background: rgba(0, 229, 255, 0.055);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: capitalize;
+  text-decoration: none;
+}
+
+.milli-page-context {
+  min-height: 23px;
+  padding: 0 20px 7px;
+  color: var(--milli-tertiary);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.milli-main {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: calc(76px + var(--safe-bottom));
+}
+
+.milli-bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  padding-bottom: var(--safe-bottom);
+  background: rgba(10, 12, 15, 0.9);
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+  backdrop-filter: blur(30px) saturate(1.25);
+  -webkit-backdrop-filter: blur(30px) saturate(1.25);
+  box-shadow: 0 -14px 36px rgba(0, 0, 0, 0.22);
+}
+
+.milli-bottom-bar-inner {
+  height: 68px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+  padding: 4px 8px 2px;
+}
+
+.milli-tab {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--milli-tertiary);
+  text-decoration: none;
+  border-radius: 16px;
+}
+
+.milli-tab:active {
+  background: rgba(255, 255, 255, 0.04);
+  transform: scale(0.97);
+}
+
+.milli-tab-icon {
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #737b85;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.milli-tab-icon.is-active {
+  color: var(--milli-cyan);
+  transform: translateY(-1px);
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.22));
+}
+
+.milli-tab-label {
+  max-width: 100%;
+  color: #747c86;
+  font-size: 9.5px;
+  font-weight: 560;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.milli-tab-label.is-active {
+  color: #d8fbff;
+}
+
+.milli-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.54);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.milli-drawer {
+  width: min(88vw, 340px);
+  height: 100%;
+  padding: calc(var(--safe-top) + 10px) 16px calc(var(--safe-bottom) + 18px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #111418 0%, #090b0e 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 28px 0 70px rgba(0, 0, 0, 0.42);
+}
+
+.milli-drawer-header {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.milli-account-summary {
+  margin: 14px 0 22px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--milli-border);
+}
+
+.milli-account-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #05272c;
+  background: linear-gradient(145deg, #aef7ff, #00c9df);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.milli-account-name {
+  color: #f4f6f8;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.milli-account-plan {
+  margin-top: 3px;
+  color: var(--milli-tertiary);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.milli-drawer-chevron {
+  margin-left: auto;
+  color: #89919b;
+}
+
+.milli-drawer-group {
+  margin-bottom: 20px;
+}
+
+.milli-drawer-group-title {
+  padding: 0 12px 7px;
+  color: #69717b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.milli-drawer-link {
+  min-height: 48px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 14px;
+  color: #c4c9cf;
+  font-size: 14px;
+  font-weight: 540;
+  text-decoration: none;
+}
+
+.milli-drawer-link.is-active {
+  color: #ddfbff;
+  background: rgba(0, 229, 255, 0.07);
+}
+
+.milli-signout {
+  min-height: 48px;
+  margin-top: auto;
+  border: 1px solid var(--milli-border);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #9da4ad;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 14px;
+}
+
+/* Existing feature screens receive a quieter, premium visual treatment. */
+.milli-card,
+[data-testid="mileage-tracker-hero"],
+[data-testid="tax-vault-module"] {
+  border-radius: var(--milli-radius) !important;
+  border-color: var(--milli-border) !important;
+  background: linear-gradient(180deg, rgba(20, 24, 29, 0.91), rgba(13, 16, 20, 0.91)) !important;
+  box-shadow: var(--milli-shadow) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+}
+
+[data-testid="mileage-tracker-hero"] {
+  border-color: rgba(0, 229, 255, 0.11) !important;
+}
+
+[data-testid="mileage-tracker-hero"] button[data-testid="trip-toggle-btn"] {
+  width: 64px !important;
+  height: 64px !important;
+  border-width: 1px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 0 6px rgba(0, 229, 255, 0.035) !important;
+}
+
+.chrome-text {
+  background: linear-gradient(180deg, #ffffff 0%, #b7bdc5 54%, #777f89 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none !important;
+}
+
+.font-mono,
+[class*="tracking-[0.2em]"],
+[class*="tracking-[0.3em]"] {
+  letter-spacing: 0.09em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
