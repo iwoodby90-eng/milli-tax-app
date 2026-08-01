@@ -24,7 +24,7 @@
     .hero-video-section {
         position: relative;
         height: 300vh;
-        background: #0A0A0A;
+        background: #050607;
     }
     .hero-video-section video {
         position: sticky;
@@ -43,8 +43,8 @@
         height: 100vh;
         margin-top: -100vh;
         background:
-            radial-gradient(ellipse at center, transparent 30%, rgba(10,10,10,0.55) 80%, rgba(10,10,10,0.9) 100%),
-            linear-gradient(180deg, rgba(10,10,10,0.35) 0%, transparent 25%, transparent 65%, rgba(10,10,10,0.75) 100%);
+            radial-gradient(ellipse at center, transparent 30%, rgba(5,6,7,0.55) 80%, rgba(5,6,7,0.9) 100%),
+            linear-gradient(180deg, rgba(5,6,7,0.35) 0%, transparent 25%, transparent 65%, rgba(5,6,7,0.75) 100%);
         pointer-events: none;
         z-index: 1;
     }
@@ -143,7 +143,142 @@
         50%      { transform: translateX(-50%) translateY(6px); opacity: 1; }
     }
 
-    /* Respect users who prefer reduced motion or slow connections */
+    /* ============ VIDEO CAMPAIGN SECTIONS ============ */
+    .campaign-section {
+        padding: 100px max(24px, 5vw);
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .campaign-section .section-head {
+        margin-bottom: 40px;
+    }
+    .campaign-video-wrap {
+        position: relative;
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid #1A1D21;
+        box-shadow: 0 0 40px rgba(0,229,255,0.08), 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .campaign-video-wrap video {
+        width: 100%;
+        display: block;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+        background: #0D0F12;
+    }
+    .campaign-video-wrap .video-label {
+        position: absolute;
+        bottom: 16px;
+        left: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.7);
+        background: rgba(5,6,7,0.7);
+        backdrop-filter: blur(8px);
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(0,229,255,0.2);
+    }
+
+    /* ============ PRICING v2 — App Standard Cards ============ */
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .pricing-card {
+        background: #0D0F12;
+        border: 1px solid #1A1D21;
+        border-radius: 22px;
+        padding: 36px 28px;
+        text-align: center;
+        position: relative;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+    }
+    .pricing-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .pricing-card.elite-tier {
+        border-color: #00E5FF;
+        box-shadow: 0 0 24px rgba(0,229,255,0.25), 0 0 60px rgba(0,229,255,0.08),
+                    inset 0 0 30px rgba(0,229,255,0.04);
+    }
+    .pricing-card.elite-tier:hover {
+        box-shadow: 0 0 36px rgba(0,229,255,0.4), 0 0 80px rgba(0,229,255,0.12),
+                    inset 0 0 40px rgba(0,229,255,0.06);
+    }
+    .distinction-badge {
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%);
+        color: #050607;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 6px 16px;
+        border-radius: 999px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        box-shadow: 0 0 16px rgba(0,229,255,0.6), 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .pricing-card .tier-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: #00E5FF;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    .pricing-card .tier-price {
+        font-family: 'Sora', sans-serif;
+        font-size: 44px;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 22px;
+        color: #FFFFFF;
+    }
+    .pricing-card .tier-price .dollar {
+        font-size: 22px;
+        vertical-align: super;
+        margin-right: 3px;
+        opacity: 0.8;
+    }
+    .pricing-card .tier-price .cadence {
+        font-size: 14px;
+        font-weight: 500;
+        color: #8B9DAF;
+        margin-left: 6px;
+    }
+    .pricing-card ul {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+        margin-top: 12px;
+    }
+    .pricing-card li {
+        color: #E6EAEF;
+        font-size: 14px;
+        padding-left: 22px;
+        position: relative;
+    }
+    .pricing-card li::before {
+        content: '✓';
+        color: #00E5FF;
+        position: absolute;
+        left: 0;
+        font-weight: 700;
+        text-shadow: 0 0 8px rgba(0,229,255,0.5);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .hero-mark, .scroll-indicator { animation: none; }
     }
@@ -153,69 +288,66 @@
 
 <header class="site-header">
     <a href="/" class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
+        <!-- Definitive 3-Blade Logo: silver blades + detached cyan bar -->
+        <svg class="brand-logo" viewBox="0 0 40 40" width="32" height="32" aria-hidden="true">
+            <defs>
+                <linearGradient id="bladeSilver" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#F4F6F8"/>
+                    <stop offset="40%" stop-color="#C7CDD3"/>
+                    <stop offset="100%" stop-color="#7B8085"/>
+                </linearGradient>
+            </defs>
+            <!-- Three architectural blades -->
+            <rect x="8"  y="6" width="5" height="22" rx="2.5" fill="url(#bladeSilver)"/>
+            <rect x="17" y="6" width="5" height="22" rx="2.5" fill="url(#bladeSilver)"/>
+            <rect x="26" y="6" width="5" height="22" rx="2.5" fill="url(#bladeSilver)"/>
+            <!-- Detached cyan bar -->
+            <rect x="8" y="32" width="23" height="3" rx="1.5" fill="#00E5FF"/>
+        </svg>
         <span class="brand-word">MILLI</span>
     </a>
     <nav>
         <a href="#value">Features</a>
+        <a href="#campaigns">Campaigns</a>
         <a href="#how">How it works</a>
         <a href="#pricing">Pricing</a>
     </nav>
 </header>
 
 <main>
-    <!-- ============= CINEMATIC 3D SCROLL HERO ============= -->
+    <!-- ============= CINEMATIC 3D SCROLL HERO — Build Your Future Master Ad ============= -->
     <section class="hero-video-section" id="scroll-hero">
         <video id="heroVideo" muted playsinline preload="auto" aria-hidden="true">
-            <source src="https://customer-assets-7cd3h4nn.emergentagent.net/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/videos/196af8d50f5efb55.mp4" type="video/mp4">
+            <source src="https://customer-assets-7cd3h4nn.emergentagent.net/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/videos/8650cfc2ae460e82.mp4" type="video/mp4">
         </video>
 
         <div class="hero-overlay">
             <div class="hero-mark" aria-hidden="true">
-                <!-- Chrome M with cyan road running through the center V -->
+                <!-- Definitive 3-Blade Mark — large hero version -->
                 <svg viewBox="0 0 200 200" width="128" height="128">
                     <defs>
-                        <linearGradient id="heroChrome" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%"  stop-color="#F4F6F8"/>
-                            <stop offset="25%" stop-color="#D8DCE1"/>
-                            <stop offset="50%" stop-color="#7B8085"/>
-                            <stop offset="75%" stop-color="#C7CDD3"/>
-                            <stop offset="100%" stop-color="#5B6068"/>
+                        <linearGradient id="heroBlades" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#F4F6F8"/>
+                            <stop offset="30%" stop-color="#D8DCE1"/>
+                            <stop offset="60%" stop-color="#A0A5AB"/>
+                            <stop offset="100%" stop-color="#7B8085"/>
                         </linearGradient>
-                        <linearGradient id="heroHi" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
-                            <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+                        <linearGradient id="heroCyanBar" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#00B8D4"/>
+                            <stop offset="50%" stop-color="#00E5FF"/>
+                            <stop offset="100%" stop-color="#00B8D4"/>
                         </linearGradient>
-                        <linearGradient id="heroRoad" x1="0" y1="1" x2="0" y2="0">
-                            <stop offset="0%"  stop-color="#00E5FF" stop-opacity="1"/>
-                            <stop offset="50%" stop-color="#00E5FF" stop-opacity="0.75"/>
-                            <stop offset="100%" stop-color="#00E5FF" stop-opacity="0.15"/>
-                        </linearGradient>
-                        <radialGradient id="heroOrb" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%"  stop-color="#FFFFFF" stop-opacity="1"/>
-                            <stop offset="45%" stop-color="#7CF6FF" stop-opacity="0.9"/>
-                            <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
-                        </radialGradient>
                     </defs>
-                    <path d="M 20 180 L 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 180 180 L 156 180 L 156 60 L 120 128 L 100 104 L 80 128 L 44 60 L 44 180 Z"
-                          fill="url(#heroChrome)" stroke="#050607" stroke-width="0.8" stroke-linejoin="round"/>
-                    <path d="M 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 156 26 L 112 112 L 100 96 L 88 112 L 44 26 Z"
-                          fill="url(#heroHi)" opacity="0.55"/>
-                    <path d="M 78 184 L 92 108 L 100 96 L 108 108 L 122 184 Z" fill="url(#heroRoad)"/>
-                    <path d="M 88 184 L 96 110 L 100 100 L 104 110 L 112 184 Z" fill="#7CF6FF" opacity="0.55"/>
-                    <rect x="99"   y="164" width="2"   height="10" fill="#FFFFFF" opacity="0.95"/>
-                    <rect x="99"   y="148" width="2"   height="8"  fill="#FFFFFF" opacity="0.8"/>
-                    <rect x="99"   y="134" width="1.6" height="6"  fill="#FFFFFF" opacity="0.65"/>
-                    <rect x="99.2" y="122" width="1.4" height="5"  fill="#FFFFFF" opacity="0.5"/>
-                    <rect x="99.4" y="112" width="1.2" height="4"  fill="#FFFFFF" opacity="0.4"/>
-                    <circle cx="100" cy="172" r="16" fill="url(#heroOrb)"/>
-                    <circle cx="100" cy="172" r="5"  fill="#FFFFFF"/>
-                    <circle cx="100" cy="172" r="3"  fill="#EAF9FD"/>
-                    <path d="M 100 92 L 95 102 L 100 99 L 105 102 Z" fill="#7CF6FF"/>
+                    <!-- Three silver architectural blades -->
+                    <rect x="40" y="30" width="24" height="100" rx="12" fill="url(#heroBlades)"/>
+                    <rect x="88" y="30" width="24" height="100" rx="12" fill="url(#heroBlades)"/>
+                    <rect x="136" y="30" width="24" height="100" rx="12" fill="url(#heroBlades)"/>
+                    <!-- Detached cyan bar beneath -->
+                    <rect x="40" y="150" width="120" height="14" rx="7" fill="url(#heroCyanBar)"/>
                 </svg>
             </div>
             <h1 class="hero-wordmark">MILLI</h1>
-            <p class="hero-tagline">Tax Autopilot for Gig Workers</p>
+            <p class="hero-tagline">Build Your Future</p>
             <div class="hero-cta-row">
                 <a href="#value" class="btn-cyan hero-cta-btn">See what Milli does</a>
                 <a href="#appstore" class="btn-outline hero-cta-btn">Download</a>
@@ -226,18 +358,17 @@
             </div>
         </div>
 
-        <!-- Dark vignette so overlay text is always legible -->
         <div class="hero-vignette" aria-hidden="true"></div>
     </section>
 
-    <!-- ============= THREE CORE VALUE PROPS ============= -->
+    <!-- ============= COMMAND CENTER — Core Value Props ============= -->
     <section id="value" class="value-props">
         <div class="section-head">
-            <div class="section-kicker">// The three things Milli does automatically</div>
-            <h2>Three engines. Zero effort.</h2>
+            <div class="section-kicker">// Command Center</div>
+            <h2>Your financial cockpit. Three engines. Zero effort.</h2>
         </div>
 
-        <!-- 1 · Automatic Tax Slicing -->
+        <!-- 1 · Tax Vault — Automatic Tax Slicing -->
         <article class="value-card glass-card">
             <div class="value-visual" aria-hidden="true">
                 <svg viewBox="0 0 200 200" width="200" height="200">
@@ -253,27 +384,27 @@
                         </linearGradient>
                     </defs>
                     <circle cx="100" cy="100" r="90" fill="url(#v1glow)"/>
-                    <!-- Payout dollar splitting into 4 slices -->
                     <circle cx="100" cy="100" r="60" fill="none" stroke="url(#v1chrome)" stroke-width="2"/>
                     <path d="M100 40 L100 100 L160 100" stroke="#00E5FF" stroke-width="3" fill="none" stroke-linecap="round"/>
                     <path d="M100 100 L160 100 A60 60 0 0 1 100 160" stroke="#8B9DAF" stroke-width="3" fill="none"/>
                     <text x="100" y="106" fill="#FFFFFF" font-family="Sora" font-size="24" font-weight="800" text-anchor="middle">30%</text>
-                    <text x="100" y="126" fill="#00E5FF" font-family="JetBrains Mono" font-size="8" text-anchor="middle" letter-spacing="2">TAX</text>
+                    <text x="100" y="126" fill="#00E5FF" font-family="JetBrains Mono" font-size="8" text-anchor="middle" letter-spacing="2">TAX VAULT</text>
                 </svg>
             </div>
             <div class="value-body">
-                <div class="value-tag">01 · TAX PROTECTION</div>
+                <div class="value-tag">01 · TAX VAULT™</div>
                 <h3>Automatic Tax Slicing</h3>
-                <p>Every dollar you earn, Milli instantly calculates and sets aside your tax obligation. No thinking. No quarterly panic. Your taxes stay ready.</p>
+                <p>The moment a payout lands, your Command Center intercepts. Federal, state, and self-employment obligations are computed in real time against live IRS brackets — then locked in your Tax Vault™. No thinking. No quarterly panic. Taxes stay ready, always.</p>
                 <ul class="value-list">
-                    <li>Federal, state, and self-employment tax — computed against real 2025 IRS brackets</li>
-                    <li>Auto-allocated to your Milli Tax Vault™ the moment a payout hits</li>
-                    <li>Immutable, SHA-256 hashed receipt filed for every single transaction</li>
+                    <li>Real-time federal + state + SE tax — computed against current IRS brackets</li>
+                    <li>Funds auto-allocated to your Milli Tax Vault™ the instant a payout clears</li>
+                    <li>Immutable, SHA-256 hashed receipt filed for every transaction — audit-proof by default</li>
+                    <li>Quarterly countdown with exact amounts due — never miss an estimated payment</li>
                 </ul>
             </div>
         </article>
 
-        <!-- 2 · Real-time Mileage Tracking -->
+        <!-- 2 · Mileage Intelligence -->
         <article class="value-card glass-card reverse">
             <div class="value-visual" aria-hidden="true">
                 <svg viewBox="0 0 200 200" width="200" height="200">
@@ -283,33 +414,31 @@
                             <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
                         </linearGradient>
                     </defs>
-                    <!-- Perspective road -->
                     <path d="M60 190 L92 90 L108 90 L140 190 Z" fill="url(#v2glow)"/>
                     <line x1="100" y1="120" x2="100" y2="140" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
                     <line x1="100" y1="150" x2="100" y2="170" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
                     <line x1="100" y1="180" x2="100" y2="200" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-                    <!-- Pin -->
                     <circle cx="100" cy="70" r="16" fill="#00E5FF"/>
                     <circle cx="100" cy="70" r="8" fill="#050607"/>
                     <path d="M100 82 L92 96 L108 96 Z" fill="#00E5FF"/>
-                    <!-- Chrome rings -->
                     <circle cx="100" cy="70" r="26" fill="none" stroke="#C0C0C0" stroke-opacity="0.5" stroke-width="1.5"/>
                     <circle cx="100" cy="70" r="38" fill="none" stroke="#C0C0C0" stroke-opacity="0.25" stroke-width="1"/>
                 </svg>
             </div>
             <div class="value-body">
-                <div class="value-tag">02 · MILEAGE</div>
-                <h3>Real-time Mileage Tracking</h3>
-                <p>Background GPS tracks every mile you drive for work. No buttons to press. Milli auto-detects trips and logs IRS-compliant mileage deductions.</p>
+                <div class="value-tag">02 · MILEAGE INTELLIGENCE</div>
+                <h3>Autonomous Trip Tracking</h3>
+                <p>Background GPS silently tracks every mile you drive for work. No buttons. No manual entry. Milli auto-detects gig trips, classifies them, and logs IRS-compliant deductions that reduce your tax burden with zero effort.</p>
                 <ul class="value-list">
-                    <li>Battery-optimized background location — like Waze, quiet and accurate</li>
-                    <li>Every mile logged at the 2025 IRS rate of $0.70 for business use</li>
-                    <li>Classify with one tap: Business · Personal · Medical · Charitable · Commute</li>
+                    <li>Battery-optimized background location — silent and accurate like Waze</li>
+                    <li>Every mile logged at the current IRS standard rate for business use</li>
+                    <li>One-tap classification: Business · Personal · Medical · Charitable · Commute</li>
+                    <li>Deductions feed directly into your Command Center tax calculations</li>
                 </ul>
             </div>
         </article>
 
-        <!-- 3 · Wealth Builder -->
+        <!-- 3 · Wealth Engine -->
         <article class="value-card glass-card">
             <div class="value-visual" aria-hidden="true">
                 <svg viewBox="0 0 200 200" width="200" height="200">
@@ -323,32 +452,53 @@
                             <stop offset="100%" stop-color="#8B9DAF"/>
                         </linearGradient>
                     </defs>
-                    <!-- Chart grid -->
                     <line x1="30" y1="170" x2="180" y2="170" stroke="#8B9DAF" stroke-opacity="0.3"/>
                     <line x1="30" y1="30" x2="30" y2="170" stroke="#8B9DAF" stroke-opacity="0.3"/>
-                    <!-- Bars growing -->
                     <rect x="45" y="130" width="18" height="40" fill="url(#v3grow)" rx="2"/>
                     <rect x="75" y="105" width="18" height="65" fill="url(#v3grow)" rx="2"/>
                     <rect x="105" y="75" width="18" height="95" fill="url(#v3grow)" rx="2"/>
                     <rect x="135" y="45" width="18" height="125" fill="url(#v3grow)" rx="2"/>
-                    <!-- Trend line -->
                     <path d="M54 130 L84 105 L114 75 L144 45" stroke="url(#v3chrome)" stroke-width="2" fill="none" stroke-linecap="round"/>
-                    <!-- Endpoint glow -->
                     <circle cx="144" cy="45" r="6" fill="#00E5FF"/>
                     <circle cx="144" cy="45" r="12" fill="none" stroke="#00E5FF" stroke-opacity="0.4"/>
                 </svg>
             </div>
             <div class="value-body">
-                <div class="value-tag">03 · WEALTH</div>
-                <h3>Wealth Builder</h3>
-                <p>Solo 401(k) tracking and tax-advantaged investing guidance. Build wealth while you earn. Milli shows you how much you can shelter from taxes.</p>
+                <div class="value-tag">03 · WEALTH ENGINE</div>
+                <h3>Compound Your Independence</h3>
+                <p>Solo 401(k) tracking, tax-advantaged investing guidance, and autopilot contributions — all inside your Command Center. Milli shows exactly how much you can shelter from taxes and projects how it compounds over decades.</p>
                 <ul class="value-list">
-                    <li>Solo 401(k), Traditional &amp; Roth IRA, SEP IRA tracked in one place</li>
-                    <li>Autopilot % contributions from every payout — retirement, investing, savings</li>
-                    <li>See exactly how much you can shelter and how it grows over time</li>
+                    <li>Solo 401(k), Traditional &amp; Roth IRA, SEP IRA — unified in one cockpit</li>
+                    <li>Autopilot % contributions from every payout into retirement + investing + savings</li>
+                    <li>Real-time growth projections — see your wealth trajectory over 10, 20, 30 years</li>
+                    <li>Tax shelter optimization: maximize write-offs and deductions automatically</li>
                 </ul>
             </div>
         </article>
+    </section>
+
+    <!-- ============= CAMPAIGN VIDEOS ============= -->
+    <section id="campaigns" class="campaign-section">
+        <div class="section-head">
+            <div class="section-kicker">// Campaigns</div>
+            <h2>See Milli in motion.</h2>
+        </div>
+
+        <!-- Summer Driving Campaign -->
+        <div class="campaign-video-wrap" style="margin-bottom: 48px;">
+            <video muted playsinline loop preload="metadata" controls>
+                <source src="https://customer-assets-7cd3h4nn.emergentagent.net/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/videos/0e795ccd4d66d8b9.mp4" type="video/mp4">
+            </video>
+            <span class="video-label">Summer Driving Campaign</span>
+        </div>
+
+        <!-- Software Walkthrough -->
+        <div class="campaign-video-wrap">
+            <video muted playsinline loop preload="metadata" controls>
+                <source src="https://customer-assets-7cd3h4nn.emergentagent.net/jobs/390f651f-e7a4-4197-9ea8-79b7db44303a/videos/555b7ef50f85f17f.mp4" type="video/mp4">
+            </video>
+            <span class="video-label">Software Walkthrough</span>
+        </div>
     </section>
 
     <!-- ============= HOW IT WORKS ============= -->
@@ -356,66 +506,71 @@
         <div class="section-head">
             <div class="section-kicker">// Three steps</div>
             <h2>Connect. Drive. Relax.</h2>
-            <p class="section-sub">Milli is the payroll department for the self-employed. Set it up once. Everything else is quiet automation.</p>
+            <p class="section-sub">Milli is the payroll department for the self-employed. Set it up once. Everything else is quiet automation inside your Command Center.</p>
         </div>
         <div class="steps">
             <div class="step glass-card">
                 <div class="step-num">01</div>
                 <h4>Connect</h4>
-                <p>Link the accounts where your gig payouts land — Stripe, PayPal, direct deposit — in under 90 seconds via Plaid.</p>
+                <p>Link your gig payout accounts — Stripe, PayPal, direct deposit — in under 90 seconds via Plaid. Your Command Center lights up instantly.</p>
             </div>
             <div class="step glass-card">
                 <div class="step-num">02</div>
                 <h4>Drive</h4>
-                <p>Keep earning. Milli auto-detects payouts, protects taxes, logs every mile, and files a receipt for every transaction.</p>
+                <p>Keep earning. Milli auto-detects every payout, slices taxes into the Vault, logs every mile, and files immutable receipts — silently, in the background.</p>
             </div>
             <div class="step glass-card">
                 <div class="step-num">03</div>
                 <h4>Relax</h4>
-                <p>Milli surfaces your Tax Ready Score™, quarterly countdowns, and Milli AI insights. No spreadsheets. No panic.</p>
+                <p>Your Wealth Engine compounds. Your Tax Ready Score™ climbs. Quarterly countdowns tick. Milli AI surfaces insights. No spreadsheets. No panic. Ever.</p>
             </div>
         </div>
     </section>
 
-    <!-- ============= PRICING ============= -->
+    <!-- ============= PRICING — App Standard Cards ============= -->
     <section id="pricing" class="pricing">
         <div class="section-head">
             <div class="section-kicker">// Plans</div>
-            <h2>Three plans. One promise.</h2>
+            <h2>Three tiers. One Command Center.</h2>
         </div>
-        <div class="grid tiers">
-            <article class="glass-card tier">
-                <div class="tier-name">Basic</div>
+        <div class="pricing-grid">
+            <!-- Basic -->
+            <article class="pricing-card">
+                <div class="tier-label">Basic</div>
                 <div class="tier-price"><span class="dollar">$</span>19.99<span class="cadence">/mo</span></div>
                 <ul>
-                    <li>Auto mileage tracking</li>
-                    <li>Expense log</li>
+                    <li>Autonomous mileage tracking</li>
+                    <li>Expense log + receipt capture</li>
                     <li>Tax Ready Score™</li>
-                    <li>Quarterly reminders</li>
-                    <li>Milli AI</li>
+                    <li>Quarterly countdown reminders</li>
+                    <li>Milli AI insights</li>
                 </ul>
             </article>
-            <article class="glass-card tier tier-featured">
-                <div class="pop-badge">Most Popular</div>
-                <div class="tier-name">Pro</div>
+            <!-- Pro -->
+            <article class="pricing-card">
+                <div class="tier-label">Pro</div>
                 <div class="tier-price"><span class="dollar">$</span>29.99<span class="cadence">/mo</span></div>
                 <ul>
                     <li>Everything in Basic</li>
-                    <li>AI Receipt OCR</li>
-                    <li>Milli Autopilot™</li>
-                    <li>Income categorization</li>
-                    <li>Tax projections</li>
+                    <li>AI Receipt OCR scanning</li>
+                    <li>Milli Autopilot™ — full tax automation</li>
+                    <li>Income categorization engine</li>
+                    <li>Real-time tax projections</li>
+                    <li>Priority Command Center updates</li>
                 </ul>
             </article>
-            <article class="glass-card tier">
-                <div class="tier-name">Elite</div>
+            <!-- Elite -->
+            <article class="pricing-card elite-tier">
+                <div class="distinction-badge">Member of Distinction</div>
+                <div class="tier-label">Elite</div>
                 <div class="tier-price"><span class="dollar">$</span>49.99<span class="cadence">/mo</span></div>
                 <ul>
                     <li>Everything in Pro</li>
-                    <li>Milli Tax Vault™</li>
-                    <li>Solo 401(k) tracking</li>
-                    <li>Priority support</li>
-                    <li>Multi-vehicle &amp; advanced analytics</li>
+                    <li>Milli Tax Vault™ — locked savings</li>
+                    <li>Wealth Engine — Solo 401(k) + investing</li>
+                    <li>Multi-vehicle fleet analytics</li>
+                    <li>Dedicated priority support</li>
+                    <li>Early access to new features</li>
                 </ul>
             </article>
         </div>
@@ -456,19 +611,15 @@
         const section = document.getElementById('scroll-hero');
         if (!video || !section) return;
 
-        // On iOS Safari and most mobile browsers, autoplaying video WITHOUT
-        // a play() call keeps the frame at 0. We need the video to be seekable
-        // to scrub. Playing then immediately pausing primes the decoder.
         function primeVideo() {
             const p = video.play();
             if (p && typeof p.then === 'function') {
-                p.then(() => { video.pause(); }).catch(() => { /* ignore */ });
+                p.then(() => { video.pause(); }).catch(() => {});
             } else {
-                try { video.pause(); } catch (_) { /* noop */ }
+                try { video.pause(); } catch (_) {}
             }
         }
         video.addEventListener('loadedmetadata', primeVideo, { once: true });
-        // Also try once user first interacts (satisfies iOS autoplay policies)
         document.addEventListener('touchstart', primeVideo, { once: true, passive: true });
         document.addEventListener('click', primeVideo, { once: true });
 
@@ -482,16 +633,30 @@
             const duration = video.duration;
             if (!duration || isNaN(duration)) return;
             const target = scrollFraction * duration;
-            // Only seek if the delta is meaningful — avoids seek-thrash
             if (Math.abs(video.currentTime - target) > 0.03) {
-                try { video.currentTime = target; } catch (_) { /* seek not ready */ }
+                try { video.currentTime = target; } catch (_) {}
             }
         }
         window.addEventListener('scroll', () => {
             if (raf === null) raf = requestAnimationFrame(updateFrame);
         }, { passive: true });
-        // Initial position
         window.addEventListener('load', updateFrame);
+    })();
+
+    // ============ Campaign video autoplay on visibility ============
+    (function () {
+        const campaignVideos = document.querySelectorAll('.campaign-video-wrap video');
+        if (!campaignVideos.length || !('IntersectionObserver' in window)) return;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.play().catch(() => {});
+                } else {
+                    entry.target.pause();
+                }
+            });
+        }, { threshold: 0.3 });
+        campaignVideos.forEach(v => observer.observe(v));
     })();
 </script>
 </body>

@@ -1,4 +1,4 @@
-/* Milli marketing site — Big City Futuristic
+/* Milli marketing site — Industrial-Noir
    Palette: #050607 noir · #00E5FF neon cyan · silver chrome
    Pattern: charcoal 20px checkered grid, fixed attachment. */
 
@@ -41,12 +41,9 @@ ul { list-style: none; }
     background: rgba(5,6,7,0.72); backdrop-filter: blur(14px);
 }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark {
-    width: 28px; height: 28px; border-radius: 6px;
-    background: radial-gradient(circle at 50% 65%, #00E5FF 0%, transparent 55%),
-                linear-gradient(135deg, #C0C0C0, #E8E8E8, #A0A0A0);
-    box-shadow: 0 0 12px rgba(0,229,255,0.4), inset 0 0 6px rgba(0,0,0,0.3);
-    display: inline-block;
+.brand-logo {
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,0.25));
 }
 .brand-word {
     font-family: 'Sora', sans-serif; font-weight: 800; font-size: 20px;
@@ -130,7 +127,7 @@ h1 {
         linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)),
         rgba(10,12,15,0.85);
     border: 1px solid rgba(192,192,192,0.20);
-    border-radius: 16px;
+    border-radius: 22px;
     padding: 28px 26px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -145,7 +142,7 @@ h1 {
 .glass-card h3 { font-size: 18px; margin-bottom: 10px; }
 .glass-card p { color: #B7C3CE; font-size: 14.5px; }
 
-/* ---------------- Pricing tiers ---------------- */
+/* ---------------- Pricing tiers (legacy compat) ---------------- */
 .tier { text-align: center; position: relative; }
 .tier .tier-name {
     font-family: 'JetBrains Mono', monospace; font-size: 12px;
@@ -208,7 +205,7 @@ h1 {
     .site-header { padding: 14px 16px; }
     .site-header nav { gap: 14px; font-size: 12px; }
     .brand-word { font-size: 17px; letter-spacing: 0.18em; }
-    .brand-mark { width: 24px; height: 24px; }
+    .brand-logo { width: 26px; height: 26px; }
     .footer-inner { flex-direction: column; align-items: flex-start; }
 }
 @media (max-width: 440px) {
