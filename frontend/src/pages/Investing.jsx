@@ -1,91 +1,67 @@
-import { useEffect, useState, useMemo } from "react";
+/**
+ * Investing.jsx — v4.2 Hollywood Blueprint Lock
+ *
+ * Cinematic Investing page matching mockup:
+ * - Hero: Elite Spend Card
+ * - Market Overview: Large candlestick chart with time toggles
+ * - Two-column: Today's Gain/Loss + Buying Power
+ * - Watchlist with logos, symbols, prices, % changes
+ * - Asset Allocation donut chart
+ * - Footer: Milli AI Insight card
+ */
+import { useEffect, useState } from "react";
 import { api, money, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 import {
-  ChartLineUp, ArrowUpRight, TrendUp, Wallet, Info, CaretRight,
-  ArrowDown, ArrowUp, Pause, Play, Sparkle, Bank, MagnifyingGlass,
-  Star,
+  ChartLineUp, TrendUp, Sparkle, Coins, ArrowUp, ArrowDown,
 } from "@phosphor-icons/react";
+import { EliteSpendCard } from "@/components/MilliPrimitives";
 
-/**
- * Investing.jsx — Wealth Engine: Automated Portfolio Growth
- * v3.8 WEALTH ENGINE HARDENING:
- *   + Sector View carousel/badges (Tech, Energy, Finance, Healthcare, Consumer)
- *   + MILLI PICK badge on top 2 Gainers (Aggressive Growth strategy)
- *   + Highest Daily Movers — cinematic premium feel
- */
-
-const PORTFOLIO_DATA = [
-  { month: "Jan", value: 1200 },
-  { month: "Feb", value: 1450 },
-  { month: "Mar", value: 1380 },
-  { month: "Apr", value: 1720 },
-  { month: "May", value: 1950 },
-  { month: "Jun", value: 2340 },
-  { month: "Jul", value: 2180 },
-  { month: "Aug", value: 2650 },
-];
-
-const HOLDINGS = [
-  { name: "VTI — Total US Market", allocation: 45, gain: "+12.4%" },
-  { name: "VXUS — International", allocation: 25, gain: "+8.2%" },
-  { name: "BND — Total Bond", allocation: 15, gain: "+3.1%" },
-  { name: "VNQ — Real Estate", allocation: 10, gain: "+6.8%" },
-  { name: "VTIP — Inflation Protected", allocation: 5, gain: "+2.9%" },
-];
-
-// Mock market data for Live Market View
-const MARKET_CANDLES = [
+const CANDLES = [
   { o: 445, h: 452, l: 440, c: 448 },
-  { o: 448, h: 455, l: 446, c: 453 },
+  { o: 448, h: 455, l: 444, c: 453 },
   { o: 453, h: 458, l: 449, c: 451 },
   { o: 451, h: 460, l: 448, c: 458 },
   { o: 458, h: 462, l: 454, c: 456 },
-  { o: 456, h: 463, l: 452, c: 461 },
+  { o: 456, h: 463, l: 450, c: 461 },
   { o: 461, h: 468, l: 457, c: 465 },
   { o: 465, h: 470, l: 460, c: 463 },
   { o: 463, h: 471, l: 459, c: 469 },
   { o: 469, h: 475, l: 466, c: 472 },
   { o: 472, h: 478, l: 468, c: 470 },
-  { o: 470, h: 476, l: 465, c: 474 },
+  { o: 470, h: 476, l: 463, c: 474 },
   { o: 474, h: 480, l: 471, c: 478 },
   { o: 478, h: 484, l: 474, c: 476 },
-  { o: 476, h: 482, l: 472, c: 481 },
+  { o: 476, h: 485, l: 472, c: 483 },
+  { o: 483, h: 490, l: 479, c: 487 },
+  { o: 487, h: 492, l: 483, c: 485 },
+  { o: 485, h: 491, l: 480, c: 489 },
+  { o: 489, h: 496, l: 486, c: 493 },
+  { o: 493, h: 498, l: 489, c: 495 },
 ];
 
-const DAILY_GAINERS = [
-  { symbol: "NVDA", name: "NVIDIA Corp", change: "+4.82%", price: "$892.40" },
-  { symbol: "SMCI", name: "Super Micro", change: "+3.91%", price: "$734.20" },
-  { symbol: "META", name: "Meta Platforms", change: "+2.67%", price: "$528.15" },
-  { symbol: "AMZN", name: "Amazon.com", change: "+2.14%", price: "$198.70" },
-  { symbol: "TSLA", name: "Tesla Inc", change: "+1.89%", price: "$264.30" },
+const WATCHLIST = [
+  { symbol: "AAPL", name: "Apple Inc", price: "$198.45", change: "+1.82%", up: true, logo: "🍎" },
+  { symbol: "NVDA", name: "NVIDIA Corp", price: "$892.40", change: "+4.12%", up: true, logo: "🟢" },
+  { symbol: "TSLA", name: "Tesla Inc", price: "$264.30", change: "-0.85%", up: false, logo: "⚡" },
+  { symbol: "MSFT", name: "Microsoft", price: "$442.18", change: "+0.94%", up: true, logo: "🟦" },
+  { symbol: "AMZN", name: "Amazon", price: "$198.70", change: "+2.14%", up: true, logo: "📦" },
 ];
 
-const DAILY_LOSERS = [
-  { symbol: "PFE", name: "Pfizer Inc", change: "-3.21%", price: "$26.40" },
-  { symbol: "BA", name: "Boeing Co", change: "-2.88%", price: "$172.50" },
-  { symbol: "INTC", name: "Intel Corp", change: "-2.45%", price: "$31.80" },
-  { symbol: "NKE", name: "Nike Inc", change: "-1.97%", price: "$74.20" },
-  { symbol: "DIS", name: "Walt Disney", change: "-1.54%", price: "$101.30" },
+const ALLOCATION = [
+  { label: "Stocks", pct: 55, color: "#00E5FF" },
+  { label: "ETFs", pct: 25, color: "#34D399" },
+  { label: "Cash", pct: 12, color: "#FFB800" },
+  { label: "Crypto", pct: 8, color: "#C084FC" },
 ];
 
-const SECTORS = [
-  { id: "tech", label: "Tech", color: "#00E5FF" },
-  { id: "energy", label: "Energy", color: "#FFB800" },
-  { id: "finance", label: "Finance", color: "#34D399" },
-  { id: "healthcare", label: "Healthcare", color: "#C084FC" },
-  { id: "consumer", label: "Consumer", color: "#FB923C" },
-];
+const TIME_TOGGLES = ["1D", "1W", "1M", "1Y", "All"];
 
 export default function Investing() {
   const { user } = useAuth();
   const [acct, setAcct] = useState(undefined);
-  const [busy, setBusy] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [moversTab, setMoversTab] = useState("gainers");
-  const [activeSector, setActiveSector] = useState(null);
+  const [timeRange, setTimeRange] = useState("1M");
 
   async function load() {
     try {
@@ -95,572 +71,421 @@ export default function Investing() {
   }
   useEffect(() => { load(); }, []);
 
-  async function setup() {
-    setBusy(true);
-    try {
-      await api.post("/smart/investing/setup", {});
-      toast.success("Brokerage account opened");
-      await load();
-    } catch (e) { toast.error(formatApiError(e)); }
-    finally { setBusy(false); }
-  }
-
-  const balance = acct?.balance || 0;
-  const ytdGrowth = acct?.ytd_growth || 0;
-  const rule = acct?.rule || {};
-  const pct = Math.round((rule.fixed_percentage ?? 0.05) * 100);
-  const maxVal = Math.max(...PORTFOLIO_DATA.map(d => d.value));
-
   if (acct === undefined) {
     return (
-      <div className="p-12 font-mono animate-pulse" style={{ backgroundColor: "#0D0F12", color: "#00E5FF", minHeight: "100vh" }}>
-        [ LOADING WEALTH ENGINE... ]
+      <div style={{
+        padding: 48, fontFamily: 'monospace',
+        backgroundColor: '#0D0F12', color: '#00E5FF', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div className="animate-pulse">[ LOADING WEALTH ENGINE... ]</div>
       </div>
     );
   }
 
-  if (!acct) {
-    return (
-      <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-3xl mx-auto" style={{ backgroundColor: "#0D0F12", color: "#FFFFFF", minHeight: "100%" }}>
-        <PageHeader />
-        <div
-          className="p-8 text-center rounded-[22px]"
-          style={{ background: "rgba(13,15,18,0.6)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.08)" }}
-        >
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.3)" }}>
-            <ChartLineUp size={32} weight="duotone" style={{ color: "#00E5FF" }} />
-          </div>
-          <div className="font-display text-2xl mb-2">Open your brokerage account.</div>
-          <div className="text-zinc-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            Set a small % of every payout to flow into a diversified brokerage. Milli auto-invests via dollar-cost averaging — build wealth without thinking about it.
-          </div>
-          <button
-            onClick={setup}
-            disabled={busy}
-            data-testid="investing-setup-btn"
-            className="btn-volt px-6 py-3 uppercase tracking-wider text-xs inline-flex items-center gap-2 disabled:opacity-50"
-          >
-            <Bank size={14} weight="bold" /> {busy ? "Opening..." : "Open Brokerage"}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const todayGain = 1247.83;
+  const todayPct = 2.34;
+  const buyingPower = 8420.00;
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto" style={{ backgroundColor: "#0D0F12", color: "#FFFFFF", minHeight: "100%" }}>
-      <PageHeader />
+    <div style={{
+      padding: '24px 16px',
+      maxWidth: 600,
+      margin: '0 auto',
+      minHeight: '100vh',
+      backgroundColor: '#0D0F12',
+      color: '#FFFFFF',
+    }}>
 
-      {/* Search the Market + Sector View */}
-      <div className="mb-5" data-testid="market-search">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "12px 16px",
-            borderRadius: 16,
-            background: "rgba(13, 15, 18, 0.6)",
-            border: "1px solid rgba(255, 255, 255, 0.06)",
-            backdropFilter: "blur(20px)",
-            marginBottom: 10,
-          }}
-        >
-          <MagnifyingGlass size={16} weight="bold" style={{ color: "#8B9DAF", flexShrink: 0 }} />
-          <input
-            data-testid="market-search-input"
-            type="text"
-            placeholder="Search the Market"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              all: "unset",
-              flex: 1,
-              fontSize: 14,
-              color: "#FFFFFF",
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
-            }}
-          />
+      {/* ═══════════════════════════════════════
+          HEADER
+          ═══════════════════════════════════════ */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#00E5FF' }}>
+          // Wealth Engine · Investing
         </div>
-
-        {/* Sector View — scrollable badge carousel */}
-        <SectorView activeSector={activeSector} onSectorChange={setActiveSector} />
+        <h1 style={{
+          fontSize: 28, fontWeight: 800, marginTop: 4, lineHeight: 1.2,
+          background: 'linear-gradient(135deg, #E8E8E8, #808080)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>
+          Build wealth on autopilot.
+        </h1>
       </div>
 
-      {/* Live Market View (Candlestick Chart) */}
-      <LiveMarketView candles={MARKET_CANDLES} activeSector={activeSector} />
+      {/* ═══════════════════════════════════════
+          HERO — Elite Spend Card
+          ═══════════════════════════════════════ */}
+      <div style={{ marginBottom: 16 }} data-testid="investing-elite-card">
+        <EliteSpendCard available={24560.00} accountMask="•••• 4821" />
+      </div>
 
-      {/* Balance Hero */}
-      <div
-        className="p-7 mb-5 relative overflow-hidden rounded-[22px]"
-        style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px) brightness(1.15)", border: "1px solid rgba(0,229,255,0.1)" }}
-        data-testid="investing-balance-card"
-      >
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-        <div className="flex items-start justify-between flex-wrap gap-4">
+      {/* ═══════════════════════════════════════
+          MARKET OVERVIEW — Candlestick Chart
+          ═══════════════════════════════════════ */}
+      <div style={{
+        background: 'rgba(13,15,18,0.5)',
+        backdropFilter: 'blur(28px)',
+        border: '1px solid rgba(0,229,255,0.08)',
+        borderRadius: 22,
+        padding: '24px 20px',
+        marginBottom: 16,
+      }} data-testid="market-overview">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <ChartLineUp size={14} weight="bold" style={{ color: "#00E5FF" }} />
-              <span className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>Portfolio Value</span>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#00E5FF' }}>
+              Market Overview
             </div>
-            <div className="font-chrome font-bold text-5xl sm:text-6xl tabular-nums" style={{ background: "linear-gradient(135deg, #E8E8E8, #808080)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              {money(balance)}
-            </div>
-            <div className="text-zinc-400 text-sm mt-2">
-              {pct}% per payout · {rule.paused ? <span style={{ color: "#FFB800" }}>paused</span> : <span style={{ color: "#34D399" }}>active</span>}
+            <div style={{ fontSize: 10, color: '#5A6573', fontFamily: 'monospace', marginTop: 2 }}>
+              S&P 500 · $4,950.23
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-xs text-zinc-500 font-mono uppercase tracking-widest">YTD Return</div>
-            <div className="font-chrome font-bold text-2xl" style={{ color: "#34D399" }}>
-              <TrendUp size={16} weight="bold" className="inline mr-1" />
-              {money(ytdGrowth)}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399', boxShadow: '0 0 6px rgba(52,211,153,0.6)' }}/>
+            <span style={{ fontSize: 9, color: '#5A6573', fontFamily: 'monospace' }}>LIVE</span>
           </div>
         </div>
-      </div>
 
-      {/* Daily Movers */}
-      <DailyMovers tab={moversTab} onTabChange={setMoversTab} />
-
-      {/* Portfolio Chart */}
-      <div
-        className="p-5 mb-5 rounded-[22px]"
-        style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
-        data-testid="portfolio-chart"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>// Growth · 2026</div>
-          <div className="text-xs text-zinc-500 font-mono">Auto-DCA Active</div>
-        </div>
-        <div className="flex items-end gap-2 h-32">
-          {PORTFOLIO_DATA.map((d, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className="w-full rounded-t-lg transition-all"
-                style={{
-                  height: `${(d.value / maxVal) * 100}%`,
-                  background: `linear-gradient(180deg, #00E5FF ${40}%, rgba(0,229,255,0.15))`,
-                  boxShadow: "0 0 12px rgba(0,229,255,0.2)",
-                  minHeight: 4,
-                }}
-              />
-              <span className="text-[9px] text-zinc-600 font-mono">{d.month}</span>
-            </div>
+        {/* Time toggles */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+          {TIME_TOGGLES.map(t => (
+            <button key={t} onClick={() => setTimeRange(t)} style={{
+              all: 'unset', cursor: 'pointer',
+              fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 8,
+              background: timeRange === t ? 'rgba(0,229,255,0.12)' : 'transparent',
+              border: timeRange === t ? '1px solid rgba(0,229,255,0.3)' : '1px solid rgba(255,255,255,0.04)',
+              color: timeRange === t ? '#00E5FF' : '#5A6573',
+              transition: 'all 0.15s',
+            }}>
+              {t}
+            </button>
           ))}
         </div>
+
+        {/* Candlestick chart */}
+        <CandlestickChart candles={CANDLES} />
       </div>
 
-      {/* Holdings */}
-      <div
-        className="p-5 mb-5 rounded-[22px]"
-        style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
-        data-testid="holdings-list"
-      >
-        <div className="text-xs font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: "#00E5FF" }}>Portfolio Allocation</div>
-        <div className="space-y-3">
-          {HOLDINGS.map((h, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-8 text-right font-mono text-xs text-zinc-400">{h.allocation}%</div>
-              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${h.allocation}%`,
-                    background: "linear-gradient(90deg, #00E5FF, #0B7A94)",
-                    boxShadow: "0 0 8px rgba(0,229,255,0.3)",
-                  }}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-white truncate">{h.name}</div>
-              </div>
-              <div className="text-xs font-mono" style={{ color: "#34D399" }}>{h.gain}</div>
-            </div>
-          ))}
+      {/* ═══════════════════════════════════════
+          TWO-COLUMN — Today's Gain/Loss + Buying Power
+          ═══════════════════════════════════════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }} data-testid="gain-buying-row">
+        {/* Today's Gain/Loss */}
+        <div style={{
+          background: 'rgba(13,15,18,0.5)',
+          backdropFilter: 'blur(28px)',
+          border: '1px solid rgba(0,229,255,0.08)',
+          borderRadius: 18,
+          padding: '20px 16px',
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8B9DAF', marginBottom: 8 }}>
+            Today's Gain
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#34D399', fontFamily: "'SF Pro Display', -apple-system, sans-serif", marginBottom: 4 }}>
+            +${todayGain.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#34D399' }}>
+            <ArrowUp size={12} weight="bold" />
+            <span style={{ fontFamily: 'monospace' }}>+{todayPct}%</span>
+          </div>
+          {/* Mini sparkline */}
+          <svg width="100%" height="24" viewBox="0 0 100 24" style={{ marginTop: 8 }}>
+            <path d="M0 20 L10 16 L20 18 L30 12 L40 14 L50 8 L60 10 L70 6 L80 8 L90 4 L100 2"
+              fill="none" stroke="#34D399" strokeWidth="1.5" strokeLinecap="round" opacity="0.8"/>
+          </svg>
         </div>
-      </div>
 
-      {/* DCA Explanation */}
-      <div
-        className="p-5 rounded-[22px]"
-        style={{ background: "rgba(13,15,18,0.4)", backdropFilter: "blur(28px)", border: "1px solid rgba(255,255,255,0.03)" }}
-      >
-        <div className="flex items-start gap-3">
-          <Info size={16} className="text-zinc-500 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-zinc-500 leading-relaxed">
-            <strong className="text-zinc-300">Dollar-Cost Averaging:</strong> Milli invests a fixed % from every detected payout automatically.
-            This removes timing risk and builds wealth consistently over time. Investments are subject to market risk and may lose value.
-            Securities offered through partner broker-dealer.
+        {/* Buying Power */}
+        <div style={{
+          background: 'rgba(13,15,18,0.5)',
+          backdropFilter: 'blur(28px)',
+          border: '1px solid rgba(0,229,255,0.08)',
+          borderRadius: 18,
+          padding: '20px 16px',
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8B9DAF', marginBottom: 8 }}>
+            Buying Power
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', fontFamily: "'SF Pro Display', -apple-system, sans-serif", marginBottom: 4 }}>
+            ${buyingPower.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+          <div style={{ fontSize: 10, color: '#5A6573', fontFamily: 'monospace' }}>
+            Available to invest
+          </div>
+          {/* Stacked coin icons */}
+          <div style={{ marginTop: 8, display: 'flex', gap: -4 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{
+                width: 20, height: 20, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #C0C0C0, #808080)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                marginLeft: i > 0 ? -6 : 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 8, fontWeight: 800, color: '#FFD700',
+              }}>$</div>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════
+          WATCHLIST
+          ═══════════════════════════════════════ */}
+      <div style={{
+        background: 'rgba(13,15,18,0.5)',
+        backdropFilter: 'blur(28px)',
+        border: '1px solid rgba(0,229,255,0.08)',
+        borderRadius: 22,
+        overflow: 'hidden',
+        marginBottom: 16,
+      }} data-testid="watchlist">
+        <div style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(255,255,255,0.03)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#00E5FF' }}>
+            Watchlist
+          </span>
+          <span style={{ fontSize: 10, color: '#5A6573', fontFamily: 'monospace' }}>
+            {WATCHLIST.length} stocks
+          </span>
+        </div>
+        {WATCHLIST.map((stock, i) => (
+          <div key={stock.symbol} style={{
+            display: 'flex', alignItems: 'center', padding: '14px 20px', gap: 12,
+            borderBottom: i < WATCHLIST.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+          }}>
+            {/* Logo */}
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, flexShrink: 0,
+            }}>
+              {stock.logo}
+            </div>
+            {/* Symbol + Name */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF' }}>{stock.symbol}</div>
+              <div style={{ fontSize: 11, color: '#5A6573' }}>{stock.name}</div>
+            </div>
+            {/* Price + Change */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF', fontFamily: 'monospace' }}>{stock.price}</div>
+              <div style={{
+                fontSize: 11, fontWeight: 700, fontFamily: 'monospace',
+                color: stock.up ? '#34D399' : '#FF4D6A',
+                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2,
+              }}>
+                {stock.up ? <ArrowUp size={10} weight="bold"/> : <ArrowDown size={10} weight="bold"/>}
+                {stock.change}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ═══════════════════════════════════════
+          ASSET ALLOCATION — Donut Chart
+          ═══════════════════════════════════════ */}
+      <div style={{
+        background: 'rgba(13,15,18,0.5)',
+        backdropFilter: 'blur(28px)',
+        border: '1px solid rgba(0,229,255,0.06)',
+        borderRadius: 22,
+        padding: '24px 20px',
+        marginBottom: 16,
+      }} data-testid="asset-allocation">
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#00E5FF', marginBottom: 20 }}>
+          Asset Allocation
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+          {/* Donut */}
+          <DonutChart data={ALLOCATION} />
+          {/* Legend */}
+          <div style={{ flex: 1, minWidth: 120 }}>
+            {ALLOCATION.map((a, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }}/>
+                <span style={{ fontSize: 12, color: '#FFFFFF', flex: 1 }}>{a.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: a.color, fontFamily: 'monospace' }}>{a.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════
+          FOOTER — Milli AI Insight
+          ═══════════════════════════════════════ */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(0,229,255,0.04), rgba(13,15,18,0.6))',
+        backdropFilter: 'blur(28px)',
+        border: '1px solid rgba(0,229,255,0.15)',
+        borderRadius: 22,
+        padding: '20px',
+        marginBottom: 32,
+        position: 'relative',
+        overflow: 'hidden',
+      }} data-testid="ai-insight-card">
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+          background: 'linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent)',
+        }}/>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: '0 0 20px rgba(0,229,255,0.15)',
+          }}>
+            <Sparkle size={20} weight="fill" style={{ color: '#00E5FF' }}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF', marginBottom: 4 }}>
+              Milli AI Insight
+            </div>
+            <div style={{ fontSize: 12, color: '#8B9DAF', lineHeight: 1.5, marginBottom: 8 }}>
+              Your portfolio is outperforming the S&P 500 by 3.2% this quarter. Consider rebalancing crypto allocation if it exceeds 10%.
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ height: 4, flex: 1, borderRadius: 2, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: '87%', borderRadius: 2, background: 'linear-gradient(90deg, #00E5FF, #34D399)' }}/>
+              </div>
+              <span style={{ fontSize: 9, color: '#00E5FF', fontFamily: 'monospace', fontWeight: 700 }}>87% confidence</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating AI Sphere */}
+      <FloatingAISphere />
     </div>
   );
 }
 
-/* =================== SUB-COMPONENTS =================== */
+/* ─── Sub-components ─── */
 
-function PageHeader() {
-  return (
-    <div className="mb-6">
-      <div className="font-mono text-xs uppercase tracking-[0.3em]" style={{ color: "#00E5FF" }}>// Wealth Engine · Investing</div>
-      <h1 className="font-display text-3xl sm:text-4xl tracking-tight mt-1" style={{ background: "linear-gradient(135deg, #E8E8E8, #808080)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-        Build wealth on autopilot.
-      </h1>
-      <p className="text-zinc-400 mt-1 text-sm">Auto-invest a % from every payout into a diversified portfolio.</p>
-    </div>
-  );
-}
-
-function SectorView({ activeSector, onSectorChange }) {
-  return (
-    <div
-      data-testid="sector-view"
-      style={{
-        display: "flex",
-        gap: 8,
-        overflowX: "auto",
-        paddingBottom: 2,
-        scrollbarWidth: "none",
-        msOverflowStyle: "none",
-      }}
-    >
-      {SECTORS.map((sector) => {
-        const isActive = activeSector === sector.id;
-        return (
-          <button
-            key={sector.id}
-            data-testid={`sector-badge-${sector.id}`}
-            onClick={() => onSectorChange(isActive ? null : sector.id)}
-            style={{
-              all: "unset",
-              cursor: "pointer",
-              flexShrink: 0,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "5px 12px",
-              borderRadius: 20,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-              transition: "all 0.18s",
-              background: isActive
-                ? `rgba(${hexToRgb(sector.color)},0.15)`
-                : "rgba(13,15,18,0.7)",
-              border: isActive
-                ? `1px solid ${sector.color}80`
-                : "1px solid rgba(255,255,255,0.06)",
-              color: isActive ? sector.color : "#8B9DAF",
-              backdropFilter: "blur(12px)",
-              boxShadow: isActive ? `0 0 10px ${sector.color}22` : "none",
-            }}
-          >
-            <span
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: "50%",
-                background: sector.color,
-                opacity: isActive ? 1 : 0.4,
-                flexShrink: 0,
-              }}
-            />
-            {sector.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* Utility: hex color to "r,g,b" string for rgba usage */
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `${r},${g},${b}`;
-}
-
-function LiveMarketView({ candles, activeSector }) {
-  const W = 340, H = 140;
-  const padL = 5, padR = 5, padT = 15, padB = 5;
+function CandlestickChart({ candles }) {
+  const W = 340, H = 180;
+  const padL = 5, padR = 5, padT = 10, padB = 10;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  const allPrices = candles.flatMap((c) => [c.h, c.l]);
+  const allPrices = candles.flatMap(c => [c.h, c.l]);
   const minP = Math.min(...allPrices);
   const maxP = Math.max(...allPrices);
   const range = maxP - minP || 1;
 
   const candleW = chartW / candles.length;
-  const bodyW = candleW * 0.5;
-
-  // Sector label mapping for header
-  const sectorLabel = activeSector
-    ? SECTORS.find((s) => s.id === activeSector)?.label
-    : "S&P 500";
+  const bodyW = candleW * 0.55;
 
   function yPos(price) {
     return padT + chartH - ((price - minP) / range) * chartH;
   }
 
   return (
-    <div
-      className="p-5 mb-5 rounded-[22px]"
-      style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
-      data-testid="live-market-view"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>
-          // Live Market · {sectorLabel}
-        </div>
-        <div className="flex items-center gap-2">
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#34D399", boxShadow: "0 0 6px rgba(52,211,153,0.6)" }} />
-          <span className="text-[10px] text-zinc-500 font-mono uppercase">Live</span>
-        </div>
-      </div>
-      <div style={{ width: "100%", maxWidth: W, margin: "0 auto" }}>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="auto" style={{ display: "block" }}>
-          <defs>
-            <filter id="candle-glow">
-              <feGaussianBlur stdDeviation="1.5" result="glow" />
-              <feMerge>
-                <feMergeNode in="glow" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+    <div style={{ width: '100%', maxWidth: W, margin: '0 auto' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="auto" style={{ display: 'block' }}>
+        <defs>
+          <filter id="candle-glow-v4">
+            <feGaussianBlur stdDeviation="1.5" result="glow"/>
+            <feMerge>
+              <feMergeNode in="glow"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
 
-          {/* Grid lines */}
-          {[0.25, 0.5, 0.75].map((frac) => (
-            <line
-              key={frac}
-              x1={padL}
-              y1={padT + chartH * (1 - frac)}
-              x2={padL + chartW}
-              y2={padT + chartH * (1 - frac)}
-              stroke="rgba(255,255,255,0.03)"
-              strokeWidth="1"
+        {/* Grid */}
+        {[0.25, 0.5, 0.75].map(frac => (
+          <line key={frac} x1={padL} y1={padT + chartH * (1 - frac)} x2={padL + chartW} y2={padT + chartH * (1 - frac)} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5"/>
+        ))}
+
+        {/* Candles */}
+        {candles.map((c, i) => {
+          const cx = padL + (i + 0.5) * candleW;
+          const bullish = c.c >= c.o;
+          const color = bullish ? "#00E5FF" : "#FF4D6A";
+          const bodyTop = yPos(Math.max(c.o, c.c));
+          const bodyBot = yPos(Math.min(c.o, c.c));
+          const bodyH = Math.max(bodyBot - bodyTop, 1.5);
+
+          return (
+            <g key={i} filter="url(#candle-glow-v4)">
+              <line x1={cx} y1={yPos(c.h)} x2={cx} y2={yPos(c.l)} stroke={color} strokeWidth="1" opacity="0.7"/>
+              <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} rx="1" opacity="0.9"/>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function DonutChart({ data }) {
+  const size = 120;
+  const cx = size / 2, cy = size / 2;
+  const r = 44;
+  const strokeWidth = 14;
+  const circumference = 2 * Math.PI * r;
+  let offset = 0;
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {data.map((seg, i) => {
+          const dash = (seg.pct / 100) * circumference;
+          const gap = circumference - dash;
+          const currentOffset = offset;
+          offset += dash;
+          return (
+            <circle key={i}
+              cx={cx} cy={cy} r={r}
+              fill="none"
+              stroke={seg.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={-currentOffset}
+              style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+              opacity="0.9"
             />
-          ))}
-
-          {/* Candlesticks */}
-          {candles.map((c, i) => {
-            const cx = padL + (i + 0.5) * candleW;
-            const bullish = c.c >= c.o;
-            const color = bullish ? "#00E5FF" : "#FF4D6A";
-            const bodyTop = yPos(Math.max(c.o, c.c));
-            const bodyBot = yPos(Math.min(c.o, c.c));
-            const bodyH = Math.max(bodyBot - bodyTop, 1);
-
-            return (
-              <g key={i} filter="url(#candle-glow)">
-                {/* Wick */}
-                <line
-                  x1={cx} y1={yPos(c.h)}
-                  x2={cx} y2={yPos(c.l)}
-                  stroke={color}
-                  strokeWidth="1"
-                  opacity="0.6"
-                />
-                {/* Body */}
-                <rect
-                  x={cx - bodyW / 2}
-                  y={bodyTop}
-                  width={bodyW}
-                  height={bodyH}
-                  fill={bullish ? color : color}
-                  rx="1"
-                  opacity="0.9"
-                />
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-[10px] text-zinc-500 font-mono">15 periods</span>
-        <span className="text-[11px] font-mono font-semibold" style={{ color: "#00E5FF" }}>
-          $481.00
-        </span>
+          );
+        })}
+      </svg>
+      {/* Center label */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>100%</div>
+        <div style={{ fontSize: 8, color: '#5A6573', fontFamily: 'monospace', letterSpacing: '0.1em' }}>INVESTED</div>
       </div>
     </div>
   );
 }
 
-function DailyMovers({ tab, onTabChange }) {
-  const movers = tab === "gainers" ? DAILY_GAINERS : DAILY_LOSERS;
-
+function FloatingAISphere() {
   return (
-    <div
-      className="p-5 mb-5 rounded-[22px]"
-      style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
-      data-testid="daily-movers"
-    >
-      {/* Cinematic section header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>
-              // Daily Movers
-            </div>
-            <div
-              className="text-[11px] font-semibold uppercase tracking-[0.18em] mt-0.5"
-              style={{ color: "#3A3F47", letterSpacing: "0.22em" }}
-            >
-              Highest Daily Movers
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            <button
-              data-testid="movers-gainers-tab"
-              onClick={() => onTabChange("gainers")}
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                fontSize: 10,
-                fontWeight: 600,
-                padding: "4px 10px",
-                borderRadius: 8,
-                background: tab === "gainers" ? "rgba(0,229,255,0.1)" : "transparent",
-                border: tab === "gainers" ? "1px solid rgba(0,229,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
-                color: tab === "gainers" ? "#00E5FF" : "#8B9DAF",
-              }}
-            >
-              Gainers
-            </button>
-            <button
-              data-testid="movers-losers-tab"
-              onClick={() => onTabChange("losers")}
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                fontSize: 10,
-                fontWeight: 600,
-                padding: "4px 10px",
-                borderRadius: 8,
-                background: tab === "losers" ? "rgba(255,77,106,0.1)" : "transparent",
-                border: tab === "losers" ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(255,255,255,0.06)",
-                color: tab === "losers" ? "#FF4D6A" : "#8B9DAF",
-              }}
-            >
-              Losers
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {movers.map((m, i) => {
-          const isMilliPick = tab === "gainers" && i < 2;
-
-          return (
-            <div
-              key={m.symbol}
-              data-testid={`mover-${m.symbol}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "10px 12px",
-                borderRadius: 12,
-                background: isMilliPick
-                  ? "linear-gradient(135deg, rgba(0,229,255,0.05), rgba(5,6,7,0.8))"
-                  : "rgba(5, 6, 7, 0.6)",
-                border: isMilliPick
-                  ? "1px solid rgba(0,229,255,0.14)"
-                  : "1px solid rgba(255,255,255,0.04)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              {/* Subtle top-edge shimmer for MILLI PICK rows */}
-              {isMilliPick && (
-                <div style={{
-                  position: "absolute",
-                  top: 0, left: 0, right: 0,
-                  height: 1,
-                  background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent)",
-                }} />
-              )}
-
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: tab === "gainers" ? "rgba(0,229,255,0.08)" : "rgba(255,77,106,0.08)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                {tab === "gainers"
-                  ? <ArrowUp size={14} weight="bold" style={{ color: "#00E5FF" }} />
-                  : <ArrowDown size={14} weight="bold" style={{ color: "#FF4D6A" }} />
-                }
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{m.symbol}</span>
-                  {/* MILLI PICK badge — top 2 gainers only */}
-                  {isMilliPick && (
-                    <span
-                      data-testid={`milli-pick-${m.symbol}`}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 3,
-                        padding: "1px 6px",
-                        borderRadius: 5,
-                        fontSize: 8,
-                        fontWeight: 800,
-                        letterSpacing: "0.12em",
-                        background: "linear-gradient(90deg, rgba(0,229,255,0.18), rgba(0,229,255,0.08))",
-                        border: "1px solid rgba(0,229,255,0.35)",
-                        color: "#00E5FF",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Star size={7} weight="fill" />
-                      MILLI PICK
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: 10, color: "#8B9DAF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
-              </div>
-
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#E8E8E8", fontFamily: "monospace" }}>{m.price}</div>
-                <div style={{
-                  fontSize: 11, fontWeight: 700, fontFamily: "monospace",
-                  color: tab === "gainers" ? "#00E5FF" : "#FF4D6A",
-                  marginTop: 1,
-                }}>
-                  {m.change}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Strategy footnote for gainers */}
-      {tab === "gainers" && (
-        <div
-          style={{
-            marginTop: 12,
-            paddingTop: 10,
-            borderTop: "1px solid rgba(255,255,255,0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Star size={10} weight="fill" style={{ color: "#00E5FF", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: "#5A6573", fontStyle: "italic", letterSpacing: "0.02em" }}>
-            MILLI PICK — Aligned with your Aggressive Growth strategy
-          </span>
-        </div>
-      )}
+    <div style={{
+      position: 'fixed',
+      bottom: 90,
+      right: 20,
+      width: 56,
+      height: 56,
+      borderRadius: '50%',
+      overflow: 'hidden',
+      boxShadow: '0 0 30px rgba(0,229,255,0.3), 0 0 60px rgba(0,229,255,0.1)',
+      border: '2px solid rgba(0,229,255,0.3)',
+      zIndex: 100,
+      cursor: 'pointer',
+    }} data-testid="floating-ai-sphere">
+      <img
+        src="/weebo/milli-ai-sphere.png"
+        alt="Milli AI"
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
     </div>
   );
 }
