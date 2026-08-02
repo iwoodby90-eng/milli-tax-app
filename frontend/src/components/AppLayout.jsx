@@ -102,21 +102,19 @@ export default function AppLayout({ children }) {
           <div className="w-[68px] flex-shrink-0" aria-hidden />
           {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
 
-          {/* Raised MILLI-M home button — chrome coin */}
+          {/* Raised chrome-M home button — floating glyph, no sticker frame */}
           <NavLink
             to="/app"
             end
             data-testid="tab-home-center"
             aria-label="Home"
-            className="absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            className="absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] flex items-center justify-center active:scale-95 transition-transform"
             style={{
-              background: "radial-gradient(circle at 30% 30%, #E2EEF3 0%, #98B4BE 40%, #22323C 100%)",
-              boxShadow:
-                "0 0 26px rgba(0,229,255,0.55), 0 6px 16px rgba(0,0,0,0.65), inset 0 2px 0 rgba(255,255,255,0.45), inset 0 -3px 0 rgba(0,0,0,0.35)",
-              border: "1.5px solid rgba(255,255,255,0.55)",
+              filter:
+                "drop-shadow(0 0 22px rgba(0,229,255,0.65)) drop-shadow(0 8px 14px rgba(0,0,0,0.65))",
             }}
           >
-            <MilliLogo size={40} />
+            <MilliLogo size={60} />
           </NavLink>
         </div>
       </nav>

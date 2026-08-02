@@ -42,6 +42,15 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
 
 ## Changelog
+- **Aug 2, 2026** — **App Store submission rebuild.**
+  * App officially renamed to **Milli Tax Vault** (short form: MILLI) in `capacitor.config.json`, `Info.plist` (CFBundleDisplayName + CFBundleName), `index.html` title/meta, `manifest`.
+  * New **official logo** shipped: chrome-M with cyan stripe. Saved as `/app/frontend/public/brand/milli-logo-{60,120,180,256,512,1024}.png`. 25 iOS app icons regenerated in `Assets.xcassets/AppIcon.appiconset/`. `MilliLogo.jsx` rewritten to render the PNG with SVG fallback.
+  * **New 5-tab bar**: `[Vault | Wealth | 🅜 raised chrome M | Mileage | Settings]`. Old 7-slot bar removed.
+  * **MilliFAB** — persistent floating Milli AI avatar in bottom-right on every protected `/app/*` route (hidden on `/app/ai` where she's already the hero).
+  * **Wealth page** (`/app/wealth`) — combined Retirement + Investing hub with segment control.
+  * **Milli Cents** (`/app/milli-cents`) — new Offer Profitability Engine. Backend: `POST /api/milli-cents/score` and `/api/milli-cents/compare` with real scoring math (gas cost + wear + tax + per-mile + per-hour blended score). Frontend: Live Offer Analysis card with animated score gauge, breakdown table, GO/MARGINAL/SKIP verdict badge, and full offer input form.
+  * **Dashboard widget grid** — 4 tab-shortcut cards (Vault, Wealth, Mileage, Milli Cents) at the top of the dashboard.
+  * Tested by testing_agent (iteration_9): backend 10/10 pytest passing, frontend all acceptance criteria green after adding missing App.js imports.
 - **Feb 22, 2026** (late-late) — **Weebo v4: 3D-feel, transparent, roaming.**
   Removed the background from the reference PNG using `rembg` (U²-Net model),
   saved as `milli-ai-cutout.png` + `milli-ai-cutout-512.png`. Rewrote

@@ -5,7 +5,7 @@
  */
 import { useState } from "react";
 
-const LOGO_SRC = "/brand/milli-logo-256.png";
+const LOGO_SRC = "/brand/milli-mark-192.png";
 
 export default function MilliLogo({ size = 32, className = "", style, ...rest }) {
   const [failed, setFailed] = useState(false);

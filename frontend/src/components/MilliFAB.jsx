@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
  * Uses the transparent cutout PNG. Tapping it takes you to /app/ai.
  * Hidden on /app/ai itself (she's already the hero there).
  */
-const CHAR_SRC = "/weebo/milli-ai-cutout-512.png";
+const CHAR_SRC = "/weebo/milli-ai-body-512.png";
 
 export default function MilliFAB() {
   const nav = useNavigate();

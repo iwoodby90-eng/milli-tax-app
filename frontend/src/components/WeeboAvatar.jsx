@@ -18,7 +18,7 @@ import { useMemo, useEffect, useState } from "react";
  *   stageH   px height of her roaming area (defaults 1.5x size)
  *   onClick  optional press handler
  */
-const CHAR_SRC = "/weebo/milli-ai-cutout-512.png";
+const CHAR_SRC = "/weebo/milli-ai-body-512.png";
 
 export default function WeeboAvatar({
   size = 180,
