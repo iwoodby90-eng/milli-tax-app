@@ -2267,6 +2267,76 @@ async def subscription_status(user: dict = Depends(get_current_user)):
     }
 
 
+# -------------------- MILLI CENTS — Offer Profitability Engine --------------------
+class OfferIn(BaseModel):
+    platform: str                      # "uber", "doordash", "spark", "lyft", ...
+    kind: Optional[str] = "delivery"   # ride | delivery
+    payout: float                      # dollars offered
+    trip_miles: float                  # customer-with-you miles
+    pickup_miles: float = 0.0          # miles to get to pickup
+    deadhead_miles: float = 0.0        # empty miles between offer and pickup
+    return_miles: float = 0.0          # miles back to base after drop-off
+    duration_min: Optional[float] = None
+    mpg: float = 26.0
+    gas_price: float = 3.85            # $/gal
+    per_mile_wear: float = 0.09        # depreciation + tires + maintenance
+    tax_rate: float = 0.23             # SE + income tax combined
+    goal_per_hour: float = 25.0        # driver's target hourly
+
+def _score_offer(o: OfferIn) -> dict:
+    total_miles = (o.trip_miles or 0) + (o.pickup_miles or 0) + (o.deadhead_miles or 0) + (o.return_miles or 0)
+    gas_cost      = (total_miles / max(o.mpg, 1)) * o.gas_price
+    wear_cost     = total_miles * o.per_mile_wear
+    tax_cost      = o.payout * o.tax_rate
+    total_cost    = gas_cost + wear_cost + tax_cost
+    net_profit    = o.payout - total_cost
+    # profit per mile & per hour drive the score
+    per_mile      = net_profit / total_miles if total_miles > 0 else 0
+    per_hour      = (net_profit / (o.duration_min / 60)) if o.duration_min and o.duration_min > 0 else 0
+    # Calibrated so a solid ride ($0.80/mi + $22/hr) scores ~80
+    ppm_score  = min(1.0, per_mile / 0.75) if per_mile > 0 else 0
+    hourly_ratio = min(1.2, per_hour / max(o.goal_per_hour * 0.85, 1)) if per_hour else ppm_score
+    raw = 0.55 * ppm_score + 0.45 * (hourly_ratio / 1.2)
+    score = max(0, min(100, round(raw * 100)))
+    if score >= 75:    verdict, label = "accept",  "Very Good"
+    elif score >= 55:  verdict, label = "marginal", "Fair"
+    else:              verdict, label = "decline", "Poor"
+    return {
+        "platform": o.platform,
+        "kind": o.kind,
+        "payout": round(o.payout, 2),
+        "trip_miles": round(o.trip_miles, 1),
+        "pickup_miles": round(o.pickup_miles, 1),
+        "deadhead_miles": round(o.deadhead_miles, 1),
+        "return_miles": round(o.return_miles, 1),
+        "total_miles": round(total_miles, 1),
+        "gas_used_gal": round(total_miles / max(o.mpg, 1), 2),
+        "gas_cost": round(gas_cost, 2),
+        "wear_cost": round(wear_cost, 2),
+        "tax_cost": round(tax_cost, 2),
+        "total_cost": round(total_cost, 2),
+        "net_profit": round(net_profit, 2),
+        "per_mile": round(per_mile, 2),
+        "per_hour": round(per_hour, 2),
+        "score": score,
+        "label": label,
+        "verdict": verdict,
+    }
+
+@api.post("/milli-cents/score")
+async def milli_cents_score(offer: OfferIn, user: dict = Depends(get_current_user)):
+    return _score_offer(offer)
+
+class CompareIn(BaseModel):
+    offers: List[OfferIn]
+
+@api.post("/milli-cents/compare")
+async def milli_cents_compare(body: CompareIn, user: dict = Depends(get_current_user)):
+    scored = [_score_offer(o) for o in body.offers]
+    scored.sort(key=lambda x: x["net_profit"], reverse=True)
+    return {"offers": scored, "count": len(scored)}
+
+
 # -------------------- MOUNT --------------------
 app.include_router(api)
 

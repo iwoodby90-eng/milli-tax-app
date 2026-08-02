@@ -1,6 +1,6 @@
 {
   "appId": "app.milli.tax",
-  "appName": "Milli",
+  "appName": "Milli Tax Vault",
   "webDir": "build",
   "bundledWebRuntime": false,
   "server": {

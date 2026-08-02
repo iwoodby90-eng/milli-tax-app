@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Bank, MapTrifold, CalendarCheck, ShieldCheck, CheckCircle, CaretRight,
   Star, Coins, Robot, ArrowUpRight, FileText, Shield, Car, ChartLineUp,
+  Vault as VaultIcon,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import {
@@ -62,6 +63,47 @@ export default function Dashboard() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-5xl mx-auto">
+      {/* Tab widget grid — one card per bottom-nav tab */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <Link to="/app/vault" data-testid="widget-vault"
+              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition"
+              style={{ background: "radial-gradient(120% 80% at 0% 0%, rgba(0,229,255,0.10), rgba(0,0,0,0) 60%), #06080B" }}>
+          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><VaultIcon size={12} weight="fill" /> Vault</div>
+          <div>
+            <div className="font-chrome text-3xl chrome-text tabular-nums leading-none">{money(summary.year_taxes_reserved || 0)}</div>
+            <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">Reserved YTD</div>
+          </div>
+        </Link>
+        <Link to="/app/wealth" data-testid="widget-wealth"
+              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition"
+              style={{ background: "radial-gradient(120% 80% at 100% 0%, rgba(0,229,255,0.10), rgba(0,0,0,0) 60%), #06080B" }}>
+          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><ChartLineUp size={12} weight="fill" /> Wealth</div>
+          <div>
+            <div className="font-chrome text-3xl chrome-text tabular-nums leading-none">{money((summary.retirement_balance || 0) + (summary.invest_balance || 0))}</div>
+            <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">401k + Invest</div>
+          </div>
+        </Link>
+        <Link to="/app/mileage" data-testid="widget-mileage"
+              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition"
+              style={{ background: "radial-gradient(120% 80% at 0% 100%, rgba(0,229,255,0.10), rgba(0,0,0,0) 60%), #06080B" }}>
+          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><MapTrifold size={12} weight="fill" /> Mileage</div>
+          <div>
+            <div className="font-chrome text-3xl chrome-text tabular-nums leading-none">{money(summary.mileage_deduction || 0)}</div>
+            <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">Deduction YTD</div>
+          </div>
+        </Link>
+        <Link to="/app/milli-cents" data-testid="widget-cents"
+              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition border-volt/40"
+              style={{ background: "radial-gradient(120% 80% at 100% 100%, rgba(0,229,255,0.16), rgba(0,0,0,0) 60%), #06080B",
+                       boxShadow: "0 0 24px rgba(0,229,255,0.15)" }}>
+          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><Coins size={12} weight="fill" /> Milli Cents</div>
+          <div>
+            <div className="font-chrome text-lg text-white tabular-nums leading-none">Live Offer</div>
+            <div className="text-[11px] text-volt uppercase tracking-widest mt-1">Analyze now →</div>
+          </div>
+        </Link>
+      </div>
+
       {/* Desktop header */}
       <div className="hidden lg:flex items-end justify-between flex-wrap gap-4 mb-8">
         <div className="flex items-center gap-4">

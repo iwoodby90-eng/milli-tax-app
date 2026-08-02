@@ -30,6 +30,8 @@ import Referral from "@/pages/Referral";
 import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
 import Paywall from "@/pages/Paywall";
+import Wealth from "@/pages/Wealth";
+import MilliCents from "@/pages/MilliCents";
 
 function OnboardingGate({ children }) {
   const { user } = useAuth();
@@ -97,6 +99,8 @@ function App() {
             <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><MilliCents /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
             <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
           </Routes>

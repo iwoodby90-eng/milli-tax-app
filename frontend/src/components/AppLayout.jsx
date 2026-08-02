@@ -1,47 +1,41 @@
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Vault as VaultIcon, PiggyBank, MapTrifold, ChartLineUp, Receipt, GearSix,
-  List, Star, Sparkle, Wallet, Robot, FileText, DotsThree, SignOut, House, Gift,
+  Vault as VaultIcon, ChartLineUp, MapTrifold, GearSix,
+  List, Star, Wallet, Robot, FileText, DotsThree, SignOut, House, PiggyBank, Gift, Receipt, Coins,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
-import WeeboAvatar from "@/components/WeeboAvatar";
+import MilliFAB from "@/components/MilliFAB";
 import { useState } from "react";
 
-// 6 side buttons + center raised M — symmetric 3 / M / 3
 const leftTabs = [
-  { to: "/app/vault",      icon: VaultIcon,   label: "Vault",     testid: "tab-vault"   },
-  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)",    testid: "tab-retire"  },
-  { to: "/app/investing",  icon: ChartLineUp, label: "Invest",    testid: "tab-invest"  },
+  { to: "/app/vault",   icon: VaultIcon,    label: "Vault",    testid: "tab-vault"   },
+  { to: "/app/wealth",  icon: ChartLineUp,  label: "Wealth",   testid: "tab-wealth"  },
 ];
 const rightTabs = [
-  { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage",   testid: "tab-mileage" },
-  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes",     testid: "tab-taxes"   },
-  { to: "/app/settings",   icon: GearSix,     label: "Settings",  testid: "tab-settings"},
+  { to: "/app/mileage",  icon: MapTrifold, label: "Mileage",  testid: "tab-mileage"  },
+  { to: "/app/settings", icon: GearSix,    label: "Settings", testid: "tab-settings" },
 ];
 
-// Full navigation lives in the side drawer
 const drawerNav = [
-  { to: "/app",            icon: House,       label: "Home", end: true },
-  { to: "/app/income",     icon: Wallet,      label: "Income" },
-  { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage" },
-  { to: "/app/vault",      icon: VaultIcon,   label: "Tax Vault" },
-  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)" },
-  { to: "/app/investing",  icon: ChartLineUp, label: "Investing" },
-  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes / Quarterly" },
-  { to: "/app/expenses",   icon: FileText,    label: "Expenses" },
-  { to: "/app/ai",         icon: Robot,       label: "Milli AI" },
-  { to: "/app/referral",   icon: Gift,        label: "Invite & Earn $10" },
-  { to: "/app/reports",    icon: FileText,    label: "Reports" },
-  { to: "/app/settings",   icon: GearSix,     label: "Settings" },
-  { to: "/app/more",       icon: DotsThree,   label: "More" },
+  { to: "/app",             icon: House,       label: "Dashboard", end: true },
+  { to: "/app/vault",       icon: VaultIcon,   label: "Vault (Tax + Holding)" },
+  { to: "/app/wealth",      icon: ChartLineUp, label: "Wealth (401k + Investing)" },
+  { to: "/app/mileage",     icon: MapTrifold,  label: "Mileage" },
+  { to: "/app/milli-cents", icon: Coins,       label: "Milli Cents" },
+  { to: "/app/quarterly",   icon: Receipt,     label: "Taxes / Quarterly" },
+  { to: "/app/income",      icon: Wallet,      label: "Income" },
+  { to: "/app/expenses",    icon: FileText,    label: "Expenses" },
+  { to: "/app/ai",          icon: Robot,       label: "Milli AI" },
+  { to: "/app/referral",    icon: Gift,        label: "Invite & Earn $10" },
+  { to: "/app/reports",     icon: FileText,    label: "Reports" },
+  { to: "/app/settings",    icon: GearSix,     label: "Settings" },
 ];
 
-function TabButton({ to, icon: Icon, label, testid, end }) {
+function TabButton({ to, icon: Icon, label, testid }) {
   return (
     <NavLink
       to={to}
-      end={end}
       data-testid={testid}
       className={({ isActive }) =>
         `flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 active:opacity-60 ${
@@ -50,7 +44,7 @@ function TabButton({ to, icon: Icon, label, testid, end }) {
       }
     >
       <Icon size={20} weight="duotone" />
-      <span className="text-[9px] font-medium tracking-wide truncate max-w-full">{label}</span>
+      <span className="text-[10px] font-medium tracking-wide truncate max-w-full">{label}</span>
     </NavLink>
   );
 }
@@ -58,13 +52,11 @@ function TabButton({ to, icon: Icon, label, testid, end }) {
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
-  const loc = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const isHome = loc.pathname === "/app" || loc.pathname === "/app/";
 
   return (
     <div className="carbon-bg text-white min-h-full flex flex-col">
-      {/* ============ iOS-style top bar (sticky) ============ */}
+      {/* ============ Top bar ============ */}
       <header
         className="sticky top-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
         style={{ background: "rgba(5, 6, 7, 0.72)", paddingTop: "var(--safe-top)" }}
@@ -80,7 +72,7 @@ export default function AppLayout({ children }) {
           </button>
           <NavLink to="/app" className="flex items-center gap-2 active:opacity-70" data-testid="topbar-brand">
             <MilliLogo size={22} />
-            <span className="font-display tracking-[0.3em] chrome-text text-[13px]">MILLI</span>
+            <span className="font-display tracking-[0.24em] chrome-text text-[13px]">MILLI</span>
           </NavLink>
           <NavLink
             to="/app/pricing"
@@ -96,31 +88,10 @@ export default function AppLayout({ children }) {
       {/* ============ Main content ============ */}
       <main className="flex-1 native-scroll" data-testid="app-main-scroll">
         {children}
-        <div aria-hidden className="h-6" />
-
-        {/* Floating Weebo FAB — only on Home. Sticky-zero-height trick keeps her
-            pinned above the tab bar while the page scrolls. */}
-        {isHome && (
-          <div
-            className="sticky bottom-[18px] pointer-events-none flex justify-end pr-4 z-30"
-            style={{ height: 0 }}
-          >
-            <NavLink
-              to="/app/ai"
-              data-testid="weebo-fab"
-              aria-label="Ask Milli AI"
-              className="pointer-events-auto -translate-y-[92px] block active:scale-95 transition-transform"
-              style={{
-                filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(0,229,255,0.35))",
-              }}
-            >
-              <WeeboAvatar size={58} state="idle" />
-            </NavLink>
-          </div>
-        )}
+        <div aria-hidden className="h-24" />
       </main>
 
-      {/* ============ Bottom tab bar — 3 tabs · raised M · 3 tabs ============ */}
+      {/* ============ Bottom tab bar — 5 slots symmetric ============ */}
       <nav
         className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
         style={{ background: "rgba(5, 6, 7, 0.85)", paddingBottom: "var(--safe-bottom)" }}
@@ -128,36 +99,32 @@ export default function AppLayout({ children }) {
       >
         <div className="relative flex items-stretch justify-around h-[64px] px-1">
           {leftTabs.map((t) => <TabButton key={t.to} {...t} />)}
-
-          {/* Center pocket for the raised M */}
           <div className="w-[68px] flex-shrink-0" aria-hidden />
-
           {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
 
-          {/* Raised MILLI-M home button */}
+          {/* Raised MILLI-M home button — chrome coin */}
           <NavLink
             to="/app"
             end
             data-testid="tab-home-center"
-            className={({ isActive }) =>
-              `absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] rounded-full flex items-center justify-center active:scale-95 transition-transform ${
-                isActive ? "" : ""
-              }`
-            }
-            style={{
-              background: "radial-gradient(circle at 30% 30%, #4CDCF5 0%, #00E5FF 40%, #0B7A94 100%)",
-              boxShadow:
-                "0 0 24px rgba(0,229,255,0.65), 0 6px 16px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.25)",
-              border: "1px solid rgba(255,255,255,0.35)",
-            }}
             aria-label="Home"
+            className="absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            style={{
+              background: "radial-gradient(circle at 30% 30%, #E2EEF3 0%, #98B4BE 40%, #22323C 100%)",
+              boxShadow:
+                "0 0 26px rgba(0,229,255,0.55), 0 6px 16px rgba(0,0,0,0.65), inset 0 2px 0 rgba(255,255,255,0.45), inset 0 -3px 0 rgba(0,0,0,0.35)",
+              border: "1.5px solid rgba(255,255,255,0.55)",
+            }}
           >
-            <MilliLogo size={30} />
+            <MilliLogo size={40} />
           </NavLink>
         </div>
       </nav>
 
-      {/* ============ Slide-in drawer ============ */}
+      {/* Persistent Milli AI floating avatar (visible on every /app/* route except /app/ai) */}
+      <MilliFAB />
+
+      {/* Slide-in drawer */}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
@@ -167,14 +134,17 @@ export default function AppLayout({ children }) {
           <div
             className="fixed top-0 left-0 bottom-0 w-72 carbon-bg border-r border-white/10 overflow-y-auto native-scroll"
             style={{
-              paddingTop:    "calc(var(--safe-top) + 20px)",
+              paddingTop: "calc(var(--safe-top) + 20px)",
               paddingBottom: "calc(var(--safe-bottom) + 20px)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 px-6 mb-8">
-              <MilliLogo size={30} />
-              <div className="font-display tracking-[0.25em] chrome-text">MILLI</div>
+            <div className="flex items-center gap-3 px-6 mb-6">
+              <MilliLogo size={32} />
+              <div>
+                <div className="font-display tracking-[0.22em] chrome-text text-sm">MILLI</div>
+                <div className="text-[10px] text-zinc-500 tracking-widest uppercase">Tax Vault</div>
+              </div>
             </div>
             <nav className="space-y-1 px-3">
               {drawerNav.map((it) => (
