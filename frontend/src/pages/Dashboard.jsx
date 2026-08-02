@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Bank, MapTrifold, CalendarCheck, ShieldCheck, CheckCircle, CaretRight,
   Star, Coins, Robot, ArrowUpRight, FileText, Shield, Car, ChartLineUp,
+  PiggyBank, Receipt, TrendUp,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import {
@@ -13,7 +14,6 @@ import {
   InsightRow, EliteBadge,
 } from "@/components/MilliPrimitives";
 import MilliCentsWidget from "@/components/MilliCentsWidget";
-import { Gauge } from "@phosphor-icons/react";
 
 
 export default function Dashboard() {
@@ -23,17 +23,31 @@ export default function Dashboard() {
   const [trips, setTrips] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [syncing, setSyncing] = useState(false);
-  const [showMilliCents, setShowMilliCents] = useState(false);
+  const [vault, setVault] = useState(null);
+  const [retirementAcct, setRetirementAcct] = useState(null);
+  const [investingAcct, setInvestingAcct] = useState(null);
+  const [mileageSummary, setMileageSummary] = useState(null);
 
   async function load() {
     try {
-      const [s, d, t, e] = await Promise.all([
+      const [s, d, t, e, v, ret, inv, mil] = await Promise.all([
         api.get("/tax/summary"),
         api.get("/deposits"),
         api.get("/trips"),
         api.get("/expenses"),
+        api.get("/vault").catch(() => ({ data: null })),
+        api.get("/smart/retirement").catch(() => ({ data: null })),
+        api.get("/smart/investing").catch(() => ({ data: null })),
+        api.get("/mileage/summary").catch(() => ({ data: null })),
       ]);
-      setSummary(s.data); setDeposits(d.data); setTrips(t.data); setExpenses(e.data);
+      setSummary(s.data);
+      setDeposits(d.data);
+      setTrips(t.data);
+      setExpenses(e.data);
+      setVault(v.data);
+      setRetirementAcct(ret.data);
+      setInvestingAcct(inv.data);
+      setMileageSummary(mil.data);
     } catch (err) { toast.error(formatApiError(err)); }
   }
 
@@ -50,10 +64,17 @@ export default function Dashboard() {
   }
 
   if (!summary) {
-    return <div className="p-12 font-mono text-volt animate-pulse" style={{ backgroundColor: "#050607", color: "#00E5FF", minHeight: "100vh" }}>[ LOADING MILLI... ]</div>;
+    return (
+      <div
+        className="p-12 font-mono animate-pulse"
+        style={{ backgroundColor: "#050607", color: "#00E5FF", minHeight: "100vh" }}
+      >
+        [ LOADING MILLI... ]
+      </div>
+    );
   }
 
-  // Tax-ready score: 4 boxes — Income, Mileage, Expenses, Quarterly est available
+  // Tax-ready score
   const checks = {
     income: deposits.length > 0,
     mileage: trips.length > 0,
@@ -64,8 +85,23 @@ export default function Dashboard() {
   const score = Math.round((filled / 4) * 100);
   const isElite = user?.plan === "elite";
 
+  // Wealth: retirement + investing balances
+  const retBalance = retirementAcct?.balance ?? user?.retirement_balance ?? 0;
+  const invBalance = investingAcct?.balance ?? user?.investing_balance ?? 0;
+  const wealthTotal = retBalance + invBalance;
+
+  // Vault balance
+  const vaultBalance = vault?.balance ?? summary?.savings_balance ?? 0;
+
+  // Mileage & expenses
+  const totalMiles = mileageSummary?.total_miles ?? summary?.total_miles ?? 0;
+  const businessMiles = mileageSummary?.business_miles ?? totalMiles;
+  const mileageDeduction = mileageSummary?.business_deduction ?? summary?.mileage_deduction ?? 0;
+  const expenseTotal = summary?.expense_total ?? 0;
+
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-5xl mx-auto">
+
       {/* Desktop header */}
       <div className="hidden lg:flex items-end justify-between flex-wrap gap-4 mb-8">
         <div className="flex items-center gap-4">
@@ -94,43 +130,118 @@ export default function Dashboard() {
 
       {/* Mobile/center title */}
       <div className="lg:hidden text-center mb-6 mt-2">
-        <div className="text-xs text-zinc-500 font-mono uppercase tracking-[0.3em]">Welcome back, {user?.name?.split(" ")[0]}</div>
+        <div className="text-xs text-zinc-500 font-mono uppercase tracking-[0.3em]">
+          Welcome back, {user?.name?.split(" ")[0]}
+        </div>
       </div>
 
-      {/* Quarterly Payment Hero Card */}
-      <div className="milli-card p-6 mb-4 relative overflow-hidden" data-testid="dashboard-quarterly-card">
-        <div className="flex items-center gap-2 mb-3">
-          <CalendarCheck size={18} weight="duotone" className="text-volt" />
-          <span className="font-semibold text-sm uppercase tracking-[0.18em] text-volt">Next Quarterly Payment</span>
+      {/* ══════════════════════════════════════════════════════
+          1 · MILLI-CENTS PROFITABILITY ENGINE  ← HERO TOP
+          ══════════════════════════════════════════════════════ */}
+      <div className="mb-4" data-testid="dashboard-milli-cents-inline">
+        <MilliCentsWidget inline />
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          2 · WEALTH SUMMARY  (Investing + Retirement)
+          ══════════════════════════════════════════════════════ */}
+      <div
+        className="milli-card p-6 mb-4 relative overflow-hidden"
+        data-testid="dashboard-wealth-summary"
+      >
+        {/* Subtle ambient gradient */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 60% 50% at 85% 50%, rgba(0,229,255,0.04) 0%, transparent 70%)",
+          }}
+        />
+        <div className="flex items-center gap-2 mb-4">
+          <TrendUp size={18} weight="duotone" className="text-volt" />
+          <span className="font-semibold text-sm uppercase tracking-[0.18em] text-volt">Wealth Summary</span>
         </div>
+
         <div className="flex items-end gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            <div className="chrome-text font-chrome font-bold text-5xl sm:text-6xl tracking-tight" data-testid="dashboard-quarterly-amount">
-              {money(summary.next_quarterly.amount).split(".")[0]}
-              <span className="text-3xl text-zinc-400">.{money(summary.next_quarterly.amount).split(".")[1] || "00"}</span>
+            <div className="text-zinc-500 text-[10px] font-mono uppercase tracking-[0.25em] mb-1">Combined Balance</div>
+            <div className="chrome-text font-chrome font-bold text-4xl sm:text-5xl tracking-tight" data-testid="wealth-total">
+              {money(wealthTotal).split(".")[0]}
+              <span className="text-2xl text-zinc-400">.{money(wealthTotal).split(".")[1] || "00"}</span>
             </div>
-            <div className="text-zinc-300 text-sm font-medium mt-2 font-mono">
-              {summary.next_quarterly.label} {summary.year} · Due {new Date(summary.next_quarterly.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            <div className="text-zinc-400 text-xs font-mono mt-2">
+              Investing + Retirement
             </div>
-            <div className="text-zinc-500 text-sm mt-1">Estimated & ready to pay.</div>
           </div>
-          {/* Decorative calendar mark */}
-          <div className="relative w-24 h-24 rounded-2xl border border-volt/30 bg-obsidian/60 flex items-center justify-center flex-shrink-0">
-            <CheckCircle size={48} weight="duotone" className="text-volt" />
-            <div className="absolute -top-2 left-3 right-3 h-1.5 bg-zinc-700 rounded-full" />
-            <div className="absolute -top-1 left-5 w-1.5 h-3 bg-zinc-600 rounded" />
-            <div className="absolute -top-1 right-5 w-1.5 h-3 bg-zinc-600 rounded" />
+
+          {/* Breakdown mini-cards */}
+          <div className="flex gap-3 flex-shrink-0">
+            <Link
+              to="/app/investing"
+              className="flex flex-col items-center justify-center px-4 py-3 rounded-2xl"
+              style={{
+                background: "rgba(0,229,255,0.04)",
+                border: "1px solid rgba(0,229,255,0.12)",
+                minWidth: 90,
+              }}
+            >
+              <ChartLineUp size={18} weight="duotone" className="text-volt mb-1" />
+              <div className="font-chrome font-bold text-lg chrome-text" data-testid="wealth-investing">
+                {money(invBalance)}
+              </div>
+              <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-500 mt-0.5">Investing</div>
+            </Link>
+            <Link
+              to="/app/retirement"
+              className="flex flex-col items-center justify-center px-4 py-3 rounded-2xl"
+              style={{
+                background: "rgba(0,229,255,0.04)",
+                border: "1px solid rgba(0,229,255,0.12)",
+                minWidth: 90,
+              }}
+            >
+              <PiggyBank size={18} weight="duotone" className="text-volt mb-1" />
+              <div className="font-chrome font-bold text-lg chrome-text" data-testid="wealth-retirement">
+                {money(retBalance)}
+              </div>
+              <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-500 mt-0.5">Retirement</div>
+            </Link>
           </div>
         </div>
+
+        {(retBalance === 0 && invBalance === 0) && (
+          <Link
+            to="/app/wealth"
+            className="mt-4 flex items-center gap-2 text-xs font-mono uppercase tracking-widest"
+            style={{ color: "rgba(0,229,255,0.6)" }}
+          >
+            <span>Set up smart accounts</span>
+            <CaretRight size={10} weight="bold" />
+          </Link>
+        )}
       </div>
 
-      {/* Tax Ready Score — new gauge primitive */}
-      <div className="milli-card p-6 mb-4 flex flex-col lg:flex-row items-center gap-8"
-            data-testid="dashboard-tax-score-card">
+      {/* ══════════════════════════════════════════════════════
+          3 · TAX VAULT
+          ══════════════════════════════════════════════════════ */}
+      <div className="mb-4" data-testid="dashboard-vault-card">
+        <TaxVaultCard
+          balance={vaultBalance}
+          period={summary.next_quarterly?.label || "Q3"}
+          locked={!isElite && vaultBalance === 0}
+        />
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          4 · QUARTERLY READINESS / TAX SCORE GAUGE
+          ══════════════════════════════════════════════════════ */}
+      <div
+        className="milli-card p-6 mb-4 flex flex-col lg:flex-row items-center gap-8"
+        data-testid="dashboard-tax-score-card"
+      >
         <TaxReadyGauge score={score} />
         <div className="flex-1 min-w-0 text-center lg:text-left">
           <div className="text-volt text-sm font-semibold uppercase tracking-[0.24em] mb-3">
-            // Tax Ready Score™
+            // Quarterly Readiness
           </div>
           <div className="text-zinc-300 text-base leading-snug max-w-md mx-auto lg:mx-0">
             {score >= 75
@@ -139,6 +250,28 @@ export default function Dashboard() {
               ? "Halfway there — every payout brings you closer. Log a few more items to close the gap."
               : "Let's get rolling. Connect your bank and take a first trip to start the score."}
           </div>
+
+          {/* Next quarterly due */}
+          <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+              style={{ background: "rgba(0,229,255,0.05)", border: "1px solid rgba(0,229,255,0.12)" }}
+            >
+              <CalendarCheck size={14} weight="duotone" className="text-volt" />
+              <span className="text-zinc-300 font-mono">
+                {summary.next_quarterly.label} · {money(summary.next_quarterly.amount)} due
+              </span>
+            </div>
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+            >
+              <span className="text-zinc-500 font-mono text-xs">
+                {summary.next_quarterly.days_until}d until deadline
+              </span>
+            </div>
+          </div>
+
           {isElite && (
             <div className="mt-4 flex justify-center lg:justify-start">
               <EliteBadge size={72} />
@@ -147,28 +280,80 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Insight row */}
-      <div className="mb-4">
-        <InsightRow items={[
-          {
-            icon: Shield, title: "Tax Protection",
-            metric: money(summary?.savings_balance || 0),
-            sub: `${score}% ready for next quarter`,
-          },
-          {
-            icon: Car, title: "Miles Tracked",
-            metric: `${num(summary?.mileage?.business_miles || 0)} mi`,
-            sub: `IRS $0.70/mi · ${money(summary?.mileage?.business_deduction || 0)}`,
-          },
-          {
-            icon: ChartLineUp, title: "Projections",
-            metric: money(summary?.federal_estimated_tax || 0),
-            sub: "Annual estimated tax",
-          },
-        ]} />
+      {/* ══════════════════════════════════════════════════════
+          5 · MILEAGE & EXPENSES SUMMARY
+          ══════════════════════════════════════════════════════ */}
+      <div
+        className="milli-card p-6 mb-4 relative overflow-hidden"
+        data-testid="dashboard-mileage-expenses-card"
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 50% 60% at 15% 50%, rgba(0,229,255,0.03) 0%, transparent 70%)",
+          }}
+        />
+        <div className="flex items-center gap-2 mb-5">
+          <Car size={18} weight="duotone" className="text-volt" />
+          <span className="font-semibold text-sm uppercase tracking-[0.18em] text-volt">Mileage &amp; Expenses</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <MiniStat
+            label="Business Miles"
+            value={`${num(businessMiles)} mi`}
+            sub={`${num(totalMiles)} total`}
+            accent
+            testid="me-business-miles"
+          />
+          <MiniStat
+            label="Mileage Deduction"
+            value={money(mileageDeduction)}
+            sub="IRS $0.70/mi"
+            testid="me-deduction"
+          />
+          <MiniStat
+            label="YTD Expenses"
+            value={money(expenseTotal)}
+            sub={`${expenses.length} receipts`}
+            testid="me-expenses"
+          />
+          <MiniStat
+            label="Total Saved"
+            value={money(mileageDeduction + expenseTotal)}
+            sub="deductible total"
+            accent
+            testid="me-total-saved"
+          />
+        </div>
+
+        <div className="mt-5 flex gap-3">
+          <Link
+            to="/app/mileage"
+            className="flex-1 flex items-center justify-between px-4 py-3 rounded-xl transition-colors hover:border-volt/40"
+            style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-2">
+              <MapTrifold size={16} weight="duotone" className="text-volt" />
+              <span className="text-sm font-medium text-zinc-200">Track Mileage</span>
+            </div>
+            <CaretRight size={14} className="text-zinc-600" />
+          </Link>
+          <Link
+            to="/app/expenses"
+            className="flex-1 flex items-center justify-between px-4 py-3 rounded-xl transition-colors hover:border-volt/40"
+            style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-2">
+              <Receipt size={16} weight="duotone" className="text-volt" />
+              <span className="text-sm font-medium text-zinc-200">Log Expense</span>
+            </div>
+            <CaretRight size={14} className="text-zinc-600" />
+          </Link>
+        </div>
       </div>
 
-      {/* Financial Timeline */}
+      {/* ─── Payout Timeline ─── */}
       <div className="milli-card p-4 mb-4" data-testid="dashboard-timeline-card">
         <div className="px-2 pt-2 pb-1 flex items-center justify-between">
           <div className="text-volt text-xs font-mono uppercase tracking-[0.24em]">
@@ -181,27 +366,18 @@ export default function Dashboard() {
         <FinancialTimeline payouts={deposits} />
       </div>
 
-      {/* Tax Vault */}
-      <div className="mb-4" data-testid="dashboard-vault-card">
-        <TaxVaultCard
-          balance={summary?.savings_balance || 0}
-          period={"Q3"}
-          locked={!isElite && (summary?.savings_balance || 0) === 0}
-        />
-      </div>
-
-      {/* Quarterly checklist */}
+      {/* ─── Quarterly Checklist ─── */}
       <div className="milli-card p-6 mb-4" data-testid="dashboard-checklist-card">
         <div className="text-volt text-sm font-semibold uppercase tracking-[0.18em] mb-4">Quarterly Checklist</div>
         <div className="divide-y divide-hairline/60">
           <CheckRow label="Income" done={checks.income} to="/app/income" testid="check-income" />
           <CheckRow label="Mileage" done={checks.mileage} to="/app/mileage" testid="check-mileage" />
           <CheckRow label="Expenses" done={checks.expenses} to="/app/expenses" testid="check-expenses" />
-          <CheckRow label="1099s & Reports" done={checks.quarterly} to="/app/reports" testid="check-1099s" />
+          <CheckRow label="1099s &amp; Reports" done={checks.quarterly} to="/app/reports" testid="check-1099s" />
         </div>
       </div>
 
-      {/* Federal + State Filing card */}
+      {/* ─── Federal + State Filing ─── */}
       <Link
         to="/app/reports"
         data-testid="dashboard-filing-card"
@@ -220,7 +396,6 @@ export default function Dashboard() {
                 : "Elite users get auto-filed federal + state returns end-to-end."}
             </div>
           </div>
-          {/* Elite shield placeholder */}
           <div className="hidden sm:flex w-20 h-20 items-center justify-center rounded-2xl border border-volt/30 bg-gradient-to-b from-zinc-800 to-zinc-950 flex-shrink-0 relative">
             <div className="chrome-text font-chrome text-xs font-bold tracking-widest">ELITE</div>
             <Star size={14} weight="fill" className="absolute top-2 right-2 text-volt" />
@@ -228,7 +403,7 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* KPI grid */}
+      {/* ─── KPI grid ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <Kpi label="YTD Gross" value={money(summary.gross_income)} icon={Coins} testid="kpi-gross" />
         <Kpi label="YTD Miles" value={num(summary.total_miles)} icon={MapTrifold} testid="kpi-miles" />
@@ -236,32 +411,7 @@ export default function Dashboard() {
         <Kpi label="Savings" value={money(summary.savings_balance)} icon={ShieldCheck} accent testid="kpi-savings" />
       </div>
 
-
-      {/* Milli-Cents Profitability Engine — visible to ALL users during launch */}
-      <>
-        <button
-          onClick={() => setShowMilliCents(true)}
-          data-testid="dashboard-milli-cents-cta"
-          className="milli-card p-5 mb-4 w-full flex items-center gap-4 hover:border-volt/50 transition-colors group text-left"
-        >
-          <div className="w-12 h-12 rounded-2xl border border-volt/30 bg-zinc-900 flex items-center justify-center flex-shrink-0">
-            <Gauge size={24} weight="duotone" className="text-volt" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-white flex items-center gap-2">
-              Milli-Cents Calculator
-              {user?.plan !== "pro" && user?.plan !== "elite" && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,229,255,0.15)", color: "#00E5FF", border: "1px solid rgba(0,229,255,0.3)" }}>PRO</span>
-              )}
-            </div>
-            <div className="text-xs text-zinc-500 font-mono">Instant offer profitability · fuel + tax analysis</div>
-          </div>
-          <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
-        </button>
-        {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
-      </>
-
-      {/* Quick links */}
+      {/* ─── Quick links ─── */}
       <div className="grid sm:grid-cols-2 gap-3">
         <Link
           to="/app/ai"
@@ -282,54 +432,11 @@ export default function Dashboard() {
         >
           <FileText size={28} weight="duotone" className="text-volt" />
           <div className="flex-1">
-            <div className="font-semibold">Tax Vault</div>
+            <div className="font-semibold">Tax Reports</div>
             <div className="text-xs text-zinc-500">Schedule C · SE · mileage CSV</div>
           </div>
           <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt" />
         </Link>
-      </div>
-    </div>
-  );
-}
-
-function ScoreRing({ value }) {
-  const r = 56;
-  const c = 2 * Math.PI * r;
-  const offset = c - (value / 100) * c;
-  return (
-    <div className="relative w-36 h-36 flex-shrink-0">
-      <svg width="144" height="144" viewBox="0 0 144 144" className="-rotate-90">
-        <defs>
-          <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#00E5FF" />
-            <stop offset="100%" stopColor="#0090A8" />
-          </linearGradient>
-          <filter id="ring-glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <circle cx="72" cy="72" r={r} fill="none" stroke="rgba(0,229,255,0.12)" strokeWidth="8" />
-        <circle
-          cx="72"
-          cy="72"
-          r={r}
-          fill="none"
-          stroke="url(#ring-grad)"
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          filter="url(#ring-glow)"
-          style={{ transition: "stroke-dashoffset 800ms cubic-bezier(0.4, 0, 0.2, 1)" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="chrome-text font-chrome font-bold text-3xl leading-none">{value}%</div>
-        <div className="text-volt text-[10px] font-mono uppercase tracking-[0.3em] mt-1">Ready</div>
       </div>
     </div>
   );
@@ -360,6 +467,16 @@ function Kpi({ label, value, icon: Icon, accent, testid }) {
         <Icon size={14} weight="duotone" className={accent ? "text-volt" : "text-zinc-500"} />
       </div>
       <div className={`font-chrome font-bold text-xl ${accent ? "text-volt" : "chrome-text"}`}>{value}</div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, sub, accent, testid }) {
+  return (
+    <div className="flex flex-col" data-testid={testid}>
+      <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-500 mb-1">{label}</div>
+      <div className={`font-chrome font-bold text-lg leading-tight ${accent ? "text-volt" : "chrome-text"}`}>{value}</div>
+      {sub && <div className="text-[10px] text-zinc-600 font-mono mt-0.5">{sub}</div>}
     </div>
   );
 }

@@ -172,6 +172,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=6)
     name: str
     state: str = "TX"
+    pending_plan: Optional[str] = "basic"
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -248,7 +249,7 @@ async def register(body: RegisterIn):
         "state": body.state.upper(),
         "filing_status": "single",
         "password_hash": hash_password(body.password),
-        "plan": "trial",
+        "plan": body.pending_plan or "basic",
         "trial_end": trial_end.isoformat(),
         "stripe_active_until": None,
         "plaid_items": [],

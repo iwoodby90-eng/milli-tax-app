@@ -5,6 +5,7 @@ import { Gauge, CurrencyDollar, GasPump, Car, Percent, MapPin, ArrowRight, Plugs
 /**
  * Milli-Cents Profitability Widget v2.0
  * NEW: 'Connect Gig Account' flow + Live Offer Detection + Auto-ACCEPT
+ * inline prop: renders as a card in the page flow (no fixed overlay)
  */
 
 const VERDICT_COLORS = {
@@ -20,7 +21,7 @@ const GIG_APPS = [
   { id: "spark", name: "Spark", color: "#0071CE" },
 ];
 
-export default function MilliCentsWidget({ onClose }) {
+export default function MilliCentsWidget({ onClose, inline = false }) {
   const [gigConnected, setGigConnected] = useState(false);
   const [connectingGig, setConnectingGig] = useState(null);
   const [liveOffer, setLiveOffer] = useState(null);
@@ -77,165 +78,182 @@ export default function MilliCentsWidget({ onClose }) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.88)" }}>
-      <div
-        className="w-full max-w-md rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto"
-        style={{ backgroundColor: "#0a0b0d", border: "1px solid rgba(40,44,52,0.8)", boxShadow: "0 0 80px rgba(0,229,255,0.06)" }}
-      >
-        {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b" style={{ borderColor: "rgba(40,44,52,0.6)" }}>
-          <div className="flex items-center gap-3">
-            <Gauge size={22} weight="duotone" style={{ color: "#00E5FF" }} />
-            <div>
-              <div className="font-display text-sm tracking-[0.2em] text-white uppercase">Milli-Cents</div>
-              <div className="text-[10px] text-zinc-500 font-mono tracking-wider">// PROFITABILITY ENGINE v2.0</div>
-            </div>
+  const content = (
+    <div
+      className="w-full rounded-3xl overflow-hidden"
+      style={{
+        backgroundColor: "#0a0b0d",
+        border: "1px solid rgba(40,44,52,0.8)",
+        boxShadow: inline
+          ? "0 0 40px rgba(0,229,255,0.04), inset 0 1px 0 rgba(255,255,255,0.03)"
+          : "0 0 80px rgba(0,229,255,0.06)",
+      }}
+    >
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b" style={{ borderColor: "rgba(40,44,52,0.6)" }}>
+        <div className="flex items-center gap-3">
+          <Gauge size={22} weight="duotone" style={{ color: "#00E5FF" }} />
+          <div>
+            <div className="font-display text-sm tracking-[0.2em] text-white uppercase">Milli-Cents</div>
+            <div className="text-[10px] text-zinc-500 font-mono tracking-wider">// PROFITABILITY ENGINE v2.0</div>
           </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-zinc-500 hover:text-white text-lg font-mono"
-              style={{ all: "unset", cursor: "pointer", color: "#8B9DAF", fontSize: 18 }}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-          )}
         </div>
-
-        {/* ─── Connect Gig Account UI ─── */}
-        {!gigConnected && (
-          <div className="px-6 py-5" style={{ borderBottom: "1px solid rgba(40,44,52,0.4)" }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Plugs size={16} weight="duotone" style={{ color: "#00E5FF" }} />
-              <span className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: "#00E5FF" }}>Connect Gig Account</span>
-            </div>
-            <p className="text-xs text-zinc-400 mb-4">Link a platform for live offer detection & auto-verdicts.</p>
-            <div className="grid grid-cols-2 gap-2">
-              {GIG_APPS.map((app) => (
-                <button
-                  key={app.id}
-                  onClick={() => connectGig(app)}
-                  disabled={!!connectingGig}
-                  data-testid={`connect-gig-${app.id}`}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left"
-                  style={{
-                    all: "unset",
-                    cursor: connectingGig ? "wait" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    background: "rgba(5,6,7,0.6)",
-                    border: connectingGig === app.id ? "1px solid rgba(0,229,255,0.4)" : "1px solid rgba(255,255,255,0.05)",
-                    opacity: connectingGig && connectingGig !== app.id ? 0.4 : 1,
-                    transition: "all 0.2s",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: "#FFFFFF",
-                  }}
-                >
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: app.color, flexShrink: 0 }} />
-                  {connectingGig === app.id ? "Linking..." : app.name}
-                </button>
-              ))}
-            </div>
-          </div>
+        {!inline && onClose && (
+          <button
+            onClick={onClose}
+            className="text-zinc-500 hover:text-white text-lg font-mono"
+            style={{ all: "unset", cursor: "pointer", color: "#8B9DAF", fontSize: 18 }}
+            aria-label="Close"
+          >
+            &times;
+          </button>
         )}
+      </div>
 
-        {/* ─── Live Offer Detected ─── */}
-        {gigConnected && liveOffer && (
-          <div className="px-6 py-5" style={{ background: "rgba(0,229,255,0.03)", borderBottom: "1px solid rgba(0,229,255,0.1)" }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Lightning size={16} weight="fill" style={{ color: "#00E5FF" }} />
-              <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: "#00E5FF" }}>Live Offer Detected</span>
-              <span className="ml-auto text-[10px] text-zinc-500 font-mono">{liveOffer.platform}</span>
+      {/* ─── Connect Gig Account UI ─── */}
+      {!gigConnected && (
+        <div className="px-6 py-5" style={{ borderBottom: "1px solid rgba(40,44,52,0.4)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Plugs size={16} weight="duotone" style={{ color: "#00E5FF" }} />
+            <span className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: "#00E5FF" }}>Connect Gig Account</span>
+          </div>
+          <p className="text-xs text-zinc-400 mb-4">Link a platform for live offer detection &amp; auto-verdicts.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {GIG_APPS.map((app) => (
+              <button
+                key={app.id}
+                onClick={() => connectGig(app)}
+                disabled={!!connectingGig}
+                data-testid={`connect-gig-${app.id}`}
+                style={{
+                  all: "unset",
+                  cursor: connectingGig ? "wait" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  background: "rgba(5,6,7,0.6)",
+                  border: connectingGig === app.id ? "1px solid rgba(0,229,255,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                  opacity: connectingGig && connectingGig !== app.id ? 0.4 : 1,
+                  transition: "all 0.2s",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#FFFFFF",
+                }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: app.color, flexShrink: 0 }} />
+                {connectingGig === app.id ? "Linking..." : app.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Live Offer Detected ─── */}
+      {gigConnected && liveOffer && (
+        <div className="px-6 py-5" style={{ background: "rgba(0,229,255,0.03)", borderBottom: "1px solid rgba(0,229,255,0.1)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Lightning size={16} weight="fill" style={{ color: "#00E5FF" }} />
+            <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: "#00E5FF" }}>Live Offer Detected</span>
+            <span className="ml-auto text-[10px] text-zinc-500 font-mono">{liveOffer.platform}</span>
+          </div>
+          <div className="flex items-center gap-4 mb-3">
+            <div>
+              <div className="font-chrome font-bold text-3xl text-white">${liveOffer.price.toFixed(2)}</div>
+              <div className="text-[10px] text-zinc-500 font-mono">{liveOffer.distance} mi + {liveOffer.deadhead} mi deadhead</div>
             </div>
-            <div className="flex items-center gap-4 mb-3">
-              <div>
-                <div className="font-chrome font-bold text-3xl text-white">${liveOffer.price.toFixed(2)}</div>
-                <div className="text-[10px] text-zinc-500 font-mono">{liveOffer.distance} mi + {liveOffer.deadhead} mi deadhead</div>
-              </div>
-              {autoVerdict && (
-                <div className="ml-auto text-center">
-                  <div
-                    className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-[0.2em] font-mono"
-                    style={{
-                      backgroundColor: VERDICT_COLORS[autoVerdict.verdict].bg,
-                      color: VERDICT_COLORS[autoVerdict.verdict].ring,
-                      border: `1px solid ${VERDICT_COLORS[autoVerdict.verdict].ring}40`,
-                      boxShadow: `0 0 12px ${VERDICT_COLORS[autoVerdict.verdict].glow}`,
-                    }}
-                    data-testid="auto-verdict-badge"
-                  >
-                    {autoVerdict.verdict}
-                  </div>
-                  <div className="text-[9px] text-zinc-500 mt-1 font-mono">
-                    Net: ${autoVerdict.result.profit.toFixed(2)}
-                  </div>
+            {autoVerdict && (
+              <div className="ml-auto text-center">
+                <div
+                  className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-[0.2em] font-mono"
+                  style={{
+                    backgroundColor: VERDICT_COLORS[autoVerdict.verdict].bg,
+                    color: VERDICT_COLORS[autoVerdict.verdict].ring,
+                    border: `1px solid ${VERDICT_COLORS[autoVerdict.verdict].ring}40`,
+                    boxShadow: `0 0 12px ${VERDICT_COLORS[autoVerdict.verdict].glow}`,
+                  }}
+                  data-testid="auto-verdict-badge"
+                >
+                  {autoVerdict.verdict}
                 </div>
-              )}
-            </div>
-            {autoVerdict?.verdict === "ACCEPT" && (
-              <div className="flex items-center gap-2 text-xs" style={{ color: "#00E5FF" }}>
-                <CheckCircle size={14} weight="fill" />
-                <span className="font-mono uppercase tracking-wider">Auto-accepted by Milli-Cents formula</span>
+                <div className="text-[9px] text-zinc-500 mt-1 font-mono">
+                  Net: ${autoVerdict.result.profit.toFixed(2)}
+                </div>
               </div>
             )}
           </div>
-        )}
-
-        {/* Gig Connected indicator */}
-        {gigConnected && !liveOffer && (
-          <div className="px-6 py-4 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(40,44,52,0.4)" }}>
-            <CheckCircle size={16} weight="fill" style={{ color: "#34D399" }} />
-            <span className="text-xs font-medium" style={{ color: "#34D399" }}>Gig account connected</span>
-            <span className="text-[10px] text-zinc-500 ml-auto font-mono">Scanning for offers...</span>
-          </div>
-        )}
-
-        {/* Bel Air Gauge */}
-        <div className="flex justify-center py-6">
-          <BelAirGauge margin={hasInput ? result.profitMargin : (autoVerdict ? autoVerdict.result.profitMargin : 0)} colors={autoVerdict ? VERDICT_COLORS[autoVerdict.verdict] : colors} active={hasInput || !!autoVerdict} />
-        </div>
-
-        {/* Manual Verdict */}
-        {hasInput && (
-          <div className="text-center -mt-2 mb-5">
-            <span
-              className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.25em] font-mono"
-              style={{ backgroundColor: colors.bg, color: colors.ring, border: `1px solid ${colors.ring}40` }}
-            >
-              {colors.label}
-            </span>
-            <div className="mt-2 text-zinc-400 text-sm font-mono">
-              Net: <span className="text-white font-semibold">${result.profit.toFixed(2)}</span>
-              <span className="text-zinc-600 mx-2">|</span>
-              Fuel: <span className="text-zinc-300">${result.fuelCost.toFixed(2)}</span>
-              <span className="text-zinc-600 mx-2">|</span>
-              Tax: <span className="text-zinc-300">${result.taxOwed.toFixed(2)}</span>
+          {autoVerdict?.verdict === "ACCEPT" && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: "#00E5FF" }}>
+              <CheckCircle size={14} weight="fill" />
+              <span className="font-mono uppercase tracking-wider">Auto-accepted by Milli-Cents formula</span>
             </div>
-          </div>
-        )}
-
-        {/* Manual Input Form */}
-        <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-          <InputField icon={CurrencyDollar} label="Offer $" value={form.offerPrice} onChange={update("offerPrice")} placeholder="12.50" testid="mc-offer" />
-          <InputField icon={MapPin} label="Trip mi" value={form.tripDistance} onChange={update("tripDistance")} placeholder="8.2" testid="mc-trip" />
-          <InputField icon={ArrowRight} label="Deadhead mi" value={form.deadheadDistance} onChange={update("deadheadDistance")} placeholder="3.0" testid="mc-deadhead" />
-          <InputField icon={GasPump} label="Gas $/gal" value={form.gasPrice} onChange={update("gasPrice")} placeholder="3.49" testid="mc-gas" />
-          <InputField icon={Car} label="MPG" value={form.vehicleMpg} onChange={update("vehicleMpg")} placeholder="28" testid="mc-mpg" />
-          <InputField icon={Percent} label="Tax %" value={form.taxSlice} onChange={update("taxSlice")} placeholder="25" testid="mc-tax" />
+          )}
         </div>
+      )}
 
-        {hasInput && (
-          <div className="px-6 pb-6 flex items-center justify-between text-xs text-zinc-500 font-mono border-t pt-4" style={{ borderColor: "rgba(40,44,52,0.6)" }}>
-            <span>Cost/mile: <span className="text-zinc-300">${result.costPerMile.toFixed(2)}</span></span>
-            <span>Total miles: <span className="text-zinc-300">{result.totalMiles}</span></span>
+      {/* Gig Connected indicator */}
+      {gigConnected && !liveOffer && (
+        <div className="px-6 py-4 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(40,44,52,0.4)" }}>
+          <CheckCircle size={16} weight="fill" style={{ color: "#34D399" }} />
+          <span className="text-xs font-medium" style={{ color: "#34D399" }}>Gig account connected</span>
+          <span className="text-[10px] text-zinc-500 ml-auto font-mono">Scanning for offers...</span>
+        </div>
+      )}
+
+      {/* Bel Air Gauge */}
+      <div className="flex justify-center py-6">
+        <BelAirGauge margin={hasInput ? result.profitMargin : (autoVerdict ? autoVerdict.result.profitMargin : 0)} colors={autoVerdict ? VERDICT_COLORS[autoVerdict.verdict] : colors} active={hasInput || !!autoVerdict} />
+      </div>
+
+      {/* Manual Verdict */}
+      {hasInput && (
+        <div className="text-center -mt-2 mb-5">
+          <span
+            className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.25em] font-mono"
+            style={{ backgroundColor: colors.bg, color: colors.ring, border: `1px solid ${colors.ring}40` }}
+          >
+            {colors.label}
+          </span>
+          <div className="mt-2 text-zinc-400 text-sm font-mono">
+            Net: <span className="text-white font-semibold">${result.profit.toFixed(2)}</span>
+            <span className="text-zinc-600 mx-2">|</span>
+            Fuel: <span className="text-zinc-300">${result.fuelCost.toFixed(2)}</span>
+            <span className="text-zinc-600 mx-2">|</span>
+            Tax: <span className="text-zinc-300">${result.taxOwed.toFixed(2)}</span>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Manual Input Form */}
+      <div className="px-6 pb-6 grid grid-cols-2 gap-3">
+        <InputField icon={CurrencyDollar} label="Offer $" value={form.offerPrice} onChange={update("offerPrice")} placeholder="12.50" testid="mc-offer" />
+        <InputField icon={MapPin} label="Trip mi" value={form.tripDistance} onChange={update("tripDistance")} placeholder="8.2" testid="mc-trip" />
+        <InputField icon={ArrowRight} label="Deadhead mi" value={form.deadheadDistance} onChange={update("deadheadDistance")} placeholder="3.0" testid="mc-deadhead" />
+        <InputField icon={GasPump} label="Gas $/gal" value={form.gasPrice} onChange={update("gasPrice")} placeholder="3.49" testid="mc-gas" />
+        <InputField icon={Car} label="MPG" value={form.vehicleMpg} onChange={update("vehicleMpg")} placeholder="28" testid="mc-mpg" />
+        <InputField icon={Percent} label="Tax %" value={form.taxSlice} onChange={update("taxSlice")} placeholder="25" testid="mc-tax" />
+      </div>
+
+      {hasInput && (
+        <div className="px-6 pb-6 flex items-center justify-between text-xs text-zinc-500 font-mono border-t pt-4" style={{ borderColor: "rgba(40,44,52,0.6)" }}>
+          <span>Cost/mile: <span className="text-zinc-300">${result.costPerMile.toFixed(2)}</span></span>
+          <span>Total miles: <span className="text-zinc-300">{result.totalMiles}</span></span>
+        </div>
+      )}
+    </div>
+  );
+
+  // Inline mode: render directly in page flow, no overlay
+  if (inline) {
+    return content;
+  }
+
+  // Modal mode: fixed overlay
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.88)" }}>
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: "1.5rem" }}>
+        {content}
       </div>
     </div>
   );
@@ -254,9 +272,6 @@ function BelAirGauge({ margin, colors, active }) {
   const arcPath = describeArc(cx, cy, r, startAngle, endAngle);
   const filledEnd = startAngle + normalized * sweepTotal;
   const filledPath = normalized > 0 ? describeArc(cx, cy, r, startAngle, filledEnd) : "";
-  const needleR = r - 18;
-  const nx = cx + needleR * Math.cos((needleAngle * Math.PI) / 180);
-  const ny = cy + needleR * Math.sin((needleAngle * Math.PI) / 180);
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((pct) => {
     const angle = startAngle + pct * sweepTotal;
     const outerR = r + 6;
@@ -284,7 +299,7 @@ function BelAirGauge({ margin, colors, active }) {
         )}
         {active && (
           <>
-            <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={colors.ring} strokeWidth="2.5" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 4px ${colors.glow})`, transition: "all 600ms cubic-bezier(0.4, 0, 0.2, 1)" }} />
+            <line x1={cx} y1={cy} x2={nx(cx, needleAngle, r - 18)} y2={ny(cy, needleAngle, r - 18)} stroke={colors.ring} strokeWidth="2.5" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 4px ${colors.glow})`, transition: "all 600ms cubic-bezier(0.4, 0, 0.2, 1)" }} />
             <circle cx={cx} cy={cy} r="5" fill="#1a1a1a" stroke={colors.ring} strokeWidth="1.5" />
           </>
         )}
@@ -298,6 +313,14 @@ function BelAirGauge({ margin, colors, active }) {
       </div>
     </div>
   );
+}
+
+function nx(cx, angleDeg, radius) {
+  return cx + radius * Math.cos((angleDeg * Math.PI) / 180);
+}
+
+function ny(cy, angleDeg, radius) {
+  return cy + radius * Math.sin((angleDeg * Math.PI) / 180);
 }
 
 function InputField({ icon: Icon, label, value, onChange, placeholder, testid }) {
