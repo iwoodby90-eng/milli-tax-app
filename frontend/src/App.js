@@ -30,7 +30,6 @@ import Quarterly from "@/pages/Quarterly";
 import More from "@/pages/More";
 import Retirement from "@/pages/Retirement";
 import Investing from "@/pages/Investing";
-import Wealth from "@/pages/Wealth";
 import Referral from "@/pages/Referral";
 import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
@@ -83,8 +82,9 @@ function App() {
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
             <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
 
-            <Route path="/app" element={<ProtectedAppScreen><MilliCentsDashboard /></ProtectedAppScreen>} />
-            <Route path="/app/overview" element={<ProtectedAppScreen><Dashboard /></ProtectedAppScreen>} />
+            <Route path="/app" element={<ProtectedAppScreen><Dashboard /></ProtectedAppScreen>} />
+            <Route path="/app/overview" element={<Navigate to="/app" replace />} />
+            <Route path="/app/milli-cents" element={<ProtectedAppScreen><MilliCentsDashboard /></ProtectedAppScreen>} />
             <Route path="/app/income" element={<ProtectedAppScreen><Income /></ProtectedAppScreen>} />
             <Route path="/app/mileage" element={<ProtectedAppScreen><Mileage /></ProtectedAppScreen>} />
             <Route path="/app/expenses" element={<ProtectedAppScreen><Expenses /></ProtectedAppScreen>} />
