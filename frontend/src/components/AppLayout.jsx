@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
+import NotificationSheet from "@/components/NotificationSheet";
 import { useState } from "react";
 
 /**
@@ -71,6 +72,7 @@ export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   return (
     <div className="carbon-bg app-aurora text-white min-h-full flex flex-col relative">
@@ -105,9 +107,9 @@ export default function AppLayout({ children }) {
               milli
             </span>
           </button>
-          <NavLink
-            to="/app/settings"
+          <button
             data-testid="topbar-bell"
+            onClick={() => setNotifOpen(true)}
             aria-label="Notifications"
             className="relative w-9 h-9 flex items-center justify-center rounded-full active:opacity-60"
           >
@@ -116,7 +118,7 @@ export default function AppLayout({ children }) {
               className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-volt"
               style={{ boxShadow: "0 0 8px rgba(0,229,255,0.9)" }}
             />
-          </NavLink>
+          </button>
         </div>
       </header>
 
@@ -155,6 +157,9 @@ export default function AppLayout({ children }) {
 
       {/* Persistent Milli AI floating avatar */}
       <MilliFAB />
+
+      {/* Notification sheet */}
+      <NotificationSheet open={notifOpen} onClose={() => setNotifOpen(false)} />
 
       {/* Slide-in drawer */}
       {drawerOpen && (
