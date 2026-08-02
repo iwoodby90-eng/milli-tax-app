@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { api, money, num, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   Bank, MapTrifold, CalendarCheck, ShieldCheck, CheckCircle, CaretRight,
   Star, Coins, Robot, ArrowUpRight, FileText, Shield, Car, ChartLineUp,
-  Play, Stop, NavigationArrow, Vault as VaultIcon, Lightning, Gauge,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import {
@@ -14,7 +13,7 @@ import {
   InsightRow, EliteBadge,
 } from "@/components/MilliPrimitives";
 import MilliCentsWidget from "@/components/MilliCentsWidget";
-import GigConnections from "@/components/GigConnections";
+import { Gauge } from "@phosphor-icons/react";
 
 
 export default function Dashboard() {
@@ -25,12 +24,6 @@ export default function Dashboard() {
   const [expenses, setExpenses] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [showMilliCents, setShowMilliCents] = useState(false);
-
-  // Mileage tracker state
-  const [tripActive, setTripActive] = useState(false);
-  const [tripStartTime, setTripStartTime] = useState(null);
-  const [liveMiles, setLiveMiles] = useState(0);
-  const [dollarsSaved, setDollarsSaved] = useState(0);
 
   async function load() {
     try {
@@ -46,31 +39,6 @@ export default function Dashboard() {
 
   useEffect(() => { load(); }, []);
 
-  // Live trip simulator
-  useEffect(() => {
-    if (!tripActive) return;
-    const interval = setInterval(() => {
-      setLiveMiles(m => {
-        const next = m + 0.02 + Math.random() * 0.03;
-        setDollarsSaved(next * 0.70); // IRS rate
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [tripActive]);
-
-  const toggleTrip = useCallback(() => {
-    if (tripActive) {
-      setTripActive(false);
-      toast.success(`Trip ended: ${liveMiles.toFixed(1)} miles · $${dollarsSaved.toFixed(2)} saved`);
-    } else {
-      setTripActive(true);
-      setTripStartTime(Date.now());
-      setLiveMiles(0);
-      setDollarsSaved(0);
-    }
-  }, [tripActive, liveMiles, dollarsSaved]);
-
   async function syncPlaid() {
     setSyncing(true);
     try {
@@ -85,6 +53,7 @@ export default function Dashboard() {
     return <div className="p-12 font-mono text-volt animate-pulse" style={{ backgroundColor: "#050607", color: "#00E5FF", minHeight: "100vh" }}>[ LOADING MILLI... ]</div>;
   }
 
+  // Tax-ready score: 4 boxes — Income, Mileage, Expenses, Quarterly est available
   const checks = {
     income: deposits.length > 0,
     mileage: trips.length > 0,
@@ -103,7 +72,7 @@ export default function Dashboard() {
           <MilliLogo size={48} />
           <div>
             <div className="font-display chrome-text text-3xl tracking-[0.2em]">MILLI</div>
-            <div className="text-zinc-500 text-xs font-mono uppercase tracking-widest mt-1">// command center · {summary.year}</div>
+            <div className="text-zinc-500 text-xs font-mono uppercase tracking-widest mt-1">// tax year {summary.year}</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -125,179 +94,10 @@ export default function Dashboard() {
 
       {/* Mobile/center title */}
       <div className="lg:hidden text-center mb-6 mt-2">
-        <div className="text-xs text-zinc-500 font-mono uppercase tracking-[0.3em]">Command Center</div>
+        <div className="text-xs text-zinc-500 font-mono uppercase tracking-[0.3em]">Welcome back, {user?.name?.split(" ")[0]}</div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          P0 — REAL-TIME MILEAGE TRACKER (Top Block)
-         ═══════════════════════════════════════════════════════ */}
-      <div
-        className="milli-card relative overflow-hidden mb-4"
-        data-testid="mileage-tracker-hero"
-        style={{
-          background: tripActive
-            ? "linear-gradient(135deg, rgba(0,229,255,0.08) 0%, rgba(13,15,18,0.85) 60%)"
-            : "rgba(13,15,18,0.6)",
-          backdropFilter: "blur(28px)",
-          border: tripActive ? "1px solid rgba(0,229,255,0.25)" : "1px solid rgba(40,44,52,0.8)",
-        }}
-      >
-        {/* Animated pulse ring when active */}
-        {tripActive && (
-          <div className="absolute top-4 right-4 w-3 h-3">
-            <div className="absolute inset-0 rounded-full bg-volt animate-ping opacity-40" />
-            <div className="absolute inset-0 rounded-full bg-volt" />
-          </div>
-        )}
-
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <NavigationArrow size={18} weight="duotone" className="text-volt" />
-            <span className="font-semibold text-xs uppercase tracking-[0.2em] text-volt">Real-Time Mileage</span>
-          </div>
-
-          <div className="flex items-center gap-6 flex-wrap">
-            {/* Start/Stop Toggle */}
-            <button
-              onClick={toggleTrip}
-              data-testid="trip-toggle-btn"
-              className="relative flex-shrink-0"
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                width: 72,
-                height: 72,
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: tripActive
-                  ? "radial-gradient(circle at 40% 35%, #FF3B5C 0%, #CC0033 100%)"
-                  : "radial-gradient(circle at 40% 35%, #4CDCF5 0%, #00E5FF 40%, #0B7A94 100%)",
-                boxShadow: tripActive
-                  ? "0 0 24px rgba(255,59,92,0.5), inset 0 2px 0 rgba(255,255,255,0.2)"
-                  : "0 0 24px rgba(0,229,255,0.5), inset 0 2px 0 rgba(255,255,255,0.2)",
-                border: "2px solid rgba(255,255,255,0.15)",
-                transition: "all 0.3s ease",
-              }}
-            >
-              {tripActive ? <Stop size={28} weight="fill" color="#fff" /> : <Play size={28} weight="fill" color="#fff" />}
-            </button>
-
-            {/* Live Counters */}
-            <div className="flex-1 min-w-0">
-              <div className="text-zinc-400 text-xs font-mono uppercase tracking-wider mb-1">
-                {tripActive ? "TRACKING LIVE" : "TAP TO START"}
-              </div>
-              <div className="flex items-baseline gap-4 flex-wrap">
-                <div>
-                  <span className="chrome-text font-chrome font-bold text-4xl tabular-nums" data-testid="live-miles">
-                    {liveMiles.toFixed(1)}
-                  </span>
-                  <span className="text-zinc-400 text-sm ml-1">mi</span>
-                </div>
-                <div className="h-8 w-px bg-zinc-700/50" />
-                <div>
-                  <span className="text-volt font-chrome font-bold text-3xl tabular-nums" data-testid="dollars-saved">
-                    ${dollarsSaved.toFixed(2)}
-                  </span>
-                  <span className="text-zinc-500 text-xs ml-1 font-mono">SAVED</span>
-                </div>
-              </div>
-              {tripActive && tripStartTime && (
-                <div className="text-zinc-500 text-xs font-mono mt-2">
-                  IRS Rate: $0.70/mi · Started {new Date(tripStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              )}
-            </div>
-
-            {/* Mini-map placeholder */}
-            <div
-              className="hidden sm:flex w-24 h-24 rounded-2xl items-center justify-center flex-shrink-0"
-              style={{
-                background: "rgba(5,6,7,0.8)",
-                border: "1px solid rgba(0,229,255,0.1)",
-              }}
-              data-testid="mini-map-placeholder"
-            >
-              <MapTrifold size={32} weight="duotone" className={tripActive ? "text-volt" : "text-zinc-600"} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════
-          CARD FLOW — Tax Vault Module
-         ═══════════════════════════════════════════════════════ */}
-      <div
-        className="milli-card p-6 mb-4 relative overflow-hidden"
-        data-testid="tax-vault-module"
-        style={{
-          background: "rgba(13,15,18,0.5)",
-          backdropFilter: "blur(28px) brightness(1.1)",
-          border: "1px solid rgba(0,229,255,0.08)",
-        }}
-      >
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-volt/40 to-transparent" />
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.2)" }}>
-            <VaultIcon size={20} weight="duotone" className="text-volt" />
-          </div>
-          <div>
-            <div className="font-semibold text-white text-sm">Tax Vault</div>
-            <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">Auto-protected reserves</div>
-          </div>
-          <Link to="/app/vault" className="ml-auto text-xs text-zinc-500 hover:text-volt font-mono uppercase tracking-wider inline-flex items-center gap-1">
-            Open <CaretRight size={10} weight="bold" />
-          </Link>
-        </div>
-        <div className="flex items-end gap-4">
-          <div className="chrome-text font-chrome font-bold text-4xl" data-testid="vault-balance-hero">
-            {money(summary?.savings_balance || 0)}
-          </div>
-          <div className="text-zinc-400 text-sm mb-1">
-            {score}% tax-ready · Q{Math.ceil((new Date().getMonth() + 1) / 3)}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════
-          CARD FLOW — Wealth Engine Module
-         ═══════════════════════════════════════════════════════ */}
-      <div
-        className="milli-card p-6 mb-4 relative overflow-hidden"
-        data-testid="wealth-engine-module"
-        style={{
-          background: "rgba(13,15,18,0.5)",
-          backdropFilter: "blur(28px) brightness(1.1)",
-          border: "1px solid rgba(0,229,255,0.06)",
-        }}
-      >
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent" />
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
-            <ChartLineUp size={20} weight="duotone" style={{ color: "#34D399" }} />
-          </div>
-          <div>
-            <div className="font-semibold text-white text-sm">Wealth Engine</div>
-            <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">Invest + Retire on autopilot</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <Link to="/app/investing" className="p-4 rounded-xl hover:bg-white/[0.02] transition-colors" style={{ background: "rgba(5,6,7,0.5)", border: "1px solid rgba(255,255,255,0.04)" }}>
-            <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-1">Brokerage</div>
-            <div className="font-chrome font-bold text-xl chrome-text">Auto-Invest</div>
-            <div className="text-xs text-zinc-400 mt-1">DCA every payout</div>
-          </Link>
-          <Link to="/app/retirement" className="p-4 rounded-xl hover:bg-white/[0.02] transition-colors" style={{ background: "rgba(5,6,7,0.5)", border: "1px solid rgba(255,255,255,0.04)" }}>
-            <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-1">Solo 401(k)</div>
-            <div className="font-chrome font-bold text-xl chrome-text">Tax-Free</div>
-            <div className="text-xs text-zinc-400 mt-1">$69K limit 2026</div>
-          </Link>
-        </div>
-      </div>
-
-      {/* Quarterly Payment Card */}
+      {/* Quarterly Payment Hero Card */}
       <div className="milli-card p-6 mb-4 relative overflow-hidden" data-testid="dashboard-quarterly-card">
         <div className="flex items-center gap-2 mb-3">
           <CalendarCheck size={18} weight="duotone" className="text-volt" />
@@ -312,24 +112,31 @@ export default function Dashboard() {
             <div className="text-zinc-300 text-sm font-medium mt-2 font-mono">
               {summary.next_quarterly.label} {summary.year} · Due {new Date(summary.next_quarterly.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             </div>
+            <div className="text-zinc-500 text-sm mt-1">Estimated & ready to pay.</div>
           </div>
+          {/* Decorative calendar mark */}
           <div className="relative w-24 h-24 rounded-2xl border border-volt/30 bg-obsidian/60 flex items-center justify-center flex-shrink-0">
             <CheckCircle size={48} weight="duotone" className="text-volt" />
             <div className="absolute -top-2 left-3 right-3 h-1.5 bg-zinc-700 rounded-full" />
+            <div className="absolute -top-1 left-5 w-1.5 h-3 bg-zinc-600 rounded" />
+            <div className="absolute -top-1 right-5 w-1.5 h-3 bg-zinc-600 rounded" />
           </div>
         </div>
       </div>
 
-      {/* Tax Ready Score */}
-      <div className="milli-card p-6 mb-4 flex flex-col lg:flex-row items-center gap-8" data-testid="dashboard-tax-score-card">
+      {/* Tax Ready Score — new gauge primitive */}
+      <div className="milli-card p-6 mb-4 flex flex-col lg:flex-row items-center gap-8"
+            data-testid="dashboard-tax-score-card">
         <TaxReadyGauge score={score} />
         <div className="flex-1 min-w-0 text-center lg:text-left">
-          <div className="text-volt text-sm font-semibold uppercase tracking-[0.24em] mb-3">// Tax Ready Score</div>
+          <div className="text-volt text-sm font-semibold uppercase tracking-[0.24em] mb-3">
+            // Tax Ready Score™
+          </div>
           <div className="text-zinc-300 text-base leading-snug max-w-md mx-auto lg:mx-0">
             {score >= 75
               ? "You're in great shape. Milli has protected enough to cover the next quarterly estimate."
               : score >= 40
-              ? "Halfway there — every payout brings you closer."
+              ? "Halfway there — every payout brings you closer. Log a few more items to close the gap."
               : "Let's get rolling. Connect your bank and take a first trip to start the score."}
           </div>
           {isElite && (
@@ -343,22 +150,83 @@ export default function Dashboard() {
       {/* Insight row */}
       <div className="mb-4">
         <InsightRow items={[
-          { icon: Shield, title: "Tax Protection", metric: money(summary?.savings_balance || 0), sub: `${score}% ready` },
-          { icon: Car, title: "Miles Tracked", metric: `${num(summary?.mileage?.business_miles || 0)} mi`, sub: `$0.70/mi · ${money(summary?.mileage?.business_deduction || 0)}` },
-          { icon: ChartLineUp, title: "Projections", metric: money(summary?.federal_estimated_tax || 0), sub: "Annual estimated tax" },
+          {
+            icon: Shield, title: "Tax Protection",
+            metric: money(summary?.savings_balance || 0),
+            sub: `${score}% ready for next quarter`,
+          },
+          {
+            icon: Car, title: "Miles Tracked",
+            metric: `${num(summary?.mileage?.business_miles || 0)} mi`,
+            sub: `IRS $0.70/mi · ${money(summary?.mileage?.business_deduction || 0)}`,
+          },
+          {
+            icon: ChartLineUp, title: "Projections",
+            metric: money(summary?.federal_estimated_tax || 0),
+            sub: "Annual estimated tax",
+          },
         ]} />
       </div>
 
-      {/* Payout Timeline */}
+      {/* Financial Timeline */}
       <div className="milli-card p-4 mb-4" data-testid="dashboard-timeline-card">
         <div className="px-2 pt-2 pb-1 flex items-center justify-between">
-          <div className="text-volt text-xs font-mono uppercase tracking-[0.24em]">// Payout Timeline</div>
+          <div className="text-volt text-xs font-mono uppercase tracking-[0.24em]">
+            // Payout Timeline
+          </div>
           <Link to="/app/income" className="text-xs font-mono text-zinc-500 hover:text-volt uppercase tracking-widest inline-flex items-center gap-1">
-            All <CaretRight size={10} weight="bold" />
+            All payouts <CaretRight size={10} weight="bold" />
           </Link>
         </div>
         <FinancialTimeline payouts={deposits} />
       </div>
+
+      {/* Tax Vault */}
+      <div className="mb-4" data-testid="dashboard-vault-card">
+        <TaxVaultCard
+          balance={summary?.savings_balance || 0}
+          period={"Q3"}
+          locked={!isElite && (summary?.savings_balance || 0) === 0}
+        />
+      </div>
+
+      {/* Quarterly checklist */}
+      <div className="milli-card p-6 mb-4" data-testid="dashboard-checklist-card">
+        <div className="text-volt text-sm font-semibold uppercase tracking-[0.18em] mb-4">Quarterly Checklist</div>
+        <div className="divide-y divide-hairline/60">
+          <CheckRow label="Income" done={checks.income} to="/app/income" testid="check-income" />
+          <CheckRow label="Mileage" done={checks.mileage} to="/app/mileage" testid="check-mileage" />
+          <CheckRow label="Expenses" done={checks.expenses} to="/app/expenses" testid="check-expenses" />
+          <CheckRow label="1099s & Reports" done={checks.quarterly} to="/app/reports" testid="check-1099s" />
+        </div>
+      </div>
+
+      {/* Federal + State Filing card */}
+      <Link
+        to="/app/reports"
+        data-testid="dashboard-filing-card"
+        className="milli-card p-6 mb-4 block hover:border-volt/50 transition-colors relative overflow-hidden"
+      >
+        <div className="flex items-center gap-5">
+          <ShieldCheck size={32} weight="duotone" className="text-volt flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-volt text-xs font-bold uppercase tracking-[0.2em]">Federal + State Filing</div>
+            <div className="font-chrome text-2xl chrome-text mt-1">
+              {isElite ? "Ready for Review" : "Upgrade to Elite"}
+            </div>
+            <div className="text-zinc-400 text-sm mt-1 max-w-md">
+              {isElite
+                ? "Your return is prepared and ready for Elite review."
+                : "Elite users get auto-filed federal + state returns end-to-end."}
+            </div>
+          </div>
+          {/* Elite shield placeholder */}
+          <div className="hidden sm:flex w-20 h-20 items-center justify-center rounded-2xl border border-volt/30 bg-gradient-to-b from-zinc-800 to-zinc-950 flex-shrink-0 relative">
+            <div className="chrome-text font-chrome text-xs font-bold tracking-widest">ELITE</div>
+            <Star size={14} weight="fill" className="absolute top-2 right-2 text-volt" />
+          </div>
+        </div>
+      </Link>
 
       {/* KPI grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -368,37 +236,30 @@ export default function Dashboard() {
         <Kpi label="Savings" value={money(summary.savings_balance)} icon={ShieldCheck} accent testid="kpi-savings" />
       </div>
 
-      {/* Milli-Cents Engine */}
-      {(user?.plan === "pro" || user?.plan === "elite") && (
-        <>
-          <button
-            onClick={() => setShowMilliCents(true)}
-            data-testid="dashboard-milli-cents-cta"
-            className="milli-card p-5 mb-4 w-full flex items-center gap-4 hover:border-volt/50 transition-colors group text-left"
-          >
-            <div className="w-12 h-12 rounded-2xl border border-volt/30 bg-zinc-900 flex items-center justify-center flex-shrink-0">
-              <Gauge size={24} weight="duotone" className="text-volt" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-white">Milli-Cents Calculator</div>
-              <div className="text-xs text-zinc-500 font-mono">Instant offer profitability · fuel + tax</div>
-            </div>
-            <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
-          </button>
-          {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
-        </>
-      )}
 
-      {/* ═══════════════════════════════════════════════════════
-          GIG CONNECTIONS — Base of Dashboard
-         ═══════════════════════════════════════════════════════ */}
-      <div className="mb-4" data-testid="dashboard-gig-connections">
-        <GigConnections
-          bankConnected={deposits.length > 0}
-          bankName="Connected Bank"
-          connectedPlatforms={[...new Set(deposits.map(d => (d.platform || '').toLowerCase().replace(/\s+/g, '_')).filter(Boolean))]}
-        />
-      </div>
+      {/* Milli-Cents Profitability Engine — visible to ALL users during launch */}
+      <>
+        <button
+          onClick={() => setShowMilliCents(true)}
+          data-testid="dashboard-milli-cents-cta"
+          className="milli-card p-5 mb-4 w-full flex items-center gap-4 hover:border-volt/50 transition-colors group text-left"
+        >
+          <div className="w-12 h-12 rounded-2xl border border-volt/30 bg-zinc-900 flex items-center justify-center flex-shrink-0">
+            <Gauge size={24} weight="duotone" className="text-volt" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-white flex items-center gap-2">
+              Milli-Cents Calculator
+              {user?.plan !== "pro" && user?.plan !== "elite" && (
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,229,255,0.15)", color: "#00E5FF", border: "1px solid rgba(0,229,255,0.3)" }}>PRO</span>
+              )}
+            </div>
+            <div className="text-xs text-zinc-500 font-mono">Instant offer profitability · fuel + tax analysis</div>
+          </div>
+          <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt transition-colors" />
+        </button>
+        {showMilliCents && <MilliCentsWidget onClose={() => setShowMilliCents(false)} />}
+      </>
 
       {/* Quick links */}
       <div className="grid sm:grid-cols-2 gap-3">
@@ -421,13 +282,73 @@ export default function Dashboard() {
         >
           <FileText size={28} weight="duotone" className="text-volt" />
           <div className="flex-1">
-            <div className="font-semibold">Tax Reports</div>
+            <div className="font-semibold">Tax Vault</div>
             <div className="text-xs text-zinc-500">Schedule C · SE · mileage CSV</div>
           </div>
           <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt" />
         </Link>
       </div>
     </div>
+  );
+}
+
+function ScoreRing({ value }) {
+  const r = 56;
+  const c = 2 * Math.PI * r;
+  const offset = c - (value / 100) * c;
+  return (
+    <div className="relative w-36 h-36 flex-shrink-0">
+      <svg width="144" height="144" viewBox="0 0 144 144" className="-rotate-90">
+        <defs>
+          <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#00E5FF" />
+            <stop offset="100%" stopColor="#0090A8" />
+          </linearGradient>
+          <filter id="ring-glow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <circle cx="72" cy="72" r={r} fill="none" stroke="rgba(0,229,255,0.12)" strokeWidth="8" />
+        <circle
+          cx="72"
+          cy="72"
+          r={r}
+          fill="none"
+          stroke="url(#ring-grad)"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          filter="url(#ring-glow)"
+          style={{ transition: "stroke-dashoffset 800ms cubic-bezier(0.4, 0, 0.2, 1)" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="chrome-text font-chrome font-bold text-3xl leading-none">{value}%</div>
+        <div className="text-volt text-[10px] font-mono uppercase tracking-[0.3em] mt-1">Ready</div>
+      </div>
+    </div>
+  );
+}
+
+function CheckRow({ label, done, to, testid }) {
+  return (
+    <Link to={to} data-testid={testid} className="flex items-center justify-between py-3 hover:bg-white/[0.02] -mx-2 px-2 rounded-lg transition-colors">
+      <div className="flex items-center gap-3">
+        <CheckCircle size={20} weight={done ? "fill" : "regular"} className={done ? "text-volt" : "text-zinc-700"} />
+        <span className={`font-medium ${done ? "text-white" : "text-zinc-400"}`}>{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={`text-sm font-mono ${done ? "text-volt" : "text-zinc-500"}`}>
+          {done ? "Complete" : "Pending"}
+        </span>
+        <CaretRight size={16} className="text-zinc-600" />
+      </div>
+    </Link>
   );
 }
 

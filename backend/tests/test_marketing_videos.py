@@ -3,7 +3,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://driver-tax-mileage.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://wingman-mem-390f651f-e7a4-4197-9ea8-79b7db44303a-d5a1266a.preview.emergentagent.com").rstrip("/")
 
 EXPECTED_IDS = [
     "01_cinematic_luxury",

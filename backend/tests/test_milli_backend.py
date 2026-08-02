@@ -8,7 +8,7 @@ import pytest
 import requests
 
 BASE_URL = (os.environ.get('REACT_APP_BACKEND_URL')
-            or 'https://driver-tax-mileage.preview.emergentagent.com').rstrip('/')
+            or 'https://wingman-mem-390f651f-e7a4-4197-9ea8-79b7db44303a-d5a1266a.preview.emergentagent.com').rstrip('/')
 API = f"{BASE_URL}/api"
 
 
