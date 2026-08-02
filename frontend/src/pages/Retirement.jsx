@@ -9,10 +9,10 @@ import {
 
 /**
  * Retirement.jsx — Solo 401(k) Tax-Advantaged Growth
- * v2.1 ELITE HARDENING:
- *   + 401(k) Type Selector (Traditional, Roth, Solo 401k)
- *   + High-Fidelity Growth Projection Graph (Neon Cyan SVG line)
- *   + Coming Soon: 3% Contribution Match
+ * v3.8 WEALTH ENGINE HARDENING:
+ *   + PlanSelector: fixed text visibility (active: cyan/white, inactive: ivory/zinc-400)
+ *   + GrowthProjectionGraph: 5-Year / 10-Year projection toggle
+ *   + Portfolio Allocation: 401k asset breakdown below graph
  */
 
 const CONTRIBUTION_LIMITS_2026 = {
@@ -39,6 +39,12 @@ const PLAN_TYPES = [
   { id: "traditional", label: "Traditional 401(k)", desc: "Pre-tax contributions, taxed on withdrawal" },
   { id: "roth", label: "Roth 401(k)", desc: "After-tax contributions, tax-free growth & withdrawal" },
   { id: "solo", label: "Solo 401(k)", desc: "Best for self-employed — up to $69K/year combined" },
+];
+
+const ALLOCATION_401K = [
+  { name: "S&P 500 Index (VFIAX)", allocation: 60, color: "#00E5FF", gain: "+14.2%" },
+  { name: "Intl Stocks (VXUS)", allocation: 20, color: "#34D399", gain: "+8.7%" },
+  { name: "Total Bonds (BND)", allocation: 20, color: "#FFB800", gain: "+3.4%" },
 ];
 
 export default function Retirement() {
@@ -188,8 +194,11 @@ export default function Retirement() {
         </div>
       </div>
 
-      {/* High-Fidelity Growth Projection Graph (SVG Line Chart) */}
+      {/* High-Fidelity Growth Projection Graph (SVG Line Chart) with 5Y/10Y toggle */}
       <GrowthProjectionGraph data={GROWTH_PROJECTION} />
+
+      {/* Portfolio Allocation — 401(k) breakdown */}
+      <PortfolioAllocation401k />
 
       {/* Coming Soon: 3% Contribution Match */}
       <div
@@ -291,10 +300,12 @@ function PlanSelector({ selected, onSelect }) {
                 {isActive && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#00E5FF" }} />}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: isActive ? "#F4F6F8" : "#F4F6F8" }}>
+                {/* Title: neon cyan when active, ivory when inactive */}
+                <div style={{ fontSize: 14, fontWeight: 600, color: isActive ? "#00E5FF" : "#F4F6F8" }}>
                   {plan.label}
                 </div>
-                <div style={{ fontSize: 11, color: "#8B9DAF", marginTop: 2 }}>
+                {/* Description: white when active, zinc-400 when inactive */}
+                <div style={{ fontSize: 11, color: isActive ? "#FFFFFF" : "#A1A1AA", marginTop: 2 }}>
                   {plan.desc}
                 </div>
               </div>
@@ -307,14 +318,18 @@ function PlanSelector({ selected, onSelect }) {
 }
 
 function GrowthProjectionGraph({ data }) {
-  const maxVal = Math.max(...data.map((d) => d.balance));
+  const [yearRange, setYearRange] = useState("10");
+
+  const displayData = yearRange === "5" ? data.slice(0, 5) : data;
+
+  const maxVal = Math.max(...displayData.map((d) => d.balance));
   const W = 340, H = 180;
   const padL = 10, padR = 10, padT = 20, padB = 30;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  const points = data.map((d, i) => {
-    const x = padL + (i / (data.length - 1)) * chartW;
+  const points = displayData.map((d, i) => {
+    const x = padL + (i / (displayData.length - 1)) * chartW;
     const y = padT + chartH - (d.balance / maxVal) * chartH;
     return { x, y, ...d };
   });
@@ -330,8 +345,44 @@ function GrowthProjectionGraph({ data }) {
     >
       <div className="flex items-center justify-between mb-4">
         <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>// Growth Projection</div>
-        <div className="text-xs text-zinc-500 font-mono">10-year outlook</div>
+
+        {/* 5Y / 10Y Segmented Toggle */}
+        <div
+          data-testid="projection-toggle"
+          style={{
+            display: "flex",
+            gap: 2,
+            background: "rgba(5,6,7,0.7)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 10,
+            padding: 2,
+          }}
+        >
+          {["5", "10"].map((yr) => (
+            <button
+              key={yr}
+              data-testid={`projection-toggle-${yr}y`}
+              onClick={() => setYearRange(yr)}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "3px 10px",
+                borderRadius: 8,
+                letterSpacing: "0.06em",
+                transition: "all 0.18s",
+                background: yearRange === yr ? "rgba(0,229,255,0.12)" : "transparent",
+                color: yearRange === yr ? "#00E5FF" : "#5A6573",
+                border: yearRange === yr ? "1px solid rgba(0,229,255,0.3)" : "1px solid transparent",
+              }}
+            >
+              {yr}Y
+            </button>
+          ))}
+        </div>
       </div>
+
       <div style={{ width: "100%", maxWidth: W, margin: "0 auto" }}>
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="auto" style={{ display: "block" }}>
           <defs>
@@ -407,6 +458,82 @@ function GrowthProjectionGraph({ data }) {
             </g>
           ))}
         </svg>
+      </div>
+    </div>
+  );
+}
+
+function PortfolioAllocation401k() {
+  return (
+    <div
+      className="p-5 mb-5 rounded-[22px]"
+      style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
+      data-testid="portfolio-allocation-401k"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>
+          Portfolio Allocation
+        </div>
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+          401(k) Split
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {ALLOCATION_401K.map((h, i) => (
+          <div key={i} className="flex items-center gap-3">
+            {/* Allocation percentage */}
+            <div
+              className="w-9 text-right font-mono text-xs flex-shrink-0"
+              style={{ color: h.color }}
+            >
+              {h.allocation}%
+            </div>
+
+            {/* Progress bar */}
+            <div
+              className="flex-shrink-0"
+              style={{ flex: "0 0 40%", height: 6, borderRadius: 4, background: "rgba(255,255,255,0.04)" }}
+            >
+              <div
+                style={{
+                  width: `${h.allocation}%`,
+                  height: "100%",
+                  borderRadius: 4,
+                  background: `linear-gradient(90deg, ${h.color}, ${h.color}99)`,
+                  boxShadow: `0 0 8px ${h.color}55`,
+                  transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)",
+                }}
+              />
+            </div>
+
+            {/* Name */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>
+                {h.name}
+              </div>
+            </div>
+
+            {/* Gain */}
+            <div className="text-xs font-mono flex-shrink-0" style={{ color: "#34D399" }}>
+              {h.gain}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Donut-style visual summary */}
+      <div className="mt-5 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div className="flex gap-3 flex-wrap">
+          {ALLOCATION_401K.map((h) => (
+            <div key={h.name} className="flex items-center gap-1.5">
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: h.color, flexShrink: 0 }} />
+              <span className="text-[10px] font-mono" style={{ color: "#8B9DAF" }}>
+                {h.name.split(" (")[0]}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

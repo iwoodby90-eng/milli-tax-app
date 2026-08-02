@@ -6,14 +6,15 @@ import { Link } from "react-router-dom";
 import {
   ChartLineUp, ArrowUpRight, TrendUp, Wallet, Info, CaretRight,
   ArrowDown, ArrowUp, Pause, Play, Sparkle, Bank, MagnifyingGlass,
+  Star,
 } from "@phosphor-icons/react";
 
 /**
  * Investing.jsx — Wealth Engine: Automated Portfolio Growth
- * v2.1 ELITE HARDENING:
- *   + Live Market View (Neon Cyan candlestick/line chart)
- *   + Search the Market bar
- *   + Daily Movers (Top 5 Gainers / Losers)
+ * v3.8 WEALTH ENGINE HARDENING:
+ *   + Sector View carousel/badges (Tech, Energy, Finance, Healthcare, Consumer)
+ *   + MILLI PICK badge on top 2 Gainers (Aggressive Growth strategy)
+ *   + Highest Daily Movers — cinematic premium feel
  */
 
 const PORTFOLIO_DATA = [
@@ -70,12 +71,21 @@ const DAILY_LOSERS = [
   { symbol: "DIS", name: "Walt Disney", change: "-1.54%", price: "$101.30" },
 ];
 
+const SECTORS = [
+  { id: "tech", label: "Tech", color: "#00E5FF" },
+  { id: "energy", label: "Energy", color: "#FFB800" },
+  { id: "finance", label: "Finance", color: "#34D399" },
+  { id: "healthcare", label: "Healthcare", color: "#C084FC" },
+  { id: "consumer", label: "Consumer", color: "#FB923C" },
+];
+
 export default function Investing() {
   const { user } = useAuth();
   const [acct, setAcct] = useState(undefined);
   const [busy, setBusy] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [moversTab, setMoversTab] = useState("gainers");
+  const [activeSector, setActiveSector] = useState(null);
 
   async function load() {
     try {
@@ -141,7 +151,7 @@ export default function Investing() {
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-4xl mx-auto" style={{ backgroundColor: "#0D0F12", color: "#FFFFFF", minHeight: "100%" }}>
       <PageHeader />
 
-      {/* Search the Market */}
+      {/* Search the Market + Sector View */}
       <div className="mb-5" data-testid="market-search">
         <div
           style={{
@@ -153,6 +163,7 @@ export default function Investing() {
             background: "rgba(13, 15, 18, 0.6)",
             border: "1px solid rgba(255, 255, 255, 0.06)",
             backdropFilter: "blur(20px)",
+            marginBottom: 10,
           }}
         >
           <MagnifyingGlass size={16} weight="bold" style={{ color: "#8B9DAF", flexShrink: 0 }} />
@@ -171,10 +182,13 @@ export default function Investing() {
             }}
           />
         </div>
+
+        {/* Sector View — scrollable badge carousel */}
+        <SectorView activeSector={activeSector} onSectorChange={setActiveSector} />
       </div>
 
       {/* Live Market View (Candlestick Chart) */}
-      <LiveMarketView candles={MARKET_CANDLES} />
+      <LiveMarketView candles={MARKET_CANDLES} activeSector={activeSector} />
 
       {/* Balance Hero */}
       <div
@@ -299,7 +313,77 @@ function PageHeader() {
   );
 }
 
-function LiveMarketView({ candles }) {
+function SectorView({ activeSector, onSectorChange }) {
+  return (
+    <div
+      data-testid="sector-view"
+      style={{
+        display: "flex",
+        gap: 8,
+        overflowX: "auto",
+        paddingBottom: 2,
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+      {SECTORS.map((sector) => {
+        const isActive = activeSector === sector.id;
+        return (
+          <button
+            key={sector.id}
+            data-testid={`sector-badge-${sector.id}`}
+            onClick={() => onSectorChange(isActive ? null : sector.id)}
+            style={{
+              all: "unset",
+              cursor: "pointer",
+              flexShrink: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "5px 12px",
+              borderRadius: 20,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              transition: "all 0.18s",
+              background: isActive
+                ? `rgba(${hexToRgb(sector.color)},0.15)`
+                : "rgba(13,15,18,0.7)",
+              border: isActive
+                ? `1px solid ${sector.color}80`
+                : "1px solid rgba(255,255,255,0.06)",
+              color: isActive ? sector.color : "#8B9DAF",
+              backdropFilter: "blur(12px)",
+              boxShadow: isActive ? `0 0 10px ${sector.color}22` : "none",
+            }}
+          >
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: sector.color,
+                opacity: isActive ? 1 : 0.4,
+                flexShrink: 0,
+              }}
+            />
+            {sector.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Utility: hex color to "r,g,b" string for rgba usage */
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
+
+function LiveMarketView({ candles, activeSector }) {
   const W = 340, H = 140;
   const padL = 5, padR = 5, padT = 15, padB = 5;
   const chartW = W - padL - padR;
@@ -313,6 +397,11 @@ function LiveMarketView({ candles }) {
   const candleW = chartW / candles.length;
   const bodyW = candleW * 0.5;
 
+  // Sector label mapping for header
+  const sectorLabel = activeSector
+    ? SECTORS.find((s) => s.id === activeSector)?.label
+    : "S&P 500";
+
   function yPos(price) {
     return padT + chartH - ((price - minP) / range) * chartH;
   }
@@ -324,7 +413,9 @@ function LiveMarketView({ candles }) {
       data-testid="live-market-view"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>// Live Market · S&P 500</div>
+        <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>
+          // Live Market · {sectorLabel}
+        </div>
         <div className="flex items-center gap-2">
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#34D399", boxShadow: "0 0 6px rgba(52,211,153,0.6)" }} />
           <span className="text-[10px] text-zinc-500 font-mono uppercase">Live</span>
@@ -408,89 +499,168 @@ function DailyMovers({ tab, onTabChange }) {
       style={{ background: "rgba(13,15,18,0.5)", backdropFilter: "blur(28px)", border: "1px solid rgba(0,229,255,0.06)" }}
       data-testid="daily-movers"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>// Daily Movers</div>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button
-            data-testid="movers-gainers-tab"
-            onClick={() => onTabChange("gainers")}
-            style={{
-              all: "unset",
-              cursor: "pointer",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: "4px 10px",
-              borderRadius: 8,
-              background: tab === "gainers" ? "rgba(0,229,255,0.1)" : "transparent",
-              border: tab === "gainers" ? "1px solid rgba(0,229,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
-              color: tab === "gainers" ? "#00E5FF" : "#8B9DAF",
-            }}
-          >
-            Gainers
-          </button>
-          <button
-            data-testid="movers-losers-tab"
-            onClick={() => onTabChange("losers")}
-            style={{
-              all: "unset",
-              cursor: "pointer",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: "4px 10px",
-              borderRadius: 8,
-              background: tab === "losers" ? "rgba(255,77,106,0.1)" : "transparent",
-              border: tab === "losers" ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(255,255,255,0.06)",
-              color: tab === "losers" ? "#FF4D6A" : "#8B9DAF",
-            }}
-          >
-            Losers
-          </button>
+      {/* Cinematic section header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "#00E5FF" }}>
+              // Daily Movers
+            </div>
+            <div
+              className="text-[11px] font-semibold uppercase tracking-[0.18em] mt-0.5"
+              style={{ color: "#3A3F47", letterSpacing: "0.22em" }}
+            >
+              Highest Daily Movers
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button
+              data-testid="movers-gainers-tab"
+              onClick={() => onTabChange("gainers")}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "4px 10px",
+                borderRadius: 8,
+                background: tab === "gainers" ? "rgba(0,229,255,0.1)" : "transparent",
+                border: tab === "gainers" ? "1px solid rgba(0,229,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                color: tab === "gainers" ? "#00E5FF" : "#8B9DAF",
+              }}
+            >
+              Gainers
+            </button>
+            <button
+              data-testid="movers-losers-tab"
+              onClick={() => onTabChange("losers")}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "4px 10px",
+                borderRadius: 8,
+                background: tab === "losers" ? "rgba(255,77,106,0.1)" : "transparent",
+                border: tab === "losers" ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                color: tab === "losers" ? "#FF4D6A" : "#8B9DAF",
+              }}
+            >
+              Losers
+            </button>
+          </div>
         </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {movers.map((m, i) => (
-          <div
-            key={m.symbol}
-            data-testid={`mover-${m.symbol}`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 12px",
-              borderRadius: 12,
-              background: "rgba(5, 6, 7, 0.6)",
-              border: "1px solid rgba(255,255,255,0.04)",
-            }}
-          >
-            <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: tab === "gainers" ? "rgba(0,229,255,0.08)" : "rgba(255,77,106,0.08)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              {tab === "gainers"
-                ? <ArrowUp size={14} weight="bold" style={{ color: "#00E5FF" }} />
-                : <ArrowDown size={14} weight="bold" style={{ color: "#FF4D6A" }} />
-              }
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{m.symbol}</div>
-              <div style={{ fontSize: 10, color: "#8B9DAF", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#E8E8E8", fontFamily: "monospace" }}>{m.price}</div>
+        {movers.map((m, i) => {
+          const isMilliPick = tab === "gainers" && i < 2;
+
+          return (
+            <div
+              key={m.symbol}
+              data-testid={`mover-${m.symbol}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: isMilliPick
+                  ? "linear-gradient(135deg, rgba(0,229,255,0.05), rgba(5,6,7,0.8))"
+                  : "rgba(5, 6, 7, 0.6)",
+                border: isMilliPick
+                  ? "1px solid rgba(0,229,255,0.14)"
+                  : "1px solid rgba(255,255,255,0.04)",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* Subtle top-edge shimmer for MILLI PICK rows */}
+              {isMilliPick && (
+                <div style={{
+                  position: "absolute",
+                  top: 0, left: 0, right: 0,
+                  height: 1,
+                  background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent)",
+                }} />
+              )}
+
               <div style={{
-                fontSize: 11, fontWeight: 700, fontFamily: "monospace",
-                color: tab === "gainers" ? "#00E5FF" : "#FF4D6A",
-                marginTop: 1,
+                width: 28, height: 28, borderRadius: 8,
+                background: tab === "gainers" ? "rgba(0,229,255,0.08)" : "rgba(255,77,106,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
               }}>
-                {m.change}
+                {tab === "gainers"
+                  ? <ArrowUp size={14} weight="bold" style={{ color: "#00E5FF" }} />
+                  : <ArrowDown size={14} weight="bold" style={{ color: "#FF4D6A" }} />
+                }
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>{m.symbol}</span>
+                  {/* MILLI PICK badge — top 2 gainers only */}
+                  {isMilliPick && (
+                    <span
+                      data-testid={`milli-pick-${m.symbol}`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 3,
+                        padding: "1px 6px",
+                        borderRadius: 5,
+                        fontSize: 8,
+                        fontWeight: 800,
+                        letterSpacing: "0.12em",
+                        background: "linear-gradient(90deg, rgba(0,229,255,0.18), rgba(0,229,255,0.08))",
+                        border: "1px solid rgba(0,229,255,0.35)",
+                        color: "#00E5FF",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Star size={7} weight="fill" />
+                      MILLI PICK
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 10, color: "#8B9DAF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+              </div>
+
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#E8E8E8", fontFamily: "monospace" }}>{m.price}</div>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                  color: tab === "gainers" ? "#00E5FF" : "#FF4D6A",
+                  marginTop: 1,
+                }}>
+                  {m.change}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {/* Strategy footnote for gainers */}
+      {tab === "gainers" && (
+        <div
+          style={{
+            marginTop: 12,
+            paddingTop: 10,
+            borderTop: "1px solid rgba(255,255,255,0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Star size={10} weight="fill" style={{ color: "#00E5FF", flexShrink: 0 }} />
+          <span style={{ fontSize: 10, color: "#5A6573", fontStyle: "italic", letterSpacing: "0.02em" }}>
+            MILLI PICK — Aligned with your Aggressive Growth strategy
+          </span>
+        </div>
+      )}
     </div>
   );
 }
