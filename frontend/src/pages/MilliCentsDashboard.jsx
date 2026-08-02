@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Gauge, Lightning, MapPin, GasPump, HouseLine, CurrencyDollar,
-  ArrowClockwise, CheckCircle, WarningCircle, XCircle, PlugsConnected,
-  ShieldCheck, ShareNetwork, Timer, LockKey,
+  ArrowClockwise,
+  CheckCircle,
+  CurrencyDollar,
+  GasPump,
+  Gauge,
+  HouseLine,
+  Lightning,
+  LockKey,
+  MapPin,
+  PlugsConnected,
+  ShieldCheck,
+  Timer,
+  WarningCircle,
+  XCircle,
 } from "@phosphor-icons/react";
 import { useAuth } from "@/context/AuthContext";
 import { calculateProfit, verdict } from "@/lib/milli-cents";
@@ -14,13 +25,31 @@ import {
   subscribeToNativeOffers,
 } from "@/lib/gigOfferService";
 
-const verdictMeta = {
-  ACCEPT: { icon: CheckCircle, title: "Accept", className: "is-accept" },
-  MARGINAL: { icon: WarningCircle, title: "Marginal", className: "is-marginal" },
-  DECLINE: { icon: XCircle, title: "Decline", className: "is-decline" },
+const decisionMeta = {
+  ACCEPT: {
+    label: "GO",
+    title: "Profitable",
+    className: "is-go",
+    icon: CheckCircle,
+    copy: "This offer clears your saved net-per-mile and net-per-hour goals.",
+  },
+  MARGINAL: {
+    label: "MAYBE",
+    title: "Borderline",
+    className: "is-maybe",
+    icon: WarningCircle,
+    copy: "This offer is close to your minimum. Traffic, wait time, or a longer return could erase the profit.",
+  },
+  DECLINE: {
+    label: "NO",
+    title: "Not profitable",
+    className: "is-no",
+    icon: XCircle,
+    copy: "The complete work cycle does not adequately cover mileage, fuel, vehicle cost, and taxes.",
+  },
 };
 
-function analyze(offer) {
+function analyzeOffer(offer) {
   const result = calculateProfit({
     offerPrice: offer.offeredPay,
     tripDistance: offer.pickupMiles + offer.routeMiles,
@@ -31,13 +60,19 @@ function analyze(offer) {
     estimatedMinutes: offer.estimatedMinutes,
     taxSlice: offer.taxRate / 100,
   });
-  return {
-    result,
-    decision: verdict(result, {
-      minimumNetPerMile: offer.minimumNetPerMile,
-      minimumNetPerHour: offer.minimumNetPerHour,
-    }),
-  };
+
+  const decision = verdict(result, {
+    minimumNetPerMile: offer.minimumNetPerMile,
+    minimumNetPerHour: offer.minimumNetPerHour,
+  });
+
+  const mileRatio = result.netPerMile / Math.max(offer.minimumNetPerMile || 1, 0.01);
+  const hourRatio = result.netPerHour > 0
+    ? result.netPerHour / Math.max(offer.minimumNetPerHour || 1, 0.01)
+    : mileRatio;
+  const profitScore = Math.max(0, Math.min(100, Math.round(((mileRatio * 0.58) + (hourRatio * 0.42)) * 72)));
+
+  return { offer, result, decision, profitScore, meta: decisionMeta[decision] };
 }
 
 function secondsRemaining(expiresAt, now) {
@@ -47,9 +82,13 @@ function secondsRemaining(expiresAt, now) {
 
 function formatCountdown(seconds) {
   if (seconds == null) return "Limited time";
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return mins > 0 ? `${mins}:${String(secs).padStart(2, "0")}` : `${secs}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return minutes > 0 ? `${minutes}:${String(remainder).padStart(2, "0")}` : `${remainder}s`;
+}
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
 }
 
 export default function MilliCentsDashboard() {
@@ -78,7 +117,11 @@ export default function MilliCentsDashboard() {
   useEffect(() => {
     if (!hasAccess) return undefined;
     let active = true;
-    fetchPlatformConnections().then((rows) => { if (active) setConnections(rows); }).catch(() => {});
+
+    fetchPlatformConnections()
+      .then((rows) => { if (active) setConnections(rows); })
+      .catch(() => {});
+
     loadOffers();
 
     const unsubscribe = subscribeToNativeOffers((offer) => {
@@ -102,28 +145,27 @@ export default function MilliCentsDashboard() {
     return remaining == null || remaining > 0;
   }), [offers, now]);
 
-  const selectedOffer = activeOffers.find((offer) => offer.id === selectedId) || activeOffers[0] || null;
-  const analysis = selectedOffer ? analyze(selectedOffer) : null;
-  const meta = analysis ? verdictMeta[analysis.decision] : null;
-  const VerdictIcon = meta?.icon;
+  const analyzedOffers = useMemo(
+    () => activeOffers.map(analyzeOffer).sort((a, b) => b.result.profit - a.result.profit),
+    [activeOffers],
+  );
+
+  const selected = analyzedOffers.find((item) => item.offer.id === selectedId) || analyzedOffers[0] || null;
 
   if (!hasAccess) {
     return (
       <div className="cents-page">
-        <section className="cents-header">
-          <div>
-            <div className="cents-kicker"><Gauge size={13} weight="fill" /> Milli Cents</div>
-            <h1>Know which offer is actually worth it.</h1>
-            <p>Compare time-limited offers after pickup miles, delivery distance, return-to-base travel, fuel, vehicle costs, and estimated taxes.</p>
-          </div>
-        </section>
-        <section className="cents-offer-card cents-empty-state">
-          <div className="cents-verdict-icon"><LockKey size={28} weight="duotone" /></div>
-          <h2>Included with Pro and Elite</h2>
-          <p>Upgrade to unlock automatic offer detection, live countdowns, side-by-side profitability comparisons, and instant Accept, Marginal, or Decline guidance.</p>
-          <Link to="/app/pricing" className="btn-volt" style={{ marginTop: 18, display: "inline-flex", padding: "12px 18px", borderRadius: 14, textDecoration: "none" }}>
-            View Pro and Elite
-          </Link>
+        <header className="cents-screen-header">
+          <div className="cents-brand-line"><Gauge size={15} weight="fill" /> Milli Cents</div>
+          <h1>Offer Profitability Engine</h1>
+          <p>Know whether the offer deserves your time before the countdown wins.</p>
+        </header>
+
+        <section className="cents-access-card">
+          <div className="cents-lock"><LockKey size={31} weight="duotone" /></div>
+          <h2>Milli Cents is included with Pro and Elite</h2>
+          <p>Unlock live multi-offer comparison, pickup and deadhead mileage, return distance, fuel use, taxes, true net profit, and instant GO, MAYBE, or NO guidance.</p>
+          <Link to="/app/pricing" className="cents-primary-button">View Pro and Elite</Link>
         </section>
       </div>
     );
@@ -131,108 +173,126 @@ export default function MilliCentsDashboard() {
 
   return (
     <div className="cents-page">
-      <section className="cents-header">
+      <header className="cents-screen-header">
         <div>
-          <div className="cents-kicker"><Gauge size={13} weight="fill" /> Milli Cents</div>
-          <h1>Choose the best offer before time runs out.</h1>
-          <p>Milli compares simultaneous offers from supported on-demand platforms and evaluates the full work cycle—not just the advertised payout.</p>
+          <div className="cents-brand-line"><Gauge size={15} weight="fill" /> Milli Cents</div>
+          <h1>Offer Profitability Engine</h1>
+          <p>Analyzing every payable mile—and every unpaid one—before you accept.</p>
         </div>
         <button type="button" className="cents-refresh" onClick={() => loadOffers()} disabled={scanning}>
           <ArrowClockwise size={17} className={scanning ? "is-spinning" : ""} />
-          {scanning ? "Checking" : "Refresh"}
+          {scanning ? "Scanning" : "Refresh"}
         </button>
-      </section>
+      </header>
 
-      <section className="cents-connected" aria-label="Connected gig platforms">
-        <div className="cents-connected-title"><PlugsConnected size={15} weight="duotone" /> Supported live-offer connections</div>
-        <div className="cents-platform-row">
+      <section className="cents-connection-strip">
+        <div className="cents-strip-title"><PlugsConnected size={16} weight="duotone" /> Live platform connections</div>
+        <div className="cents-platform-chips">
           {connections.length ? connections.map((connection) => (
-            <span key={connection.platform || connection.id} className="is-current">
+            <span key={connection.platform || connection.id} className="is-connected">
               {connection.display_name || connection.platform}
             </span>
-          )) : <span>Connect Uber, Spark, DoorDash, Instacart, Grubhub, or Shipt</span>}
+          )) : <span>Connect Uber, Lyft, Spark, DoorDash, Instacart, Grubhub, or Shipt</span>}
         </div>
       </section>
 
-      {activeOffers.length > 1 && (
-        <section className="cents-connected" aria-label="Active offers">
-          <div className="cents-connected-title"><Timer size={15} weight="duotone" /> {activeOffers.length} offers available now</div>
-          <div className="cents-platform-row">
-            {activeOffers.map((offer) => {
-              const item = analyze(offer);
-              const remaining = secondsRemaining(offer.expiresAt, now);
-              return (
-                <button
-                  key={offer.id}
-                  type="button"
-                  onClick={() => setSelectedId(offer.id)}
-                  className={offer.id === selectedOffer?.id ? "is-current" : ""}
-                  style={{ border: 0, cursor: "pointer" }}
-                >
-                  {offer.platform} · ${offer.offeredPay.toFixed(2)} · {item.decision} · {formatCountdown(remaining)}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {!selectedOffer ? (
-        <section className="cents-offer-card cents-empty-state">
-          <div className="cents-verdict-icon"><Lightning size={30} weight="duotone" /></div>
-          <h2>Waiting for the next time-limited offer</h2>
-          <p>Milli Cents watches supported selectable-offer platforms. Scheduled block products such as Amazon Flex are intentionally excluded.</p>
-          <div className="cents-assumptions">
-            <div><ShieldCheck size={15} weight="duotone" /> Every recommendation shows its source and confidence.</div>
-            <div><ShareNetwork size={15} weight="duotone" /> The driver always makes the final accept or decline decision.</div>
-          </div>
+      {!selected ? (
+        <section className="cents-access-card">
+          <div className="cents-lock"><Lightning size={31} weight="duotone" /></div>
+          <h2>Waiting for the next selectable offer</h2>
+          <p>Milli Cents is watching supported platforms. When a new offer appears, the full profitability calculation will populate automatically.</p>
         </section>
       ) : (
         <>
-          <section className="cents-offer-card">
-            <div className="cents-offer-topline">
-              <div>
-                <div className="cents-label">Time-limited offer</div>
-                <div className="cents-platform"><Lightning size={14} weight="fill" /> {selectedOffer.platform}</div>
-                <div className="cents-source-line">{sourceLabel(selectedOffer.source)} · {Math.round(selectedOffer.confidence * 100)}% confidence</div>
-                <div className="cents-source-line"><Timer size={12} /> {formatCountdown(secondsRemaining(selectedOffer.expiresAt, now))} remaining</div>
+          <section className="cents-live-card" data-testid="milli-cents-live-analysis">
+            <div className="cents-live-heading">
+              <span>Live Offer Analysis</span>
+              <span className="cents-live-pill"><i /> LIVE</span>
+            </div>
+
+            <div className="cents-offer-hero">
+              <div className="cents-platform-block">
+                <div className="cents-platform-logo">{selected.offer.platform?.slice(0, 1) || "M"}</div>
+                <div>
+                  <strong>{selected.offer.platform}</strong>
+                  <span>{sourceLabel(selected.offer.source)} · {Math.round(selected.offer.confidence * 100)}% confidence</span>
+                  <small><Timer size={12} /> {formatCountdown(secondsRemaining(selected.offer.expiresAt, now))} remaining</small>
+                </div>
               </div>
-              <div className="cents-offer-pay"><span>$</span>{selectedOffer.offeredPay.toFixed(2)}</div>
+
+              <div className="cents-offer-price">
+                <strong>{money(selected.offer.offeredPay)}</strong>
+                <span>Estimated payout</span>
+              </div>
+
+              <ProfitGauge score={selected.profitScore} label={selected.meta.title} />
             </div>
 
-            <div className="cents-route-strip">
-              <Metric icon={MapPin} label="To pickup" value={`${selectedOffer.pickupMiles.toFixed(1)} mi`} />
-              <Metric icon={MapPin} label="Offer route" value={`${selectedOffer.routeMiles.toFixed(1)} mi`} />
-              <Metric icon={HouseLine} label="Return to base" value={`${selectedOffer.returnToBaseMiles.toFixed(1)} mi`} emphasized />
+            <div className="cents-cost-table">
+              <CostRow label="Offer route" value={`${selected.offer.routeMiles.toFixed(1)} mi`} icon={MapPin} />
+              <CostRow label="Pickup distance" value={`${selected.offer.pickupMiles.toFixed(1)} mi`} cost={money((selected.offer.pickupMiles || 0) * selected.offer.vehicleCostPerMile)} icon={MapPin} />
+              <CostRow label="Deadhead distance" value={`${(selected.offer.pickupMiles + selected.offer.returnToBaseMiles).toFixed(1)} mi`} cost={money((selected.offer.pickupMiles + selected.offer.returnToBaseMiles) * selected.offer.vehicleCostPerMile)} icon={HouseLine} />
+              <CostRow label="Return distance" value={`${selected.offer.returnToBaseMiles.toFixed(1)} mi`} cost={money(selected.offer.returnToBaseMiles * selected.offer.vehicleCostPerMile)} icon={HouseLine} />
+              <CostRow label="Estimated gas used" value={`${(selected.result.totalMiles / Math.max(selected.offer.vehicleMpg, 1)).toFixed(2)} gal`} cost={money(selected.result.fuelCost)} icon={GasPump} />
+              <CostRow label={`Estimated taxes (${selected.offer.taxRate}%)`} value="Reserve" cost={money(selected.result.taxOwed)} icon={CurrencyDollar} />
+              <CostRow label="Vehicle operating cost" value={`${money(selected.offer.vehicleCostPerMile)}/mi`} cost={money(selected.result.operatingCost)} icon={Gauge} />
+              <CostRow label="Total estimated costs" value={`${selected.result.totalMiles.toFixed(1)} total mi`} cost={money(selected.result.fuelCost + selected.result.operatingCost + selected.result.taxOwed)} total />
+              <CostRow label="Projected net profit" value={`${selected.result.netPerMile.toFixed(2)} net/mi`} cost={money(selected.result.profit)} profit />
             </div>
 
-            <div className={`cents-verdict ${meta.className}`}>
-              <div className="cents-verdict-icon"><VerdictIcon size={28} weight="fill" /></div>
+            <div className={`cents-recommendation ${selected.meta.className}`}>
+              <selected.meta.icon size={30} weight="fill" />
               <div>
-                <div className="cents-verdict-label">Milli verdict</div>
-                <h2>{meta.title}</h2>
-                <p>{analysis.decision === "ACCEPT" ? "This offer clears your saved net-per-mile and net-per-hour targets." : analysis.decision === "MARGINAL" ? "This offer is close to your minimum and could lose value from traffic or wait time." : "This offer does not adequately cover the complete trip and your minimum profit targets."}</p>
+                <span>Recommendation</span>
+                <strong>{selected.meta.label}</strong>
+                <p>{selected.meta.copy}</p>
+              </div>
+              <div className="cents-recommendation-metrics">
+                <span>{selected.result.netPerHour > 0 ? money(selected.result.netPerHour) : "—"}<small>net/hour</small></span>
+                <span>{selected.result.netPerMile.toFixed(2)}<small>net/mile</small></span>
               </div>
             </div>
           </section>
 
-          <section className="cents-breakdown">
-            <h2>True-cycle profitability</h2>
-            <div className="cents-breakdown-grid">
-              <Breakdown label="Total working miles" value={`${analysis.result.totalMiles.toFixed(1)} mi`} subvalue="Pickup + route + return to base" />
-              <Breakdown label="Gross per mile" value={`$${analysis.result.grossPerMile.toFixed(2)}`} subvalue="Before costs and taxes" />
-              <Breakdown label="Estimated fuel" value={`-$${analysis.result.fuelCost.toFixed(2)}`} subvalue={`${selectedOffer.vehicleMpg} MPG at $${selectedOffer.gasPrice.toFixed(2)}/gal`} negative />
-              <Breakdown label="Vehicle operating cost" value={`-$${analysis.result.operatingCost.toFixed(2)}`} subvalue={`$${selectedOffer.vehicleCostPerMile.toFixed(2)} per mile`} negative />
-              <Breakdown label="Estimated taxes" value={`-$${analysis.result.taxOwed.toFixed(2)}`} subvalue={`${selectedOffer.taxRate}% reserve estimate`} negative />
-              <Breakdown label="Net profit" value={`$${analysis.result.profit.toFixed(2)}`} subvalue={`${analysis.result.profitMargin.toFixed(0)}% margin`} highlight />
-              <Breakdown label="Net per mile" value={`$${analysis.result.netPerMile.toFixed(2)}`} subvalue={`Target $${selectedOffer.minimumNetPerMile.toFixed(2)}`} />
-              <Breakdown label="Net per hour" value={analysis.result.netPerHour > 0 ? `$${analysis.result.netPerHour.toFixed(2)}` : "Not available"} subvalue={analysis.result.netPerHour > 0 ? `Target $${selectedOffer.minimumNetPerHour.toFixed(2)}` : "Platform did not provide time"} />
+          <section className="cents-compare-section" data-testid="milli-cents-offer-comparison">
+            <div className="cents-section-heading">
+              <div>
+                <span>Compare Live Offers</span>
+                <small>{analyzedOffers.length} available now</small>
+              </div>
+              <span>Sorted by net profit</span>
+            </div>
+
+            <div className="cents-offer-grid">
+              {analyzedOffers.map((item, index) => (
+                <button
+                  type="button"
+                  key={item.offer.id}
+                  onClick={() => setSelectedId(item.offer.id)}
+                  className={`cents-compare-card ${item.offer.id === selected.offer.id ? "is-selected" : ""} ${item.meta.className}`}
+                >
+                  <div className="cents-rank">{index + 1}</div>
+                  <div className="cents-compare-platform">{item.offer.platform}</div>
+                  <strong>{money(item.offer.offeredPay)}</strong>
+                  <div className="cents-compare-details">
+                    <span>{item.result.totalMiles.toFixed(1)} mi total</span>
+                    <span>{money(item.result.profit)} net</span>
+                  </div>
+                  <div className="cents-score-row">
+                    <span>{item.profitScore}/100</span>
+                    <b>{item.meta.label}</b>
+                  </div>
+                </button>
+              ))}
             </div>
           </section>
 
-          <section className="cents-assumptions">
-            <div><GasPump size={15} weight="duotone" /> Fuel and vehicle assumptions come from the member’s saved vehicle profile.</div>
-            <div><CurrencyDollar size={15} weight="duotone" /> Tax estimates update from the member’s Milli tax profile.</div>
+          <section className="cents-trust-note">
+            <ShieldCheck size={19} weight="duotone" />
+            <div>
+              <strong>You make the final call.</strong>
+              <span>Milli bases each recommendation on your vehicle profile, current fuel assumptions, saved profitability goals, complete mileage cycle, and estimated tax reserve.</span>
+            </div>
           </section>
         </>
       )}
@@ -240,10 +300,46 @@ export default function MilliCentsDashboard() {
   );
 }
 
-function Metric({ icon: Icon, label, value, emphasized = false }) {
-  return <div className={`cents-route-metric ${emphasized ? "is-emphasized" : ""}`}><Icon size={16} weight="duotone" /><div><span>{label}</span><strong>{value}</strong></div></div>;
+function CostRow({ icon: Icon, label, value, cost, total = false, profit = false }) {
+  return (
+    <div className={`cents-cost-row ${total ? "is-total" : ""} ${profit ? "is-profit" : ""}`}>
+      <div className="cents-cost-label">
+        {Icon ? <Icon size={16} weight="duotone" /> : null}
+        <span>{label}</span>
+      </div>
+      <span className="cents-cost-value">{value}</span>
+      <strong>{cost}</strong>
+    </div>
+  );
 }
 
-function Breakdown({ label, value, subvalue, negative = false, highlight = false }) {
-  return <div className={`cents-breakdown-item ${highlight ? "is-highlight" : ""}`}><span>{label}</span><strong className={negative ? "is-negative" : ""}>{value}</strong><small>{subvalue}</small></div>;
+function ProfitGauge({ score, label }) {
+  const radius = 47;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - score / 100);
+
+  return (
+    <div className="cents-profit-gauge" aria-label={`Profit score ${score} out of 100`}>
+      <svg viewBox="0 0 112 112" aria-hidden="true">
+        <defs>
+          <filter id="cents-gauge-glow"><feGaussianBlur stdDeviation="3.2" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+        </defs>
+        <circle cx="56" cy="56" r={radius} className="cents-gauge-track" />
+        <circle
+          cx="56"
+          cy="56"
+          r={radius}
+          className="cents-gauge-value"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div>
+        <strong>{score}</strong>
+        <span>/100</span>
+        <small>Profit Score</small>
+        <b>{label}</b>
+      </div>
+    </div>
+  );
 }
