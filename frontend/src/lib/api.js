@@ -14,7 +14,7 @@ import axios from "axios";
  * The ServerStatus overlay handles this gracefully.
  */
 export const BACKEND_URL = "https://worker-finance-api.preview.emergentagent.com";
-export const API_BASE = BACKEND_URL;
+export const API_BASE = `${BACKEND_URL}/api`;
 
 export const api = axios.create({
   baseURL: API_BASE,
