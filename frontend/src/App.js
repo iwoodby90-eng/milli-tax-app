@@ -35,6 +35,9 @@ import Referral from "@/pages/Referral";
 import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
 import Paywall from "@/pages/Paywall";
+import WealthHub from "@/pages/WealthHub";
+import ActivityHub from "@/pages/ActivityHub";
+import CockpitHub from "@/pages/CockpitHub";
 
 function OnboardingGate({ children }) {
   const { user } = useAuth();
@@ -92,10 +95,12 @@ function App() {
             <Route path="/app/vault" element={<ProtectedAppScreen><Vault /></ProtectedAppScreen>} />
             <Route path="/app/quarterly" element={<ProtectedAppScreen><Quarterly /></ProtectedAppScreen>} />
             <Route path="/app/more" element={<ProtectedAppScreen requireOnboarding={false}><More /></ProtectedAppScreen>} />
-            <Route path="/app/wealth" element={<ProtectedAppScreen><Wealth /></ProtectedAppScreen>} />
+            <Route path="/app/wealth" element={<ProtectedAppScreen><WealthHub /></ProtectedAppScreen>} />
             <Route path="/app/retirement" element={<ProtectedAppScreen><Retirement /></ProtectedAppScreen>} />
             <Route path="/app/investing" element={<ProtectedAppScreen><Investing /></ProtectedAppScreen>} />
             <Route path="/app/referral" element={<ProtectedAppScreen><Referral /></ProtectedAppScreen>} />
+            <Route path="/app/activity" element={<ProtectedAppScreen><ActivityHub /></ProtectedAppScreen>} />
+            <Route path="/app/cockpit" element={<ProtectedAppScreen><CockpitHub /></ProtectedAppScreen>} />
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>

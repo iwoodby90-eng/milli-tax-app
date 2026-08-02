@@ -1,35 +1,36 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Vault as VaultIcon, PiggyBank, MapTrifold, ChartLineUp, Receipt, GearSix,
-  List, Star, Sparkle, Wallet, Robot, FileText, DotsThree, SignOut, House, Gift,
+  Vault as VaultIcon, ChartLineUp, MapTrifold, Gauge,
+  List, Star, SignOut, House, Gift, PiggyBank, Receipt,
+  FileText, Wallet, Robot, GearSix, DotsThree,
 } from "@phosphor-icons/react";
-import MilliLogo from "@/components/MilliLogo";
 import WeeboAvatar from "@/components/WeeboAvatar";
 import { useState, useCallback } from "react";
 
-// 6 side buttons + center raised M — symmetric 3 / M / 3
+// 4-tab + center M layout: VAULT | WEALTH | [M] | ACTIVITY | COCKPIT
 const leftTabs = [
-  { to: "/app/vault",      icon: VaultIcon,   label: "Vault",     testid: "tab-vault"   },
-  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)",    testid: "tab-retire"  },
-  { to: "/app/investing",  icon: ChartLineUp, label: "Invest",    testid: "tab-invest"  },
+  { to: "/app/vault",     icon: VaultIcon,   label: "VAULT",     testid: "tab-vault"     },
+  { to: "/app/wealth",    icon: ChartLineUp, label: "WEALTH",    testid: "tab-wealth"    },
 ];
 const rightTabs = [
-  { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage",   testid: "tab-mileage" },
-  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes",     testid: "tab-taxes"   },
-  { to: "/app/settings",   icon: GearSix,     label: "Settings",  testid: "tab-settings"},
+  { to: "/app/activity",  icon: MapTrifold,  label: "ACTIVITY",  testid: "tab-activity"  },
+  { to: "/app/cockpit",   icon: Gauge,       label: "COCKPIT",   testid: "tab-cockpit"   },
 ];
 
 // Full navigation lives in the side drawer
 const drawerNav = [
   { to: "/app",            icon: House,       label: "Home", end: true },
+  { to: "/app/vault",      icon: VaultIcon,   label: "Tax Vault" },
+  { to: "/app/wealth",     icon: ChartLineUp, label: "Wealth" },
+  { to: "/app/activity",   icon: MapTrifold,  label: "Activity" },
+  { to: "/app/cockpit",    icon: Gauge,       label: "Cockpit" },
   { to: "/app/income",     icon: Wallet,      label: "Income" },
   { to: "/app/mileage",    icon: MapTrifold,  label: "Mileage" },
-  { to: "/app/vault",      icon: VaultIcon,   label: "Tax Vault" },
-  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)" },
-  { to: "/app/investing",  icon: ChartLineUp, label: "Investing" },
-  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes / Quarterly" },
   { to: "/app/expenses",   icon: FileText,    label: "Expenses" },
+  { to: "/app/investing",  icon: ChartLineUp, label: "Investing" },
+  { to: "/app/retirement", icon: PiggyBank,   label: "401(k)" },
+  { to: "/app/quarterly",  icon: Receipt,     label: "Taxes / Quarterly" },
   { to: "/app/ai",         icon: Robot,       label: "Milli AI" },
   { to: "/app/referral",   icon: Gift,        label: "Invite & Earn $10" },
   { to: "/app/reports",    icon: FileText,    label: "Reports" },
@@ -68,9 +69,9 @@ function TabButton({ to, icon: Icon, label, testid, end }) {
           <span
             style={{
               fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-              fontSize: "10px",
+              fontSize: "9px",
               fontWeight: isActive ? 600 : 500,
-              letterSpacing: "0.1em",
+              letterSpacing: "0.15em",
               color: isActive ? CYAN : "#71717a",
               textShadow: isActive ? `0 0 8px rgba(0,229,255,0.4)` : "none",
               transition: "color 0.2s ease, text-shadow 0.2s ease",
@@ -86,7 +87,7 @@ function TabButton({ to, icon: Icon, label, testid, end }) {
 }
 
 // -----------------------------------------------------------------------
-// Haptics utility — triggers Capacitor Haptics if available, graceful no-op otherwise
+// Haptics utility
 // -----------------------------------------------------------------------
 async function triggerHeavyHaptic() {
   try {
@@ -100,13 +101,7 @@ async function triggerHeavyHaptic() {
 
 // -----------------------------------------------------------------------
 // ChromeDialM — The masterpiece center nav button.
-// A 3D hardware dial milled from billet aluminum.
-// Features:
-//   • Outer chrome bevel ring (1px #C0C0C0 catching light)
-//   • Deep recess shadow (inset 0 4px 10px rgba(0,0,0,0.9))
-//   • Conic-gradient milled metal body
-//   • Breathing neon aura pulse animation
-//   • High-fidelity 3D Chrome M with cyan road
+// Uses the EXACT brand logo M path from public/brand/milli-logo.svg
 // -----------------------------------------------------------------------
 function ChromeDialM({ isActive }) {
   return (
@@ -114,7 +109,7 @@ function ChromeDialM({ isActive }) {
       className="relative flex items-center justify-center"
       style={{ width: 66, height: 66 }}
     >
-      {/* Deep recess — inset shadow only; masked to circle so no bleed onto titanium bar */}
+      {/* Deep recess */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
@@ -124,7 +119,7 @@ function ChromeDialM({ isActive }) {
         }}
       />
 
-      {/* Outer chrome bevel ring — true ring via CSS mask; no solid fill so titanium bar bleeds through */}
+      {/* Outer chrome bevel ring */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
@@ -134,7 +129,7 @@ function ChromeDialM({ isActive }) {
         }}
       />
 
-      {/* Milled metal body — conic gradient simulating machined aluminum under studio lighting */}
+      {/* Milled metal body */}
       <div
         className="absolute rounded-full"
         style={{
@@ -145,7 +140,7 @@ function ChromeDialM({ isActive }) {
         }}
       />
 
-      {/* Inner face — obsidian with radial specular highlights (concave dish effect) */}
+      {/* Inner face — obsidian */}
       <div
         className="absolute rounded-full"
         style={{
@@ -158,7 +153,7 @@ function ChromeDialM({ isActive }) {
         }}
       />
 
-      {/* Breathing neon aura — pulsing ring of light */}
+      {/* Breathing neon aura */}
       <div
         className="absolute rounded-full"
         style={{
@@ -172,7 +167,7 @@ function ChromeDialM({ isActive }) {
         }}
       />
 
-      {/* The M monogram — 3D Chrome with cyan road */}
+      {/* The M monogram — EXACT brand logo SVG paths */}
       <div
         className="relative z-10 flex items-center justify-center"
         style={{
@@ -185,59 +180,46 @@ function ChromeDialM({ isActive }) {
         <svg
           width={28}
           height={28}
-          viewBox="0 0 64 64"
+          viewBox="0 0 128 128"
           aria-hidden="true"
         >
           <defs>
-            <linearGradient id="nav-m-chrome" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="20%" stopColor="#F0F2F4" />
-              <stop offset="45%" stopColor="#C8CDD2" />
-              <stop offset="70%" stopColor="#8A9099" />
-              <stop offset="100%" stopColor="#5B6068" />
+            <linearGradient id="nav-mChrome" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#F0F0F0" />
+              <stop offset="35%" stopColor="#E8E8E8" />
+              <stop offset="55%" stopColor="#808080" />
+              <stop offset="80%" stopColor="#C0C0C0" />
+              <stop offset="100%" stopColor="#F0F0F0" />
             </linearGradient>
-            <linearGradient id="nav-m-edge" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="nav-m-road" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor={CYAN} stopOpacity="1" />
-              <stop offset="60%" stopColor={CYAN} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={CYAN} stopOpacity="0.1" />
+            <linearGradient id="nav-mRoad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.15" />
+              <stop offset="55%" stopColor="#00E5FF" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#00E5FF" stopOpacity="1" />
             </linearGradient>
           </defs>
-          {/* M body — chrome */}
+          {/* Chrome M — exact brand logo path */}
           <path
-            d="M 6 58 L 6 10 L 16 6 L 27 30 L 32 20 L 37 30 L 48 6 L 58 10 L 58 58 L 48 58 L 48 24 L 38 42 L 32 34 L 26 42 L 16 24 L 16 58 Z"
-            fill="url(#nav-m-chrome)"
-            stroke="rgba(0,0,0,0.3)"
-            strokeWidth="0.6"
+            d="M 12 116 L 12 20 L 32 12 L 54 60 L 64 40 L 74 60 L 96 12 L 116 20 L 116 116 L 96 116 L 96 48 L 76 84 L 64 68 L 52 84 L 32 48 L 32 116 Z"
+            fill="url(#nav-mChrome)"
+            stroke="#0A0D10"
+            strokeWidth="1"
             strokeLinejoin="round"
           />
-          {/* Top bevel highlight */}
+          {/* Turquoise perspective runway */}
           <path
-            d="M 6 10 L 16 6 L 27 30 L 32 20 L 37 30 L 48 6 L 58 10 L 48 8 L 37 32 L 32 24 L 27 32 L 16 8 Z"
-            fill="url(#nav-m-edge)"
-            opacity="0.5"
-          />
-          {/* Cyan road */}
-          <path
-            d="M 25 60 L 30 34 L 32 26 L 34 34 L 39 60 Z"
-            fill="url(#nav-m-road)"
-          />
-          <path
-            d="M 28 60 L 31 36 L 32 30 L 33 36 L 36 60 Z"
-            fill="#7CF6FF"
-            opacity="0.5"
+            d="M 52 118 L 60 82 L 63 56 L 65 56 L 68 82 L 76 118 Z"
+            fill="url(#nav-mRoad)"
           />
           {/* Lane markers */}
-          <rect x="31.5" y="50" width="1" height="5" fill="#FFF" opacity="0.8" rx="0.5" />
-          <rect x="31.6" y="42" width="0.8" height="4" fill="#FFF" opacity="0.6" rx="0.4" />
-          <rect x="31.7" y="36" width="0.6" height="3" fill="#FFF" opacity="0.4" rx="0.3" />
+          <rect x="63.4" y="102" width="1.2" height="8" fill="#FFFFFF" opacity="0.95" />
+          <rect x="63.4" y="90" width="1.2" height="6" fill="#FFFFFF" opacity="0.75" />
+          <rect x="63.4" y="80" width="1.2" height="4" fill="#FFFFFF" opacity="0.5" />
+          <rect x="63.4" y="72" width="1.2" height="3" fill="#FFFFFF" opacity="0.3" />
+          <circle cx="64" cy="58" r="1.4" fill="#00E5FF" />
         </svg>
       </div>
 
-      {/* Top specular crescent — wet chrome reflection on the dial's crown */}
+      {/* Top specular crescent */}
       <div
         className="absolute rounded-full pointer-events-none"
         style={{
@@ -282,8 +264,21 @@ export default function AppLayout({ children }) {
             <List size={22} weight="bold" />
           </button>
           <NavLink to="/app" className="flex items-center gap-2 active:opacity-70" data-testid="topbar-brand">
-            <MilliLogo size={22} />
-            <span className="font-display tracking-[0.3em] chrome-text text-[13px]">MILLI</span>
+            <img src="/brand/milli-logo.svg" alt="Milli" style={{ height: 28, width: 28 }} />
+            <span
+              style={{
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+                fontWeight: 700,
+                fontSize: "13px",
+                letterSpacing: "0.25em",
+                background: "linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 50%, #808080 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              MILLI
+            </span>
           </NavLink>
           <NavLink
             to="/app/pricing"
@@ -300,27 +295,24 @@ export default function AppLayout({ children }) {
       <main className="flex-1 native-scroll" data-testid="app-main-scroll">
         {children}
         <div aria-hidden className="h-6" />
-
-        {/* Floating Weebo FAB — only on Home */}
-        {isHome && (
-          <div
-            className="sticky bottom-[18px] pointer-events-none flex justify-end pr-4 z-30"
-            style={{ height: 0 }}
-          >
-            <NavLink
-              to="/app/ai"
-              data-testid="weebo-fab"
-              aria-label="Ask Milli AI"
-              className="pointer-events-auto -translate-y-[92px] block active:scale-95 transition-transform"
-              style={{
-                filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(0,229,255,0.35))",
-              }}
-            >
-              <WeeboAvatar size={58} state="idle" />
-            </NavLink>
-          </div>
-        )}
       </main>
+
+      {/* ============ Floating Weebo FAB — on EVERY page, above tab bar ============ */}
+      <div
+        className="fixed bottom-[96px] right-4 z-30"
+        style={{
+          filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.55)) drop-shadow(0 0 18px rgba(0,229,255,0.35))",
+        }}
+      >
+        <NavLink
+          to="/app/ai"
+          data-testid="weebo-fab"
+          aria-label="Ask Milli AI"
+          className="block active:scale-95 transition-transform"
+        >
+          <WeeboAvatar size={58} state="idle" />
+        </NavLink>
+      </div>
 
       {/* ============ Bottom tab bar — Cinematic Luxury Cockpit ============ */}
       <nav
@@ -328,7 +320,7 @@ export default function AppLayout({ children }) {
         style={{ paddingBottom: "var(--safe-bottom)" }}
         data-testid="bottom-tab-bar"
       >
-        {/* Specular edge — 0.5px white highlight at the very top of the bar */}
+        {/* Specular edge */}
         <div
           className="absolute top-0 left-0 right-0 pointer-events-none"
           style={{
@@ -367,7 +359,7 @@ export default function AppLayout({ children }) {
           aria-hidden="true"
         />
 
-        {/* Inner top highlight — subtle light catching the bevel */}
+        {/* Inner top highlight */}
         <div
           className="absolute top-[1px] left-[10%] right-[10%] pointer-events-none"
           style={{
@@ -415,8 +407,20 @@ export default function AppLayout({ children }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 px-6 mb-8">
-              <MilliLogo size={30} />
-              <div className="font-display tracking-[0.25em] chrome-text">MILLI</div>
+              <img src="/brand/milli-logo.svg" alt="Milli" style={{ height: 30, width: 30 }} />
+              <span
+                style={{
+                  fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+                  fontWeight: 700,
+                  letterSpacing: "0.25em",
+                  background: "linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 50%, #808080 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                MILLI
+              </span>
             </div>
             <nav className="space-y-1 px-3">
               {drawerNav.map((it) => (
@@ -449,7 +453,7 @@ export default function AppLayout({ children }) {
         </div>
       )}
 
-      {/* Breathing aura keyframe — injected once */}
+      {/* Breathing aura keyframe */}
       <style>{`
         @keyframes breatheAura {
           0%, 100% { opacity: 1; box-shadow: 0 0 14px rgba(0,229,255,0.4), 0 0 28px rgba(0,229,255,0.15), inset 0 0 10px rgba(0,229,255,0.12); }
