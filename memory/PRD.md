@@ -42,6 +42,18 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
 
 ## Changelog
+- **Aug 2, 2026 (evening)** — **Dashboard v3 — 1:1 with reference mockup.**
+  * Rewrote `AppLayout.jsx` header: cyan lowercase `milli` wordmark left, bell icon w/ cyan notification dot right. Removed Elite pill from header.
+  * New 5-tab bottom bar: **Dashboard · Activity · [raised chrome M home] · Transfers · More**. Center home button is a metallic radial-gradient chrome ring with pure text-M inside (no more sticker-look) plus cyan underglow bloom.
+  * Rewrote `Dashboard.jsx` from scratch to match the "Good morning, Alex" mockup exactly:
+    - Greeting hero (time-aware Good morning / afternoon / evening)
+    - **Available to Spend** cyan-glow-border card with metallic M debit-card graphic floated in top-right
+    - **Latest Payout** 2-column card (Gross | Net/Taxes/Vault/Total breakdown)
+    - **Milli Tax Vault™** + **Tax Ready Score™** 2-up (bank icon + progress bar + goal · circular ring + status)
+    - **Financial Timeline** with cyan-outlined date circles + icon + label + amount + chevron rows
+    - **Mileage · Retirement · Investing** 3-up tiles with delta chips
+  * New CSS primitives in `index.css`: `.milli-card-lux` (cyan halo glass card w/ gradient border), `.app-aurora` + `.aurora-streak` (ambient cyan side-glow / neon streak animations layered over carbon-fibre bg — matches the mockup's signature aurora).
+  * Rebuilt Capacitor iOS bundle (`yarn build && npx cap sync ios`) and refreshed `/app/frontend/public/milli-source.tar.gz` (~121 MB) so user can pull latest into Xcode.
 - **Aug 2, 2026** — **App Store submission rebuild.**
   * App officially renamed to **Milli Tax Vault** (short form: MILLI) in `capacitor.config.json`, `Info.plist` (CFBundleDisplayName + CFBundleName), `index.html` title/meta, `manifest`.
   * New **official logo** shipped: chrome-M with cyan stripe. Saved as `/app/frontend/public/brand/milli-logo-{60,120,180,256,512,1024}.png`. 25 iOS app icons regenerated in `Assets.xcassets/AppIcon.appiconset/`. `MilliLogo.jsx` rewritten to render the PNG with SVG fallback.

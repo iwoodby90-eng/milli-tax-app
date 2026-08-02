@@ -1,50 +1,68 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Vault as VaultIcon, ChartLineUp, MapTrifold, GearSix,
-  List, Star, Wallet, Robot, FileText, DotsThree, SignOut, House, PiggyBank, Gift, Receipt, Coins,
+  SquaresFour, ListBullets, ArrowsLeftRight, DotsThreeOutline,
+  Bell, List, SignOut, House, Vault as VaultIcon, ChartLineUp,
+  MapTrifold, Coins, Receipt, Wallet, FileText, Robot, Gift, GearSix,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
 import { useState } from "react";
 
+/**
+ * Milli Tax Vault — App shell.
+ * Top bar:  cyan "milli" wordmark  |  bell (notifications).
+ * Bottom nav: Dashboard · Activity · [raised chrome M home] · Transfers · More.
+ * Milli AI floats above the tab bar on every screen except /app/ai.
+ */
+
 const leftTabs = [
-  { to: "/app/vault",   icon: VaultIcon,    label: "Vault",    testid: "tab-vault"   },
-  { to: "/app/wealth",  icon: ChartLineUp,  label: "Wealth",   testid: "tab-wealth"  },
+  { to: "/app",           icon: SquaresFour,       label: "Dashboard", end: true, testid: "tab-dashboard" },
+  { to: "/app/income",    icon: ListBullets,       label: "Activity",             testid: "tab-activity"  },
 ];
 const rightTabs = [
-  { to: "/app/mileage",  icon: MapTrifold, label: "Mileage",  testid: "tab-mileage"  },
-  { to: "/app/settings", icon: GearSix,    label: "Settings", testid: "tab-settings" },
+  { to: "/app/vault",     icon: ArrowsLeftRight,   label: "Transfers",            testid: "tab-transfers" },
+  { to: "/app/more",      icon: DotsThreeOutline,  label: "More",                 testid: "tab-more"      },
 ];
 
 const drawerNav = [
-  { to: "/app",             icon: House,       label: "Dashboard", end: true },
-  { to: "/app/vault",       icon: VaultIcon,   label: "Vault (Tax + Holding)" },
-  { to: "/app/wealth",      icon: ChartLineUp, label: "Wealth (401k + Investing)" },
-  { to: "/app/mileage",     icon: MapTrifold,  label: "Mileage" },
-  { to: "/app/milli-cents", icon: Coins,       label: "Milli Cents" },
-  { to: "/app/quarterly",   icon: Receipt,     label: "Taxes / Quarterly" },
-  { to: "/app/income",      icon: Wallet,      label: "Income" },
-  { to: "/app/expenses",    icon: FileText,    label: "Expenses" },
-  { to: "/app/ai",          icon: Robot,       label: "Milli AI" },
-  { to: "/app/referral",    icon: Gift,        label: "Invite & Earn $10" },
-  { to: "/app/reports",     icon: FileText,    label: "Reports" },
-  { to: "/app/settings",    icon: GearSix,     label: "Settings" },
+  { to: "/app",             icon: House,        label: "Dashboard", end: true },
+  { to: "/app/income",      icon: Wallet,       label: "Activity / Payouts" },
+  { to: "/app/vault",       icon: VaultIcon,    label: "Milli Tax Vault™" },
+  { to: "/app/wealth",      icon: ChartLineUp,  label: "Wealth (401k + Investing)" },
+  { to: "/app/mileage",     icon: MapTrifold,   label: "Mileage" },
+  { to: "/app/milli-cents", icon: Coins,        label: "Milli Cents" },
+  { to: "/app/quarterly",   icon: Receipt,      label: "Quarterly Taxes" },
+  { to: "/app/expenses",    icon: FileText,     label: "Expenses" },
+  { to: "/app/ai",          icon: Robot,        label: "Milli AI" },
+  { to: "/app/referral",    icon: Gift,         label: "Invite & Earn $10" },
+  { to: "/app/reports",     icon: FileText,     label: "Reports" },
+  { to: "/app/settings",    icon: GearSix,      label: "Settings" },
 ];
 
-function TabButton({ to, icon: Icon, label, testid }) {
+function TabButton({ to, icon: Icon, label, end, testid }) {
   return (
     <NavLink
       to={to}
+      end={end}
       data-testid={testid}
       className={({ isActive }) =>
-        `flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 active:opacity-60 ${
+        `flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:opacity-60 transition-colors ${
           isActive ? "text-volt" : "text-zinc-500"
         }`
       }
+      style={({ isActive }) =>
+        isActive ? { textShadow: "0 0 10px rgba(0,229,255,0.55)" } : undefined
+      }
     >
-      <Icon size={20} weight="duotone" />
-      <span className="text-[10px] font-medium tracking-wide truncate max-w-full">{label}</span>
+      {({ isActive }) => (
+        <>
+          <Icon size={22} weight={isActive ? "fill" : "regular"} />
+          <span className="text-[10.5px] font-medium tracking-wide truncate max-w-full">
+            {label}
+          </span>
+        </>
+      )}
     </NavLink>
   );
 }
@@ -55,71 +73,87 @@ export default function AppLayout({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="carbon-bg text-white min-h-full flex flex-col">
-      {/* ============ Top bar ============ */}
+    <div className="carbon-bg app-aurora text-white min-h-full flex flex-col relative">
+      <div className="aurora-streak" aria-hidden />
+
+      {/* ============ Top bar — cyan wordmark left, bell right ============ */}
       <header
-        className="sticky top-0 z-40 backdrop-blur-2xl border-b border-white/[0.06]"
-        style={{ background: "rgba(5, 6, 7, 0.72)", paddingTop: "var(--safe-top)" }}
+        className="sticky top-0 z-40 backdrop-blur-2xl"
+        style={{
+          background: "linear-gradient(180deg, rgba(5,6,7,0.9) 0%, rgba(5,6,7,0.6) 100%)",
+          paddingTop: "var(--safe-top)",
+        }}
       >
-        <div className="flex items-center justify-between px-5 h-11">
+        <div className="flex items-center justify-between px-5 h-12">
           <button
             data-testid="mobile-menu-btn"
             onClick={() => setDrawerOpen(true)}
-            className="p-2 -ml-2 text-zinc-200 active:opacity-60"
+            className="active:opacity-60 flex items-center gap-1"
             aria-label="Open menu"
           >
-            <List size={22} weight="bold" />
+            <List size={20} weight="bold" className="text-zinc-400 sm:hidden" />
+            <span
+              className="font-display text-[26px] leading-none lowercase select-none"
+              style={{
+                color: "#00E5FF",
+                fontWeight: 500,
+                letterSpacing: "-0.01em",
+                textShadow: "0 0 18px rgba(0,229,255,0.55)",
+              }}
+              data-testid="topbar-brand"
+            >
+              milli
+            </span>
           </button>
-          <NavLink to="/app" className="flex items-center gap-2 active:opacity-70" data-testid="topbar-brand">
-            <MilliLogo size={22} />
-            <span className="font-display tracking-[0.24em] chrome-text text-[13px]">MILLI</span>
-          </NavLink>
           <NavLink
-            to="/app/pricing"
-            data-testid="mobile-plan-badge"
-            className="btn-outline-cyan px-2.5 py-1 text-[11px] font-semibold inline-flex items-center gap-1.5 active:opacity-70"
+            to="/app/settings"
+            data-testid="topbar-bell"
+            aria-label="Notifications"
+            className="relative w-9 h-9 flex items-center justify-center rounded-full active:opacity-60"
           >
-            <Star size={11} weight="fill" />
-            {(user?.plan === "trial" || !user?.plan) ? "Trial" : String(user.plan).toUpperCase()}
+            <Bell size={22} weight="regular" className="text-white/80" />
+            <span
+              className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-volt"
+              style={{ boxShadow: "0 0 8px rgba(0,229,255,0.9)" }}
+            />
           </NavLink>
         </div>
       </header>
 
       {/* ============ Main content ============ */}
-      <main className="flex-1 native-scroll" data-testid="app-main-scroll">
+      <main className="flex-1 native-scroll relative z-10" data-testid="app-main-scroll">
         {children}
-        <div aria-hidden className="h-24" />
+        <div aria-hidden className="h-28" />
       </main>
 
-      {/* ============ Bottom tab bar — 5 slots symmetric ============ */}
+      {/* ============ Bottom tab bar — 5 slots, raised chrome M center ============ */}
       <nav
         className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
-        style={{ background: "rgba(5, 6, 7, 0.85)", paddingBottom: "var(--safe-bottom)" }}
+        style={{
+          background: "linear-gradient(180deg, rgba(5,6,7,0.75) 0%, rgba(5,6,7,0.95) 100%)",
+          paddingBottom: "var(--safe-bottom)",
+        }}
         data-testid="bottom-tab-bar"
       >
-        <div className="relative flex items-stretch justify-around h-[64px] px-1">
+        <div className="relative flex items-stretch justify-around h-[68px] px-1">
           {leftTabs.map((t) => <TabButton key={t.to} {...t} />)}
-          <div className="w-[68px] flex-shrink-0" aria-hidden />
+          <div className="w-[76px] flex-shrink-0" aria-hidden />
           {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
 
-          {/* Raised chrome-M home button — floating glyph, no sticker frame */}
+          {/* Raised chrome M home button */}
           <NavLink
             to="/app"
             end
             data-testid="tab-home-center"
             aria-label="Home"
-            className="absolute left-1/2 -translate-x-1/2 -top-6 w-[60px] h-[60px] flex items-center justify-center active:scale-95 transition-transform"
-            style={{
-              filter:
-                "drop-shadow(0 0 22px rgba(0,229,255,0.65)) drop-shadow(0 8px 14px rgba(0,0,0,0.65))",
-            }}
+            className="absolute left-1/2 -translate-x-1/2 -top-7 active:scale-95 transition-transform"
           >
-            <MilliLogo size={60} />
+            <ChromeHomeButton />
           </NavLink>
         </div>
       </nav>
 
-      {/* Persistent Milli AI floating avatar (visible on every /app/* route except /app/ai) */}
+      {/* Persistent Milli AI floating avatar */}
       <MilliFAB />
 
       {/* Slide-in drawer */}
@@ -140,8 +174,13 @@ export default function AppLayout({ children }) {
             <div className="flex items-center gap-3 px-6 mb-6">
               <MilliLogo size={32} />
               <div>
-                <div className="font-display tracking-[0.22em] chrome-text text-sm">MILLI</div>
-                <div className="text-[10px] text-zinc-500 tracking-widest uppercase">Tax Vault</div>
+                <div
+                  className="font-display text-[22px] leading-none lowercase"
+                  style={{ color: "#00E5FF", fontWeight: 500, textShadow: "0 0 12px rgba(0,229,255,0.5)" }}
+                >
+                  milli
+                </div>
+                <div className="text-[10px] text-zinc-500 tracking-widest uppercase mt-1">Tax Vault</div>
               </div>
             </div>
             <nav className="space-y-1 px-3">
@@ -162,7 +201,10 @@ export default function AppLayout({ children }) {
                 </NavLink>
               ))}
             </nav>
-            <div className="px-6 pt-6">
+            <div className="px-6 pt-6 text-[11px] text-zinc-600 uppercase tracking-widest">
+              Signed in · {(user?.plan || "trial").toUpperCase()}
+            </div>
+            <div className="px-6 pt-3">
               <button
                 onClick={() => { logout(); nav("/"); }}
                 className="w-full flex items-center justify-center gap-2 px-3 py-3 text-sm text-zinc-400 border border-white/10 rounded-xl active:bg-white/[0.04]"
@@ -174,6 +216,55 @@ export default function AppLayout({ children }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ============ Raised chrome home button (metallic ring + M) ============ */
+function ChromeHomeButton() {
+  return (
+    <div
+      className="w-[64px] h-[64px] rounded-full flex items-center justify-center relative"
+      style={{
+        background:
+          "radial-gradient(circle at 30% 25%, #F0F0F0 0%, #B4B8BE 30%, #6E7379 60%, #2A2E33 100%)",
+        boxShadow:
+          "inset 0 2px 2px rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.6), 0 6px 18px rgba(0,0,0,0.55), 0 0 28px rgba(0,229,255,0.55), 0 12px 20px rgba(0,229,255,0.35)",
+      }}
+    >
+      {/* underneath cyan light bloom */}
+      <span
+        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-2 rounded-full pointer-events-none"
+        style={{
+          background: "rgba(0,229,255,0.85)",
+          filter: "blur(6px)",
+          opacity: 0.9,
+        }}
+      />
+      <div
+        className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
+        style={{
+          background:
+            "radial-gradient(circle at 30% 30%, #1A1D22 0%, #0A0C10 60%, #05070A 100%)",
+          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -2px 4px rgba(0,0,0,0.7)",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Sora','Inter',sans-serif",
+            fontWeight: 900,
+            fontSize: 26,
+            lineHeight: 1,
+            background: "linear-gradient(180deg, #FFFFFF 0%, #D6D9DE 45%, #6E7379 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            letterSpacing: "-0.03em",
+            filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.6))",
+          }}
+        >
+          M
+        </span>
+      </div>
     </div>
   );
 }

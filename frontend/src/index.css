@@ -220,6 +220,102 @@ body,
         0 8px 36px rgba(0, 0, 0, 0.5);
 }
 
+/* Lux card — the "floating in cyan haze" mockup look.
+   Used for the marquee Dashboard cards (quarterly, tax score, filing). */
+.milli-card-lux {
+    position: relative;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 55%),
+        rgba(9, 11, 14, 0.88);
+    border: 1px solid rgba(0, 229, 255, 0.22);
+    border-radius: 22px;
+    backdrop-filter: blur(20px) saturate(1.15);
+    -webkit-backdrop-filter: blur(20px) saturate(1.15);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 0 44px rgba(0, 229, 255, 0.05),
+        0 0 32px rgba(0, 229, 255, 0.18),
+        0 22px 60px rgba(0, 0, 0, 0.6);
+}
+.milli-card-lux::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg,
+        rgba(0, 229, 255, 0.55) 0%,
+        rgba(192, 192, 192, 0.15) 35%,
+        rgba(0, 229, 255, 0.05) 65%,
+        rgba(0, 229, 255, 0.45) 100%);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Ambient cyan side-glow — layered on top of carbon-bg to match mockup aurora */
+.app-aurora {
+    position: relative;
+    isolation: isolate;
+}
+.app-aurora::before,
+.app-aurora::after {
+    content: '';
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 42vw;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(60px);
+}
+.app-aurora::before {
+    left: -18vw;
+    background: radial-gradient(ellipse 60% 55% at 60% 40%,
+        rgba(0, 229, 255, 0.22) 0%,
+        rgba(0, 229, 255, 0.06) 40%,
+        transparent 70%);
+    animation: aurora-drift-l 12s ease-in-out infinite alternate;
+}
+.app-aurora::after {
+    right: -18vw;
+    background: radial-gradient(ellipse 60% 55% at 40% 60%,
+        rgba(0, 229, 255, 0.20) 0%,
+        rgba(0, 229, 255, 0.05) 42%,
+        transparent 72%);
+    animation: aurora-drift-r 14s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift-l {
+    0%   { transform: translateY(-4%) scale(1); opacity: 0.85; }
+    100% { transform: translateY(4%)  scale(1.06); opacity: 1; }
+}
+@keyframes aurora-drift-r {
+    0%   { transform: translateY(3%)  scale(1.04); opacity: 0.9; }
+    100% { transform: translateY(-3%) scale(1);    opacity: 1; }
+}
+
+/* Neon "arc streak" — a curved cyan line sweeping past the cards (the mockup's signature). */
+.aurora-streak {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    width: 140vw;
+    height: 60vh;
+    left: -20vw;
+    top: 20vh;
+    background:
+        radial-gradient(ellipse 60% 30% at 50% 50%,
+          transparent 40%,
+          rgba(0, 229, 255, 0.35) 48%,
+          rgba(0, 229, 255, 0.0)  55%);
+    filter: blur(2px);
+    transform: rotate(-12deg);
+    opacity: 0.55;
+}
+
 /* Premium panel — always glowing (Tax Vault, Autopilot cards, etc.) */
 .milli-card-strong {
     background:

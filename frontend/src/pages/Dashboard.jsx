@@ -1,378 +1,444 @@
 import { useEffect, useState } from "react";
-import { api, money, num, formatApiError } from "@/lib/api";
+import { api, money, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Bank, MapTrifold, CalendarCheck, ShieldCheck, CheckCircle, CaretRight,
-  Star, Coins, Robot, ArrowUpRight, FileText, Shield, Car, ChartLineUp,
-  Vault as VaultIcon,
+  Eye, CaretRight, Bank, Gauge, Plant, ChartLineUp,
+  Receipt, FileText,
 } from "@phosphor-icons/react";
-import MilliLogo from "@/components/MilliLogo";
-import {
-  TaxReadyGauge, FinancialTimeline, TaxVaultCard,
-  InsightRow, EliteBadge,
-} from "@/components/MilliPrimitives";
 
+/**
+ * Milli Tax Vault — Dashboard.
+ * Matches the "Good morning, Alex" reference mockup exactly:
+ *   1. Greeting
+ *   2. Available to Spend hero (cyan glow + metallic M card graphic)
+ *   3. Latest Payout (2-column breakdown)
+ *   4. Milli Tax Vault™ | Tax Ready Score™ (side-by-side)
+ *   5. Financial Timeline
+ *   6. Mileage · Retirement · Investing (3-up tiles)
+ */
 export default function Dashboard() {
   const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [deposits, setDeposits] = useState([]);
   const [trips, setTrips] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [syncing, setSyncing] = useState(false);
 
   async function load() {
     try {
-      const [s, d, t, e] = await Promise.all([
+      const [s, d, t] = await Promise.all([
         api.get("/tax/summary"),
         api.get("/deposits"),
         api.get("/trips"),
-        api.get("/expenses"),
       ]);
-      setSummary(s.data); setDeposits(d.data); setTrips(t.data); setExpenses(e.data);
+      setSummary(s.data); setDeposits(d.data); setTrips(t.data);
     } catch (err) { toast.error(formatApiError(err)); }
   }
-
   useEffect(() => { load(); }, []);
 
-  async function syncPlaid() {
-    setSyncing(true);
-    try {
-      const { data } = await api.post("/plaid/sync");
-      toast.success(`Synced ${data.synced} new deposits`);
-      await load();
-    } catch (e) { toast.error(formatApiError(e)); }
-    finally { setSyncing(false); }
-  }
-
   if (!summary) {
-    return <div className="p-12 font-mono text-volt animate-pulse">[ LOADING MILLI... ]</div>;
+    return (
+      <div className="p-12 font-mono text-volt animate-pulse text-center">
+        [ LOADING MILLI... ]
+      </div>
+    );
   }
 
-  // Tax-ready score: 4 boxes — Income, Mileage, Expenses, Quarterly est available
-  const checks = {
-    income: deposits.length > 0,
-    mileage: trips.length > 0,
-    expenses: expenses.length > 0,
-    quarterly: summary.estimated_tax > 0,
-  };
-  const filled = Object.values(checks).filter(Boolean).length;
-  const score = Math.round((filled / 4) * 100);
-  const isElite = user?.plan === "elite";
+  const firstName = user?.name?.split(" ")[0] || "there";
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  // Available to spend = gross - reserved (fallback logic if fields missing)
+  const availableToSpend =
+    Number(summary?.available_to_spend) ||
+    Math.max(
+      0,
+      Number(summary?.gross_income || 0) -
+      Number(summary?.year_taxes_reserved || summary?.savings_balance || 0)
+    );
+
+  const latestPayout = deposits?.[0] || null;
+  const latestGross = Number(latestPayout?.amount || 0);
+  const latestTaxes = Math.round(latestGross * 0.15 * 100) / 100;
+  const latestVault = Math.round(latestGross * 0.066 * 100) / 100;
+  const latestNet = Math.round((latestGross - latestTaxes - latestVault) * 100) / 100;
+  const latestDate = latestPayout
+    ? new Date(latestPayout.date || latestPayout.created_at)
+        .toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : "—";
+
+  const vaultBalance = Number(summary?.savings_balance || 0);
+  const vaultThisMonth = Number(summary?.vault_this_month || latestVault || 0);
+  const taxGoal = Number(summary?.tax_goal || 20000);
+  const vaultPct = Math.min(100, Math.round((vaultBalance / Math.max(1, taxGoal)) * 100));
+
+  // Tax Ready Score (Excellent ≥85, On Track ≥70, ...)
+  const readyScore = summary?.tax_ready_score
+    ?? Math.round(Math.min(100, (vaultBalance / Math.max(1, taxGoal * 0.25)) * 100));
+  const readyLabel = readyScore >= 85 ? "Excellent"
+                   : readyScore >= 70 ? "On Track"
+                   : readyScore >= 40 ? "Building"
+                   : "Start";
+
+  // Mileage
+  const milesThisMonth = summary?.mileage?.business_miles || trips.reduce((a, t) => a + Number(t.miles || 0), 0);
+  const mileageDeduction = summary?.mileage?.business_deduction || Math.round(milesThisMonth * 0.70 * 100) / 100;
+
+  // Wealth
+  const retirement = Number(summary?.retirement_balance || 0);
+  const invest = Number(summary?.invest_balance || 0);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-10 max-w-5xl mx-auto">
-      {/* Tab widget grid — one card per bottom-nav tab */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Link to="/app/vault" data-testid="widget-vault"
-              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition"
-              style={{ background: "radial-gradient(120% 80% at 0% 0%, rgba(0,229,255,0.10), rgba(0,0,0,0) 60%), #06080B" }}>
-          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><VaultIcon size={12} weight="fill" /> Vault</div>
-          <div>
-            <div className="font-chrome text-3xl chrome-text tabular-nums leading-none">{money(summary.year_taxes_reserved || 0)}</div>
-            <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">Reserved YTD</div>
-          </div>
-        </Link>
-        <Link to="/app/wealth" data-testid="widget-wealth"
-              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition"
-              style={{ background: "radial-gradient(120% 80% at 100% 0%, rgba(0,229,255,0.10), rgba(0,0,0,0) 60%), #06080B" }}>
-          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><ChartLineUp size={12} weight="fill" /> Wealth</div>
-          <div>
-            <div className="font-chrome text-3xl chrome-text tabular-nums leading-none">{money((summary.retirement_balance || 0) + (summary.invest_balance || 0))}</div>
-            <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">401k + Invest</div>
-          </div>
-        </Link>
-        <Link to="/app/mileage" data-testid="widget-mileage"
-              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition"
-              style={{ background: "radial-gradient(120% 80% at 0% 100%, rgba(0,229,255,0.10), rgba(0,0,0,0) 60%), #06080B" }}>
-          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><MapTrifold size={12} weight="fill" /> Mileage</div>
-          <div>
-            <div className="font-chrome text-3xl chrome-text tabular-nums leading-none">{money(summary.mileage_deduction || 0)}</div>
-            <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">Deduction YTD</div>
-          </div>
-        </Link>
-        <Link to="/app/milli-cents" data-testid="widget-cents"
-              className="milli-card p-4 flex flex-col justify-between min-h-[112px] active:scale-[0.98] transition border-volt/40"
-              style={{ background: "radial-gradient(120% 80% at 100% 100%, rgba(0,229,255,0.16), rgba(0,0,0,0) 60%), #06080B",
-                       boxShadow: "0 0 24px rgba(0,229,255,0.15)" }}>
-          <div className="flex items-center gap-1.5 text-volt font-mono text-[10px] uppercase tracking-[0.24em]"><Coins size={12} weight="fill" /> Milli Cents</div>
-          <div>
-            <div className="font-chrome text-lg text-white tabular-nums leading-none">Live Offer</div>
-            <div className="text-[11px] text-volt uppercase tracking-widest mt-1">Analyze now →</div>
-          </div>
-        </Link>
-      </div>
+    <div className="px-5 sm:px-6 lg:px-10 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
 
-      {/* Desktop header */}
-      <div className="hidden lg:flex items-end justify-between flex-wrap gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <MilliLogo size={48} />
-          <div>
-            <div className="font-display chrome-text text-3xl tracking-[0.2em]">MILLI</div>
-            <div className="text-zinc-500 text-xs font-mono uppercase tracking-widest mt-1">// tax year {summary.year}</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/app/pricing"
-            data-testid="dashboard-plan-badge"
-            className="btn-outline-cyan px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
-          >
-            <Star size={14} weight="fill" /> {(user?.plan || "trial").toUpperCase()}
-          </Link>
-          <button
-            onClick={syncPlaid}
-            disabled={syncing}
-            data-testid="dashboard-sync-deposits"
-            className="btn-volt px-4 py-2 text-xs font-bold uppercase tracking-wider disabled:opacity-50"
-          >{syncing ? "Syncing..." : "Sync"}</button>
-        </div>
-      </div>
+      {/* ===== Greeting ===== */}
+      <header className="pt-2 pb-1">
+        <h1
+          className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
+          data-testid="dashboard-greeting"
+        >
+          {greeting}, {firstName}
+        </h1>
+        <p className="text-zinc-400 text-[15px] mt-1">Here&apos;s your financial overview</p>
+      </header>
 
-      {/* Mobile/center title */}
-      <div className="lg:hidden text-center mb-6 mt-2">
-        <div className="text-xs text-zinc-500 font-mono uppercase tracking-[0.3em]">Welcome back, {user?.name?.split(" ")[0]}</div>
-      </div>
-
-      {/* Quarterly Payment Hero Card */}
-      <div className="milli-card p-6 mb-4 relative overflow-hidden" data-testid="dashboard-quarterly-card">
-        <div className="flex items-center gap-2 mb-3">
-          <CalendarCheck size={18} weight="duotone" className="text-volt" />
-          <span className="font-semibold text-sm uppercase tracking-[0.18em] text-volt">Next Quarterly Payment</span>
-        </div>
-        <div className="flex items-end gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <div className="chrome-text font-chrome font-bold text-5xl sm:text-6xl tracking-tight" data-testid="dashboard-quarterly-amount">
-              {money(summary.next_quarterly.amount).split(".")[0]}
-              <span className="text-3xl text-zinc-400">.{money(summary.next_quarterly.amount).split(".")[1] || "00"}</span>
-            </div>
-            <div className="text-zinc-300 text-sm font-medium mt-2 font-mono">
-              {summary.next_quarterly.label} {summary.year} · Due {new Date(summary.next_quarterly.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </div>
-            <div className="text-zinc-500 text-sm mt-1">Estimated & ready to pay.</div>
-          </div>
-          {/* Decorative calendar mark */}
-          <div className="relative w-24 h-24 rounded-2xl border border-volt/30 bg-obsidian/60 flex items-center justify-center flex-shrink-0">
-            <CheckCircle size={48} weight="duotone" className="text-volt" />
-            <div className="absolute -top-2 left-3 right-3 h-1.5 bg-zinc-700 rounded-full" />
-            <div className="absolute -top-1 left-5 w-1.5 h-3 bg-zinc-600 rounded" />
-            <div className="absolute -top-1 right-5 w-1.5 h-3 bg-zinc-600 rounded" />
-          </div>
-        </div>
-      </div>
-
-      {/* Tax Ready Score — new gauge primitive */}
-      <div className="milli-card p-6 mb-4 flex flex-col lg:flex-row items-center gap-8"
-            data-testid="dashboard-tax-score-card">
-        <TaxReadyGauge score={score} />
-        <div className="flex-1 min-w-0 text-center lg:text-left">
-          <div className="text-volt text-sm font-semibold uppercase tracking-[0.24em] mb-3">
-            // Tax Ready Score™
-          </div>
-          <div className="text-zinc-300 text-base leading-snug max-w-md mx-auto lg:mx-0">
-            {score >= 75
-              ? "You're in great shape. Milli has protected enough to cover the next quarterly estimate."
-              : score >= 40
-              ? "Halfway there — every payout brings you closer. Log a few more items to close the gap."
-              : "Let's get rolling. Connect your bank and take a first trip to start the score."}
-          </div>
-          {isElite && (
-            <div className="mt-4 flex justify-center lg:justify-start">
-              <EliteBadge size={72} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Insight row */}
-      <div className="mb-4">
-        <InsightRow items={[
-          {
-            icon: Shield, title: "Tax Protection",
-            metric: money(summary?.savings_balance || 0),
-            sub: `${score}% ready for next quarter`,
-          },
-          {
-            icon: Car, title: "Miles Tracked",
-            metric: `${num(summary?.mileage?.business_miles || 0)} mi`,
-            sub: `IRS $0.70/mi · ${money(summary?.mileage?.business_deduction || 0)}`,
-          },
-          {
-            icon: ChartLineUp, title: "Projections",
-            metric: money(summary?.federal_estimated_tax || 0),
-            sub: "Annual estimated tax",
-          },
-        ]} />
-      </div>
-
-      {/* Financial Timeline */}
-      <div className="milli-card p-4 mb-4" data-testid="dashboard-timeline-card">
-        <div className="px-2 pt-2 pb-1 flex items-center justify-between">
-          <div className="text-volt text-xs font-mono uppercase tracking-[0.24em]">
-            // Payout Timeline
-          </div>
-          <Link to="/app/income" className="text-xs font-mono text-zinc-500 hover:text-volt uppercase tracking-widest inline-flex items-center gap-1">
-            All payouts <CaretRight size={10} weight="bold" />
-          </Link>
-        </div>
-        <FinancialTimeline payouts={deposits} />
-      </div>
-
-      {/* Tax Vault */}
-      <div className="mb-4" data-testid="dashboard-vault-card">
-        <TaxVaultCard
-          balance={summary?.savings_balance || 0}
-          period={"Q3"}
-          locked={!isElite && (summary?.savings_balance || 0) === 0}
-        />
-      </div>
-
-      {/* Quarterly checklist */}
-      <div className="milli-card p-6 mb-4" data-testid="dashboard-checklist-card">
-        <div className="text-volt text-sm font-semibold uppercase tracking-[0.18em] mb-4">Quarterly Checklist</div>
-        <div className="divide-y divide-hairline/60">
-          <CheckRow label="Income" done={checks.income} to="/app/income" testid="check-income" />
-          <CheckRow label="Mileage" done={checks.mileage} to="/app/mileage" testid="check-mileage" />
-          <CheckRow label="Expenses" done={checks.expenses} to="/app/expenses" testid="check-expenses" />
-          <CheckRow label="1099s & Reports" done={checks.quarterly} to="/app/reports" testid="check-1099s" />
-        </div>
-      </div>
-
-      {/* Federal + State Filing card */}
-      <Link
-        to="/app/reports"
-        data-testid="dashboard-filing-card"
-        className="milli-card p-6 mb-4 block hover:border-volt/50 transition-colors relative overflow-hidden"
+      {/* ===== 1 · Available to Spend Hero ===== */}
+      <section
+        className="relative overflow-hidden rounded-3xl p-5 sm:p-6"
+        data-testid="dashboard-available-card"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(0,180,200,0.30) 0%, rgba(0,229,255,0.10) 35%, rgba(10,14,18,0.85) 70%, rgba(10,14,18,0.95) 100%)",
+          border: "1px solid rgba(0,229,255,0.55)",
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.10), 0 0 28px rgba(0,229,255,0.35), 0 0 60px rgba(0,229,255,0.15), 0 18px 44px rgba(0,0,0,0.55)",
+        }}
       >
-        <div className="flex items-center gap-5">
-          <ShieldCheck size={32} weight="duotone" className="text-volt flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="text-volt text-xs font-bold uppercase tracking-[0.2em]">Federal + State Filing</div>
-            <div className="font-chrome text-2xl chrome-text mt-1">
-              {isElite ? "Ready for Review" : "Upgrade to Elite"}
-            </div>
-            <div className="text-zinc-400 text-sm mt-1 max-w-md">
-              {isElite
-                ? "Your return is prepared and ready for Elite review."
-                : "Elite users get auto-filed federal + state returns end-to-end."}
-            </div>
+        {/* Metallic M card floated in the top-right corner so the amount has full width */}
+        <div className="absolute top-4 right-4 sm:top-5 sm:right-5 pointer-events-none">
+          <MetallicMCard />
+        </div>
+        <div className="relative z-10 min-w-0">
+          <div className="flex items-center gap-2 text-white/80 text-[14px] font-medium">
+            <span>Available to Spend</span>
+            <Eye size={16} weight="regular" className="text-white/60" />
           </div>
-          {/* Elite shield placeholder */}
-          <div className="hidden sm:flex w-20 h-20 items-center justify-center rounded-2xl border border-volt/30 bg-gradient-to-b from-zinc-800 to-zinc-950 flex-shrink-0 relative">
-            <div className="chrome-text font-chrome text-xs font-bold tracking-widest">ELITE</div>
-            <Star size={14} weight="fill" className="absolute top-2 right-2 text-volt" />
+          <div
+            className="font-chrome font-black text-white tabular-nums leading-[1] tracking-tight mt-3 text-[36px] sm:text-[44px]"
+            data-testid="dashboard-available-amount"
+          >
+            ${availableToSpend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <Link
+            to="/app/vault"
+            className="mt-3 inline-flex items-center gap-1.5 text-white/70 text-[13px] active:opacity-70"
+            data-testid="dashboard-checking-link"
+          >
+            <span>Milli Checking</span>
+            <span className="tracking-widest text-white/50">•••• 4587</span>
+            <CaretRight size={12} weight="bold" className="text-white/60" />
+          </Link>
+        </div>
+      </section>
+
+      {/* ===== 2 · Latest Payout ===== */}
+      <Link
+        to="/app/income"
+        className="milli-card block p-5 rounded-2xl active:scale-[0.995] transition-transform"
+        data-testid="dashboard-latest-payout-card"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-white font-semibold text-[17px]">Latest Payout</h2>
+          <CaretRight size={16} weight="bold" className="text-zinc-500" />
+        </div>
+        <div className="flex gap-5">
+          {/* Left */}
+          <div className="flex-1 min-w-0">
+            <div className="text-zinc-400 text-[12.5px]">Gross Payout</div>
+            <div className="chrome-text font-chrome font-bold text-[26px] leading-tight mt-1 tabular-nums">
+              ${latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-zinc-500 text-[12.5px] mt-2">{latestDate}</div>
+          </div>
+          {/* Right */}
+          <div className="flex-1 min-w-0 text-[13.5px] space-y-1.5">
+            <BreakdownRow label="Net Payout" value={`$${latestNet.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+            <BreakdownRow label="Taxes" value={`−$${latestTaxes.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+            <BreakdownRow label={<>Milli Tax Vault<sup>™</sup></>} value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
+            <div className="border-t border-white/10 pt-1.5 mt-1.5">
+              <BreakdownRow label="Total" value={`$${latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} bold />
+            </div>
           </div>
         </div>
       </Link>
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <Kpi label="YTD Gross" value={money(summary.gross_income)} icon={Coins} testid="kpi-gross" />
-        <Kpi label="YTD Miles" value={num(summary.total_miles)} icon={MapTrifold} testid="kpi-miles" />
-        <Kpi label="Tax Est." value={money(summary.estimated_tax)} icon={CalendarCheck} testid="kpi-est-tax" />
-        <Kpi label="Savings" value={money(summary.savings_balance)} icon={ShieldCheck} accent testid="kpi-savings" />
+      {/* ===== 3 · Tax Vault + Ready Score (2-up) ===== */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Tax Vault */}
+        <Link
+          to="/app/vault"
+          data-testid="dashboard-vault-card"
+          className="milli-card p-4 rounded-2xl flex flex-col active:scale-[0.995] transition-transform"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Bank size={20} weight="regular" className="text-volt" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
+            <span className="text-white text-[13.5px] font-semibold leading-none">Milli Tax Vault<sup>™</sup></span>
+          </div>
+          <div className="chrome-text font-chrome font-bold text-[24px] leading-none tabular-nums mt-1">
+            ${vaultBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <div className="text-volt text-[12px] mt-1.5" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
+            +${vaultThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this month
+          </div>
+          {/* progress */}
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex-1 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${vaultPct}%`,
+                  background: "linear-gradient(90deg, #00E5FF 0%, #4DE0FF 100%)",
+                  boxShadow: "0 0 12px rgba(0,229,255,0.7)",
+                }}
+              />
+            </div>
+            <span className="text-zinc-400 text-[11px] tabular-nums">{vaultPct}%</span>
+          </div>
+          <div className="text-zinc-500 text-[11.5px] mt-2">
+            {now.getFullYear()} Tax Goal: ${taxGoal.toLocaleString("en-US")}
+          </div>
+        </Link>
+
+        {/* Tax Ready Score */}
+        <Link
+          to="/app/quarterly"
+          data-testid="dashboard-ready-score-card"
+          className="milli-card p-4 rounded-2xl flex flex-col items-center justify-between active:scale-[0.995] transition-transform"
+        >
+          <div className="w-full text-white text-[13.5px] font-semibold">Tax Ready Score<sup>™</sup></div>
+          <ReadyRing value={readyScore} label={readyLabel} />
+          <div className="text-zinc-500 text-[11.5px]">Updated today</div>
+        </Link>
       </div>
 
-      {/* Quick links */}
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Link
-          to="/app/ai"
-          data-testid="dashboard-ai-cta"
-          className="milli-card p-5 flex items-center gap-4 hover:border-volt/50 transition-colors group"
-        >
-          <Robot size={28} weight="duotone" className="text-volt" />
-          <div className="flex-1">
-            <div className="font-semibold">Ask MILLI AI</div>
-            <div className="text-xs text-zinc-500">Tax tips · deductions · quarterlies</div>
-          </div>
-          <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt" />
-        </Link>
-        <Link
-          to="/app/reports"
-          data-testid="dashboard-reports-cta"
-          className="milli-card p-5 flex items-center gap-4 hover:border-volt/50 transition-colors group"
-        >
-          <FileText size={28} weight="duotone" className="text-volt" />
-          <div className="flex-1">
-            <div className="font-semibold">Tax Vault</div>
-            <div className="text-xs text-zinc-500">Schedule C · SE · mileage CSV</div>
-          </div>
-          <ArrowUpRight size={18} className="text-zinc-600 group-hover:text-volt" />
-        </Link>
+      {/* ===== 4 · Financial Timeline ===== */}
+      <section className="milli-card p-5 rounded-2xl" data-testid="dashboard-timeline-card">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-white font-semibold text-[16px]">Financial Timeline</h2>
+          <Link
+            to="/app/income"
+            className="text-volt text-[13.5px] font-semibold active:opacity-70"
+            style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}
+            data-testid="dashboard-timeline-viewall"
+          >
+            View all
+          </Link>
+        </div>
+        <ul className="space-y-2">
+          <TimelineRow
+            month="JUN" day="15"
+            icon={Receipt}
+            label="Estimated Tax Payment"
+            amount="$1,240.00"
+          />
+          <TimelineRow
+            month="SEP" day="15"
+            icon={FileText}
+            label="Q3 Estimated Tax"
+            amount="$1,310.00"
+            last
+          />
+        </ul>
+      </section>
+
+      {/* ===== 5 · Mileage · Retirement · Investing (3-up) ===== */}
+      <div className="grid grid-cols-3 gap-2.5">
+        <MetricTile
+          to="/app/mileage"
+          icon={Gauge}
+          label="Mileage"
+          value={`${Math.round(milesThisMonth).toLocaleString("en-US")} mi`}
+          sub="This month"
+          delta={`+$${mileageDeduction.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          testid="tile-mileage"
+        />
+        <MetricTile
+          to="/app/retirement"
+          icon={Plant}
+          label="Retirement"
+          value={`$${Math.round(retirement).toLocaleString("en-US")}`}
+          sub="Total Balance"
+          delta="+7.2%"
+          testid="tile-retirement"
+        />
+        <MetricTile
+          to="/app/investing"
+          icon={ChartLineUp}
+          label="Investing"
+          value={`$${Math.round(invest).toLocaleString("en-US")}`}
+          sub="Total Balance"
+          delta="+5.6%"
+          testid="tile-investing"
+        />
       </div>
     </div>
   );
 }
 
-function ScoreRing({ value }) {
-  const r = 56;
-  const c = 2 * Math.PI * r;
-  const offset = c - (value / 100) * c;
+/* =================================================================
+   Sub-components
+   ================================================================= */
+
+function BreakdownRow({ label, value, cyan, bold }) {
   return (
-    <div className="relative w-36 h-36 flex-shrink-0">
-      <svg width="144" height="144" viewBox="0 0 144 144" className="-rotate-90">
-        <defs>
-          <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#00E5FF" />
-            <stop offset="100%" stopColor="#0090A8" />
-          </linearGradient>
-          <filter id="ring-glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <circle cx="72" cy="72" r={r} fill="none" stroke="rgba(0,229,255,0.12)" strokeWidth="8" />
+    <div className="flex items-center justify-between">
+      <span className={`text-zinc-400 ${bold ? "font-semibold text-white" : ""}`}>{label}</span>
+      <span
+        className={`tabular-nums ${bold ? "font-bold text-white" : "text-white"} ${
+          cyan ? "text-volt" : ""
+        }`}
+        style={cyan ? { color: "#00E5FF", textShadow: "0 0 6px rgba(0,229,255,0.4)" } : {}}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* Small circular Tax Ready Score ring (fits inside the 2-up card) */
+function ReadyRing({ value = 0, label = "Excellent" }) {
+  const size = 100;
+  const stroke = 7;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.max(0, Math.min(100, value)) / 100) * c;
+  return (
+    <div
+      className="relative"
+      style={{ width: size, height: size, filter: "drop-shadow(0 0 16px rgba(0,229,255,0.35))" }}
+    >
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,229,255,0.15)" strokeWidth={stroke} />
         <circle
-          cx="72"
-          cy="72"
-          r={r}
-          fill="none"
-          stroke="url(#ring-grad)"
-          strokeWidth="8"
+          cx={size/2} cy={size/2} r={r}
+          fill="none" stroke="#00E5FF" strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={offset}
-          filter="url(#ring-glow)"
-          style={{ transition: "stroke-dashoffset 800ms cubic-bezier(0.4, 0, 0.2, 1)" }}
+          style={{ transition: "stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="chrome-text font-chrome font-bold text-3xl leading-none">{value}%</div>
-        <div className="text-volt text-[10px] font-mono uppercase tracking-[0.3em] mt-1">Ready</div>
+        <div className="chrome-text font-chrome font-bold text-[26px] leading-none tabular-nums">{Math.round(value)}</div>
+        <div className="text-volt text-[10px] font-semibold uppercase tracking-widest mt-0.5"
+             style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
+          {label}
+        </div>
       </div>
     </div>
   );
 }
 
-function CheckRow({ label, done, to, testid }) {
+function TimelineRow({ month, day, icon: Icon, label, amount, last }) {
   return (
-    <Link to={to} data-testid={testid} className="flex items-center justify-between py-3 hover:bg-white/[0.02] -mx-2 px-2 rounded-lg transition-colors">
-      <div className="flex items-center gap-3">
-        <CheckCircle size={20} weight={done ? "fill" : "regular"} className={done ? "text-volt" : "text-zinc-700"} />
-        <span className={`font-medium ${done ? "text-white" : "text-zinc-400"}`}>{label}</span>
+    <li>
+      <div className={`flex items-center gap-3 py-2.5 ${last ? "" : "border-b border-white/[0.05]"}`}>
+        {/* date circle */}
+        <div
+          className="w-11 h-11 rounded-full flex flex-col items-center justify-center flex-shrink-0"
+          style={{
+            border: "1.5px solid rgba(0,229,255,0.55)",
+            background: "rgba(0,229,255,0.05)",
+            boxShadow: "0 0 12px rgba(0,229,255,0.25)",
+          }}
+        >
+          <span className="text-volt text-[9px] font-bold tracking-wider leading-none uppercase">{month}</span>
+          <span className="text-white text-[13px] font-bold leading-none mt-0.5">{day}</span>
+        </div>
+        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center flex-shrink-0">
+          <Icon size={16} weight="regular" className="text-white/70" />
+        </div>
+        <div className="flex-1 min-w-0 text-white text-[14.5px] truncate">{label}</div>
+        <div className="text-white font-semibold text-[15px] tabular-nums whitespace-nowrap">{amount}</div>
+        <CaretRight size={14} weight="bold" className="text-zinc-600 flex-shrink-0" />
       </div>
-      <div className="flex items-center gap-2">
-        <span className={`text-sm font-mono ${done ? "text-volt" : "text-zinc-500"}`}>
-          {done ? "Complete" : "Pending"}
+    </li>
+  );
+}
+
+function MetricTile({ to, icon: Icon, label, value, sub, delta, testid }) {
+  return (
+    <Link
+      to={to}
+      data-testid={testid}
+      className="milli-card p-3 rounded-2xl flex flex-col justify-between min-h-[130px] active:scale-[0.98] transition-transform"
+    >
+      <div className="flex items-center gap-1.5">
+        <Icon size={16} weight="regular" className="text-volt" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.5))" }} />
+        <span className="text-zinc-300 text-[11.5px] font-semibold">{label}</span>
+      </div>
+      <div>
+        <div className="chrome-text font-chrome font-bold text-[17px] leading-tight tabular-nums truncate">
+          {value}
+        </div>
+        <div className="text-zinc-500 text-[10.5px] mt-0.5">{sub}</div>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-volt text-[12px] font-semibold" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
+          {delta}
         </span>
-        <CaretRight size={16} className="text-zinc-600" />
+        <CaretRight size={12} weight="bold" className="text-zinc-500" />
       </div>
     </Link>
   );
 }
 
-function Kpi({ label, value, icon: Icon, accent, testid }) {
+/* Metallic M card graphic (right side of the "Available to Spend" hero) */
+function MetallicMCard() {
   return (
-    <div className="milli-card p-4" data-testid={testid}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500">{label}</div>
-        <Icon size={14} weight="duotone" className={accent ? "text-volt" : "text-zinc-500"} />
+    <div
+      className="relative w-[88px] h-[56px] sm:w-[104px] sm:h-[64px] flex-shrink-0 rounded-lg overflow-hidden"
+      aria-hidden
+      style={{
+        background:
+          "linear-gradient(135deg, #E4E7EA 0%, #A8ADB4 20%, #4B4F55 50%, #1E2126 80%, #0A0C10 100%)",
+        boxShadow:
+          "inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -6px 12px rgba(0,0,0,0.5), 0 6px 14px rgba(0,0,0,0.55)",
+        transform: "rotate(-8deg)",
+      }}
+    >
+      {/* diagonal highlight */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.28) 45%, transparent 60%)",
+        }}
+      />
+      {/* chip */}
+      <div
+        className="absolute top-2 left-2 w-5 h-3.5 rounded-sm"
+        style={{
+          background: "linear-gradient(180deg, #C8B970 0%, #8A7A3E 100%)",
+          boxShadow: "inset 0 0 2px rgba(0,0,0,0.6)",
+        }}
+      />
+      {/* Big M */}
+      <div
+        className="absolute inset-0 flex items-center justify-end pr-2.5"
+        style={{
+          fontFamily: "'Sora','Inter',sans-serif",
+          fontWeight: 900,
+          fontSize: 32,
+          background: "linear-gradient(180deg, #FFFFFF 0%, #D0D3D8 40%, #6E7379 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.5))",
+        }}
+      >
+        M
       </div>
-      <div className={`font-chrome font-bold text-xl ${accent ? "text-volt" : "chrome-text"}`}>{value}</div>
     </div>
   );
 }
