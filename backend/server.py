@@ -328,8 +328,8 @@ async def onboarding_complete(body: OnboardingIn, user: dict = Depends(get_curre
 @api.post("/plaid/link-token")
 async def plaid_link_token(user: dict = Depends(get_current_user)):
     req = LinkTokenCreateRequest(
-        products=[Products("transactions")],
-        client_name="TaxHaul",
+        products=[Products("auth"), Products("transactions")],
+        client_name="Milli Tax Vault",
         country_codes=[CountryCode("US")],
         language="en",
         user=LinkTokenCreateRequestUser(
