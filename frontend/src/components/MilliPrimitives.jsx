@@ -1,5 +1,5 @@
 /**
- * MilliPrimitives.jsx — v4.1 Hollywood Blueprint Lock
+ * MilliPrimitives.jsx — v4.3 Senior Defense
  *
  * Cinematic design-system primitives for Milli Tax App.
  * Compose these anywhere. Each renders design-system.css classes so the
@@ -233,9 +233,10 @@ function SemiCircularGauge({ score = 82 }) {
 
 /* ---------- 3 · Elite Spend Card ---------- */
 export function EliteSpendCard({
-    available = 24560.00,
+    available,
     accountMask = "•••• 4821",
 }) {
+    const amt = Number(available || 0);
     return (
         <div style={{
             background: 'rgba(13,15,18,0.5)',
@@ -282,7 +283,7 @@ export function EliteSpendCard({
                         fontFamily: "'SF Pro Display', -apple-system, sans-serif",
                         marginBottom: 10,
                     }} data-testid="elite-spend-amount">
-                        ${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div style={{
                         display: 'flex',
@@ -388,11 +389,12 @@ export function FinancialTimeline({ payouts = [] }) {
         { id: 3, platform: "Lyft", amount: 256.80, date: "2026-07-22" },
         { id: 4, platform: "Uber", amount: 412.00, date: "2026-07-19" },
     ];
-    const items = payouts.length ? payouts : defaults;
+    const items = (Array.isArray(payouts) && payouts.length > 0) ? payouts : defaults;
 
     return (
         <div data-testid="financial-timeline" style={{ padding: '8px 0' }}>
             {items.slice(0, 8).map((p, i) => {
+                if (!p || typeof p !== 'object') return null;
                 const amt = Number(p.amount || 0);
                 const date = new Date(p.date || p.created_at || Date.now())
                     .toLocaleDateString("en-US", { month: "short", day: "numeric" });

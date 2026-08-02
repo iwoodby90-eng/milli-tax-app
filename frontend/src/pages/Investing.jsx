@@ -1,5 +1,5 @@
 /**
- * Investing.jsx — v4.2 Hollywood Blueprint Lock
+ * Investing.jsx — v4.3 Senior Defense
  *
  * Cinematic Investing page matching mockup:
  * - Hero: Elite Spend Card
@@ -368,6 +368,20 @@ export default function Investing() {
 /* ─── Sub-components ─── */
 
 function CandlestickChart({ candles }) {
+  if (!Array.isArray(candles) || candles.length < 2) {
+    return (
+      <div style={{
+        padding: '32px 16px',
+        textAlign: 'center',
+        color: '#5A6573',
+        fontFamily: 'monospace',
+        fontSize: 12,
+      }} data-testid="candlestick-placeholder">
+        Waiting for more data...
+      </div>
+    );
+  }
+
   const W = 340, H = 180;
   const padL = 5, padR = 5, padT = 10, padB = 10;
   const chartW = W - padL - padR;
@@ -425,6 +439,18 @@ function CandlestickChart({ candles }) {
 }
 
 function DonutChart({ data }) {
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <div style={{
+        width: 120, height: 120, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#5A6573', fontFamily: 'monospace', fontSize: 11,
+      }} data-testid="donut-placeholder">
+        No allocation data
+      </div>
+    );
+  }
+
   const size = 120;
   const cx = size / 2, cy = size / 2;
   const r = 44;

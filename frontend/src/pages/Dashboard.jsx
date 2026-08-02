@@ -1,5 +1,5 @@
 /**
- * Dashboard.jsx — v4.2 Hollywood Blueprint Lock
+ * Dashboard.jsx — v4.3 Senior Defense
  *
  * Cinematic financial dashboard matching the mockup:
  * - Header: "Good morning, Alex. Here's your financial overview."
@@ -44,9 +44,9 @@ export default function Dashboard() {
         api.get("/mileage/summary").catch(() => ({ data: null })),
       ]);
       setSummary(s.data);
-      setDeposits(d.data);
-      setTrips(t.data);
-      setExpenses(e.data);
+      setDeposits(d.data || []);
+      setTrips(t.data || []);
+      setExpenses(e.data || []);
       setVault(v.data);
       setMileageSummary(mil.data);
     } catch (err) { toast.error(formatApiError(err)); }
@@ -67,17 +67,17 @@ export default function Dashboard() {
   }
 
   const checks = {
-    income: deposits.length > 0,
-    mileage: trips.length > 0,
-    expenses: expenses.length > 0,
-    quarterly: summary.estimated_tax > 0,
+    income: (deposits?.length || 0) > 0,
+    mileage: (trips?.length || 0) > 0,
+    expenses: (expenses?.length || 0) > 0,
+    quarterly: (summary?.estimated_tax || 0) > 0,
   };
   const filled = Object.values(checks).filter(Boolean).length;
-  const score = Math.round((filled / 4) * 100) || 85;
+  const score = Number.isFinite(Math.round((filled / 4) * 100)) ? Math.round((filled / 4) * 100) : 85;
   const vaultBalance = vault?.balance ?? summary?.savings_balance ?? 0;
   const firstName = user?.name?.split(" ")[0] || "Alex";
 
-  const latestPayout = deposits.length > 0 ? deposits[0] : {
+  const latestPayout = (Array.isArray(deposits) && deposits.length > 0) ? deposits[0] : {
     amount: 1247.50, platform: "Uber", date: "2026-07-28",
     gross: 1247.50, net: 984.20, taxes: 187.13, vault_amount: 76.17,
   };

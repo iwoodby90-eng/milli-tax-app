@@ -1,7 +1,9 @@
 /**
- * Retirement.jsx — v4.1 Hollywood Blueprint Lock
+ * Retirement.jsx — v4.3 Senior Defense + Plan Selector Restoration
  *
  * Cinematic 401(k) page:
+ * - Header: "Pay your future self first."
+ * - PlanSelector: Solo 401(k), Traditional IRA, Roth IRA
  * - Hero: "Projected Balance" with glowing tree asset
  * - Main: 10-year projection graph with glowing cyan line
  * - Grid: "Your Contribution", "Employer Match", "Goal Progress"
@@ -34,9 +36,16 @@ const SCENARIOS = [
   { label: "Aggressive", rate: "11%", projected: "$480,000", color: "#34D399" },
 ];
 
+const PLANS = [
+  { key: "solo", title: "Solo 401(k)", description: "Max $69,000/yr. Ideal for self-employed with no employees." },
+  { key: "traditional", title: "Traditional IRA", description: "Tax-deductible contributions. $7,000/yr limit." },
+  { key: "roth", title: "Roth IRA", description: "Tax-free growth & withdrawals. $7,000/yr limit." },
+];
+
 export default function Retirement() {
   const { user } = useAuth();
   const [acct, setAcct] = useState(undefined);
+  const [plan, setPlan] = useState("solo");
 
   async function load() {
     try {
@@ -88,6 +97,11 @@ export default function Retirement() {
           Pay your future self first.
         </h1>
       </div>
+
+      {/* ═══════════════════════════════════════
+          PLAN SELECTOR
+          ═══════════════════════════════════════ */}
+      <PlanSelector value={plan} onChange={setPlan} />
 
       {/* ═══════════════════════════════════════
           HERO — Projected Balance with Growth Tree
@@ -244,7 +258,74 @@ export default function Retirement() {
 
 /* ─── Sub-components ─── */
 
+function PlanSelector({ value, onChange }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr 1fr',
+      gap: 10,
+      marginBottom: 20,
+    }} data-testid="plan-selector">
+      {PLANS.map((p) => {
+        const active = value === p.key;
+        return (
+          <div
+            key={p.key}
+            onClick={() => onChange(p.key)}
+            style={{
+              background: active
+                ? 'rgba(0,229,255,0.06)'
+                : 'rgba(13,15,18,0.5)',
+              backdropFilter: 'blur(28px)',
+              border: active
+                ? '1px solid rgba(0,229,255,0.35)'
+                : '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 16,
+              padding: '16px 12px',
+              cursor: 'pointer',
+              textAlign: 'center',
+              transition: 'all 0.2s ease',
+            }}
+            data-testid={`plan-${p.key}`}
+          >
+            <div style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: active ? '#00E5FF' : '#E8E8E8',
+              marginBottom: 6,
+              lineHeight: 1.3,
+            }}>
+              {p.title}
+            </div>
+            <div style={{
+              fontSize: 10,
+              lineHeight: 1.4,
+              color: active ? '#FFFFFF' : '#8B9DAF',
+            }}>
+              {p.description}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function GrowthGraph({ data }) {
+  if (!Array.isArray(data) || data.length < 2) {
+    return (
+      <div style={{
+        padding: '32px 16px',
+        textAlign: 'center',
+        color: '#5A6573',
+        fontFamily: 'monospace',
+        fontSize: 12,
+      }} data-testid="growth-graph-placeholder">
+        Waiting for more data...
+      </div>
+    );
+  }
+
   const W = 320, H = 160;
   const padL = 8, padR = 8, padT = 20, padB = 28;
   const chartW = W - padL - padR;
