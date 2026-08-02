@@ -80,3 +80,6 @@ memory/test_credentials.md
 
 # Mobile development
 android-sdk/frontend/public/milli-source.tar.gz
+frontend/build/milli-source.tar.gz
+frontend/public/milli-source.tar.gz
+frontend/ios/App/App/public/milli-source.tar.gz

@@ -220,51 +220,54 @@ export default function AppLayout({ children }) {
   );
 }
 
-/* ============ Raised chrome home button (metallic ring + M) ============ */
+/* ============ Raised chrome home button (matches reference: bright polished chrome disc + big M) ============ */
 function ChromeHomeButton() {
   return (
     <div
-      className="w-[64px] h-[64px] rounded-full flex items-center justify-center relative"
+      className="w-[68px] h-[68px] rounded-full flex items-center justify-center relative"
       style={{
         background:
-          "radial-gradient(circle at 30% 25%, #F0F0F0 0%, #B4B8BE 30%, #6E7379 60%, #2A2E33 100%)",
+          "radial-gradient(circle at 32% 24%, #FDFDFE 0%, #E8ECEF 22%, #B2B7BD 48%, #7A8087 72%, #3F454B 92%, #22272C 100%)",
         boxShadow:
-          "inset 0 2px 2px rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.6), 0 6px 18px rgba(0,0,0,0.55), 0 0 28px rgba(0,229,255,0.55), 0 12px 20px rgba(0,229,255,0.35)",
+          "inset 0 3px 3px rgba(255,255,255,0.75), inset 0 -4px 8px rgba(0,0,0,0.55), 0 8px 22px rgba(0,0,0,0.6), 0 0 32px rgba(0,229,255,0.55), 0 14px 24px rgba(0,229,255,0.35)",
       }}
     >
       {/* underneath cyan light bloom */}
       <span
-        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-2 rounded-full pointer-events-none"
+        className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-2.5 rounded-full pointer-events-none"
         style={{
-          background: "rgba(0,229,255,0.85)",
-          filter: "blur(6px)",
-          opacity: 0.9,
+          background: "rgba(0,229,255,0.95)",
+          filter: "blur(7px)",
+          opacity: 0.95,
         }}
       />
-      <div
-        className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
+      {/* soft top-light highlight sheen */}
+      <span
+        className="absolute top-1 left-2 right-2 h-3 rounded-full pointer-events-none"
         style={{
-          background:
-            "radial-gradient(circle at 30% 30%, #1A1D22 0%, #0A0C10 60%, #05070A 100%)",
-          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -2px 4px rgba(0,0,0,0.7)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)",
+          filter: "blur(2px)",
+        }}
+      />
+      {/* Big polished chrome M — directly on the disc */}
+      <span
+        style={{
+          fontFamily: "'Sora','Inter',sans-serif",
+          fontWeight: 900,
+          fontSize: 38,
+          lineHeight: 1,
+          background: "linear-gradient(180deg, #FFFFFF 0%, #E8ECEF 30%, #6E7379 62%, #24272B 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          letterSpacing: "-0.05em",
+          filter:
+            "drop-shadow(0 2px 0 rgba(0,0,0,0.55)) drop-shadow(0 -1px 0 rgba(255,255,255,0.35))",
+          position: "relative",
+          zIndex: 2,
         }}
       >
-        <span
-          style={{
-            fontFamily: "'Sora','Inter',sans-serif",
-            fontWeight: 900,
-            fontSize: 26,
-            lineHeight: 1,
-            background: "linear-gradient(180deg, #FFFFFF 0%, #D6D9DE 45%, #6E7379 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            letterSpacing: "-0.03em",
-            filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.6))",
-          }}
-        >
-          M
-        </span>
-      </div>
+        M
+      </span>
     </div>
   );
 }
