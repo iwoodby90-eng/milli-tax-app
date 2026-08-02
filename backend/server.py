@@ -447,6 +447,19 @@ async def _sync_item(item: dict, user: dict) -> int:
             await _run_autopilot(db, fresh_user, doc)
         except Exception as ap_err:
             logging.warning("Autopilot failed for deposit %s: %s", doc["id"], ap_err)
+        # Fire a push notification for the new payout (no-op if APNs not configured).
+        try:
+            import apns as _apns
+            tok = (user.get("push") or {}).get("device_token")
+            if tok:
+                await _apns.send_push(
+                    tok,
+                    f"New {platform} payout · +${deposit_amount:,.2f}",
+                    f"${savings_set_aside:,.2f} auto-routed to your Milli Tax Vault™.",
+                    thread_id="payout", category="PAYOUT",
+                )
+        except Exception:
+            pass
     return new_deposits
 
 @api.post("/plaid/sandbox/fire-webhook")
@@ -2406,6 +2419,23 @@ async def push_unregister(user: dict = Depends(get_current_user)):
     await db.users.update_one({"id": user["id"]}, {"$unset": {"push": ""}})
     return {"ok": True}
 
+@api.post("/push/test")
+async def push_test(user: dict = Depends(get_current_user)):
+    """Send a test push to the caller's device — useful for setup verification."""
+    try:
+        import apns as _apns
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"apns module unavailable: {e!s}")
+    tok = (user.get("push") or {}).get("device_token")
+    if not tok:
+        raise HTTPException(status_code=404, detail="No device_token registered")
+    res = await _apns.send_push(
+        tok, "Milli test push",
+        "If you see this on your lock screen, APNs is wired ✅",
+        thread_id="test",
+    )
+    return res
+
 
 # -------------------- MOUNT --------------------
 app.include_router(api)
@@ -2475,6 +2505,26 @@ async def _startup():
     except Exception as e:
         logging.warning("Autopilot migration skipped: %s", e)
 
+    # ----- APScheduler: quarterly reminders + light housekeeping -----
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        import apns as _apns
+        from notifications import run_quarterly_reminders
+        sched = AsyncIOScheduler(timezone="America/Los_Angeles")
+        # Every day at 09:00 local — hits the T-14/7/3/1/0 windows automatically.
+        sched.add_job(lambda: run_quarterly_reminders(db, _apns),
+                      "cron", hour=9, minute=0, id="milli-quarterly-reminders")
+        sched.start()
+        app.state.scheduler = sched
+        logging.info("APScheduler started (quarterly reminders 09:00 America/Los_Angeles).")
+    except Exception as e:
+        logging.warning("Scheduler not started: %s", e)
+
 @app.on_event("shutdown")
 async def _shutdown():
+    try:
+        sched = getattr(app.state, "scheduler", None)
+        if sched: sched.shutdown(wait=False)
+    except Exception:
+        pass
     client.close()

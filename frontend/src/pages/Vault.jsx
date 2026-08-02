@@ -7,6 +7,7 @@ import {
   ShieldCheck, ArrowDown, ArrowUp, Sparkle, Star, LockKey,
   CaretRight, Bank, Confetti,
 } from "@phosphor-icons/react";
+import MilliVaultBridge from "@/plugins/MilliVaultBridge";
 
 /**
  * Milli Tax Vault — matches Milli aesthetic (dashboard style).
@@ -38,6 +39,12 @@ export default function Vault() {
   const isElite = user?.plan === "elite";
   const year = new Date().getFullYear();
   const rate = Number(vault?.rate_pct ?? 0.06);
+
+  // Push the latest vault snapshot into the iOS App Group so the home-screen widget shows fresh data
+  useEffect(() => {
+    if (!balance && !taxGoal) return;
+    MilliVaultBridge.update({ balance, goal: taxGoal, thisMonth }).catch(() => {});
+  }, [balance, taxGoal, thisMonth]);
 
   // Confetti on milestone crossings (25/50/75/100)
   useEffect(() => {

@@ -42,6 +42,14 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - Apple IAP (StoreKit 2) — implemented via `@capgo/native-purchases` + receipt verification
 
 ## Changelog
+- **Aug 3, 2026 (early)** — **Widget bridge + APNs sender + quarterly cron + payout push.**
+  * **`MilliVaultBridge` Capacitor plugin** — full Swift + Objective-C registration at `ios/App/App/plugins/MilliVaultBridgePlugin.{swift,m}`. Writes vault balance/goal/thisMonth into the shared App Group (`group.app.milli.tax`) and calls `WidgetCenter.shared.reloadTimelines`. JS wrapper at `src/plugins/MilliVaultBridge.js` (no-op on web). Wired into `Vault.jsx` — every summary load automatically refreshes the widget.
+  * **APNs sender** (`backend/apns.py`) — ES256 JWT provider auth (cached 50 min), HTTP/2 client via `httpx`, graceful no-op when `.p8` env is missing. Uses env vars `APNS_KEY_ID / APNS_TEAM_ID (default W5Q42XNM9V) / APNS_BUNDLE_ID (default app.milli.tax) / APNS_KEY_P8 / APNS_ENV`.
+  * **Quarterly reminder cron** (`backend/notifications.py`) — `run_quarterly_reminders` computes next IRS deadline (Apr 15 / Jun 15 / Sep 15 / Jan 15) and fires at T-14, T-7, T-3, T-1, T-0. Wired via APScheduler, daily 09:00 America/Los_Angeles.
+  * **Payout-triggered push** — Plaid `_sync_item` now fires "New Uber payout · +$X · $Y to Vault" on every new deposit.
+  * New endpoints: `POST /api/push/test` (fires a hello push to the caller's device — verifies APNs setup), plus existing `POST/DELETE /api/push/register`.
+  * Fresh iOS bundle: `milli-source.tar.gz` (~2.5 GB) — pull into Xcode.
+  * **APScheduler running live in production** (`INFO - APScheduler started`).
 - **Aug 2, 2026 (night)** — **Streak Counter, Push infra, TaxBandits auth, Vault Widget code.**
   * **Streak Counter** — Dashboard header now shows a cyan flame pill "N day(s)" that counts consecutive days with logged trips (60-day look-back). Rendered next to the greeting via `data-testid="dashboard-streak-pill"`.
   * **Push Notifications infrastructure** — installed `@capacitor/push-notifications`, added `usePushNotifications` hook (permissions → register → POST /api/push/register), and backend endpoints `POST /api/push/register` + `DELETE /api/push/register` that persist device token in `users.push`. Wired at AppLayout mount so every native launch registers. **Actual APNs delivery still needs an Apple Push key (.p8) + Key ID.**
