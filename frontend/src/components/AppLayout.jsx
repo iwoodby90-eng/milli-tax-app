@@ -114,25 +114,25 @@ function ChromeDialM({ isActive }) {
       className="relative flex items-center justify-center"
       style={{ width: 66, height: 66 }}
     >
-      {/* Deep recess — makes it look physically SET INTO the dashboard */}
+      {/* Deep recess — inset shadow only; masked to circle so no bleed onto titanium bar */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          boxShadow:
-            "inset 0px 4px 10px rgba(0,0,0,0.9), inset 0px 1px 3px rgba(0,0,0,0.7), 0px 6px 16px rgba(0,0,0,0.85), 0px 2px 4px rgba(0,0,0,0.6)",
+          boxShadow: "inset 0px 4px 10px rgba(0,0,0,0.9), inset 0px 1px 3px rgba(0,0,0,0.7), 0px 1px 3px rgba(0,0,0,0.25)",
+          mask: "radial-gradient(circle at center, white 32px, black 33px)",
+          WebkitMask: "radial-gradient(circle at center, white 32px, black 33px)",
         }}
       />
 
-      {/* Outer chrome bevel ring — 1px specular catch */}
+      {/* Outer chrome bevel ring — true ring via CSS mask; no solid fill so titanium bar bleeds through */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
           background: "conic-gradient(from 0deg, #808080 0deg, #C0C0C0 30deg, #FFFFFF 60deg, #C0C0C0 90deg, #606060 135deg, #404040 180deg, #808080 225deg, #D0D0D0 270deg, #FFFFFF 300deg, #A0A0A0 330deg, #808080 360deg)",
-          padding: "1px",
+          mask: "radial-gradient(circle at center, black 30px, white 30px, white 33px, black 33px)",
+          WebkitMask: "radial-gradient(circle at center, black 30px, white 30px, white 33px, black 33px)",
         }}
-      >
-        <div className="w-full h-full rounded-full" style={{ background: "#0D0F12" }} />
-      </div>
+      />
 
       {/* Milled metal body — conic gradient simulating machined aluminum under studio lighting */}
       <div
