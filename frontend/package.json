@@ -9,6 +9,7 @@
     "@capacitor/core": "7",
     "@capacitor/ios": "7",
     "@capacitor/preferences": "7",
+    "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/splash-screen": "7",
     "@capacitor/status-bar": "7",
     "@capgo/native-purchases": "~8.5.0",

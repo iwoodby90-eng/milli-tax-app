@@ -2337,6 +2337,76 @@ async def milli_cents_compare(body: CompareIn, user: dict = Depends(get_current_
     return {"offers": scored, "count": len(scored)}
 
 
+# -------------------- TaxBandits (TIN Matching) --------------------
+try:
+    from taxbandits import tin_match, get_access_token as tb_token
+except Exception as _e:
+    tin_match = None
+    tb_token = None
+
+class TinMatchIn(BaseModel):
+    tin: str
+    tin_type: str = "SSN"          # SSN or EIN
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    business_name: Optional[str] = None
+
+@api.get("/taxbandits/health")
+async def taxbandits_health(user: dict = Depends(get_current_user)):
+    if not tb_token:
+        raise HTTPException(status_code=503, detail="TaxBandits module not loaded")
+    try:
+        tok = await tb_token()
+        return {"authenticated": True, "token_prefix": tok[:12] + "..."}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TaxBandits auth failed: {e!s}")
+
+@api.post("/taxbandits/tin-match")
+async def taxbandits_tin_match(body: TinMatchIn, user: dict = Depends(get_current_user)):
+    if not tin_match:
+        raise HTTPException(status_code=503, detail="TaxBandits module not loaded")
+    if user.get("plan") != "elite":
+        raise HTTPException(status_code=402, detail="TIN Matching is an Elite feature")
+    try:
+        result = await tin_match(
+            tin=body.tin, tin_type=body.tin_type,
+            first_name=body.first_name, last_name=body.last_name,
+            business_name=body.business_name,
+        )
+        return {"ok": True, "provider": "taxbandits", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TaxBandits TIN match failed: {e!s}")
+
+
+# -------------------- Push Notifications (device registration) --------------------
+class PushRegisterIn(BaseModel):
+    device_token: str
+    platform: str = "ios"          # ios | android
+    app_version: Optional[str] = None
+
+@api.post("/push/register")
+async def push_register(body: PushRegisterIn, user: dict = Depends(get_current_user)):
+    """Store the APNs / FCM device token for this user so we can send
+    quarterly reminders, payout confirmations, and vault milestones."""
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "push": {
+                "device_token": body.device_token,
+                "platform": body.platform,
+                "app_version": body.app_version,
+                "registered_at": datetime.now(timezone.utc).isoformat(),
+            }
+        }}
+    )
+    return {"ok": True}
+
+@api.delete("/push/register")
+async def push_unregister(user: dict = Depends(get_current_user)):
+    await db.users.update_one({"id": user["id"]}, {"$unset": {"push": ""}})
+    return {"ok": True}
+
+
 # -------------------- MOUNT --------------------
 app.include_router(api)
 

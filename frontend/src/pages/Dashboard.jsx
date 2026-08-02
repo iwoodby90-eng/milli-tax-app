@@ -49,6 +49,25 @@ export default function Dashboard() {
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
+  // Compute a driving-day streak from `trips` — consecutive days working back from today.
+  const streak = (() => {
+    if (!trips || !trips.length) return 0;
+    const daySet = new Set(
+      trips.map(t => {
+        const d = new Date(t.date || t.created_at || 0);
+        return d.toDateString();
+      })
+    );
+    let count = 0;
+    for (let i = 0; i < 60; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      if (daySet.has(d.toDateString())) count++;
+      else if (i > 0) break;
+    }
+    return count;
+  })();
+
   // Available to spend = gross - reserved (fallback logic if fields missing)
   const availableToSpend =
     Number(summary?.available_to_spend) ||
@@ -93,14 +112,39 @@ export default function Dashboard() {
     <div className="px-5 sm:px-6 lg:px-10 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
 
       {/* ===== Greeting ===== */}
-      <header className="pt-2 pb-1">
-        <h1
-          className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-          data-testid="dashboard-greeting"
-        >
-          {greeting}, {firstName}
-        </h1>
-        <p className="text-zinc-400 text-[15px] mt-1">Here&apos;s your financial overview</p>
+      <header className="pt-2 pb-1 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1
+            className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
+            data-testid="dashboard-greeting"
+          >
+            {greeting}, {firstName}
+          </h1>
+          <p className="text-zinc-400 text-[15px] mt-1">Here&apos;s your financial overview</p>
+        </div>
+        {streak > 0 && (
+          <div
+            data-testid="dashboard-streak-pill"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full mt-1"
+            style={{
+              background: "rgba(0,229,255,0.08)",
+              border: "1px solid rgba(0,229,255,0.5)",
+              boxShadow: "0 0 14px rgba(0,229,255,0.35)",
+            }}
+            title={`${streak}-day driving streak · earning Milli Cents boost`}
+          >
+            <FlameIcon />
+            <span
+              className="font-chrome font-bold text-[15px] tabular-nums text-volt leading-none"
+              style={{ textShadow: "0 0 6px rgba(0,229,255,0.55)" }}
+            >
+              {streak}
+            </span>
+            <span className="text-zinc-400 text-[10px] uppercase tracking-widest leading-none">
+              day{streak === 1 ? "" : "s"}
+            </span>
+          </div>
+        )}
       </header>
 
       {/* ===== 1 · Available to Spend Hero ===== */}
@@ -391,6 +435,17 @@ function MetricTile({ to, icon: Icon, label, value, sub, delta, testid }) {
         <CaretRight size={12} weight="bold" className="text-zinc-500" />
       </div>
     </Link>
+  );
+}
+
+/* Small cyan flame for streak pill */
+function FlameIcon() {
+  return (
+    <svg width="12" height="14" viewBox="0 0 12 14" fill="none"
+         style={{ filter: "drop-shadow(0 0 4px rgba(0,229,255,0.7))" }}>
+      <path d="M6 1 C4 3 3 5 3 7 C3 9.5 4.5 12 6 12 C7.5 12 9 9.5 9 7 C9 5.5 8 4 7 3 C7 4 6.5 4.5 6 4.5 C5.5 4.5 5 4 6 1 Z"
+            fill="#00E5FF" stroke="#7BF3FF" strokeWidth="0.4" />
+    </svg>
   );
 }
 

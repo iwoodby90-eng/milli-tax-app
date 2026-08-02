@@ -8,6 +8,7 @@ import {
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
 import NotificationSheet from "@/components/NotificationSheet";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useState } from "react";
 
 /**
@@ -73,6 +74,9 @@ export default function AppLayout({ children }) {
   const nav = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  // Register APNs / FCM device token on native iOS/Android launch
+  usePushNotifications(true);
 
   return (
     <div className="carbon-bg app-aurora text-white min-h-full flex flex-col relative">
