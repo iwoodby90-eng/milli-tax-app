@@ -5,8 +5,9 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Eye, CaretRight, Bank, Gauge, Plant, ChartLineUp,
-  Receipt, FileText,
+  Receipt, FileText, ShieldCheck,
 } from "@phosphor-icons/react";
+import { EliteBadge } from "@/components/MilliPrimitives";
 
 /**
  * Milli Tax Vault — Dashboard.
@@ -296,7 +297,10 @@ export default function Dashboard() {
         </ul>
       </section>
 
-      {/* ===== 5 · Mileage · Retirement · Investing (3-up) ===== */}
+      {/* ===== 5 · Federal + State Filing (Elite: download IRS-ready PDF) ===== */}
+      <FilingCard isElite={user?.plan === "elite"} year={now.getFullYear()} />
+
+      {/* ===== 6 · Mileage · Retirement · Investing (3-up) ===== */}
       <div className="grid grid-cols-3 gap-2.5">
         <MetricTile
           to="/app/mileage"
@@ -495,5 +499,94 @@ function MetallicMCard() {
         M
       </div>
     </div>
+  );
+}
+
+
+/* ===================== Filing Card (Elite Schedule C download) ===================== */
+function FilingCard({ isElite, year }) {
+  const [downloading, setDownloading] = useState(false);
+
+  async function downloadPdf() {
+    if (!isElite) return;
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem("milli_token");
+      const base = process.env.REACT_APP_BACKEND_URL || "";
+      const res = await fetch(`${base}/api/reports/schedule-c-pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `milli-schedule-c-${year}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Schedule C ready — check your Downloads");
+    } catch (e) {
+      toast.error(`Could not build PDF: ${e.message}`);
+    } finally { setDownloading(false); }
+  }
+
+  if (!isElite) {
+    return (
+      <Link
+        to="/app/pricing"
+        data-testid="dashboard-filing-card"
+        className="milli-card rounded-2xl p-5 block active:scale-[0.995] transition-transform"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 w-11 h-11 rounded-2xl border border-volt/50 bg-volt/[0.06] flex items-center justify-center"
+               style={{ boxShadow: "0 0 14px rgba(0,229,255,0.3)" }}>
+            <ShieldCheck size={22} weight="duotone" className="text-volt" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
+                 style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
+              Federal + State Filing
+            </div>
+            <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
+              Upgrade to Elite
+            </div>
+            <div className="text-zinc-400 text-[12px] mt-0.5">
+              Elite unlocks the IRS-Ready Schedule C + SE PDF download.
+            </div>
+          </div>
+          <EliteBadge size={54} />
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      onClick={downloadPdf}
+      disabled={downloading}
+      data-testid="dashboard-filing-card"
+      className="milli-card rounded-2xl p-5 w-full text-left active:scale-[0.995] transition-transform disabled:opacity-70"
+      style={{ border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 18px rgba(0,229,255,0.22)" }}
+    >
+      <div className="flex items-center gap-4">
+        <div className="flex-shrink-0 w-11 h-11 rounded-2xl border border-volt/50 bg-volt/[0.06] flex items-center justify-center"
+             style={{ boxShadow: "0 0 14px rgba(0,229,255,0.35)" }}>
+          <ShieldCheck size={22} weight="duotone" className="text-volt" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
+               style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
+            IRS-Ready · Schedule C + SE
+          </div>
+          <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
+            {downloading ? "Building your PDF…" : "Download Filing PDF"}
+          </div>
+          <div className="text-zinc-400 text-[12px] mt-0.5">
+            Preparer-ready. Attach in FreeTaxUSA / TurboTax or hand to your CPA.
+          </div>
+        </div>
+        <EliteBadge size={54} />
+      </div>
+    </button>
   );
 }

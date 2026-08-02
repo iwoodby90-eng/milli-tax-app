@@ -306,6 +306,7 @@ class OnboardingIn(BaseModel):
     expected_income: Optional[float] = 0
     dependents: Optional[int] = 0
     reserve_strategy: Optional[str] = "balanced"
+    tax_goal: Optional[float] = 20000
     mileage_mode: Optional[str] = "auto"
 
 @api.post("/onboarding/complete")
@@ -319,8 +320,15 @@ async def onboarding_complete(body: OnboardingIn, user: dict = Depends(get_curre
             "expected_income": float(body.expected_income or 0),
             "dependents": int(body.dependents or 0),
             "reserve_strategy": body.reserve_strategy,
+            "tax_goal": float(body.tax_goal or 20000),
             "mileage_mode": body.mileage_mode,
         }},
+    )
+    # Seed the tax_vault with this goal so the Progress Story hero has a real target on day 1
+    await db.tax_vaults.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"tax_goal": float(body.tax_goal or 20000)}, "$setOnInsert": {"balance": 0, "user_id": user["id"]}},
+        upsert=True,
     )
     out = await db.users.find_one({"id": user["id"]}, {"password_hash": 0, "_id": 0})
     return out
@@ -2435,6 +2443,62 @@ async def push_test(user: dict = Depends(get_current_user)):
         thread_id="test",
     )
     return res
+
+
+# -------------------- Schedule C / SE PDF (Elite Filing) --------------------
+from fastapi.responses import Response
+from schedule_c_pdf import build_schedule_c_pdf
+
+@api.get("/reports/schedule-c-pdf")
+async def schedule_c_pdf(user: dict = Depends(get_current_user), year: Optional[int] = None):
+    """
+    Preparer-ready Schedule C + Schedule SE PDF, filled from Milli data.
+    Elite users can download this and attach to any e-file provider
+    (FreeTaxUSA, TurboTax, H&R Block) or hand it to their CPA.
+    """
+    if user.get("plan") != "elite":
+        raise HTTPException(status_code=402, detail="IRS-Ready PDF is an Elite feature")
+    y = int(year or datetime.now(timezone.utc).year)
+    q = {"user_id": user["id"]}
+    deposits = await db.deposits.find(q, {"_id": 0}).to_list(2000)
+    deposits = [d for d in deposits if str(d.get("date", "")).startswith(str(y))]
+    gross_receipts = round(sum(float(d.get("amount", 0)) for d in deposits), 2)
+
+    expenses = await db.expenses.find(q, {"_id": 0}).to_list(2000)
+    expenses = [e for e in expenses if str(e.get("date", "")).startswith(str(y))]
+    exp_by_cat: dict[str, float] = {}
+    for e in expenses:
+        cat = e.get("category", "other")
+        exp_by_cat[cat] = exp_by_cat.get(cat, 0) + float(e.get("amount", 0))
+
+    trips = await db.trips.find(q, {"_id": 0}).to_list(5000)
+    trips = [t for t in trips if str(t.get("date", "")).startswith(str(y))]
+    business_miles = round(sum(float(t.get("miles", 0)) for t in trips), 1)
+    mileage_deduction = round(business_miles * 0.70, 2)
+
+    total_expenses = round(sum(exp_by_cat.values()) + mileage_deduction, 2)
+    net_profit = round(gross_receipts - total_expenses, 2)
+    se_taxable = round(max(0, net_profit) * 0.9235, 2)
+    se_tax     = round(se_taxable * 0.153, 2)
+
+    summary = {
+        "year": y,
+        "gross_receipts": gross_receipts,
+        "other_income": 0, "returns_allowances": 0, "cogs": 0,
+        "expenses_by_category": exp_by_cat,
+        "mileage_business_miles": business_miles,
+        "mileage_deduction": mileage_deduction,
+        "total_expenses": total_expenses,
+        "net_profit": net_profit,
+        "se_taxable_earnings": se_taxable,
+        "se_tax": se_tax,
+    }
+    pdf_bytes = build_schedule_c_pdf(user, summary)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="milli-schedule-c-{y}.pdf"'},
+    )
 
 
 # -------------------- MOUNT --------------------

@@ -45,6 +45,7 @@ export default function Onboarding() {
     expected_income: "",
     dependents: 0,
     reserve_strategy: "balanced",
+    tax_goal: 20000,
     mileage_mode: "auto",
   });
 
@@ -65,6 +66,7 @@ export default function Onboarding() {
         expected_income: parseFloat(data.expected_income || 0),
         dependents: parseInt(data.dependents || 0),
         reserve_strategy: data.reserve_strategy,
+        tax_goal: parseFloat(data.tax_goal || 20000),
         mileage_mode: data.mileage_mode,
       });
       await refresh();
@@ -285,6 +287,93 @@ function VaultStep({ data, update, onBack, onNext }) {
   );
 }
 
+function VaultGoalStep({ data, update, onBack, onNext }) {
+  const goal = Number(data.tax_goal || 0);
+  const [custom, setCustom] = useState(String(goal || ""));
+  const presets = [10000, 15000, 20000, 25000, 30000, 40000];
+  const monthly = Math.round(goal / 12);
+  const perPayout = Math.round(goal / 260); // ~5 payouts/wk
+
+  return (
+    <div>
+      <Eyebrow>// 07 · Vault Goal</Eyebrow>
+      <h2 className="font-display chrome-text text-3xl mt-2">
+        How much do you want to protect this year?
+      </h2>
+      <p className="text-zinc-400 text-sm mt-3 max-w-md">
+        We&apos;ll show your progress in the Milli Tax Vault so you always know how far ahead you are.
+        You can change this anytime.
+      </p>
+
+      {/* Preset chips */}
+      <div className="grid grid-cols-3 gap-2 mt-6">
+        {presets.map((p) => {
+          const active = goal === p;
+          return (
+            <button
+              key={p}
+              data-testid={`ob-goal-${p}`}
+              onClick={() => { update("tax_goal", p); setCustom(String(p)); }}
+              className="rounded-2xl p-3.5 text-center transition-all"
+              style={{
+                background: active ? "rgba(0,229,255,0.10)" : "rgba(10,14,18,0.6)",
+                border: active ? "1px solid rgba(0,229,255,0.7)" : "1px solid rgba(255,255,255,0.08)",
+                boxShadow: active ? "0 0 16px rgba(0,229,255,0.35)" : "none",
+              }}
+            >
+              <div className={`font-chrome font-bold text-[22px] leading-none tabular-nums ${active ? "text-volt" : "chrome-text"}`}
+                   style={active ? { textShadow: "0 0 8px rgba(0,229,255,0.55)" } : {}}>
+                ${(p/1000).toFixed(0)}K
+              </div>
+              <div className="text-zinc-500 text-[10.5px] mt-1">
+                {p === 20000 ? "Most popular" : `$${Math.round(p/12).toLocaleString()}/mo`}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Custom input */}
+      <div className="milli-card p-4 mt-4 rounded-2xl">
+        <label className="text-zinc-400 text-[11px] uppercase tracking-widest">Custom amount</label>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className="chrome-text font-chrome font-bold text-[26px]">$</span>
+          <input
+            data-testid="ob-goal-custom"
+            type="number" min="1000" step="1000"
+            value={custom}
+            onChange={(e) => { setCustom(e.target.value); update("tax_goal", parseFloat(e.target.value || 0)); }}
+            placeholder="20000"
+            className="flex-1 bg-transparent chrome-text font-chrome font-bold text-[26px] tabular-nums focus:outline-none"
+          />
+        </div>
+        {goal > 0 && (
+          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10">
+            <div>
+              <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest">Monthly pace</div>
+              <div className="text-white font-chrome font-bold text-[17px] tabular-nums">
+                ${monthly.toLocaleString("en-US")}
+              </div>
+            </div>
+            <div>
+              <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest">Per payout</div>
+              <div className="text-volt font-chrome font-bold text-[17px] tabular-nums"
+                   style={{ textShadow: "0 0 6px rgba(0,229,255,0.4)" }}>
+                ~${perPayout.toLocaleString("en-US")}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="text-[11px] text-zinc-500 mt-4 leading-relaxed">
+        Milli Autopilot™ will automatically route a % of every payout into your Tax Vault so you hit this goal by December 31.
+      </p>
+      <NavRow onBack={onBack} onNext={onNext} testid="ob-vault-goal" disabled={!goal} />
+    </div>
+  );
+}
+
 function Mileage({ data, update, onBack, onNext }) {
   const opts = [
     { v: "auto", t: "Automatic tracking", b: "Background location detects trips. Best for active drivers." },
@@ -292,9 +381,10 @@ function Mileage({ data, update, onBack, onNext }) {
     { v: "manual", t: "Manual entry", b: "Add trips yourself when you remember." },
     { v: "skip", t: "Skip for now", b: "You can turn this on later in Settings." },
   ];
+  const NUM = "07";
   return (
     <div>
-      <Eyebrow>// 07 · Mileage</Eyebrow>
+      <Eyebrow>// 08 · Mileage</Eyebrow>
       <h2 className="font-display chrome-text text-3xl mt-2">Every mile is a deduction.</h2>
       <p className="text-zinc-400 text-sm mt-3 max-w-md">IRS standard mileage rate is $0.70/mi. Pick how you want to capture trips.</p>
       <div className="space-y-2 mt-6">
