@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Gear, ShieldCheck, Gift, Sparkle, FileText, ChartLineUp, PiggyBank,
+  Gear, ShieldCheck, Gift, Sparkle, FileText, ChartLineUp,
+  PiggyBank, Bank, Car,
   Receipt, Robot, CaretRight, SignOut, Star, Coins,
 } from "@phosphor-icons/react";
 import { MilliCardHero } from "@/components/MilliCard";
@@ -13,26 +14,29 @@ const GROUPS = [
   {
     title: "Money",
     items: [
-      { to: "/app/quarterly",   icon: Receipt,     label: "Quarterly Tax Center",  sub: "Deadlines, payments, readiness" },
-      { to: "/app/retirement",  icon: PiggyBank,   label: "Retirement · 401(k)",   sub: "Auto-contribute per payout" },
-      { to: "/app/investing",   icon: ChartLineUp, label: "Investing",             sub: "Auto-invest a % of every payout" },
-      { to: "/app/milli-cents", icon: Coins,       label: "Milli Cents",           sub: "Offer Profitability Engine" },
+      { to: "/app/quarterly",   icon: Receipt,      label: "Quarterly Tax Center", sub: "Deadlines, payments, readings" },
+      { to: "/app/retirement",  icon: PiggyBank,    label: "Retirement ™ 401(k)",  sub: "Auto-contribute per payout" },
+      { to: "/app/investing",    icon: ChartLineUp, label: "Investing",            sub: "Auto-invest a % of every payout" },
+      { to: "/app/milli-cents",  icon: Coins,        label: "Milli Cents",          sub: "Offer Profitability Engine" },
+      { to: "/app/savings",      icon: PiggyBank,    label: "Savings",              sub: "Goals: emergency, vehicle, vacation" },
+      { to: "/app/accounts",    icon: Bank,         label: "Accounts",             sub: "Checking, cards, connections" },
+      { to: "/app/vehicles",    icon: Car,          label: "Vehicles",            sub: "Mileage tracking & deductions" },
     ],
   },
   {
     title: "Tools",
     items: [
-      { to: "/app/reports",     icon: FileText,    label: "Tax Vault Reports",     sub: "Schedule C · SE · Mileage CSV" },
-      { to: "/app/expenses",    icon: FileText,    label: "Expenses",              sub: "Receipts & deductions" },
-      { to: "/app/ai",          icon: Robot,       label: "Milli AI",              sub: "Ask anything about your numbers" },
+      { to: "/app/reports",     icon: FileText,  label: "Tax Vault Reports",  sub: "Schedule C ⨯ SE ⨯ Mileage CSV" },
+      { to: "/app/expenses",    icon: FileText,  label: "Expenses",          sub: "Receipts & deductions" },
+      { to: "/app/ai",          icon: Robot,     label: "Milli AI",          sub: "Ask anything about your numbers" },
     ],
   },
   {
     title: "Account",
     items: [
-      { to: "/app/pricing",     icon: Star,        label: "Plans & Billing",       sub: "Basic · Pro · Elite" },
-      { to: "/app/referral",    icon: Gift,        label: "Invite & Earn $10",     sub: "Both sides get $10 to your Vault" },
-      { to: "/app/settings",    icon: Gear,        label: "Settings",              sub: "Profile · state · notifications" },
+      { to: "/app/pricing",     icon: Star,      label: "Plans & Billing",  sub: "Basic ⨯ Pro ⨯ Elite" },
+      { to: "/app/referral",    icon: Gift,      label: "Invite & Earn $10", sub: "Both sides get $10 to your Vault™" },
+      { to: "/app/settings",    icon: Gear,      label: "Settings",         sub: "Profile ⨯ state ⨯ notifications" },
     ],
   },
 ];
@@ -63,7 +67,7 @@ export default function More() {
       >
         <MilliCardHero user={user} testid="more-milli-card" />
         <div className="text-zinc-500 text-[11.5px] text-center">
-          Ships once your first ${100} clears the Milli Tax Vault™
+          Ships once your first $100 clears the Milli Tax Vault™
         </div>
       </section>
 
@@ -85,7 +89,7 @@ export default function More() {
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-white font-semibold text-[15.5px] truncate">{user?.name || "Milli User"}</div>
+            <div className="text-white font-semibold text-[15px] truncate">{user?.name || "Milli User"}</div>
             <div className="text-zinc-500 text-[12px] truncate">{user?.email || "you@milli.app"}</div>
           </div>
           <span
@@ -122,7 +126,7 @@ export default function More() {
                       className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{
                         background: "rgba(0,229,255,0.08)",
-                        border: "1px solid rgba(0,229,255,0.28)",
+                        border: "1px solid rgba(0,229,255,0.2)",
                         boxShadow: "0 0 8px rgba(0,229,255,0.18)",
                       }}
                     >
@@ -150,7 +154,7 @@ export default function More() {
       </button>
 
       <div className="text-center text-zinc-600 text-[10.5px] pt-2">
-        Milli Tax Vault™ · v2.6.0
+        Milli Tax Vault™ ⨯ v2.6.0
       </div>
     </div>
   );
