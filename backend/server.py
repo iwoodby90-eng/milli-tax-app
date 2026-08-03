@@ -2400,6 +2400,64 @@ async def taxbandits_tin_match(body: TinMatchIn, user: dict = Depends(get_curren
 
 
 # -------------------- Push Notifications (device registration) --------------------
+class Nec1099In(BaseModel):
+    tax_year: int
+    forms: List[Dict[str, Any]]        # [{ payer_name, gross_amount, tin? }]
+
+@api.post("/tax/import-1099-nec")
+async def import_1099_nec(body: Nec1099In, user: dict = Depends(get_current_user)):
+    """
+    Import 1099-NEC forms (from TaxBandits webhook or manual entry).
+    Reconciles reported gross against Milli's tracked deposits so the
+    Schedule C line 1 is accurate at year-end.
+    """
+    saved = 0
+    for f in body.forms:
+        doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "tax_year": int(body.tax_year),
+            "payer_name": f.get("payer_name") or "Unknown",
+            "gross_amount": float(f.get("gross_amount") or 0),
+            "payer_tin": f.get("tin"),
+            "source": f.get("source", "manual"),
+            "imported_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.tax_forms_1099.update_one(
+            {"user_id": user["id"], "tax_year": doc["tax_year"], "payer_name": doc["payer_name"]},
+            {"$set": doc},
+            upsert=True,
+        )
+        saved += 1
+
+    # Sum totals and compare to tracked deposits for the year
+    forms = await db.tax_forms_1099.find(
+        {"user_id": user["id"], "tax_year": int(body.tax_year)}, {"_id": 0}
+    ).to_list(200)
+    reported = round(sum(float(f.get("gross_amount", 0)) for f in forms), 2)
+
+    deposits = await db.deposits.find({"user_id": user["id"]}, {"_id": 0}).to_list(5000)
+    tracked = round(sum(
+        float(d.get("amount", 0)) for d in deposits
+        if str(d.get("date", "")).startswith(str(body.tax_year))
+    ), 2)
+
+    return {
+        "saved": saved,
+        "tax_year": int(body.tax_year),
+        "reported_gross": reported,
+        "tracked_gross": tracked,
+        "delta": round(reported - tracked, 2),
+        "reconciled": abs(reported - tracked) < 25,
+    }
+
+@api.get("/tax/forms-1099")
+async def list_1099s(user: dict = Depends(get_current_user), year: Optional[int] = None):
+    q = {"user_id": user["id"]}
+    if year: q["tax_year"] = int(year)
+    return await db.tax_forms_1099.find(q, {"_id": 0}).to_list(500)
+
+
 class PushRegisterIn(BaseModel):
     device_token: str
     platform: str = "ios"          # ios | android

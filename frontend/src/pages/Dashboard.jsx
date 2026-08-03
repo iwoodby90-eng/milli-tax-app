@@ -505,11 +505,12 @@ function MetallicMCard() {
 
 /* ===================== Filing Card (Elite Schedule C download) ===================== */
 function FilingCard({ isElite, year }) {
-  const [downloading, setDownloading] = useState(false);
+  const [preview, setPreview] = useState(null);   // { url, blob } while previewing
+  const [loading, setLoading] = useState(false);
 
-  async function downloadPdf() {
+  async function openPreview() {
     if (!isElite) return;
-    setDownloading(true);
+    setLoading(true);
     try {
       const token = localStorage.getItem("milli_token");
       const base = process.env.REACT_APP_BACKEND_URL || "";
@@ -519,15 +520,24 @@ function FilingCard({ isElite, year }) {
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `milli-schedule-c-${year}.pdf`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      toast.success("Schedule C ready — check your Downloads");
+      setPreview({ url, blob });
     } catch (e) {
       toast.error(`Could not build PDF: ${e.message}`);
-    } finally { setDownloading(false); }
+    } finally { setLoading(false); }
+  }
+
+  function downloadFromPreview() {
+    if (!preview) return;
+    const a = document.createElement("a");
+    a.href = preview.url;
+    a.download = `milli-schedule-c-${year}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast.success("Downloaded — check your Downloads");
+  }
+
+  function closePreview() {
+    if (preview?.url) URL.revokeObjectURL(preview.url);
+    setPreview(null);
   }
 
   if (!isElite) {
@@ -551,7 +561,7 @@ function FilingCard({ isElite, year }) {
               Upgrade to Elite
             </div>
             <div className="text-zinc-400 text-[12px] mt-0.5">
-              Elite unlocks the IRS-Ready Schedule C + SE PDF download.
+              Elite unlocks the IRS-Ready Schedule C + SE PDF preview.
             </div>
           </div>
           <EliteBadge size={54} />
@@ -561,32 +571,97 @@ function FilingCard({ isElite, year }) {
   }
 
   return (
-    <button
-      onClick={downloadPdf}
-      disabled={downloading}
-      data-testid="dashboard-filing-card"
-      className="milli-card rounded-2xl p-5 w-full text-left active:scale-[0.995] transition-transform disabled:opacity-70"
-      style={{ border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 18px rgba(0,229,255,0.22)" }}
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex-shrink-0 w-11 h-11 rounded-2xl border border-volt/50 bg-volt/[0.06] flex items-center justify-center"
-             style={{ boxShadow: "0 0 14px rgba(0,229,255,0.35)" }}>
-          <ShieldCheck size={22} weight="duotone" className="text-volt" />
+    <>
+      <button
+        onClick={openPreview}
+        disabled={loading}
+        data-testid="dashboard-filing-card"
+        className="milli-card rounded-2xl p-5 w-full text-left active:scale-[0.995] transition-transform disabled:opacity-70"
+        style={{ border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 18px rgba(0,229,255,0.22)" }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 w-11 h-11 rounded-2xl border border-volt/50 bg-volt/[0.06] flex items-center justify-center"
+               style={{ boxShadow: "0 0 14px rgba(0,229,255,0.35)" }}>
+            <ShieldCheck size={22} weight="duotone" className="text-volt" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
+                 style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
+              IRS-Ready · Schedule C + SE
+            </div>
+            <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
+              {loading ? "Building your PDF…" : "Preview Filing PDF"}
+            </div>
+            <div className="text-zinc-400 text-[12px] mt-0.5">
+              Review before downloading. Attach in FreeTaxUSA / TurboTax or hand to your CPA.
+            </div>
+          </div>
+          <EliteBadge size={54} />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
-               style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
-            IRS-Ready · Schedule C + SE
-          </div>
-          <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
-            {downloading ? "Building your PDF…" : "Download Filing PDF"}
-          </div>
-          <div className="text-zinc-400 text-[12px] mt-0.5">
-            Preparer-ready. Attach in FreeTaxUSA / TurboTax or hand to your CPA.
+      </button>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          onClick={closePreview}
+          data-testid="pdf-preview-modal"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
+            style={{
+              background: "linear-gradient(180deg, rgba(15,18,22,0.98) 0%, rgba(5,7,10,0.98) 100%)",
+              border: "1px solid rgba(0,229,255,0.35)",
+              boxShadow: "0 0 40px rgba(0,229,255,0.25), 0 30px 80px rgba(0,0,0,0.7)",
+              maxHeight: "92vh",
+            }}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={18} weight="duotone" className="text-volt"
+                             style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
+                <div className="text-white font-semibold text-[14.5px]">Schedule C + SE — {year}</div>
+              </div>
+              <button
+                onClick={closePreview}
+                data-testid="pdf-preview-close"
+                className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center active:opacity-60"
+                aria-label="Close"
+              >
+                <span className="text-white text-[18px] leading-none">×</span>
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-zinc-100">
+              <iframe
+                title="Schedule C Preview"
+                src={preview.url}
+                className="w-full h-full"
+                style={{ minHeight: "60vh", border: "0" }}
+                data-testid="pdf-preview-iframe"
+              />
+            </div>
+            <div className="flex gap-2 px-4 py-3 border-t border-white/[0.06]">
+              <button
+                onClick={closePreview}
+                className="flex-1 rounded-xl py-3 text-white/80 text-[13px] font-semibold border border-white/10 active:opacity-70"
+              >
+                Close
+              </button>
+              <button
+                onClick={downloadFromPreview}
+                data-testid="pdf-preview-download"
+                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obsidian active:brightness-95"
+                style={{
+                  background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
+                  boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)",
+                }}
+              >
+                Download PDF
+              </button>
+            </div>
           </div>
         </div>
-        <EliteBadge size={54} />
-      </div>
-    </button>
+      )}
+    </>
   );
 }
