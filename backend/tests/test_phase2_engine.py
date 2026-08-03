@@ -2,13 +2,13 @@
 Comprehensive Phase 2 tests for the Milli financial engine.
 
 Covers:
-    • Tax Engine (pure math): SE, federal, state, QBI, quarterly plan, mileage
-    • Autopilot Engine: full 9-step pipeline, immutable receipts, feature gating
-    • Dashboard snapshot: Available to Spend, Tax Ready Score, balance sync
-    • Trip classification + mileage summary
-    • Milli AI insights
-    • Notifications
-    • Plan / feature gating (retirement + investing locked on basic/core)
+    ‒ Tax Engine (pure math): SE, federal, state, QBI, quarterly plan, mileage
+    ‒ Autopilot Engine: full 9-step pipeline, immutable receipts, feature gating
+    ‒ Dashboard snapshot: Available to Spend, Tax Ready Score, balance sync
+    ‒ Trip classification + mileage summary
+    ‒ Milli AI insights
+    ‒ Notifications
+    ‒ Plan / feature gating (retirement + investing locked on basic/core)
 
 Run with: pytest /app/backend/tests/test_phase2_engine.py -v
 """
@@ -28,9 +28,9 @@ from tax_engine import (
 )
 
 
-# ==========================================================================
+# ============================================================================
 # Tax Engine — pure functions, no DB needed
-# ==========================================================================
+# ============================================================================
 
 class TestTaxEngine:
 
@@ -40,11 +40,11 @@ class TestTaxEngine:
 
     def test_se_tax_at_typical_gig_income(self):
         se, half = calc_se_tax(40_000, TaxProfile())
-        assert 5_000 < se < 6_500        # ~15.3% × 92.35% × 40k ≈ 5,652
+        assert 5_000 < se < 6_500       # ~15.3% × 92.35% × 40k ≈ 5,652
         assert abs(half - se / 2) < 0.01
 
     def test_se_tax_caps_ss_at_wage_base(self):
-        # Above SS wage base ($168,600 in 2025), SS portion caps.
+        # Above SS wage base ($176,100 in 2025), SS portion caps.
         se_low, _ = calc_se_tax(100_000, TaxProfile())
         se_high, _ = calc_se_tax(300_000, TaxProfile())
         # Ratio should be well below 3x due to SS cap.
@@ -89,7 +89,8 @@ class TestTaxEngine:
         # Single filer, $250k SE income − will exceed $200k threshold.
         addl = calc_additional_medicare(250_000, "single")
         assert addl > 0
-        assert addl == pytest.approx((250_000 - 200_000) * 0.009, abs=1.0)
+        assert addl == pytest.approx(
+            (250_000 - 200_000) * 0.009, abs=1.0)
 
     def test_calc_total_tax_low_income_no_tax_state(self):
         profile = TaxProfile(home_state="TX")
@@ -109,7 +110,7 @@ class TestTaxEngine:
         assert result.federal_income_tax > 0
         assert result.state_income_tax > 0
         # Additional Medicare kicks in above $200k for single filers
-        # ($280k net × 0.9235 factor = $258,580, well above threshold)
+        # ($280k net ÷ 0.9235 factor = $258,580, well above threshold)
         assert result.additional_medicare_tax > 0
 
     def test_per_payout_rate_cold_start(self):
@@ -127,26 +128,26 @@ class TestTaxEngine:
     def test_quarterly_plan_produces_four_quarters(self):
         profile = TaxProfile(home_state="TX")
         plan = quarterly_plan(2026, profile, 30_000, 4_500, [],
-                                today=date(2026, 5, 1))
+                              today=date(2026, 5, 1))
         assert len(plan.quarters) == 4
         assert plan.annual_estimated_tax > 0
-        assert plan.quarter_amount == pytest.approx(
+        assert plan.quarterly_amount == pytest.approx(
             plan.annual_estimated_tax / 4, abs=0.5,
         )
 
     def test_quarterly_plan_marks_paid_periods(self):
         profile = TaxProfile()
         plan = quarterly_plan(2026, profile, 30_000, 4_500,
-                                [{"period": "Q1", "year": 2026, "amount": 500}],
-                                today=date(2026, 7, 1))
+                              [{"period": "Q1", "year": 2026, "amount": 500}],
+                              today=date(2026, 7, 1))
         q1 = next(q for q in plan.quarters if q["period"] == "Q1")
         assert q1["paid"] is True
 
     def test_mileage_deduction_uses_2025_rates(self):
         result = mileage_deduction(1000, 100, 50)
         assert result["business_deduction"] == 700.0    # 1000 × $0.70
-        assert result["medical_deduction"] == 21.0       # 100 × $0.21
-        assert result["charitable_deduction"] == 7.0     # 50 × $0.14
+        assert result["medical_deduction"] == 21.0        # 100 × $0.21
+        assert result["charitable_deduction"] == 7.0      # 50 × $0.14
         assert result["total_deduction"] == 728.0
 
     def test_profile_from_user_defaults_are_safe(self):
@@ -168,9 +169,9 @@ class TestTaxEngine:
         assert p.dependents == 2
 
 
-# ==========================================================================
+# ============================================================================
 # Autopilot Engine — integration with in-memory Mongo
-# ==========================================================================
+# ============================================================================
 
 @pytest.fixture
 async def db():
@@ -244,7 +245,7 @@ class TestAutopilotEngine:
         payout = {"id": "p2", "amount": 100.0, "platform": "Uber",
                   "date": "2026-07-10"}
         receipt = await run_autopilot(db, user, payout)
-        # Sum of allocations + ATS should equal payout amount (within cents).
+        # Sum of all allocations + ATS should equal payout amount (within cents).
         total_out = (
             receipt["tax_reserve"] + receipt["retirement_amount"]
             + receipt["investing_amount"] + receipt["savings_amount"]
@@ -266,7 +267,7 @@ class TestAutopilotEngine:
         payout = {"id": "p3", "amount": 150.0, "platform": "Lyft",
                   "date": "2026-07-10"}
         receipt = await run_autopilot(db, user, payout)
-        # Recompute hash from stored fields — must match.
+        # Recompute hash from stored fields − must match.
         stored = await db.autopilot_receipts.find_one({"id": receipt["id"]},
                                                        {"_id": 0})
         original_hash = stored.pop("hash")
