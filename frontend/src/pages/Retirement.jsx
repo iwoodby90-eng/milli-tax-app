@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { CaretDown, ArrowUp, ArrowDown, Info, LockKey, Target } from "@phosphor-icons/react";
 import ChromeBonsai from "@/components/ChromeBonsai";
+import { api } from "@/lib/api";
 
 /**
  * Retirement — matches the reference mockup.
@@ -36,6 +37,20 @@ export default function Retirement() {
   // 4% rule (Trinity study): safe annual withdrawal = 4% of nest egg
   const estMonthlyIncome = Math.round(projected * 0.04 / 12);
 
+  // Bonsai growth reflects vault progress toward the annual tax goal —
+  // the tree grows and blooms as Jordan's Milli Tax Vault™ climbs milestones.
+  const [bonsaiProgress, setBonsaiProgress] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    api.get("/tax/summary").then(({ data }) => {
+      if (!alive) return;
+      const bal  = Number(data?.savings_balance || 0);
+      const goal = Number(data?.tax_goal || 20000);
+      setBonsaiProgress(Math.max(0, Math.min(1, bal / Math.max(1, goal))));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const SCENARIOS = [
     { id: "current",  title: "Current Plan",    active: true,  balance_num: projected,          contribution_pct: goals.contribution_pct, note: "10 yr forecast" },
     { id: "increase", title: "Increase to 20%", active: false, balance_num: 3_350_000,          contribution_pct: 20, delta: "up",   note: "10 yr forecast" },
@@ -64,8 +79,8 @@ export default function Retirement() {
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(0,229,255,0.3), 0 20px 44px rgba(0,0,0,0.6)",
         }}
       >
-        <div className="absolute top-2 right-2 pointer-events-none">
-          <ChromeBonsai size={148} />
+        <div className="absolute top-2 right-2 pointer-events-none" data-testid="retirement-chrome-bonsai">
+          <ChromeBonsai size={148} progress={bonsaiProgress} />
         </div>
         <div className="relative z-10">
           <div className="text-white/85 text-[14px] font-medium">Projected Balance <span className="text-white/50 ml-1">👁</span></div>
@@ -76,6 +91,28 @@ export default function Retirement() {
           <div className="text-volt text-[13px] mt-3 flex items-center gap-1" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
             <ArrowUp size={12} weight="bold" />
             ${delta.toLocaleString("en-US")} ({deltaPct}%) more than today
+          </div>
+          {/* Milestone-locked bonsai stage caption */}
+          <div
+            className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-semibold tracking-wider uppercase"
+            data-testid="retirement-bonsai-stage"
+            style={{
+              background: "rgba(0,229,255,0.08)",
+              border: "1px solid rgba(0,229,255,0.35)",
+              color: "#7BF3FF",
+              textShadow: "0 0 6px rgba(0,229,255,0.35)",
+            }}
+            title={`Bonsai grows with your Milli Tax Vault™ balance · currently ${Math.round(bonsaiProgress * 100)}% of tax goal`}
+          >
+            {(() => {
+              const p = bonsaiProgress;
+              const s = p >= 1 ? "Crowned · 10 blooms"
+                     : p >= 0.75 ? "Blooming · 7 blooms"
+                     : p >= 0.5  ? "Branching · 4 blooms"
+                     : p >= 0.25 ? "Young · 2 blooms"
+                     : "Sapling";
+              return `Bonsai · ${s}`;
+            })()}
           </div>
         </div>
       </section>

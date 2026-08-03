@@ -119,13 +119,16 @@ retirement, investing, and available-to-spend before the user ever sees it.
   * Regenerated all 5 Sora 2 marketing reels — now **PRIVATE**: `/api/marketing/videos` + `/api/marketing/videos/{file}` require auth; public gofile mirror disabled (`upload_marketing_to_public_host.py` renamed to `.bak`).
 - **Feb 2026** — Fixed AppLayout scroll clipping (position:fixed → position:sticky).
 
-- **Aug 3, 2026** — Personalisation + luxury Milli Card + realistic bonsai.
-  * New `<MilliCardHero>` + `<MilliCardMini>` components (`/app/frontend/src/components/MilliCard.jsx`) — brushed-steel/matte-obsidian diagonal split, neon-cyan glowing seam, embossed 3D chrome "M", EMV chip + MILLI label, VISA + plan-tier wordmark (ELITE/PRO/BASIC), deterministic per-user cardholder name / 4218-5632-XXXX-XXXX number / MM/YY expiry via `cardMetaFor(user)`.
+- **Aug 3, 2026** — Personalisation + luxury Milli Card + realistic bonsai + three flagship enhancements.
+  * New `<MilliCardHero>` + `<MilliCardMini>` components (`/app/frontend/src/components/MilliCard.jsx`) — brushed-steel/matte-obsidian diagonal split, neon-cyan glowing seam, embossed 3D chrome "M", EMV chip + MILLI label, VISA + plan-tier wordmark (ELITE/PRO/BASIC), deterministic per-user cardholder name / 4218-5632-XXXX-XXXX number / MM/YY expiry via exported `cardMetaFor(user)`.
   * Dashboard: added a dedicated "Your Milli Card" section between Available-to-Spend hero and Latest Payout; replaced the plain `MetallicMCard` chip in the Available-to-Spend corner with the new `<MilliCardMini>`; Milli Checking "•••• XXXX" now reflects the same dynamic last4 as the hero card.
   * More/Account page: added personalised hero card showcase + first-name header ("Jordan account").
   * Retirement: replaced cartoonish blob-tree (`GlowingTree`) with photoreal `<ChromeBonsai>` — twisted trunk & branches on chrome gradients, layered chrome-speck foliage with cyan rim-light, polished chrome pedestal with embossed M and cyan floor glow (`/app/frontend/src/components/ChromeBonsai.jsx`).
+  * **Bonsai Growth**: `<ChromeBonsai progress={0..1} />` grows taller and reveals cyan blooms at milestone tiers 25% / 50% / 75% / 100% — driven by the live Vault balance vs annual tax goal. Retirement hero shows a "Bonsai · Sapling/Young/Branching/Blooming/Crowned" caption ([data-testid=retirement-bonsai-stage]).
+  * **Card Reveal Animation**: `MilliCardHero` now plays a 1.6-second 3-D tilt-and-flip reveal (framer-motion) the FIRST time the app opens each calendar day (stored under `localStorage.milli_card_last_reveal`); respects `prefers-reduced-motion`.
+  * **Apple Watch companion** (`/app/frontend/ios/App/MilliWatch Watch App/`) — SwiftUI @main app + 4 WidgetKit complications (circular / inline / rectangular / corner) that mirror the Vault balance, streak flame, and cyan progress ring on the watch face. Reads live from the shared App Group `group.app.milli.tax`. `MilliVaultBridge` (JS + Swift) extended to also write `streak` + `firstName` — both `Dashboard.jsx` (streak from trips) and `Vault.jsx` (balance) push snapshots. See `MilliWatch Watch App/README.md` for one-time Xcode target setup.
   * Personalisation pass: Dashboard subgreeting adapts to streak + deposits; Vault + Retirement + More headers use user's first name; Retirement subheader now reads "Retire in N years · target $X/mo" from the user's saved goals.
-  * Testing agent iter_10: **100 % pass** across 9 acceptance criteria (see `/app/test_reports/iteration_10.json`). Capacitor iOS bundle rebuilt + `npx cap sync ios` succeeded.
+  * Testing agent iter_10: **100 % pass** across 9 acceptance criteria (see `/app/test_reports/iteration_10.json`). Capacitor iOS bundle rebuilt + `npx cap sync ios` succeeded for every subsequent code change.
 
 ## Prioritized Roadmap
 ### P0 — DONE
@@ -133,6 +136,7 @@ retirement, investing, and available-to-spend before the user ever sees it.
 - AppLayout scroll/clipping fix (sticky header + tab bar) ✅ (Feb 2026)
 - Retirement Scenario Comparison + View-details modal + dynamic Est. Monthly Income ✅ (Aug 2026, verified iter_10)
 - Personalised Milli Card visual + realistic chrome bonsai ✅ (Aug 2026, verified iter_10)
+- Bonsai Growth (milestone-driven) + Card Reveal Animation + Apple Watch companion ✅ (Aug 2026)
 
 ### P1
 - Wire real banking via Stripe Treasury when Treasury access is approved

@@ -40,11 +40,13 @@ export default function Vault() {
   const year = new Date().getFullYear();
   const rate = Number(vault?.rate_pct ?? 0.06);
 
-  // Push the latest vault snapshot into the iOS App Group so the home-screen widget shows fresh data
+  // Push the latest vault snapshot into the iOS App Group so the home-screen widget
+  // AND the Milli Watch complication both stay fresh.
   useEffect(() => {
     if (!balance && !taxGoal) return;
-    MilliVaultBridge.update({ balance, goal: taxGoal, thisMonth }).catch(() => {});
-  }, [balance, taxGoal, thisMonth]);
+    const firstName = user?.name?.split(" ")[0] || "";
+    MilliVaultBridge.update({ balance, goal: taxGoal, thisMonth, firstName }).catch(() => {});
+  }, [balance, taxGoal, thisMonth, user?.name]);
 
   // Confetti on milestone crossings (25/50/75/100)
   useEffect(() => {

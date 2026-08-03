@@ -24,6 +24,8 @@ public class MilliVaultBridge: CAPPlugin {
         let balance   = call.getDouble("balance")   ?? 0
         let goal      = call.getDouble("goal")      ?? 20000
         let thisMonth = call.getDouble("thisMonth") ?? 0
+        let streak    = call.getInt("streak")       ?? 0
+        let firstName = call.getString("firstName") ?? ""
 
         guard let d = UserDefaults(suiteName: Self.appGroup) else {
             call.reject("App Group \(Self.appGroup) not configured")
@@ -32,10 +34,13 @@ public class MilliVaultBridge: CAPPlugin {
         d.set(balance,   forKey: "vault_balance")
         d.set(goal,      forKey: "vault_goal")
         d.set(thisMonth, forKey: "vault_month")
+        d.set(streak,    forKey: "vault_streak")
+        d.set(firstName, forKey: "vault_firstname")
         d.set(Date().timeIntervalSince1970, forKey: "vault_updated")
 
         if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
+            WidgetCenter.shared.reloadTimelines(ofKind: "MilliWatchComplication")
         }
         call.resolve(["ok": true])
     }
@@ -49,6 +54,8 @@ public class MilliVaultBridge: CAPPlugin {
             "balance":   d.double(forKey: "vault_balance"),
             "goal":      d.double(forKey: "vault_goal"),
             "month":     d.double(forKey: "vault_month"),
+            "streak":    d.integer(forKey: "vault_streak"),
+            "firstName": d.string(forKey: "vault_firstname") ?? "",
             "updated":   d.double(forKey: "vault_updated"),
         ])
     }

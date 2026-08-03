@@ -11,7 +11,12 @@
  * Two exports:
  *   <MilliCardHero user={user} />   large hero variant (used on Dashboard, More)
  *   <MilliCardMini user={user} />   compact badge (used inside "Available to Spend")
+ *
+ * The hero variant plays a slow 3-D tilt-and-flip reveal the FIRST time the
+ * user opens the app each morning (once per calendar day, per device).
  */
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 /* -------- deterministic mock account number from the user id/email -------- */
 function digitsFrom(seed, len) {
@@ -51,20 +56,46 @@ export function cardMetaFor(user) {
 /* ------------------------------- HERO CARD ------------------------------- */
 export function MilliCardHero({ user, className = "", testid = "milli-card-hero" }) {
   const { name, number, expiry, tierLabel } = cardMetaFor(user);
+  const shouldReduce = useReducedMotion();
+  // Play the reveal the first time this device opens the app each calendar day.
+  const [reveal, setReveal] = useState(false);
+  useEffect(() => {
+    if (shouldReduce) return; // respect user OS setting
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const last = localStorage.getItem("milli_card_last_reveal");
+      if (last !== today) {
+        localStorage.setItem("milli_card_last_reveal", today);
+        setReveal(true);
+      }
+    } catch (_) { /* SSR / disabled storage — silently skip */ }
+  }, [shouldReduce]);
+
   return (
     <div
       data-testid={testid}
       className={`relative w-full max-w-[380px] mx-auto ${className}`}
-      style={{ aspectRatio: "1.586 / 1", perspective: "1200px" }}
+      style={{ aspectRatio: "1.586 / 1", perspective: "1400px" }}
     >
-      <div
+      <motion.div
+        data-testid={`${testid}-inner`}
         className="absolute inset-0 rounded-[22px] overflow-hidden"
         style={{
-          transform: "rotateX(6deg) rotateY(-8deg)",
           transformStyle: "preserve-3d",
           boxShadow:
             "0 30px 60px rgba(0,0,0,0.72), 0 12px 28px rgba(0,0,0,0.55), 0 0 60px rgba(0,229,255,0.12)",
         }}
+        initial={
+          reveal
+            ? { rotateY: -180, rotateX: -30, scale: 0.85, opacity: 0 }
+            : { rotateY: 0, rotateX: 6, rotateZ: -8, scale: 1, opacity: 1 }
+        }
+        animate={{ rotateY: 0, rotateX: 6, rotateZ: -8, scale: 1, opacity: 1 }}
+        transition={
+          reveal
+            ? { duration: 1.6, ease: [0.22, 1, 0.36, 1] }
+            : { duration: 0.001 }
+        }
       >
         {/* base: brushed steel */}
         <div
@@ -240,7 +271,7 @@ export function MilliCardHero({ user, className = "", testid = "milli-card-hero"
             {tierLabel}
           </span>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

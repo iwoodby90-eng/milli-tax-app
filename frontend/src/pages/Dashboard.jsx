@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { EliteBadge } from "@/components/MilliPrimitives";
 import { MilliCardHero, MilliCardMini, cardMetaFor } from "@/components/MilliCard";
+import MilliVaultBridge from "@/plugins/MilliVaultBridge";
 
 /**
  * Milli Tax Vault — Dashboard.
@@ -38,20 +39,7 @@ export default function Dashboard() {
   }
   useEffect(() => { load(); }, []);
 
-  if (!summary) {
-    return (
-      <div className="p-12 font-mono text-volt animate-pulse text-center">
-        [ LOADING MILLI... ]
-      </div>
-    );
-  }
-
-  const firstName = user?.name?.split(" ")[0] || "there";
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-
-  // Compute a driving-day streak from `trips` — consecutive days working back from today.
+  // Compute driving-day streak — done pre-return so hooks/effects can depend on it.
   const streak = (() => {
     if (!trips || !trips.length) return 0;
     const daySet = new Set(
@@ -69,6 +57,32 @@ export default function Dashboard() {
     }
     return count;
   })();
+
+  // Keep the iOS home-screen widget + watch complication fresh with the latest streak.
+  useEffect(() => {
+    if (!summary) return;
+    const firstName = user?.name?.split(" ")[0] || "";
+    MilliVaultBridge.update({
+      balance:   Number(summary?.savings_balance || 0),
+      goal:      Number(summary?.tax_goal || 20000),
+      thisMonth: Number(summary?.vault_this_month || 0),
+      streak,
+      firstName,
+    }).catch(() => {});
+  }, [summary?.savings_balance, summary?.tax_goal, summary?.vault_this_month, streak, user?.name, summary]);
+
+  if (!summary) {
+    return (
+      <div className="p-12 font-mono text-volt animate-pulse text-center">
+        [ LOADING MILLI... ]
+      </div>
+    );
+  }
+
+  const firstName = user?.name?.split(" ")[0] || "there";
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   // Available to spend = gross - reserved (fallback logic if fields missing)
   const availableToSpend =
