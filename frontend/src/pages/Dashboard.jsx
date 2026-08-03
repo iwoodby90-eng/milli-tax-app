@@ -20,7 +20,7 @@ import MilliVaultBridge from "@/plugins/MilliVaultBridge";
  *   3.5. Milli Cents entry point
  *   4. Milli Tax Vault™ | Tax Ready Score™ (side-by-side)
  *   5. Financial Timeline
- *   6. Mileage × Retirement × Investing (3-up tiles)
+ *   6. Mileage · Retirement · Investing (3-up tiles)
  */
 export default function Dashboard() {
   const { user } = useAuth();
@@ -128,12 +128,12 @@ export default function Dashboard() {
   return (
     <div className="px-5 sm:px-6 lg:px-10 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
 
-      {/* ==== Greeting ==== */}
+      {/* === Greeting === */}
       <header className="pt-2 pb-1 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1
             className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-            style={{ fontFamily: "'SF Pro Display', -apple-system, 'Inter', sans-serif", letterSpacing: "-0.035em" }}
+            style={{ fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.035em" }}
             data-testid="dashboard-greeting"
           >
             {greeting}, {firstName}
@@ -155,7 +155,7 @@ export default function Dashboard() {
               border: "1px solid rgba(0,229,255,0.5)",
               boxShadow: "0 0 14px rgba(0,229,255,0.35)",
             }}
-            title={`${streak}-day driving streak ⬇ earning Milli Cents boost`}
+            title={`${streak}-day driving streak 🔥 earning Milli Cents boost`}
           >
             <FlameIcon />
             <span
@@ -171,7 +171,7 @@ export default function Dashboard() {
         )}
       </header>
 
-      {/* ==== 1 ⬇ Available to Spend Hero ==== */}
+      {/* === 1. · Available to Spend Hero === */}
       <section
         className="relative overflow-hidden rounded-3xl p-5 sm:p-6"
         data-testid="dashboard-available-card"
@@ -194,7 +194,7 @@ export default function Dashboard() {
           </div>
           <div
             className="font-chrome font-black text-white tabular-nums leading-[1] tracking-tight mt-3 text-[36px] sm:text-[44px]"
-            style={{ fontFamily: "'SF Pro Display', -apple-system, 'Inter', sans-serif" }}
+            style={{ fontFamily: "'Outfit', sans-serif" }}
             data-testid="dashboard-available-amount"
           >
             {availableToSpend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -205,13 +205,13 @@ export default function Dashboard() {
             data-testid="dashboard-checking-link"
           >
             <span>Milli Checking</span>
-            <span className="tracking-widest text-white/50" data-testid="dashboard-checking-last4">•••• {cardMetaFor(user).last4}</span>
+            <span className="tracking-widest text-white/50" data-testid="dashboard-checking-last4">▸▸▸▸ {cardMetaFor(user).last4}</span>
             <CaretRight size={12} weight="bold" className="text-white/60" />
           </Link>
         </div>
       </section>
 
-      {/* ==== 1.5 ⬇ Your Milli Card ==== */}
+      {/* === 1.5 · Your Milli Card === */}
       <section
         className="rounded-3xl p-5 sm:p-6 flex flex-col items-center gap-3"
         data-testid="dashboard-milli-card-section"
@@ -225,7 +225,7 @@ export default function Dashboard() {
           <div>
             <div className="text-white/85 text-[15px] font-semibold">Your Milli Card</div>
             <div className="text-zinc-500 text-[12px] mt-0.5">
-              Tap-to-pay ready ⬇ {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
+              Tap-to-pay ready ▸ {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
             </div>
           </div>
           <Link
@@ -240,7 +240,7 @@ export default function Dashboard() {
         <MilliCardHero user={user} testid="dashboard-milli-card" />
       </section>
 
-      {/* ==== 2 ⬇ Latest Payout ==== */}
+      {/* === 2. · Latest Payout === */}
       <Link
         to="/app/income"
         className="milli-card block p-5 rounded-2xl active:scale-[0.995] transition-transform"
@@ -271,7 +271,7 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* ==== 2.5 ⬇ Milli Cents Entry Point ==== */}
+      {/* === 2.5 · Milli Cents Entry Point === */}
       <Link
         to="/app/milli-cents"
         data-testid="dashboard-milli-cents-link"
@@ -304,7 +304,7 @@ export default function Dashboard() {
         <CaretRight size={18} weight="bold" className="text-volt flex-shrink-0" />
       </Link>
 
-      {/* ==== 3 ⬇ Tax Vault + Ready Score (2-up) ==== */}
+      {/* === 3. · Tax Vault + Ready Score (2-up) === */}
       <div className="grid grid-cols-2 gap-3">
         {/* Tax Vault */}
         <Link
@@ -353,7 +353,7 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* ==== 4 ⬇ Financial Timeline ==== */}
+      {/* === 4. · Financial Timeline === */}
       <section className="milli-card p-5 rounded-2xl" data-testid="dashboard-timeline-card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-white font-semibold text-[16px]">Financial Timeline</h2>
@@ -383,10 +383,10 @@ export default function Dashboard() {
         </ul>
       </section>
 
-      {/* ==== 5 ⬇ Federal + State Filing (Elite: download IRS-ready PDF) ==== */}
+      {/* === 5. · Federal + State Filing (Elite: download IRS-ready PDF) === */}
       <FilingCard isElite={user?.plan === "elite"} year={now.getFullYear()} />
 
-      {/* ==== 6 ⬇ Mileage × Retirement × Investing (3-up) ==== */}
+      {/* === 6. · Mileage · Retirement · Investing (3-up) === */}
       <div className="grid grid-cols-3 gap-2.5">
         <MetricTile
           to="/app/mileage"
@@ -422,7 +422,7 @@ export default function Dashboard() {
 
 /* ============================================================
    Sub-components
-   ============================================================ */
+   ========================================================== */
 
 function BreakdownRow({ label, value, cyan, bold }) {
   return (
@@ -547,7 +547,7 @@ function FlameIcon() {
 function MetallicMCard() { return null; }
 
 
-/* ============== Filing Card (Elite Schedule C download) ============== */
+/* =========== Filing Card (Elite Schedule C download) =========== */
 function FilingCard({ isElite, year }) {
   const [preview, setPreview] = useState(null);   // { url, blob } while previewing
   const [loading, setLoading] = useState(false);
@@ -631,7 +631,7 @@ function FilingCard({ isElite, year }) {
           <div className="flex-1 min-w-0">
             <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
                  style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
-              IRS-Ready ⬇ Schedule C + SE
+              IRS-Ready ▸ Schedule C + SE
             </div>
             <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
               {loading ? "Building your PDF…" : "Preview Filing PDF"}
@@ -651,7 +651,7 @@ function FilingCard({ isElite, year }) {
           data-testid="pdf-preview-modal"
         >
           <div
-            onClick={(e) => e.stopPropagationPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
             style={{
               background: "linear-gradient(180deg, rgba(15,18,22,0.98) 0%, rgba(5,7,10,0.98) 100%)",
@@ -664,7 +664,7 @@ function FilingCard({ isElite, year }) {
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} weight="duotone" className="text-volt"
                   style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
-                <div className="text-white font-semibold text-[14.5px]">Schedule C + SE — {year}</div>
+                <div className="text-white font-semibold text-[14.5px]">Schedule C + SE ▸ {year}</div>
               </div>
               <button
                 onClick={closePreview}
@@ -672,7 +672,7 @@ function FilingCard({ isElite, year }) {
                 className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center active:opacity-60"
                 aria-label="Close"
               >
-                <span className="text-white text-[18px] leading-none">×</span>
+                <span className="text-white text-[18px] leading-none">✕</span>
               </button>
             </div>
             <div className="flex-1 min-h-0 bg-zinc-100">
@@ -694,7 +694,7 @@ function FilingCard({ isElite, year }) {
               <button
                 onClick={downloadFromPreview}
                 data-testid="pdf-preview-download"
-                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obscidian"
+                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obidian"
                 style={{
                   background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
                   boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)",
