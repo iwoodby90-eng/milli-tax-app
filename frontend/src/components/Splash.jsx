@@ -62,7 +62,7 @@ export default function Splash({ onDone }) {
           >
             {[20, 35, 50, 65, 80].map((x, i) => (
               <motion.line
-                key={i}
+                key={`splash-line-${x}`}
                 x1={`${x}%`}
                 y1="0%"
                 x2={`${50}%`}
@@ -194,7 +194,7 @@ export default function Splash({ onDone }) {
             <div className="mt-12 flex items-center gap-1.5 sm:gap-2">
               {LETTERS.map((ch, i) => (
                 <motion.span
-                  key={i}
+                  key={`letter-${ch}-${i}`}
                   className="chrome-text font-display text-5xl sm:text-6xl tracking-tight"
                   style={{ display: "inline-block", textShadow: "0 0 24px rgba(19,216,209,0.35)" }}
                   initial={{ opacity: 0, y: 28, scale: 0.7, filter: "blur(8px)" }}

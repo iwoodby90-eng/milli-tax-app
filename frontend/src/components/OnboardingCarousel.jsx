@@ -91,7 +91,7 @@ export default function OnboardingCarousel({ onFinish }) {
       <div className="flex justify-center gap-2 mb-6 flex-shrink-0" data-testid="onboarding-dots">
         {SLIDES.map((_, i) => (
           <button
-            key={i}
+            key={`slide-dot-${i}`}
             onClick={() => setIndex(i)}
             data-testid={`onboarding-dot-${i}`}
             aria-label={`Slide ${i + 1}`}

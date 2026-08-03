@@ -134,7 +134,7 @@ export default function RoadScene({ tagline = "Every mile is a deduction", showL
             const offset = ((i * 137) % 60) - 30; // pseudo-random horizontal
             return (
               <div
-                key={i}
+                key={`streak-${i}`}
                 className="absolute milli-streak"
                 style={{
                   left: `${50 + offset}%`,

@@ -45,7 +45,8 @@ export default function Vault() {
   useEffect(() => {
     if (!balance && !taxGoal) return;
     const firstName = user?.name?.split(" ")[0] || "";
-    MilliVaultBridge.update({ balance, goal: taxGoal, thisMonth, firstName }).catch(() => {});
+    MilliVaultBridge.update({ balance, goal: taxGoal, thisMonth, firstName })
+      .catch((e) => { console.debug("[Vault] widget bridge:", e); });
   }, [balance, taxGoal, thisMonth, user?.name]);
 
   // Confetti on milestone crossings (25/50/75/100)

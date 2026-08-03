@@ -139,7 +139,7 @@ export function InsightRow({ items = [] }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4"
               data-testid="insight-row">
             {rows.map((it, i) => (
-                <div key={i} className="milli-card milli-insight"
+                <div key={it.title || `insight-${i}`} className="milli-card milli-insight"
                       data-testid={`insight-${i}`}>
                     <div className="milli-insight__icon-wrap">
                         <it.icon size={20} weight="duotone"/>

@@ -99,7 +99,7 @@ export default function Landing() {
         <div className="border-y border-hairline overflow-hidden bg-obsidian/40">
           <div className="flex items-center gap-12 py-5 marquee-track whitespace-nowrap">
             {[...PLATFORMS, ...PLATFORMS, ...PLATFORMS].map((p, i) => (
-              <div key={i} className="flex items-center gap-3 text-zinc-500 font-mono text-sm tracking-[0.3em]">
+              <div key={`${p}-${i}`} className="flex items-center gap-3 text-zinc-500 font-mono text-sm tracking-[0.3em]">
                 <span className="w-1 h-1 bg-volt" />
                 {p}
               </div>

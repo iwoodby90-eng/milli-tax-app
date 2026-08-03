@@ -127,7 +127,7 @@ export default function Onboarding() {
         </div>
         <div className="flex gap-1" data-testid="onboarding-progress">
           {steps.map((_, i) => (
-            <div key={i} className={`h-1 rounded-full transition-all ${i <= step ? "bg-volt w-6" : "bg-zinc-700 w-3"}`} />
+            <div key={`step-${i}`} className={`h-1 rounded-full transition-all ${i <= step ? "bg-volt w-6" : "bg-zinc-700 w-3"}`} />
           ))}
         </div>
         <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest">{step + 1}/{steps.length}</div>

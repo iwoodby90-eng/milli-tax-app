@@ -49,7 +49,7 @@ export default function WelcomePaywall({ onSelected }) {
         first_charge_at: chargeDate.toISOString(),
       };
       localStorage.setItem("milli_selected_plan", JSON.stringify(record));
-    } catch (_) { /* localStorage unavailable — proceed anyway */ }
+    } catch (e) { console.debug("[WelcomePaywall] localStorage save:", e); }
     onSelected && onSelected(tier);
   }
 

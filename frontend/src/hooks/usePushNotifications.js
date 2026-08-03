@@ -36,7 +36,7 @@ export function usePushNotifications(enabled = true) {
               device_token: t.value,
               platform: Capacitor.getPlatform(),
             });
-          } catch (_) { /* silent */ }
+          } catch (e) { console.debug("[usePush] token register:", e); }
         });
 
         PushNotifications.addListener("registrationError", () => {
@@ -46,7 +46,7 @@ export function usePushNotifications(enabled = true) {
         // In-app foreground handler (optional). Backend push service
         // will drive the actual notifications when apn cert is loaded.
         PushNotifications.addListener("pushNotificationReceived", () => {});
-      } catch (_) { /* plugin missing = fine on web */ }
+      } catch (e) { console.debug("[usePush] plugin missing on web:", e); }
     })();
   }, [enabled]);
 }
