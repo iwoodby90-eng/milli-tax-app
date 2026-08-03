@@ -17,9 +17,10 @@ import MilliVaultBridge from "@/plugins/MilliVaultBridge";
  *   1. Greeting
  *   2. Available to Spend hero (cyan glow + metallic M card graphic)
  *   3. Latest Payout (2-column breakdown)
+ *   3.5. Milli Cents entry point
  *   4. Milli Tax Vault™ | Tax Ready Score™ (side-by-side)
  *   5. Financial Timeline
- *   6. Mileage · Retirement · Investing (3-up tiles)
+ *   6. Mileage × Retirement × Investing (3-up tiles)
  */
 export default function Dashboard() {
   const { user } = useAuth();
@@ -110,11 +111,11 @@ export default function Dashboard() {
 
   // Tax Ready Score (Excellent ≥85, On Track ≥70, ...)
   const readyScore = summary?.tax_ready_score
-    ?? Math.round(Math.min(100, (vaultBalance / Math.max(1, taxGoal * 0.25)) * 100));
+    ? Math.round(Math.min(100, (vaultBalance / Math.max(1, taxGoal * 0.25)) * 100));
   const readyLabel = readyScore >= 85 ? "Excellent"
-                   : readyScore >= 70 ? "On Track"
-                   : readyScore >= 40 ? "Building"
-                   : "Start";
+      : readyScore >= 70 ? "On Track"
+      : readyScore >= 40 ? "Building"
+      : "Start";
 
   // Mileage
   const milesThisMonth = summary?.mileage?.business_miles || trips.reduce((a, t) => a + Number(t.miles || 0), 0);
@@ -127,11 +128,12 @@ export default function Dashboard() {
   return (
     <div className="px-5 sm:px-6 lg:px-10 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
 
-      {/* ===== Greeting ===== */}
+      {/* ==== Greeting ==== */}
       <header className="pt-2 pb-1 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1
             className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
+            style={{ fontFamily: "'SF Pro Display', -apple-system, 'Inter', sans-serif", letterSpacing: "-0.035em" }}
             data-testid="dashboard-greeting"
           >
             {greeting}, {firstName}
@@ -153,7 +155,7 @@ export default function Dashboard() {
               border: "1px solid rgba(0,229,255,0.5)",
               boxShadow: "0 0 14px rgba(0,229,255,0.35)",
             }}
-            title={`${streak}-day driving streak · earning Milli Cents boost`}
+            title={`${streak}-day driving streak ⬇ earning Milli Cents boost`}
           >
             <FlameIcon />
             <span
@@ -169,7 +171,7 @@ export default function Dashboard() {
         )}
       </header>
 
-      {/* ===== 1 · Available to Spend Hero ===== */}
+      {/* ==== 1 ⬇ Available to Spend Hero ==== */}
       <section
         className="relative overflow-hidden rounded-3xl p-5 sm:p-6"
         data-testid="dashboard-available-card"
@@ -192,9 +194,10 @@ export default function Dashboard() {
           </div>
           <div
             className="font-chrome font-black text-white tabular-nums leading-[1] tracking-tight mt-3 text-[36px] sm:text-[44px]"
+            style={{ fontFamily: "'SF Pro Display', -apple-system, 'Inter', sans-serif" }}
             data-testid="dashboard-available-amount"
           >
-            ${availableToSpend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {availableToSpend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <Link
             to="/app/vault"
@@ -208,20 +211,21 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ===== 1.5 · Your Milli Card ===== */}
+      {/* ==== 1.5 ⬇ Your Milli Card ==== */}
       <section
         className="rounded-3xl p-5 sm:p-6 flex flex-col items-center gap-3"
         data-testid="dashboard-milli-card-section"
         style={{
           background: "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.35) 100%)",
           border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
         <div className="w-full flex items-center justify-between">
           <div>
             <div className="text-white/85 text-[15px] font-semibold">Your Milli Card</div>
             <div className="text-zinc-500 text-[12px] mt-0.5">
-              Tap-to-pay ready · {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
+              Tap-to-pay ready ⬇ {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
             </div>
           </div>
           <Link
@@ -236,7 +240,7 @@ export default function Dashboard() {
         <MilliCardHero user={user} testid="dashboard-milli-card" />
       </section>
 
-      {/* ===== 2 · Latest Payout ===== */}
+      {/* ==== 2 ⬇ Latest Payout ==== */}
       <Link
         to="/app/income"
         className="milli-card block p-5 rounded-2xl active:scale-[0.995] transition-transform"
@@ -251,15 +255,15 @@ export default function Dashboard() {
           <div className="flex-1 min-w-0">
             <div className="text-zinc-400 text-[12.5px]">Gross Payout</div>
             <div className="chrome-text font-chrome font-bold text-[26px] leading-tight mt-1 tabular-nums">
-              ${latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className="text-zinc-500 text-[12.5px] mt-2">{latestDate}</div>
           </div>
           {/* Right */}
-          <div className="flex-1 min-w-0 text-[13.5px] space-y-1.5">
+          <div className="flex-1 min-w-[13.5px] space-y-1.5">
             <BreakdownRow label="Net Payout" value={`$${latestNet.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
             <BreakdownRow label="Taxes" value={`−$${latestTaxes.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-            <BreakdownRow label={<>Milli Tax Vault<sup>™</sup></>} value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
+            <BreakdownRow label={<span>Milli Tax Vault<sup>™</sup></span>} value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
             <div className="border-t border-white/10 pt-1.5 mt-1.5">
               <BreakdownRow label="Total" value={`$${latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} bold />
             </div>
@@ -267,26 +271,59 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* ===== 3 · Tax Vault + Ready Score (2-up) ===== */}
+      {/* ==== 2.5 ⬇ Milli Cents Entry Point ==== */}
+      <Link
+        to="/app/milli-cents"
+        data-testid="dashboard-milli-cents-link"
+        className="group flex items-center gap-3 p-4 rounded-2xl active:scale-[0.995] transition-transform"
+        style={{
+          background:
+            "radial-gradient(circle at 86% 0%, rgba(0,229,255,0.15), transparent 28%), linear-gradient(180deg, rgba(16,29,36,0.96) 0%, rgba(6,11,14,0.98) 100%)",
+          border: "1px solid rgba(0,229,255,0.38)",
+          boxShadow: "0 0 24px rgba(0,229,255,0.10), inset 0 1px 0 rgba(255,255,255,0.06)",
+        }}
+      >
+        <div
+          className="flex items-center justify-center w-11 h-11 rounded-2xl text-volt flex-shrink-0"
+          style={{
+            background: "rgba(0,229,255,0.10)",
+            border: "1px solid rgba(0,229,255,0.25)",
+            boxShadow: "0 0 17px rgba(0,229,255,0.11)",
+          }}
+        >
+          <Gauge size={24} weight="duotone" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-volt text-[11px] font-bold tracking-[0.12em] uppercase">
+            Milli Cents
+          </div>
+          <div className="text-white/85 text-[13px] font-medium mt-0.5">
+            Analyze live offers before you accept.
+          </div>
+        </div>
+        <CaretRight size={18} weight="bold" className="text-volt flex-shrink-0" />
+      </Link>
+
+      {/* ==== 3 ⬇ Tax Vault + Ready Score (2-up) ==== */}
       <div className="grid grid-cols-2 gap-3">
         {/* Tax Vault */}
         <Link
           to="/app/vault"
           data-testid="dashboard-vault-card"
-          className="milli-card p-4 rounded-2xl flex flex-col active:scale-[0.995] transition-transform"
+          className="milli-card p-4 rounded-2xl flex flex-col items-center justify-between active:scale-[0.995] transition-transform"
         >
           <div className="flex items-center gap-2 mb-2">
             <Bank size={20} weight="regular" className="text-volt" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
-            <span className="text-white text-[13.5px] font-semibold leading-none">Milli Tax Vault<sup>™</sup></span>
+            <span className="text-white text-[13.5px] font-semibold">Milli Tax Vault<sup>™</sup></span>
           </div>
-          <div className="chrome-text font-chrome font-bold text-[24px] leading-none tabular-nums mt-1">
-            ${vaultBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="chrome-text font-chrome font-bold text-[24px] leading-none tabular-nums">
+            {vaultBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="text-volt text-[12px] mt-1.5" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
-            +${vaultThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this month
+            +{vaultThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this month
           </div>
           {/* progress */}
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 w-full">
             <div className="flex-1 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
               <div
                 className="h-full rounded-full"
@@ -316,13 +353,13 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* ===== 4 · Financial Timeline ===== */}
+      {/* ==== 4 ⬇ Financial Timeline ==== */}
       <section className="milli-card p-5 rounded-2xl" data-testid="dashboard-timeline-card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-white font-semibold text-[16px]">Financial Timeline</h2>
           <Link
             to="/app/income"
-            className="text-volt text-[13.5px] font-semibold active:opacity-70"
+            className="text-volt text-[13.5px] font-semibold"
             style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}
             data-testid="dashboard-timeline-viewall"
           >
@@ -346,10 +383,10 @@ export default function Dashboard() {
         </ul>
       </section>
 
-      {/* ===== 5 · Federal + State Filing (Elite: download IRS-ready PDF) ===== */}
+      {/* ==== 5 ⬇ Federal + State Filing (Elite: download IRS-ready PDF) ==== */}
       <FilingCard isElite={user?.plan === "elite"} year={now.getFullYear()} />
 
-      {/* ===== 6 · Mileage · Retirement · Investing (3-up) ===== */}
+      {/* ==== 6 ⬇ Mileage × Retirement × Investing (3-up) ==== */}
       <div className="grid grid-cols-3 gap-2.5">
         <MetricTile
           to="/app/mileage"
@@ -383,9 +420,9 @@ export default function Dashboard() {
   );
 }
 
-/* =================================================================
+/* ============================================================
    Sub-components
-   ================================================================= */
+   ============================================================ */
 
 function BreakdownRow({ label, value, cyan, bold }) {
   return (
@@ -394,7 +431,7 @@ function BreakdownRow({ label, value, cyan, bold }) {
       <span
         className={`tabular-nums ${bold ? "font-bold text-white" : "text-white"} ${
           cyan ? "text-volt" : ""
-        }`}
+        } ${cyan ? "text-volt" : ""}`}
         style={cyan ? { color: "#00E5FF", textShadow: "0 0 6px rgba(0,229,255,0.4)" } : {}}
       >
         {value}
@@ -419,7 +456,9 @@ function ReadyRing({ value = 0, label = "Excellent" }) {
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,229,255,0.15)" strokeWidth={stroke} />
         <circle
           cx={size/2} cy={size/2} r={r}
-          fill="none" stroke="#00E5FF" strokeWidth={stroke}
+          fill="none"
+          stroke="#00E5FF"
+          strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={offset}
@@ -428,8 +467,10 @@ function ReadyRing({ value = 0, label = "Excellent" }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="chrome-text font-chrome font-bold text-[26px] leading-none tabular-nums">{Math.round(value)}</div>
-        <div className="text-volt text-[10px] font-semibold uppercase tracking-widest mt-0.5"
-             style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
+        <div
+          className="text-volt text-[10px] font-semibold uppercase tracking-widest mt-0.5"
+          style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}
+        >
           {label}
         </div>
       </div>
@@ -491,7 +532,7 @@ function MetricTile({ to, icon: Icon, label, value, sub, delta, testid }) {
   );
 }
 
-/* Small cyan flame for streak pill */
+/* Small cyan flame icon for streak pill */
 function FlameIcon() {
   return (
     <svg width="12" height="14" viewBox="0 0 12 14" fill="none"
@@ -506,7 +547,7 @@ function FlameIcon() {
 function MetallicMCard() { return null; }
 
 
-/* ===================== Filing Card (Elite Schedule C download) ===================== */
+/* ============== Filing Card (Elite Schedule C download) ============== */
 function FilingCard({ isElite, year }) {
   const [preview, setPreview] = useState(null);   // { url, blob } while previewing
   const [loading, setLoading] = useState(false);
@@ -564,7 +605,7 @@ function FilingCard({ isElite, year }) {
               Upgrade to Elite
             </div>
             <div className="text-zinc-400 text-[12px] mt-0.5">
-              Elite unlocks the IRS-Ready Schedule C + SE PDF preview.
+              Elite unlocks the IRS-Ready Schedule C + SE PDF.
             </div>
           </div>
           <EliteBadge size={54} />
@@ -590,7 +631,7 @@ function FilingCard({ isElite, year }) {
           <div className="flex-1 min-w-0">
             <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
                  style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
-              IRS-Ready · Schedule C + SE
+              IRS-Ready ⬇ Schedule C + SE
             </div>
             <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
               {loading ? "Building your PDF…" : "Preview Filing PDF"}
@@ -610,7 +651,7 @@ function FilingCard({ isElite, year }) {
           data-testid="pdf-preview-modal"
         >
           <div
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagationPropagation()}
             className="relative w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
             style={{
               background: "linear-gradient(180deg, rgba(15,18,22,0.98) 0%, rgba(5,7,10,0.98) 100%)",
@@ -622,7 +663,7 @@ function FilingCard({ isElite, year }) {
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} weight="duotone" className="text-volt"
-                             style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
+                  style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
                 <div className="text-white font-semibold text-[14.5px]">Schedule C + SE — {year}</div>
               </div>
               <button
@@ -653,7 +694,7 @@ function FilingCard({ isElite, year }) {
               <button
                 onClick={downloadFromPreview}
                 data-testid="pdf-preview-download"
-                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obsidian active:brightness-95"
+                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obscidian"
                 style={{
                   background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
                   boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)",
