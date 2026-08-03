@@ -28,11 +28,11 @@ FilingStatus = Literal["single", "married_joint", "married_separate",
 BusinessType = Literal["sole_prop", "llc", "s_corp", "partnership"]
 
 # --- Self-Employment tax (Schedule SE) --------------------------------------
-SE_TAX_RATE = 0.153                # 12.4% SS + 2.9% Medicare
-SS_WAGE_BASE_2025 = 168_600.0
+SE_TAX_RATE = 0.153               # 12.4% SS + 2.9% Medicare
+SS_WAGE_BASE_2025 = 176_100.0
 SS_RATE = 0.124
 MEDICARE_RATE = 0.029
-ADDL_MEDICARE_RATE = 0.009         # kicks in at high income
+ADDL_MEDICARE_RATE = 0.009        # kicks in at high income
 ADDL_MEDICARE_THRESHOLD = {
     "single": 200_000,
     "married_joint": 250_000,
@@ -40,53 +40,58 @@ ADDL_MEDICARE_THRESHOLD = {
     "head_of_household": 200_000,
     "qualifying_widow": 250_000,
 }
-NET_EARNINGS_FACTOR = 0.9235       # 92.35% of net SE income is subject to SE tax
+NET_EARNINGS_FACTOR = 0.9235     # 92.35% of net SE income is subject to SE tax
 
-# --- Federal income tax brackets 2025 (marginal) -----------------------------
+# --- Federal income tax brackets 2025 (marginal) ----------------------------
 FED_BRACKETS_2025: dict[FilingStatus, list[tuple[float, float]]] = {
     "single": [
-        (0.10, 11_600), (0.12, 47_150), (0.22, 100_525),
-        (0.24, 191_950), (0.32, 243_725), (0.35, 609_350), (0.37, float("inf")),
+        (0.10, 11_925), (0.12, 48_475), (0.22, 103_350),
+        (0.24, 197_300), (0.32, 250_525), (0.35, 626_350),
+        (0.37, float("inf")),
     ],
     "married_joint": [
-        (0.10, 23_200), (0.12, 94_300), (0.22, 201_050),
-        (0.24, 383_900), (0.32, 487_450), (0.35, 731_200), (0.37, float("inf")),
+        (0.10, 23_850), (0.12, 96_950), (0.22, 206_700),
+        (0.24, 394_600), (0.32, 501_050), (0.35, 751_600),
+        (0.37, float("inf")),
     ],
     "married_separate": [
-        (0.10, 11_600), (0.12, 47_150), (0.22, 100_525),
-        (0.24, 191_950), (0.32, 243_725), (0.35, 365_600), (0.37, float("inf")),
+        (0.10, 11_925), (0.12, 48_475), (0.22, 103_350),
+        (0.24, 197_300), (0.32, 250_525), (0.35, 626_350),
+        (0.37, float("inf")),
     ],
     "head_of_household": [
-        (0.10, 16_550), (0.12, 63_100), (0.22, 100_500),
-        (0.24, 191_950), (0.32, 243_700), (0.35, 609_350), (0.37, float("inf")),
+        (0.10, 17_000), (0.12, 64_850), (0.22, 103_350),
+        (0.24, 197_300), (0.32, 250_500), (0.35, 626_350),
+        (0.37, float("inf")),
     ],
     "qualifying_widow": [
-        (0.10, 23_200), (0.12, 94_300), (0.22, 201_050),
-        (0.24, 383_900), (0.32, 487_450), (0.35, 731_200), (0.37, float("inf")),
+        (0.10, 23_850), (0.12, 96_950), (0.22, 206_700),
+        (0.24, 394_600), (0.32, 501_050), (0.35, 751_600),
+        (0.37, float("inf")),
     ],
 }
 
 # Standard deduction 2025
 STANDARD_DEDUCTION_2025: dict[FilingStatus, float] = {
-    "single": 14_600,
-    "married_joint": 29_200,
-    "married_separate": 14_600,
-    "head_of_household": 21_900,
-    "qualifying_widow": 29_200,
+    "single": 15_750,
+    "married_joint": 31_500,
+    "married_separate": 15_750,
+    "head_of_household": 23_625,
+    "qualifying_widow": 31_500,
 }
 
-# QBI (Sec 199A) — passthrough deduction. Simplified: 20% of qualified biz income
-# up to threshold. For gig income + sole prop / LLC, generally full 20%.
+# QBI (Sec 199A) — pass-through deduction. Simplified: 20% of qualified biz
+# income up to threshold. For gig income + sole prop / LLC, generally full 20%.
 QBI_DEDUCTION_RATE = 0.20
 QBI_INCOME_LIMIT = {
-    "single": 241_950,             # 2024 threshold placeholder
-    "married_joint": 483_900,
-    "married_separate": 241_950,
-    "head_of_household": 241_950,
-    "qualifying_widow": 483_900,
+    "single": 197_300,
+    "married_joint": 394_600,
+    "married_separate": 197_300,
+    "head_of_household": 197_300,
+    "qualifying_widow": 394_600,
 }
 
-# --- State effective rates (simplified single-bracket) ----------------------
+# --- State effective rates (simplified single-bracket) ---------------------
 STATE_EFFECTIVE_RATES: dict[str, float] = {
     # 9 no-income-tax states
     "TX": 0.0, "FL": 0.0, "WA": 0.0, "TN": 0.0, "NV": 0.0,
@@ -96,14 +101,14 @@ STATE_EFFECTIVE_RATES: dict[str, float] = {
     "MI": 0.0425, "NC": 0.0475, "PA": 0.0307, "UT": 0.0485,
     # Effective average for progressive states (rough)
     "CA": 0.093, "NY": 0.0685, "OR": 0.0875, "MA": 0.05,
-    "NJ": 0.0637, "GA": 0.0575, "AZ": 0.025, "VA": 0.0575,
-    "OH": 0.0399, "MN": 0.0785, "MD": 0.05, "WI": 0.053,
-    "SC": 0.065, "DC": 0.0925, "HI": 0.079, "ID": 0.058,
-    "IA": 0.06, "KS": 0.057, "LA": 0.0425, "ME": 0.0715,
-    "MO": 0.054, "MT": 0.059, "NE": 0.0684, "NM": 0.049,
+    "NJ": 0.0637, "VA": 0.0575, "OH": 0.0399, "MN": 0.0785,
+    "WI": 0.053, "MO": 0.054, "AZ": 0.025, "AR": 0.044,
+    "GA": 0.0539, "IA": 0.057, "ID": 0.058, "KS": 0.057,
+    "LA": 0.0425, "ME": 0.0715, "MD": 0.0575, "MS": 0.05,
+    "MT": 0.059, "NE": 0.0684, "NM": 0.049, "ND": 0.049,
     "OK": 0.0475, "RI": 0.0599, "VT": 0.0875, "WV": 0.065,
-    "AL": 0.05, "AR": 0.055, "CT": 0.0699, "DE": 0.066,
-    "MS": 0.05, "ND": 0.025,
+    "CT": 0.0699, "DE": 0.066, "HI": 0.079, "SC": 0.0699,
+    "DC": 0.0925, "AL": 0.05,
 }
 DEFAULT_STATE_RATE = 0.05
 
@@ -129,11 +134,11 @@ class TaxProfile:
     filing_status: FilingStatus = "single"
     business_type: BusinessType = "sole_prop"
     home_state: str = "TX"
-    additional_states: tuple[str, ...] = ()           # multi-state income
+    additional_states: tuple[str, ...] = ()
     dependents: int = 0
-    additional_income: float = 0.0                    # W-2, interest, etc.
-    additional_withholding: float = 0.0               # already paid via W-2, prior payments
-    take_qbi: bool = True                             # generally yes for gig income
+    additional_income: float = 0.0          # W-2, interest, etc.
+    additional_withholding: float = 0.0     # already paid via W-2, prior payments
+    take_qbi: bool = True
 
 
 @dataclass
@@ -141,8 +146,8 @@ class TaxBreakdown:
     """Result of a full tax calculation for a given income + profile."""
     gross_income: float
     net_earnings_from_se: float
-    se_tax: float                    # Schedule SE
-    se_tax_deductible_half: float    # 50% deductible on Form 1040
+    se_tax: float
+    se_tax_deductible_half: float
     federal_taxable_income: float
     federal_income_tax: float
     state_income_tax: float
@@ -157,7 +162,7 @@ class TaxBreakdown:
 class QuarterlyPlan:
     year: int
     annual_estimated_tax: float
-    quarter_amount: float
+    quarterly_amount: float
     already_paid: float
     remaining_owed: float
     quarters: list[dict]
@@ -200,19 +205,19 @@ def calc_federal_income_tax(taxable_income: float, filing_status: FilingStatus) 
     return round(tax, 2)
 
 
-def calc_additional_medicare(net_earnings: float, filing_status: FilingStatus) -> float:
+def calc_additional_medicare(net_earnings: float, profile: TaxProfile) -> float:
     """0.9% additional Medicare tax above filing-status threshold."""
-    threshold = ADDL_MEDICARE_THRESHOLD.get(filing_status, 200_000)
-    excess = max(0.0, net_earnings - threshold)
+    threshold = ADDL_MEDICARE_THRESHOLD.get(profile.filing_status, 200_000)
+    excess = max(0.0, net_earnings * NET_EARNINGS_FACTOR - threshold)
     return round(excess * ADDL_MEDICARE_RATE, 2)
 
 
 def calc_qbi_deduction(net_se_income: float, se_tax_half: float,
-                        profile: TaxProfile) -> float:
+                      profile: TaxProfile) -> float:
     """Simplified §199A: 20% of net SE income minus half SE tax."""
     if not profile.take_qbi or net_se_income <= 0:
         return 0.0
-    limit = QBI_INCOME_LIMIT.get(profile.filing_status, 241_950)
+    limit = QBI_INCOME_LIMIT.get(profile.filing_status, 197_300)
     if net_se_income > limit:
         # Higher-income phaseout applies; keep it simple and return 0.
         return 0.0
@@ -221,7 +226,7 @@ def calc_qbi_deduction(net_se_income: float, se_tax_half: float,
 
 
 def calc_total_tax(gross_se_income: float, deductions: float,
-                    profile: TaxProfile) -> TaxBreakdown:
+                   profile: TaxProfile) -> TaxBreakdown:
     """Compute the full tax picture for a self-employed individual.
 
     ``gross_se_income`` is total gig receipts. ``deductions`` should include
@@ -238,10 +243,10 @@ def calc_total_tax(gross_se_income: float, deductions: float,
     # 2) QBI deduction (simplified)
     qbi = calc_qbi_deduction(net_se_income, se_tax_half, profile)
 
-    # 3) Federal taxable income = net SE + other income − standard deduction
+    # 3) Federal taxable income = net SE + other income − std deduction
     #    − half SE tax − QBI deduction
     std = STANDARD_DEDUCTION_2025.get(profile.filing_status,
-                                       STANDARD_DEDUCTION_2025["single"])
+                                      STANDARD_DEDUCTION_2025["single"])
     federal_taxable = max(
         0.0,
         net_se_income + profile.additional_income - std - se_tax_half - qbi,
@@ -250,17 +255,14 @@ def calc_total_tax(gross_se_income: float, deductions: float,
                                                   profile.filing_status)
 
     # 4) Additional Medicare (above threshold)
-    addl_medicare = calc_additional_medicare(
-        net_se_income * NET_EARNINGS_FACTOR + profile.additional_income,
-        profile.filing_status,
-    )
+    addl_medicare = calc_additional_medicare(net_se_income, profile)
 
     # 5) State tax — home state on net SE income (multi-state prorate later)
     home_rate = state_rate(profile.home_state)
     state_tax_amount = round(net_se_income * home_rate, 2)
     by_state = {profile.home_state.upper(): state_tax_amount}
     for st in profile.additional_states:
-        by_state[st.upper()] = 0.0     # placeholder for multi-state proration
+        by_state[st.upper()] = 0.0  # placeholder for multi-state proration
 
     # 6) Total
     total = round(
@@ -297,7 +299,7 @@ def per_payout_reserve_rate(profile: TaxProfile,
     """
     if projected_annual_gross > 0:
         breakdown = calc_total_tax(projected_annual_gross,
-                                    projected_annual_deductions, profile)
+                                   projected_annual_deductions, profile)
         return {
             "federal": round(breakdown.federal_income_tax / projected_annual_gross, 4),
             "se": round(breakdown.se_tax / projected_annual_gross, 4),
@@ -305,7 +307,7 @@ def per_payout_reserve_rate(profile: TaxProfile,
             "total": max(0.0, min(0.45, breakdown.effective_rate)),
             "source": "projected_annual",
         }
-    # Cold-start: conservative bracket
+    # Cold-start: conservative brackets
     fed = 0.12
     se = SE_TAX_RATE
     st = state_rate(profile.home_state)
@@ -329,9 +331,11 @@ def quarterly_plan(year: int, profile: TaxProfile, ytd_gross: float,
     breakdown = calc_total_tax(projected_annual, projected_deductions, profile)
     per_q = round(breakdown.total_tax / 4, 2)
 
-    already_paid = sum((p.get("amount") or 0.0) for p in quarterly_payments_made)
+    already_paid = sum((p.get("amount") or 0.0) for p in quarterly_payments_made
+                       if p.get("year") == year)
     quarters = []
-    paid_by_q = {p.get("period"): p for p in quarterly_payments_made
+    paid_by_q = {p.get("period"): p
+                 for p in quarterly_payments_made
                  if p.get("year") == year}
     for m, d, label in QUARTERLY_DUE_DATES:
         due_year = year + (1 if label == "Q4" else 0)
@@ -348,7 +352,7 @@ def quarterly_plan(year: int, profile: TaxProfile, ytd_gross: float,
     return QuarterlyPlan(
         year=year,
         annual_estimated_tax=breakdown.total_tax,
-        quarter_amount=per_q,
+        quarterly_amount=per_q,
         already_paid=round(already_paid, 2),
         remaining_owed=round(max(0.0, breakdown.total_tax - already_paid), 2),
         quarters=quarters,
@@ -356,7 +360,7 @@ def quarterly_plan(year: int, profile: TaxProfile, ytd_gross: float,
 
 
 def mileage_deduction(business_miles: float, medical_miles: float = 0.0,
-                       charitable_miles: float = 0.0) -> dict:
+                      charitable_miles: float = 0.0) -> dict:
     """IRS standard mileage deduction (2025 rates)."""
     biz = round(business_miles * IRS_MILEAGE_RATE_BUSINESS, 2)
     med = round(medical_miles * IRS_MILEAGE_RATE_MEDICAL, 2)
