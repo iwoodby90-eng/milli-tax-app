@@ -1,6 +1,6 @@
 /**
- * Milli — Big City Futuristic Design System
- * ===========================================
+ * Milli — Big City Futurist Design System
+ * ========================================
  * Canonical tokens + primitives. All app screens should compose from these,
  * so any future palette / spacing shift is one file to update.
  *
@@ -8,27 +8,35 @@
  * the page's own module (Tailwind or CSS Modules).
  */
 
-/* ----- Design tokens (available as CSS vars) ----- */
+/* ---- Design tokens (available as CSS vars) ---- */
 :root {
     /* Palette */
     --milli-noir:      #050607;
-    --milli-checker:  #0A0C0F;
+    --milli-checker:   #0A0C0F;
     --milli-surface:   #0D1117;
     --milli-cyan:      #00E5FF;
-    --milli-cyan-2:   #13D8D1;
+    --milli-cyan-2:    #13D8D1;
     --milli-silver:    #C0C0C0;
-    --milli-chrome1:  #E8E8E8;
-    --milli-chrome2:  #F0F0F0;
-    --milli-chrome3:  #808080;
+    --milli-chrome1:   #E8E8E8;
+    --milli-chrome2:   #F0F0F0;
+    --milli-chrome3:   #808080;
     --milli-muted:     #8B9DAF;
     --milli-white:     #FFFFFF;
+
+    /* Volt Yellow — primary CTA color per design_guidelines.json */
+    --milli-volt:      #D4FF00;
+    --milli-volt-hover: #BBE600;
 
     /* Glow presets */
     --glow-cyan-sm:   0 0 15px rgba(0, 229, 255, 0.30);
     --glow-cyan-md:   0 0 20px rgba(0, 229, 255, 0.40), 0 0 60px rgba(0, 229, 255, 0.10);
     --glow-cyan-lg:   0 0 30px rgba(0, 229, 255, 0.55), 0 0 80px rgba(0, 229, 255, 0.20);
 
-    /* Radii */
+    /* Volt glow presets */
+    --glow-volt-sm:   0 0 12px rgba(212, 255, 0, 0.35);
+    --glow-volt-md:   0 0 18px rgba(212, 255, 0, 0.45), 0 0 40px rgba(212, 255, 0, 0.10);
+
+    /* Radius */
     --radius-lg:      20px;
     --radius-md:      14px;
     --radius-sm:      10px;
@@ -37,13 +45,13 @@
     --ease-milli:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ----- 0 ⬇ Milli Card (shared surface) ----- */
+/* ---- 0 ✦ Milli Card (shared surface) ---- */
 .milli-card {
     background: linear-gradient(180deg, rgba(17,24,30,0.92) 0%, rgba(8,11,14,0.96) 100%);
     backdrop-filter: blur(28px);
     border: 1px solid rgba(0,229,255,0.12);
     box-shadow:
-        0 18px 50px rgba(0,0,0,0.28),
+        0 8px 50px rgba(0,0,0,0.28),
         inset 0 1px 0 rgba(255,255,255,0.035);
     transition: border-color 0.2s var(--ease-milli), box-shadow 0.2s var(--ease-milli);
 }
@@ -67,7 +75,30 @@
     border-color: rgba(0,229,255,0.18);
 }
 
-/* ----- 1 ⬇ Tax Ready Score Gauge ----- */
+/* ---- 0b ✦ Volt CTA Button (primary action) ---- */
+.milli-cta {
+    background: var(--milli-volt);
+    color: #050607;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 14px 24px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.16s var(--ease-milli), box-shadow 0.16s var(--ease-milli), background 0.16s var(--ease-milli);
+    box-shadow: var(--glow-volt-sm);
+}
+.milli-cta:hover {
+    background: var(--milli-volt-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--glow-volt-md);
+}
+.milli-cta:active {
+    transform: translateY(0);
+    box-shadow: var(--glow-volt-sm);
+}
+
+/* ---- 1 ✦ Tax Ready Core Gauge ---- */
 .milli-gauge {
     --gauge-size: 220px;
     --gauge-stroke: 8px;
@@ -97,7 +128,7 @@
     text-align: center;
 }
 .milli-gauge__pct {
-    font-family: 'Sora', 'Inter', sans-serif;
+    font-family: 'Outfit', 'Inter', sans-serif;
     font-weight: 800;
     font-size: calc(var(--gauge-size) * 0.28);
     color: var(--milli-white);
@@ -105,14 +136,14 @@
     font-variant-numeric: tabular-nums;
 }
 .milli-gauge__caption {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--milli-muted);
 }
 .milli-gauge__status {
-    font-family: 'Sora', 'Inter', sans-serif;
+    font-family: 'Outfit', 'Inter', sans-serif;
     font-weight: 700;
     font-size: 11px;
     color: var(--milli-cyan);
@@ -139,7 +170,7 @@
     50%      { transform: scale(1.02); opacity: 1; }
 }
 
-/* ----- 2 ⬇ Financial Timeline ----- */
+/* ---- 2 ✦ Financial Timeline ---- */
 .milli-timeline {
     display: flex;
     gap: 36px;
@@ -189,7 +220,7 @@
     background: rgba(13,17,23,0.9);
     border: 1.5px solid rgba(192,192,192,0.35);
     color: var(--milli-silver);
-    font-family: 'Sora', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
     font-size: 12px;
     letter-spacing: 0.04em;
@@ -202,7 +233,7 @@
     box-shadow: var(--glow-cyan-md);
 }
 .milli-node__amount {
-    font-family: 'Sora', 'Inter', sans-serif;
+    font-family: 'Outfit', 'Inter', sans-serif;
     font-weight: 800;
     font-size: 14px;
     color: var(--milli-white);
@@ -210,7 +241,7 @@
 }
 .milli-node--active .milli-node__amount { color: var(--milli-cyan); }
 
-/* ----- 3 ⬇ Tax Vault Card ----- */
+/* ---- 3 ✦ Tax Vault Card ---- */
 .milli-vault {
     display: flex;
     flex-direction: column;
@@ -246,7 +277,7 @@
     z-index: 1;
 }
 .milli-vault__balance {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
     font-size: 38px;
     color: var(--milli-white);
@@ -263,7 +294,7 @@
     z-index: 1;
 }
 
-/* ----- 4 ⬇ Insight Cards ----- */
+/* ---- 4 ✦ Insight Cards ---- */
 .milli-insight {
     padding: 22px 20px;
     display: flex;
@@ -288,7 +319,7 @@
     margin-top: 6px;
 }
 .milli-insight__metric {
-    font-family: 'Sora', 'Inter', sans-serif;
+    font-family: 'Outfit', 'Inter', sans-serif;
     font-weight: 800;
     font-size: 22px;
     color: var(--milli-white);
@@ -300,7 +331,7 @@
     font-size: 12px;
 }
 
-/* ----- 5 ⬇ Elite Badge ----- */
+/* ---- 5 ✦ Elite Badge ---- */
 .milli-elite {
     display: inline-flex;
     flex-direction: column;
@@ -316,7 +347,7 @@
     justify-content: center;
 }
 .milli-elite__label {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
     font-size: 12px;
     letter-spacing: 0.34em;
@@ -325,7 +356,7 @@
     -webkit-text-fill-color: transparent; color: transparent;
 }
 
-/* ----- 6 ⬇ Bottom Nav (iPhone) ----- */
+/* ---- 6 ✦ Bottom Nav (iPhone) ---- */
 .milli-tabbar {
     background: rgba(10, 12, 15, 0.94);
     border-top: 1px solid rgba(255,255,255,0.05);
@@ -361,7 +392,7 @@
     box-shadow: 0 0 8px rgba(0,229,255,0.9);
 }
 
-/* ----- 7 ⬇ Sidebar (iPad landscape) ----- */
+/* ---- 7 ✦ Sidebar (iPad landscape) ---- */
 .milli-sidebar {
     width: 260px;
     padding: 24px 18px;
