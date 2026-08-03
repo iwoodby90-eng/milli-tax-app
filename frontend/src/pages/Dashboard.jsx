@@ -8,7 +8,7 @@ import {
   Receipt, FileText, ShieldCheck,
 } from "@phosphor-icons/react";
 import { EliteBadge } from "@/components/MilliPrimitives";
-import { MilliCardHero, MilliCardMini } from "@/components/MilliCard";
+import { MilliCardHero, MilliCardMini, cardMetaFor } from "@/components/MilliCard";
 
 /**
  * Milli Tax Vault — Dashboard.
@@ -188,7 +188,7 @@ export default function Dashboard() {
             data-testid="dashboard-checking-link"
           >
             <span>Milli Checking</span>
-            <span className="tracking-widest text-white/50">•••• 4587</span>
+            <span className="tracking-widest text-white/50" data-testid="dashboard-checking-last4">•••• {cardMetaFor(user).last4}</span>
             <CaretRight size={12} weight="bold" className="text-white/60" />
           </Link>
         </div>

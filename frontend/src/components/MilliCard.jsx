@@ -28,7 +28,7 @@ function digitsFrom(seed, len) {
   return out.slice(0, len);
 }
 
-function cardMetaFor(user) {
+export function cardMetaFor(user) {
   const name = (user?.name || user?.email?.split("@")[0] || "Milli Member").toUpperCase();
   const seed = (user?.id || user?.email || user?.name || "milli").toString();
   // Fixed "4218 5632" BIN prefix (visa-style demo range) + 8 deterministic digits
