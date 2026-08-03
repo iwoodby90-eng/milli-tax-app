@@ -6,6 +6,7 @@ import {
   MapTrifold, Coins, Receipt, Wallet, FileText, Robot, Gift, GearSix,
   PiggyBank, Bank, Car,
   FolderOpen, Calendar, CreditCard,
+  ShieldCheck, ChartBar,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
@@ -14,40 +15,42 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useState } from "react";
 
 /**
- * Milli Tax Vault→ App shell.
+ * Milli Tax Vault — App shell.
  * Top bar:  cyan "milli" wordmark left  |  bell right.
- * Bottom nav: Dashboard ⊕ Activity ⊕ [raised chrome M home] ⊕ Transfers ⊕ More.
+ * Bottom nav: Dashboard ⟶ Activity ⟶ [raised chrome M home] ⟶ Transfers ⟶ More.
  * Milli AI floats above the tab bar on every screen except /app/ai.
  */
 
 const leftTabs = [
-  { to: "/app",              icon: SquaresFour,   label: "Dashboard", end: true, testid: "tab-dashboard" },
-  { to: "/app/income",       icon: ListBullets,   label: "Activity",          testid: "tab-activity"   },
+  { to: "/app",              icon: SquaresFour,    label: "Dashboard", end: true, testid: "tab-dashboard" },
+  { to: "/app/income",       icon: ListBullets,   label: "Activity",            testid: "tab-activity"   },
 ];
 const rightTabs = [
-  { to: "/app/vault",        icon: ArrowsLeftRight, label: "Transfers",        testid: "tab-transfers" },
-  { to: "/app/more",         icon: DotsThreeOutline, label: "More",            testid: "tab-more"      },
+  { to: "/app/vault",        icon: ArrowsLeftRight, label: "Transfers",          testid: "tab-transfers" },
+  { to: "/app/more",         icon: DotsThreeOutline, label: "More",             testid: "tab-more"      },
 ];
 
 const drawerNav = [
-  { to: "/app",              icon: House,         label: "Dashboard" },
-  { to: "/app/income",       icon: Wallet,        label: "Activity / Payouts" },
-  { to: "/app/vault",        icon: VaultIcon,     label: "Milli Tax Vault→" },
-  { to: "/app/wealth",       icon: ChartLineUp,   label: "Wealth (401k + Investing)" },
-  { to: "/app/mileage",      icon: MapTrifold,    label: "Mileage" },
-  { to: "/app/milli-cents",  icon: Coins,         label: "Milli Cents" },
-  { to: "/app/savings",      icon: PiggyBank,     label: "Savings" },
-  { to: "/app/accounts",     icon: Bank,          label: "Accounts" },
-  { to: "/app/vehicles",     icon: Car,           label: "Vehicles" },
-  { to: "/app/annual-taxes", icon: FileText,      label: "Annual Taxes" },
-  { to: "/app/documents",    icon: FolderOpen,    label: "Documents" },
-  { to: "/app/quarterly",    icon: Receipt,       label: "Quarterly Taxes" },
-  { to: "/app/expenses",     icon: FileText,      label: "Expenses" },
-  { to: "/app/ai",           icon: Robot,         label: "Milli AI" },
-  { to: "/app/subscription", icon: CreditCard,    label: "Subscription" },
-  { to: "/app/referral",     icon: Gift,          label: "Invite & Earn $10" },
-  { to: "/app/reports",      icon: FileText,      label: "Reports" },
-  { to: "/app/settings",     icon: GearSix,       label: "Settings" },
+  { to: "/app",              icon: House,          label: "Dashboard" },
+  { to: "/app/income",       icon: Wallet,         label: "Activity / Payouts" },
+  { to: "/app/vault",        icon: VaultIcon,       label: "Milli Tax Vault™" },
+  { to: "/app/wealth",       icon: ChartLineUp,     label: "Wealth (401k + Investing)" },
+  { to: "/app/mileage",      icon: MapTrifold,      label: "Mileage" },
+  { to: "/app/milli-cents",  icon: Coins,          label: "Milli Cents" },
+  { to: "/app/savings",      icon: PiggyBank,      label: "Savings" },
+  { to: "/app/accounts",     icon: Bank,           label: "Accounts" },
+  { to: "/app/vehicles",     icon: Car,            label: "Vehicles" },
+  { to: "/app/annual-taxes", icon: FileText,       label: "Annual Taxes" },
+  { to: "/app/documents",    icon: FolderOpen,      label: "Documents" },
+  { to: "/app/quarterly",    icon: Receipt,        label: "Quarterly Taxes" },
+  { to: "/app/expenses",     icon: FileText,       label: "Expenses" },
+  { to: "/app/ai",           icon: Robot,          label: "Milli AI" },
+  { to: "/app/subscription", icon: CreditCard,     label: "Subscription" },
+  { to: "/app/security",     icon: ShieldCheck,    label: "Security & Auth" },
+  { to: "/app/referral",     icon: Gift,           label: "Invite & Earn $10" },
+  { to: "/app/reports",      icon: FileText,       label: "Reports" },
+  { to: "/app/admin",       icon: ChartBar,       label: "Admin Dashboard" },
+  { to: "/app/settings",    icon: GearSix,        label: "Settings" },
 ];
 
 function TabButton({ to, icon: Icon, label, end, testid }) {
@@ -87,8 +90,8 @@ export default function AppLayout({ children }) {
   usePushNotifications(true);
 
   return (
-    <div className="carbon-bg app-aurora text-white min-h-full flex flex-col relative">
-      <div className="aurora-streak" aria-hidden />
+    <div className="carbon-bg app-aura text-white min-h-full flex flex-col relative">
+      <div className="aura-streak" aria-hidden />
 
       {/* === Top bar — cyan wordmark left, bell right === */}
       <header
@@ -257,7 +260,7 @@ function ChromeHomeButton() {
           opacity: 0.95,
         }}
       />
-      {/* soft top-light highlight shield */}
+      {/* soft top-light shield */}
       <span
         className="absolute top-1 left-2 right-2 h-3 rounded-full pointer-events-none"
         style={{

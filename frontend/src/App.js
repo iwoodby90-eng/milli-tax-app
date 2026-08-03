@@ -1,4 +1,4 @@
-import "@/App.css";
+import "@App.css";
 import { useState, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -37,10 +37,12 @@ import Vehicles from "@/pages/Vehicles";
 import Documents from "@/pages/Documents";
 import AnnualTaxes from "@/pages/AnnualTaxes";
 import Subscription from "@/pages/Subscription";
+import AdminDashboard from "@/pages/AdminDashboard";
+import SecuritySettings from "@/pages/SecuritySettings";
 import TierGate from "@/components/TierGate";
 
 /* ──────────────────────────────────────────────────────────────
- * ErrorBoundary — prevents full white-screen crashes on iOS WKWebView.
+ * ErrorBoundary — prevents full-screen crashes on iOS WKWebView.
  * If any page component throws, a branded fallback is shown instead
  * of a blank screen, with a retry button.
  * ────────────────────────────────────────────────────────────── */
@@ -72,7 +74,7 @@ class ErrorBoundary extends Component {
         >
           <div
             className="mb-6 text-5xl font-bold tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif' }}
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}
           >
             <span className="text-white">M</span>
             <span className="text-volt">I</span>
@@ -107,24 +109,16 @@ function OnboardingGate({ children }) {
 }
 
 function App() {
-  // Show splash only on first session entry.
-  // FIX: Use localStorage instead of sessionStorage — in Capacitor/iOS WKWebView,
-  // sessionStorage gets cleared when the app is backgrounded or killed, causing
-  // the splash to re-trigger on every app resume. localStorage persists correctly.
   const [splashDone, setSplashDone] = useState(() => {
     try { return localStorage.getItem("milli_splash_seen") === "1"; } catch { return false; }
   });
-  // Tier must be selected before onboarding is unlocked (persistent).
   const [planSelected, setPlanSelected] = useState(() => {
     try { return !!localStorage.getItem("milli_selected_plan"); } catch { return true; }
   });
-  // Onboarding: persistent across sessions — only shown once ever
   const [onboardingDone, setOnboardingDone] = useState(() => {
     try { return localStorage.getItem("milli_onboarding_complete") === "true"; } catch { return true; }
   });
 
-  // First launch = user has never picked a plan. In that case the splash
-  // auto-fades directly into the Welcome Paywall (no tap required).
   const firstLaunch = !planSelected;
 
   const onSplashDone = () => {
@@ -138,7 +132,7 @@ function App() {
   };
 
   return (
-    <div className="App ios-frame-outer">
+    <div className="App ios-frame-outset">
       <div className="ios-frame native-scroll">
         {!splashDone && <Splash onDone={onSplashDone} autoFade={firstLaunch} />}
         {splashDone && !planSelected && <WelcomePaywall onSelected={onPlanSelected} />}
@@ -179,6 +173,8 @@ function App() {
             <Route path="/app/documents" element={<ProtectedRoute><OnboardingGate><AppLayout><Documents /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/annual-taxes" element={<ProtectedRoute><OnboardingGate><AppLayout><AnnualTaxes /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/subscription" element={<ProtectedRoute><OnboardingGate><AppLayout><Subscription /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/security" element={<ProtectedRoute><OnboardingGate><AppLayout><SecuritySettings /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/admin" element={<ProtectedRoute><OnboardingGate><AppLayout><AdminDashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
             <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
           </Routes>
