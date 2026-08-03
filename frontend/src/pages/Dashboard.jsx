@@ -8,6 +8,7 @@ import {
   Receipt, FileText, ShieldCheck,
 } from "@phosphor-icons/react";
 import { EliteBadge } from "@/components/MilliPrimitives";
+import { MilliCardHero, MilliCardMini } from "@/components/MilliCard";
 
 /**
  * Milli Tax Vault — Dashboard.
@@ -121,7 +122,13 @@ export default function Dashboard() {
           >
             {greeting}, {firstName}
           </h1>
-          <p className="text-zinc-400 text-[15px] mt-1">Here&apos;s your financial overview</p>
+          <p className="text-zinc-400 text-[15px] mt-1" data-testid="dashboard-subgreeting">
+            {streak > 1
+              ? `You're on a ${streak}-day earning streak, ${firstName}.`
+              : (deposits?.length ?? 0) > 0
+                ? `Here's your money, ${firstName}.`
+                : `Welcome to Milli, ${firstName}.`}
+          </p>
         </div>
         {streak > 0 && (
           <div
@@ -160,9 +167,9 @@ export default function Dashboard() {
             "inset 0 1px 0 rgba(255,255,255,0.10), 0 0 28px rgba(0,229,255,0.35), 0 0 60px rgba(0,229,255,0.15), 0 18px 44px rgba(0,0,0,0.55)",
         }}
       >
-        {/* Metallic M card floated in the top-right corner so the amount has full width */}
+        {/* Milli card mini badge floated in the top-right so the amount has full width */}
         <div className="absolute top-4 right-4 sm:top-5 sm:right-5 pointer-events-none">
-          <MetallicMCard />
+          <MilliCardMini user={user} />
         </div>
         <div className="relative z-10 min-w-0">
           <div className="flex items-center gap-2 text-white/80 text-[14px] font-medium">
@@ -185,6 +192,34 @@ export default function Dashboard() {
             <CaretRight size={12} weight="bold" className="text-white/60" />
           </Link>
         </div>
+      </section>
+
+      {/* ===== 1.5 · Your Milli Card ===== */}
+      <section
+        className="rounded-3xl p-5 sm:p-6 flex flex-col items-center gap-3"
+        data-testid="dashboard-milli-card-section"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.35) 100%)",
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="w-full flex items-center justify-between">
+          <div>
+            <div className="text-white/85 text-[15px] font-semibold">Your Milli Card</div>
+            <div className="text-zinc-500 text-[12px] mt-0.5">
+              Tap-to-pay ready · {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
+            </div>
+          </div>
+          <Link
+            to="/app/more"
+            data-testid="dashboard-card-manage"
+            className="text-volt text-[13px] font-semibold"
+            style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}
+          >
+            Manage
+          </Link>
+        </div>
+        <MilliCardHero user={user} testid="dashboard-milli-card" />
       </section>
 
       {/* ===== 2 · Latest Payout ===== */}
@@ -453,54 +488,8 @@ function FlameIcon() {
   );
 }
 
-/* Metallic M card graphic (right side of the "Available to Spend" hero) */
-function MetallicMCard() {
-  return (
-    <div
-      className="relative w-[88px] h-[56px] sm:w-[104px] sm:h-[64px] flex-shrink-0 rounded-lg overflow-hidden"
-      aria-hidden
-      style={{
-        background:
-          "linear-gradient(135deg, #E4E7EA 0%, #A8ADB4 20%, #4B4F55 50%, #1E2126 80%, #0A0C10 100%)",
-        boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -6px 12px rgba(0,0,0,0.5), 0 6px 14px rgba(0,0,0,0.55)",
-        transform: "rotate(-8deg)",
-      }}
-    >
-      {/* diagonal highlight */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.28) 45%, transparent 60%)",
-        }}
-      />
-      {/* chip */}
-      <div
-        className="absolute top-2 left-2 w-5 h-3.5 rounded-sm"
-        style={{
-          background: "linear-gradient(180deg, #C8B970 0%, #8A7A3E 100%)",
-          boxShadow: "inset 0 0 2px rgba(0,0,0,0.6)",
-        }}
-      />
-      {/* Big M */}
-      <div
-        className="absolute inset-0 flex items-center justify-end pr-2.5"
-        style={{
-          fontFamily: "'Sora','Inter',sans-serif",
-          fontWeight: 900,
-          fontSize: 32,
-          background: "linear-gradient(180deg, #FFFFFF 0%, #D0D3D8 40%, #6E7379 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.5))",
-        }}
-      >
-        M
-      </div>
-    </div>
-  );
-}
+/* Legacy MetallicMCard replaced by <MilliCardMini />. Left as no-op for safety. */
+function MetallicMCard() { return null; }
 
 
 /* ===================== Filing Card (Elite Schedule C download) ===================== */

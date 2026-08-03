@@ -67,8 +67,8 @@ export default function Vault() {
 
       {/* Header */}
       <header>
-        <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight">
-          Milli Tax Vault<sup className="text-[16px] align-super">™</sup>
+        <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight" data-testid="vault-header">
+          {(user?.name?.split(" ")[0] || "Your")}&apos;s Tax Vault<sup className="text-[16px] align-super">™</sup>
         </h1>
         <p className="text-zinc-400 text-[14px] mt-1">Every payout protected. Automatically.</p>
       </header>

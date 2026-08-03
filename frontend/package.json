@@ -7,6 +7,7 @@
     "@capacitor/app": "7",
     "@capacitor/cli": "7",
     "@capacitor/core": "7",
+    "@capacitor/geolocation": "^8.2.0",
     "@capacitor/ios": "7",
     "@capacitor/preferences": "7",
     "@capacitor/push-notifications": "^8.1.2",

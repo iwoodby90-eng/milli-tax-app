@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { CaretDown, ArrowUp, ArrowDown, Info } from "@phosphor-icons/react";
+import { useAuth } from "@/context/AuthContext";
+import { CaretDown, ArrowUp, ArrowDown, Info, LockKey, Target } from "@phosphor-icons/react";
+import ChromeBonsai from "@/components/ChromeBonsai";
 
 /**
  * Retirement — matches the reference mockup.
@@ -12,22 +14,44 @@ import { CaretDown, ArrowUp, ArrowDown, Info } from "@phosphor-icons/react";
  *   6. Scenario Comparison (Current Plan · Increase to 20% · Delay 2 Years)
  */
 export default function Retirement() {
+  const { user } = useAuth();
+  const isElite = user?.plan === "elite";
+  const firstName = user?.name?.split(" ")[0] || "friend";
+  const currentYear = new Date().getFullYear();
   const [range, setRange] = useState("10 Years");
   const [viewBy, setViewBy] = useState("Future Value");
+  const [detailScenario, setDetailScenario] = useState(null);
+  const [goals, setGoals] = useState({
+    retirement_year: user?.retirement_year || (new Date().getFullYear() + 30),
+    target_income:   user?.retirement_target_income || 10000,
+    goal_notes:      user?.retirement_goal_notes || "",
+    account_type:    user?.retirement_account_type || "roth_ira",
+    contribution_pct: user?.retirement_contribution_pct ?? 15,
+  });
 
   const projected = 2652113;
   const today = 1412020;
   const delta = projected - today;
   const deltaPct = Math.round((delta / today) * 100);
+  // 4% rule (Trinity study): safe annual withdrawal = 4% of nest egg
+  const estMonthlyIncome = Math.round(projected * 0.04 / 12);
+
+  const SCENARIOS = [
+    { id: "current",  title: "Current Plan",    active: true,  balance_num: projected,          contribution_pct: goals.contribution_pct, note: "10 yr forecast" },
+    { id: "increase", title: "Increase to 20%", active: false, balance_num: 3_350_000,          contribution_pct: 20, delta: "up",   note: "10 yr forecast" },
+    { id: "delay",    title: "Delay 2 Years",   active: false, balance_num: 2_050_000,          contribution_pct: goals.contribution_pct, delta: "down", note: "10 yr forecast" },
+  ];
 
   return (
     <div className="px-5 sm:px-6 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
       {/* Header */}
       <header>
         <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight">
-          Retirement
+          {firstName}&apos;s Retirement
         </h1>
-        <p className="text-zinc-400 text-[14px] mt-1">Plan today. Prosper tomorrow.</p>
+        <p className="text-zinc-400 text-[14px] mt-1" data-testid="retirement-subheader">
+          Retire in <span className="text-white/90 font-semibold">{Math.max(0, goals.retirement_year - currentYear)} years</span> · target ${Number(goals.target_income).toLocaleString("en-US")}/mo
+        </p>
       </header>
 
       {/* 1 · Projected Balance Hero */}
@@ -40,8 +64,8 @@ export default function Retirement() {
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(0,229,255,0.3), 0 20px 44px rgba(0,0,0,0.6)",
         }}
       >
-        <div className="absolute top-4 right-4 pointer-events-none">
-          <GlowingTree />
+        <div className="absolute top-2 right-2 pointer-events-none">
+          <ChromeBonsai size={148} />
         </div>
         <div className="relative z-10">
           <div className="text-white/85 text-[14px] font-medium">Projected Balance <span className="text-white/50 ml-1">👁</span></div>
@@ -82,8 +106,20 @@ export default function Retirement() {
 
       {/* 4 · Contribution / Match / Goal (3-up) */}
       <div className="grid grid-cols-3 gap-2.5">
-        <ContribCard label="Your Contribution" pct={15} money="$1,240/mo" ringPct={75} />
-        <ContribCard label="Employer Match"    pct={5}  money="$413/mo"   ringPct={25} icon="match" />
+        <ContribCard
+          label="Your Contribution"
+          pct={goals.contribution_pct}
+          money={`$${Math.round((goals.contribution_pct/100) * 60000 / 12).toLocaleString()}/mo`}
+          ringPct={Math.min(100, goals.contribution_pct * 5)}
+        />
+        <ContribCard
+          label="Employer Match"
+          pct={isElite ? 5 : 0}
+          money={isElite ? "$413/mo" : "Coming Soon"}
+          ringPct={isElite ? 25 : 0}
+          icon="match"
+          soon={!isElite}
+        />
         <GoalProgressCard pct={68} goal="$1,800,000" />
       </div>
 
@@ -95,9 +131,12 @@ export default function Retirement() {
               Est. Monthly Income <Info size={13} weight="regular" className="text-zinc-600" />
             </div>
             <div className="chrome-text font-chrome font-bold text-[28px] leading-tight mt-1 tabular-nums">
-              $10,842 <span className="text-white/50 text-[16px]">/mo</span>
+              ${estMonthlyIncome.toLocaleString("en-US")}
+              <span className="text-white/50 text-[16px]">/mo</span>
             </div>
-            <div className="text-zinc-500 text-[12px] mt-1">At retirement</div>
+            <div className="text-zinc-500 text-[12px] mt-1">
+              4% rule · at retirement · ~{Math.round((estMonthlyIncome / (goals.target_income || 1)) * 100)}% of goal
+            </div>
           </div>
           <div>
             <div className="text-zinc-400 text-[13px]">Confidence Level</div>
@@ -118,18 +157,43 @@ export default function Retirement() {
         </div>
       </section>
 
+      {/* Retirement Goals — user's long-term plan */}
+      <RetirementGoalsCard goals={goals} setGoals={setGoals} />
+
       {/* 6 · Scenario Comparison */}
       <section className="milli-card rounded-2xl p-5" data-testid="retirement-scenarios-card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-white font-semibold text-[16px]">Scenario Comparison</h2>
-          <button className="text-volt text-[13.5px] font-semibold active:opacity-70">View details &rsaquo;</button>
+          <button
+            onClick={() => setDetailScenario(SCENARIOS.find(s => s.active) || SCENARIOS[0])}
+            data-testid="retirement-scenarios-viewdetails"
+            className="text-volt text-[13.5px] font-semibold active:opacity-70"
+            style={{ textShadow: "0 0 6px rgba(0,229,255,0.4)" }}
+          >
+            View details &rsaquo;
+          </button>
         </div>
         <div className="grid grid-cols-3 gap-2.5">
-          <ScenarioCard title="Current Plan" active balance="$2.65M" income="$10,842/mo" note="10 yr forecast" />
-          <ScenarioCard title="Increase to 20%" balance="$3.35M" income="$13,680/mo" note="10 yr forecast" delta="up" />
-          <ScenarioCard title="Delay 2 Years"   balance="$2.05M" income="$8,420/mo"  note="10 yr forecast" delta="down" />
+          {SCENARIOS.map((s) => (
+            <ScenarioCard
+              key={s.id}
+              title={s.title}
+              active={s.active}
+              balance={fmtMoneyMillions(s.balance_num)}
+              income={`$${Math.round(s.balance_num * 0.04 / 12).toLocaleString()}/mo`}
+              note={s.note}
+              delta={s.delta}
+              onClick={() => setDetailScenario(s)}
+              testid={`retirement-scenario-${s.id}`}
+            />
+          ))}
         </div>
       </section>
+
+      {/* Scenario detail modal */}
+      {detailScenario && (
+        <ScenarioDetailModal scenario={detailScenario} onClose={() => setDetailScenario(null)} estIncome={Math.round(detailScenario.balance_num * 0.04 / 12)} />
+      )}
     </div>
   );
 }
@@ -228,17 +292,26 @@ function ProjectionChart({ projected, range }) {
   );
 }
 
-function ContribCard({ label, pct, money, ringPct, icon }) {
+function ContribCard({ label, pct, money, ringPct, icon, soon }) {
   const size = 44, stroke = 4, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const off = c - (ringPct / 100) * c;
   return (
-    <div className="milli-card rounded-2xl p-3" data-testid={`retirement-contrib-${label.toLowerCase().replace(/\s/g, "-")}`}>
+    <div className="milli-card rounded-2xl p-3 relative" data-testid={`retirement-contrib-${label.toLowerCase().replace(/\s/g, "-")}`}>
+      {soon && (
+        <span className="absolute -top-1.5 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: "rgba(255,204,51,0.12)", border: "1px solid rgba(255,204,51,0.55)",
+                       color: "#FFCC33", letterSpacing: "0.05em" }}>
+          ELITE
+        </span>
+      )}
       <div className="text-zinc-400 text-[11.5px]">{label}</div>
       <div className="flex items-end justify-between mt-1">
-        <div className="chrome-text font-chrome font-bold text-[26px] leading-none tabular-nums">{pct}%</div>
+        <div className={`chrome-text font-chrome font-bold text-[26px] leading-none tabular-nums ${soon ? "opacity-40" : ""}`}>
+          {soon ? "—" : `${pct}%`}
+        </div>
         {icon === "match" ? (
           <div className="w-10 h-10 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center">
-            <MatchIcon />
+            {soon ? <LockKey size={14} weight="regular" className="text-zinc-500" /> : <MatchIcon />}
           </div>
         ) : (
           <svg width={size} height={size} className="-rotate-90">
@@ -249,7 +322,7 @@ function ContribCard({ label, pct, money, ringPct, icon }) {
           </svg>
         )}
       </div>
-      <div className="text-zinc-400 text-[11.5px] mt-1">{money}</div>
+      <div className={`text-zinc-400 text-[11.5px] mt-1 ${soon ? "text-amber-300/80 font-semibold" : ""}`}>{money}</div>
     </div>
   );
 }
@@ -289,13 +362,14 @@ function MatchIcon() {
   );
 }
 
-function ScenarioCard({ title, active, balance, income, note, delta }) {
+function ScenarioCard({ title, active, balance, income, note, delta, onClick, testid }) {
   const stroke = active ? "rgba(0,229,255,0.65)" : "rgba(255,255,255,0.08)";
   const glow   = active ? "0 0 18px rgba(0,229,255,0.35)" : "none";
   return (
-    <div
-      className="rounded-2xl p-3"
-      data-testid={`retirement-scenario-${title.toLowerCase().replace(/\s/g, "-")}`}
+    <button
+      onClick={onClick}
+      className="rounded-2xl p-3 text-left active:scale-[0.98] transition-transform"
+      data-testid={testid || `retirement-scenario-${title.toLowerCase().replace(/\s/g, "-")}`}
       style={{
         background: "rgba(10,14,18,0.9)",
         border: `1px solid ${stroke}`,
@@ -315,6 +389,75 @@ function ScenarioCard({ title, active, balance, income, note, delta }) {
       <div className="text-zinc-500 text-[10px] mt-1">{note}</div>
       {/* mini sparkline */}
       <MiniSpark up={delta !== "down"} />
+    </button>
+  );
+}
+
+function fmtMoneyMillions(v) {
+  if (v >= 1_000_000) return `$${(v/1_000_000).toFixed(2)}M`;
+  if (v >= 1_000) return `$${(v/1_000).toFixed(0)}K`;
+  return `$${v}`;
+}
+
+/* Interactive scenario detail modal */
+function ScenarioDetailModal({ scenario, onClose, estIncome }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" onClick={onClose} data-testid="retirement-scenario-modal">
+      <div onClick={(e) => e.stopPropagation()}
+           className="w-full max-w-md rounded-3xl p-5"
+           style={{
+             background: "linear-gradient(180deg, rgba(15,18,22,0.98) 0%, rgba(5,7,10,0.98) 100%)",
+             border: "1px solid rgba(0,229,255,0.35)",
+             boxShadow: "0 0 40px rgba(0,229,255,0.25), 0 30px 80px rgba(0,0,0,0.7)",
+           }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt" style={{ textShadow: "0 0 6px rgba(0,229,255,0.4)" }}>
+              Scenario
+            </div>
+            <h3 className="chrome-text font-chrome font-bold text-[22px] mt-1">{scenario.title}</h3>
+          </div>
+          <button onClick={onClose} data-testid="retirement-scenario-modal-close" className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center active:opacity-60">
+            <span className="text-white text-[18px] leading-none">×</span>
+          </button>
+        </div>
+
+        <div className="milli-card rounded-2xl p-4 mb-3">
+          <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest">Projected balance</div>
+          <div className="chrome-text font-chrome font-bold text-[32px] leading-none tabular-nums mt-1">
+            ${scenario.balance_num.toLocaleString("en-US")}
+          </div>
+          <div className="text-zinc-400 text-[12.5px] mt-1">at age 65 · 10 yr forecast</div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="milli-card rounded-xl p-3">
+            <div className="text-zinc-500 text-[10px] uppercase tracking-widest">Monthly income</div>
+            <div className="chrome-text font-chrome font-bold text-[18px] tabular-nums mt-1">${estIncome.toLocaleString()}</div>
+            <div className="text-zinc-500 text-[10.5px] mt-1">4% withdrawal rule</div>
+          </div>
+          <div className="milli-card rounded-xl p-3">
+            <div className="text-zinc-500 text-[10px] uppercase tracking-widest">Contribution</div>
+            <div className="chrome-text font-chrome font-bold text-[18px] tabular-nums mt-1">{scenario.contribution_pct}%</div>
+            <div className="text-zinc-500 text-[10.5px] mt-1">of pre-tax income</div>
+          </div>
+        </div>
+
+        <ul className="text-zinc-300 text-[13px] space-y-2 mb-4">
+          <li className="flex gap-2"><span className="text-volt">•</span> Assumes 7% average annual return</li>
+          <li className="flex gap-2"><span className="text-volt">•</span> Contributions increase 3%/year with inflation</li>
+          <li className="flex gap-2"><span className="text-volt">•</span> Tax-advantaged growth ({scenario.title === "Delay 2 Years" ? "starts in 2 years" : "starts today"})</li>
+          {scenario.delta === "up"   && <li className="flex gap-2 text-volt"><span>✓</span> This scenario reaches your goal $700K earlier.</li>}
+          {scenario.delta === "down" && <li className="flex gap-2 text-rose-300"><span>⚠</span> This scenario is $600K short of the Current Plan.</li>}
+        </ul>
+
+        <button onClick={onClose} data-testid="retirement-scenario-modal-done"
+                className="w-full rounded-xl py-3 font-bold text-[13px] text-obsidian active:brightness-95"
+                style={{ background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
+                         boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
+          Got it
+        </button>
+      </div>
     </div>
   );
 }
@@ -334,50 +477,157 @@ function MiniSpark({ up }) {
   );
 }
 
-function GlowingTree() {
+function GlowingTree() { return null; /* deprecated: see ChromeBonsai */ }
+
+/* ===================== Retirement Goals ===================== */
+function RetirementGoalsCard({ goals, setGoals }) {
+  const [editing, setEditing] = useState(false);
+  const currentAge = 35;
+  const yearsLeft = Math.max(0, goals.retirement_year - new Date().getFullYear());
+  const targetAge = currentAge + yearsLeft;
+
+  async function save() {
+    try {
+      const { api } = await import("@/lib/api");
+      await api.put("/auth/profile", {
+        retirement_year: parseInt(goals.retirement_year),
+        retirement_target_income: parseFloat(goals.target_income),
+        retirement_goal_notes: goals.goal_notes,
+        retirement_account_type: goals.account_type,
+        retirement_contribution_pct: parseFloat(goals.contribution_pct),
+      });
+      const { toast } = await import("sonner");
+      toast.success("Goals saved");
+    } catch (_) { /* keep local only if backend rejects */ }
+    setEditing(false);
+  }
+
   return (
-    <div
-      className="relative w-[130px] h-[130px] flex items-center justify-center"
-      style={{ filter: "drop-shadow(0 0 24px rgba(0,229,255,0.55))" }}
-    >
-      {/* chrome pedestal with M */}
-      <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100px] h-[24px] rounded-full flex items-center justify-center"
-        style={{
-          background: "radial-gradient(ellipse at 50% 40%, #E8EBEF 0%, #A0A5AB 40%, #4A4E54 80%, #1E2126 100%)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.6), 0 4px 10px rgba(0,0,0,0.6)",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Sora','Inter',sans-serif",
-            fontWeight: 900, fontSize: 12,
-            background: "linear-gradient(180deg, #FFFFFF 0%, #808388 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          }}
-        >M</span>
+    <section className="milli-card rounded-2xl p-5" data-testid="retirement-goals-card">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Target size={16} weight="fill" className="text-volt"
+                  style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.55))" }} />
+          <h2 className="text-white font-semibold text-[16px]">Your Retirement Goals</h2>
+        </div>
+        <button onClick={() => (editing ? save() : setEditing(true))}
+                data-testid="retirement-goals-edit"
+                className="text-volt text-[13px] font-semibold"
+                style={{ textShadow: "0 0 6px rgba(0,229,255,0.4)" }}>
+          {editing ? "Save" : "Edit"}
+        </button>
       </div>
-      {/* Tree */}
-      <svg width="118" height="120" viewBox="0 0 118 120" style={{ marginBottom: 8 }}>
-        <defs>
-          <radialGradient id="crown" cx="50%" cy="50%" r="60%">
-            <stop offset="0%" stopColor="#7BF3FF" />
-            <stop offset="60%" stopColor="#00E5FF" />
-            <stop offset="100%" stopColor="#00A2C0" stopOpacity="0.85" />
-          </radialGradient>
-        </defs>
-        {/* trunk */}
-        <path d="M55 96 L59 65 L63 96 Z" fill="#00E5FF" opacity="0.85" />
-        {/* branches (blobs) */}
-        <g opacity="0.95" style={{ filter: "drop-shadow(0 0 8px rgba(0,229,255,0.7))" }}>
-          <circle cx="59" cy="46" r="26" fill="url(#crown)" />
-          <circle cx="38" cy="58" r="18" fill="url(#crown)" />
-          <circle cx="80" cy="58" r="18" fill="url(#crown)" />
-          <circle cx="45" cy="34" r="12" fill="url(#crown)" />
-          <circle cx="72" cy="34" r="12" fill="url(#crown)" />
-          <circle cx="59" cy="22" r="10" fill="url(#crown)" />
-        </g>
-      </svg>
-    </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="milli-card rounded-xl p-3">
+          <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest">Retire in year</div>
+          {editing ? (
+            <input
+              data-testid="retirement-year-input"
+              type="number" min={new Date().getFullYear()} max={new Date().getFullYear()+80}
+              value={goals.retirement_year}
+              onChange={(e) => setGoals({...goals, retirement_year: e.target.value})}
+              className="w-full bg-transparent chrome-text font-chrome font-bold text-[22px] tabular-nums mt-1 focus:outline-none"
+            />
+          ) : (
+            <div className="chrome-text font-chrome font-bold text-[22px] tabular-nums mt-1">{goals.retirement_year}</div>
+          )}
+          <div className="text-zinc-500 text-[11px] mt-1">Age {targetAge} · {yearsLeft} yrs away</div>
+        </div>
+        <div className="milli-card rounded-xl p-3">
+          <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest">Target monthly income</div>
+          {editing ? (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="chrome-text font-chrome font-bold text-[22px]">$</span>
+              <input
+                data-testid="retirement-income-input"
+                type="number" min="0" step="500"
+                value={goals.target_income}
+                onChange={(e) => setGoals({...goals, target_income: e.target.value})}
+                className="flex-1 bg-transparent chrome-text font-chrome font-bold text-[22px] tabular-nums focus:outline-none"
+              />
+            </div>
+          ) : (
+            <div className="chrome-text font-chrome font-bold text-[22px] tabular-nums mt-1">
+              ${Number(goals.target_income).toLocaleString()}
+            </div>
+          )}
+          <div className="text-zinc-500 text-[11px] mt-1">Post-retirement lifestyle</div>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest mb-1.5">Long-term goals</div>
+        {editing ? (
+          <textarea
+            data-testid="retirement-notes-input"
+            rows={3}
+            placeholder="Buy a house, travel, kids' college, second home in Costa Rica…"
+            value={goals.goal_notes}
+            onChange={(e) => setGoals({...goals, goal_notes: e.target.value})}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-white text-[13px] focus:outline-none focus:border-volt resize-none"
+          />
+        ) : (
+          <div className="text-white text-[13px] leading-relaxed min-h-[40px]">
+            {goals.goal_notes || <span className="text-zinc-600 italic">Tap Edit to add your long-term goals.</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Account type + Contribution % */}
+      <div className="mt-4 pt-4 border-t border-white/[0.06]">
+        <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest mb-2">Account Type</div>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { id: "roth_ira",        label: "Roth IRA",        hint: "Tax-free growth" },
+            { id: "traditional_ira", label: "Traditional IRA", hint: "Tax deferred" },
+            { id: "sep_ira",         label: "SEP IRA",         hint: "For 1099 self-emp." },
+            { id: "solo_401k",       label: "Solo 401(k)",     hint: "Highest limit" },
+            { id: "hsa",             label: "HSA",             hint: "Triple tax-free" },
+            { id: "taxable",         label: "Brokerage",       hint: "Post-tax" },
+          ].map((a) => {
+            const active = goals.account_type === a.id;
+            return (
+              <button
+                key={a.id}
+                onClick={() => editing && setGoals({...goals, account_type: a.id})}
+                disabled={!editing}
+                data-testid={`retirement-account-${a.id}`}
+                className="rounded-xl p-2.5 text-center transition-all disabled:cursor-not-allowed"
+                style={{
+                  background: active ? "rgba(0,229,255,0.10)" : "rgba(10,14,18,0.6)",
+                  border: active ? "1px solid rgba(0,229,255,0.6)" : "1px solid rgba(255,255,255,0.06)",
+                  boxShadow: active ? "0 0 14px rgba(0,229,255,0.3)" : "none",
+                  opacity: editing ? 1 : (active ? 1 : 0.55),
+                }}
+              >
+                <div className={`text-[12px] font-semibold ${active ? "text-volt" : "text-white"}`}>{a.label}</div>
+                <div className="text-zinc-500 text-[9.5px] mt-0.5">{a.hint}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="text-zinc-500 text-[10.5px] uppercase tracking-widest mt-4 mb-2 flex items-center justify-between">
+          <span>Contribution</span>
+          <span className="text-volt font-bold text-[13px] tabular-nums normal-case tracking-normal"
+                style={{ textShadow: "0 0 6px rgba(0,229,255,0.4)" }}>
+            {goals.contribution_pct}%
+          </span>
+        </div>
+        <input
+          data-testid="retirement-contribution-slider"
+          type="range" min="0" max="30" step="1"
+          value={goals.contribution_pct}
+          onChange={(e) => editing && setGoals({...goals, contribution_pct: e.target.value})}
+          disabled={!editing}
+          className="w-full accent-volt cursor-pointer disabled:cursor-not-allowed"
+        />
+        <div className="flex justify-between text-[10px] text-zinc-500 tabular-nums mt-1 uppercase tracking-widest">
+          <span>0%</span><span>10%</span><span>20%</span><span>30%</span>
+        </div>
+      </div>
+    </section>
   );
 }
+

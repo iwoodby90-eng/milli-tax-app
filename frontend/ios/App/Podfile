@@ -13,6 +13,7 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCommunityBackgroundGeolocation', :path => '../../node_modules/@capacitor-community/background-geolocation'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
+  pod 'CapacitorGeolocation', :path => '../../node_modules/@capacitor/geolocation'
   pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
   pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
   pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'

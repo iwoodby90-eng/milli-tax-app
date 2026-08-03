@@ -1,26 +1,37 @@
-import { useState } from "react";
-import { Eye, CaretDown, CaretRight, Sparkle } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { Eye, CaretDown, CaretRight, Sparkle, ArrowUp, ArrowDown } from "@phosphor-icons/react";
 
 /**
- * Investing — matches the reference mockup.
- * Sections:
- *   1. Total Portfolio Value hero (cyan-glow card + metallic M debit graphic)
- *   2. Market Overview (candlestick chart w/ price + Live pill + 1D/1W/1M/1Y/All)
- *   3. Today's Gain/Loss + Buying Power (2-up)
- *   4. Watchlist + Asset Allocation donut (2-up)
- *   5. Milli AI Insight card
+ * Investing — matches the reference mockup + LIVE market data.
  */
 export default function Investing() {
   const [range, setRange] = useState("1D");
+  const [overview, setOverview] = useState(null);
+  const [movers, setMovers] = useState(null);
+
+  useEffect(() => {
+    const rangeMap = { "1D": "1d", "1W": "1w", "1M": "1m", "1Y": "1y", "All": "all" };
+    api.get(`/market/overview?range_=${rangeMap[range] || "1d"}`)
+      .then(r => setOverview(r.data)).catch(() => {});
+  }, [range]);
+  useEffect(() => {
+    api.get("/market/movers").then(r => setMovers(r.data)).catch(() => {});
+    const iv = setInterval(() => {
+      api.get("/market/movers").then(r => setMovers(r.data)).catch(() => {});
+    }, 120000);
+    return () => clearInterval(iv);
+  }, []);
 
   const total = 124560;
   const todayGain = 2340.50;
   const todayPct = 1.91;
   const buyingPower = 8750;
 
-  const spx = 5321.41;
-  const spxDelta = 24.39;
-  const spxPct = 0.46;
+  const spx = overview?.index?.price ?? 5321.41;
+  const spxDelta = overview?.index?.change ?? 24.39;
+  const spxPct = overview?.index?.change_pct ?? 0.46;
+  const spxUp = (spxDelta || 0) >= 0;
 
   return (
     <div className="px-5 sm:px-6 pt-4 pb-6 max-w-2xl mx-auto space-y-4">
@@ -80,8 +91,9 @@ export default function Investing() {
             <div className="chrome-text font-chrome font-bold text-[28px] leading-tight tabular-nums mt-1">
               {spx.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-volt text-[13px]" style={{ textShadow: "0 0 6px rgba(0,229,255,0.4)" }}>
-              +{spxDelta.toFixed(2)} ({spxPct}%)
+            <div className={spxUp ? "text-volt text-[13px]" : "text-rose-400 text-[13px]"}
+                 style={spxUp ? { textShadow: "0 0 6px rgba(0,229,255,0.4)" } : {}}>
+              {spxUp ? "+" : ""}{spxDelta.toFixed(2)} ({spxPct.toFixed(2)}%)
             </div>
           </div>
           <PriceTicks />
@@ -108,6 +120,9 @@ export default function Investing() {
           })}
         </div>
       </section>
+
+      {/* Live Top Movers (from real market data) */}
+      <MoversSection movers={movers} />
 
       {/* 3 · Today's Gain/Loss + Buying Power */}
       <div className="grid grid-cols-2 gap-3">
@@ -406,3 +421,67 @@ function AllocLegend({ color, label, pct }) {
     </li>
   );
 }
+
+/* Live Top Movers — powered by /api/market/movers */
+function MoversSection({ movers }) {
+  const [tab, setTab] = useState("gainers");
+  const rows = movers?.[tab] || [];
+  return (
+    <section className="milli-card rounded-2xl p-4" data-testid="investing-movers-card">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-white font-semibold text-[15px]">Today&apos;s Movers</h2>
+        <div className="flex gap-1 text-[11px] font-semibold">
+          {["gainers", "losers", "actives"].map((k) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              data-testid={`movers-tab-${k}`}
+              className="px-2.5 py-1 rounded-full transition"
+              style={tab === k
+                ? { background: "rgba(0,229,255,0.10)", color: "#00E5FF", border: "1px solid rgba(0,229,255,0.5)", textShadow: "0 0 6px rgba(0,229,255,0.4)" }
+                : { color: "#8B95A5", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              {k === "gainers" ? "Gainers" : k === "losers" ? "Losers" : "Active"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {!movers && (
+        <div className="text-zinc-500 text-[12.5px] py-4 text-center">Loading live market…</div>
+      )}
+      <ul className="divide-y divide-white/[0.05]">
+        {rows.slice(0, 5).map((m) => {
+          const up = (m.change_pct || 0) >= 0;
+          return (
+            <li key={m.ticker} className="flex items-center gap-3 py-2.5"
+                data-testid={`mover-${m.ticker}`}>
+              <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+                {m.ticker.replace("-", "")}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white text-[13.5px] font-medium truncate">{m.name || m.ticker}</div>
+                <div className="text-zinc-500 text-[11.5px] tabular-nums">${m.price?.toFixed(2)}</div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <div className={`text-[13.5px] font-semibold tabular-nums ${up ? "text-volt" : "text-rose-400"}`}
+                     style={up ? { textShadow: "0 0 6px rgba(0,229,255,0.4)" } : {}}>
+                  {up ? "+" : ""}{m.change_pct?.toFixed(2)}%
+                </div>
+                <div className="text-zinc-500 text-[10.5px] tabular-nums">
+                  {up ? <ArrowUp size={9} weight="bold" className="inline" /> : <ArrowDown size={9} weight="bold" className="inline" />}
+                  {" "}${Math.abs(m.change || 0).toFixed(2)}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {movers?.last_updated && (
+        <div className="text-[10px] text-zinc-600 text-center mt-2 uppercase tracking-widest">
+          Updated {new Date(movers.last_updated).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · Live
+        </div>
+      )}
+    </section>
+  );
+}
+

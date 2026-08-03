@@ -4,6 +4,7 @@ import {
   Gear, ShieldCheck, Gift, Sparkle, FileText, ChartLineUp, PiggyBank,
   Receipt, Robot, CaretRight, SignOut, Star, Coins,
 } from "@phosphor-icons/react";
+import { MilliCardHero } from "@/components/MilliCard";
 
 /**
  * More — extra destinations, styled in Milli aesthetic (card list).
@@ -45,11 +46,26 @@ export default function More() {
     <div className="px-5 sm:px-6 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
       {/* Header */}
       <header>
-        <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight">
-          More
+        <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight" data-testid="more-header">
+          {(user?.name?.split(" ")[0] || "Your")} account
         </h1>
         <p className="text-zinc-400 text-[14px] mt-1">Everything else, in one place.</p>
       </header>
+
+      {/* Milli Card showcase */}
+      <section
+        className="rounded-3xl p-5 flex flex-col items-center gap-3"
+        data-testid="more-milli-card-section"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.35) 100%)",
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <MilliCardHero user={user} testid="more-milli-card" />
+        <div className="text-zinc-500 text-[11.5px] text-center">
+          Ships once your first ${100} clears the Milli Tax Vault™
+        </div>
+      </section>
 
       {/* Profile card */}
       <Link

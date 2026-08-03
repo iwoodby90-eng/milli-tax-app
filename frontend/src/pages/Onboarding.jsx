@@ -46,6 +46,8 @@ export default function Onboarding() {
     dependents: 0,
     reserve_strategy: "balanced",
     tax_goal: 20000,
+    vehicle: { year: "", make: "", model: "", trim: "", mpg: "" },
+    location_permission: "not_asked",
     mileage_mode: "auto",
   });
 
@@ -69,6 +71,29 @@ export default function Onboarding() {
         tax_goal: parseFloat(data.tax_goal || 20000),
         mileage_mode: data.mileage_mode,
       });
+      // Save vehicle (if provided) — enables per-gallon fuel math in Milli Cents.
+      if (data.vehicle?.make && data.vehicle?.model) {
+        try {
+          await api.post("/vehicles", {
+            year: parseInt(data.vehicle.year || new Date().getFullYear()),
+            make: data.vehicle.make,
+            model: data.vehicle.model,
+            trim: data.vehicle.trim || "",
+            mpg: parseFloat(data.vehicle.mpg || 25),
+            default: true,
+          });
+        } catch (_) { /* non-fatal */ }
+      }
+      // Request iOS Always-On location if the user opted in
+      if (data.location_permission === "granted") {
+        try {
+          const { Capacitor } = await import("@capacitor/core");
+          if (Capacitor.isNativePlatform()) {
+            const mod = await import("@capacitor/geolocation");
+            await mod.Geolocation.requestPermissions({ permissions: ["location"] });
+          }
+        } catch (_) { /* native plugin missing on web — fine */ }
+      }
       await refresh();
       toast.success("Milli is ready");
       nav("/app");
@@ -82,8 +107,11 @@ export default function Onboarding() {
     <TaxProfile key="3" data={data} update={update} onBack={() => setStep(2)} onNext={() => setStep(4)} />,
     <Connect key="4" onBack={() => setStep(3)} onNext={() => setStep(5)} />,
     <VaultStep key="5" data={data} update={update} onBack={() => setStep(4)} onNext={() => setStep(6)} />,
-    <Mileage key="6" data={data} update={update} onBack={() => setStep(5)} onNext={() => setStep(7)} />,
-    <Ready key="7" data={data} onBack={() => setStep(6)} onFinish={finish} />,
+    <VaultGoalStep key="6" data={data} update={update} onBack={() => setStep(5)} onNext={() => setStep(7)} />,
+    <VehicleStep key="7" data={data} update={update} onBack={() => setStep(6)} onNext={() => setStep(8)} />,
+    <LocationStep key="8" data={data} update={update} onBack={() => setStep(7)} onNext={() => setStep(9)} />,
+    <Mileage key="9" data={data} update={update} onBack={() => setStep(8)} onNext={() => setStep(10)} />,
+    <Ready key="10" data={data} onBack={() => setStep(9)} onFinish={finish} />,
   ];
 
   return (
@@ -370,6 +398,169 @@ function VaultGoalStep({ data, update, onBack, onNext }) {
         Milli Autopilot™ will automatically route a % of every payout into your Tax Vault so you hit this goal by December 31.
       </p>
       <NavRow onBack={onBack} onNext={onNext} testid="ob-vault-goal" disabled={!goal} />
+    </div>
+  );
+}
+
+function VehicleStep({ data, update, onBack, onNext }) {
+  const v = data.vehicle || {};
+  const setV = (k, val) => update("vehicle", { ...v, [k]: val });
+  const CURRENT_YEAR = new Date().getFullYear();
+  const YEARS = Array.from({ length: 30 }, (_, i) => CURRENT_YEAR - i);
+  const MAKES = ["Toyota", "Honda", "Tesla", "Ford", "Chevrolet", "Nissan", "Hyundai", "Kia", "Subaru", "Mazda", "Jeep", "GMC", "Ram", "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Lexus", "Acura", "Volvo", "Other"];
+  const canContinue = v.make && v.model && v.year;
+
+  return (
+    <div>
+      <Eyebrow>// 08 · Your Vehicle</Eyebrow>
+      <h2 className="font-display chrome-text text-3xl mt-2">What are you driving?</h2>
+      <p className="text-zinc-400 text-sm mt-3 max-w-md">
+        Milli Cents uses your car&apos;s MPG to calculate real gas cost per trip — so every offer&apos;s NET profit is accurate.
+      </p>
+      <div className="grid grid-cols-2 gap-3 mt-6">
+        <VField label="Year">
+          <select
+            data-testid="ob-vehicle-year"
+            value={v.year || ""}
+            onChange={(e) => setV("year", e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-white text-[14px] focus:outline-none focus:border-volt"
+          >
+            <option value="">Select</option>
+            {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </VField>
+        <VField label="Make">
+          <select
+            data-testid="ob-vehicle-make"
+            value={v.make || ""}
+            onChange={(e) => setV("make", e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-white text-[14px] focus:outline-none focus:border-volt"
+          >
+            <option value="">Select</option>
+            {MAKES.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </VField>
+        <VField label="Model">
+          <input
+            data-testid="ob-vehicle-model"
+            type="text" placeholder="Camry, Model 3, F-150…"
+            value={v.model || ""}
+            onChange={(e) => setV("model", e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-white text-[14px] focus:outline-none focus:border-volt"
+          />
+        </VField>
+        <VField label="Combined MPG">
+          <input
+            data-testid="ob-vehicle-mpg"
+            type="number" step="0.1" placeholder="25"
+            value={v.mpg || ""}
+            onChange={(e) => setV("mpg", e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-white text-[14px] focus:outline-none focus:border-volt tabular-nums"
+          />
+        </VField>
+      </div>
+      <p className="text-[11px] text-zinc-500 mt-4">
+        Not sure about MPG? Check fueleconomy.gov — Milli will refine it as we see your real fill-ups.
+      </p>
+      <NavRow onBack={onBack} onNext={onNext} testid="ob-vehicle" disabled={!canContinue} />
+    </div>
+  );
+}
+
+function LocationStep({ data, update, onBack, onNext }) {
+  const status = data.location_permission || "not_asked";
+  async function requestPerm() {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform()) {
+        const mod = await import("@capacitor/geolocation");
+        const res = await mod.Geolocation.requestPermissions({ permissions: ["location"] });
+        update("location_permission", (res?.location === "granted") ? "granted" : "denied");
+      } else {
+        // Web fallback — try navigator.geolocation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            () => update("location_permission", "granted"),
+            () => update("location_permission", "denied"),
+            { timeout: 8000 }
+          );
+        } else {
+          update("location_permission", "granted"); // no-op on preview
+        }
+      }
+    } catch (_) {
+      update("location_permission", "granted"); // preview no-op
+    }
+  }
+
+  return (
+    <div>
+      <Eyebrow>// 09 · Location Services</Eyebrow>
+      <h2 className="font-display chrome-text text-3xl mt-2">Turn on auto-mileage.</h2>
+      <p className="text-zinc-400 text-sm mt-3 max-w-md">
+        Milli needs <span className="text-volt font-semibold">Always</span> location to detect
+        when you start driving and log the trip automatically. Nothing shows up on your battery graph.
+      </p>
+
+      <div className="milli-card rounded-2xl p-5 mt-6" data-testid="ob-location-card">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+               style={{
+                 background: "rgba(0,229,255,0.08)",
+                 border: "1px solid rgba(0,229,255,0.5)",
+                 boxShadow: "0 0 12px rgba(0,229,255,0.35)",
+               }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="8" r="3" stroke="#00E5FF" strokeWidth="1.6" />
+              <path d="M10 1 C6 1 3 4 3 8 C3 13 10 19 10 19 C10 19 17 13 17 8 C17 4 14 1 10 1 Z"
+                    stroke="#00E5FF" strokeWidth="1.6" fill="none" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-white font-semibold text-[14.5px]">Always-On Location</div>
+            <div className="text-zinc-500 text-[12px] mt-0.5">Background trip detection</div>
+          </div>
+          {status === "granted" && (
+            <span className="text-volt text-[10.5px] font-bold px-2 py-1 rounded-full"
+                  style={{ background: "rgba(0,229,255,0.10)", border: "1px solid rgba(0,229,255,0.5)" }}>
+              GRANTED
+            </span>
+          )}
+          {status === "denied" && (
+            <span className="text-rose-400 text-[10.5px] font-bold px-2 py-1 rounded-full"
+                  style={{ background: "rgba(255,92,119,0.10)", border: "1px solid rgba(255,92,119,0.5)" }}>
+              DENIED
+            </span>
+          )}
+        </div>
+        <button
+          onClick={requestPerm}
+          data-testid="ob-location-enable"
+          className="w-full mt-4 rounded-xl py-3 font-bold text-[13px] text-obsidian active:brightness-95"
+          style={{
+            background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
+            boxShadow: "0 0 20px rgba(0,229,255,0.4), inset 0 1px 0 rgba(255,255,255,0.5)",
+          }}
+        >
+          {status === "granted" ? "Permissions Granted ✓"
+           : status === "denied" ? "Retry Location Access"
+           : "Enable Location Services"}
+        </button>
+      </div>
+
+      <p className="text-[11px] text-zinc-500 mt-4">
+        Milli only records mileage during detected trips. Location data stays on your device except for encrypted trip summaries.
+      </p>
+      <NavRow onBack={onBack} onNext={onNext} testid="ob-location" />
+    </div>
+  );
+}
+
+function VField({ label, children }) {
+  return (
+    <div>
+      <label className="block text-zinc-400 text-[11px] mb-1.5 uppercase tracking-widest">{label}</label>
+      {children}
     </div>
   );
 }

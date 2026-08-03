@@ -182,7 +182,12 @@ class LoginIn(BaseModel):
 class ProfileUpdateIn(BaseModel):
     name: Optional[str] = None
     state: Optional[str] = None
-    filing_status: Optional[str] = None  # single, married_joint, etc.
+    filing_status: Optional[str] = None
+    retirement_year: Optional[int] = None
+    retirement_target_income: Optional[float] = None
+    retirement_goal_notes: Optional[str] = None
+    retirement_account_type: Optional[str] = None   # roth_ira, traditional_ira, sep_ira, solo_401k, hsa
+    retirement_contribution_pct: Optional[float] = None
 
 class PublicTokenIn(BaseModel):
     public_token: str
@@ -295,6 +300,11 @@ async def update_profile(body: ProfileUpdateIn, user: dict = Depends(get_current
     if body.name: update["name"] = body.name
     if body.state: update["state"] = body.state.upper()
     if body.filing_status: update["filing_status"] = body.filing_status
+    if body.retirement_year is not None: update["retirement_year"] = int(body.retirement_year)
+    if body.retirement_target_income is not None: update["retirement_target_income"] = float(body.retirement_target_income)
+    if body.retirement_goal_notes is not None: update["retirement_goal_notes"] = body.retirement_goal_notes
+    if body.retirement_account_type is not None: update["retirement_account_type"] = body.retirement_account_type
+    if body.retirement_contribution_pct is not None: update["retirement_contribution_pct"] = float(body.retirement_contribution_pct)
     if update:
         await db.users.update_one({"id": user["id"]}, {"$set": update})
     out = await db.users.find_one({"id": user["id"]}, {"password_hash": 0, "_id": 0})
@@ -2560,6 +2570,30 @@ async def schedule_c_pdf(user: dict = Depends(get_current_user), year: Optional[
 
 
 # -------------------- MOUNT --------------------
+# Market data (live)
+try:
+    from market import get_market_overview, get_movers, get_quote_batch
+
+    @api.get("/market/overview")
+    async def market_overview(range_: str = "1d", user: dict = Depends(get_current_user)):
+        try:
+            return await get_market_overview(range_)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Market data unavailable: {e!s}")
+
+    @api.get("/market/movers")
+    async def market_movers(user: dict = Depends(get_current_user)):
+        try:
+            return await get_movers()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Movers unavailable: {e!s}")
+
+    @api.get("/market/quotes")
+    async def market_quotes(tickers: str, user: dict = Depends(get_current_user)):
+        return await get_quote_batch([t.strip() for t in tickers.split(",") if t.strip()])
+except Exception as _me:
+    logging.warning("Market module not mounted: %s", _me)
+
 app.include_router(api)
 
 app.add_middleware(
