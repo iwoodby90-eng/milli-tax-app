@@ -1,4 +1,4 @@
-import "@App.css";
+import "@/App.css";
 import { useState, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -34,12 +34,16 @@ import MilliCents from "@/pages/MilliCents";
 import Savings from "@/pages/Savings";
 import Accounts from "@/pages/Accounts";
 import Vehicles from "@/pages/Vehicles";
+import Documents from "@/pages/Documents";
+import AnnualTaxes from "@/pages/AnnualTaxes";
+import Subscription from "@/pages/Subscription";
+import TierGate from "@/components/TierGate";
 
-/* ──────────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────
  * ErrorBoundary — prevents full white-screen crashes on iOS WKWebView.
- * If any page component throws, a branded fallback is shown instead of
- * a blank screen, with a retry button.
- * ────────────────────────────────────────────────────────────────────────── */
+ * If any page component throws, a branded fallback is shown instead
+ * of a blank screen, with a retry button.
+ * ────────────────────────────────────────────────────────────── */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -68,7 +72,7 @@ class ErrorBoundary extends Component {
         >
           <div
             className="mb-6 text-5xl font-bold tracking-tight"
-            style={{ fontFamily: '"Outfit", system-ui, sans-serif' }}
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif' }}
           >
             <span className="text-white">M</span>
             <span className="text-volt">I</span>
@@ -168,10 +172,13 @@ function App() {
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
-            <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><MilliCents /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro","elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/accounts" element={<ProtectedRoute><OnboardingGate><AppLayout><Accounts /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/vehicles" element={<ProtectedRoute><OnboardingGate><AppLayout><Vehicles /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/documents" element={<ProtectedRoute><OnboardingGate><AppLayout><Documents /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/annual-taxes" element={<ProtectedRoute><OnboardingGate><AppLayout><AnnualTaxes /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/subscription" element={<ProtectedRoute><OnboardingGate><AppLayout><Subscription /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
             <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
           </Routes>
