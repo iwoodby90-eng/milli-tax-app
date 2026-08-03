@@ -4,6 +4,7 @@ import {
   SquaresFour, ListBullets, ArrowsLeftRight, DotsThreeOutline,
   Bell, List, SignOut, House, Vault as VaultIcon, ChartLineUp,
   MapTrifold, Coins, Receipt, Wallet, FileText, Robot, Gift, GearSix,
+  PiggyBank, Bank, Car,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
@@ -12,34 +13,37 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useState } from "react";
 
 /**
- * Milli Tax Vault — App shell.
+ * Milli Tax Vault™ App shell.
  * Top bar:  cyan "milli" wordmark  |  bell (notifications).
- * Bottom nav: Dashboard · Activity · [raised chrome M home] · Transfers · More.
+ * Bottom nav: Dashboard ⨯ Activity ⨯ [raised chrome M home] ⨯ Transfers ⨯ More.
  * Milli AI floats above the tab bar on every screen except /app/ai.
  */
 
 const leftTabs = [
-  { to: "/app",           icon: SquaresFour,       label: "Dashboard", end: true, testid: "tab-dashboard" },
-  { to: "/app/income",    icon: ListBullets,       label: "Activity",             testid: "tab-activity"  },
+  { to: "/app",          icon: SquaresFour,   label: "Dashboard", end: true, testid: "tab-dashboard" },
+  { to: "/app/income",   icon: ListBullets,   label: "Activity",            testid: "tab-activity"  },
 ];
 const rightTabs = [
-  { to: "/app/vault",     icon: ArrowsLeftRight,   label: "Transfers",            testid: "tab-transfers" },
-  { to: "/app/more",      icon: DotsThreeOutline,  label: "More",                 testid: "tab-more"      },
+  { to: "/app/vault",    icon: ArrowsLeftRight, label: "Transfers",         testid: "tab-transfers" },
+  { to: "/app/more",     icon: DotsThreeOutline, label: "More",             testid: "tab-more"      },
 ];
 
 const drawerNav = [
-  { to: "/app",             icon: House,        label: "Dashboard", end: true },
-  { to: "/app/income",      icon: Wallet,       label: "Activity / Payouts" },
-  { to: "/app/vault",       icon: VaultIcon,    label: "Milli Tax Vault™" },
-  { to: "/app/wealth",      icon: ChartLineUp,  label: "Wealth (401k + Investing)" },
-  { to: "/app/mileage",     icon: MapTrifold,   label: "Mileage" },
-  { to: "/app/milli-cents", icon: Coins,        label: "Milli Cents" },
-  { to: "/app/quarterly",   icon: Receipt,      label: "Quarterly Taxes" },
-  { to: "/app/expenses",    icon: FileText,     label: "Expenses" },
-  { to: "/app/ai",          icon: Robot,        label: "Milli AI" },
-  { to: "/app/referral",    icon: Gift,         label: "Invite & Earn $10" },
-  { to: "/app/reports",     icon: FileText,     label: "Reports" },
-  { to: "/app/settings",    icon: GearSix,      label: "Settings" },
+  { to: "/app",            icon: House,        label: "Dashboard" },
+  { to: "/app/income",     icon: Wallet,       label: "Activity / Payouts" },
+  { to: "/app/vault",      icon: VaultIcon,    label: "Milli Tax Vault™" },
+  { to: "/app/wealth",     icon: ChartLineUp,  label: "Wealth (401k + Investing)" },
+  { to: "/app/mileage",    icon: MapTrifold,   label: "Mileage" },
+  { to: "/app/milli-cents",icon: Coins,        label: "Milli Cents" },
+  { to: "/app/savings",    icon: PiggyBank,    label: "Savings" },
+  { to: "/app/accounts",   icon: Bank,         label: "Accounts" },
+  { to: "/app/vehicles",  icon: Car,          label: "Vehicles" },
+  { to: "/app/quarterly",  icon: Receipt,      label: "Quarterly Taxes" },
+  { to: "/app/expenses",   icon: FileText,     label: "Expenses" },
+  { to: "/app/ai",         icon: Robot,        label: "Milli AI" },
+  { to: "/app/referral",   icon: Gift,         label: "Invite & Earn $10" },
+  { to: "/app/reports",    icon: FileText,     label: "Reports" },
+  { to: "/app/settings",   icon: GearSix,      label: "Settings" },
 ];
 
 function TabButton({ to, icon: Icon, label, end, testid }) {
@@ -82,7 +86,7 @@ export default function AppLayout({ children }) {
     <div className="carbon-bg app-aurora text-white min-h-full flex flex-col relative">
       <div className="aurora-streak" aria-hidden />
 
-      {/* ============ Top bar — cyan wordmark left, bell right ============ */}
+      {/* === Top bar — cyan wordmark left, bell right === */}
       <header
         className="sticky top-0 z-40 backdrop-blur-2xl"
         style={{
@@ -95,7 +99,6 @@ export default function AppLayout({ children }) {
             data-testid="mobile-menu-btn"
             onClick={() => setDrawerOpen(true)}
             className="active:opacity-60 flex items-center gap-1"
-            aria-label="Open menu"
           >
             <List size={20} weight="bold" className="text-zinc-400 sm:hidden" />
             <span
@@ -126,13 +129,13 @@ export default function AppLayout({ children }) {
         </div>
       </header>
 
-      {/* ============ Main content ============ */}
+      {/* === Main content === */}
       <main className="flex-1 native-scroll relative z-10" data-testid="app-main-scroll">
         {children}
         <div aria-hidden className="h-28" />
       </main>
 
-      {/* ============ Bottom tab bar — 5 slots, raised chrome M center ============ */}
+      {/* === Bottom tab bar — 5 slots, raised chrome M center === */}
       <nav
         className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
         style={{
@@ -189,15 +192,15 @@ export default function AppLayout({ children }) {
                 >
                   milli
                 </div>
-                <div className="text-[10px] text-zinc-500 tracking-widest uppercase mt-1">Tax Vault</div>
+                <div className="text-[10px] text-zinc-600 uppercase tracking-widest mt-1">Tax Vault</div>
               </div>
             </div>
             <nav className="space-y-1 px-3">
-              {drawerNav.map((it) => (
+              {drawerNav.map((item) => (
                 <NavLink
-                  key={it.label}
-                  to={it.to}
-                  end={it.end}
+                  key={item.label}
+                  to={item.to}
+                  end={item.end}
                   onClick={() => setDrawerOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-3 text-[15px] font-medium rounded-xl active:opacity-60 ${
@@ -205,8 +208,8 @@ export default function AppLayout({ children }) {
                     }`
                   }
                 >
-                  <it.icon size={18} weight="duotone" />
-                  {it.label}
+                  <item.icon size={18} weight="duotone" />
+                  {item.label}
                 </NavLink>
               ))}
             </nav>
@@ -229,7 +232,7 @@ export default function AppLayout({ children }) {
   );
 }
 
-/* ============ Raised chrome home button (matches reference: bright polished chrome disc + big M) ============ */
+/* === Raised chrome home button (matches reference: bright polished chrome disc + big M) === */
 function ChromeHomeButton() {
   return (
     <div
@@ -265,7 +268,7 @@ function ChromeHomeButton() {
           fontWeight: 900,
           fontSize: 38,
           lineHeight: 1,
-          background: "linear-gradient(180deg, #FFFFFF 0%, #E8ECEF 30%, #6E7379 62%, #24272B 100%)",
+          background: "linear-gradient(180deg, #FFFFFF 0%, #E8ECEF 30%, #6E7379 62%, #24272C 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           letterSpacing: "-0.05em",
