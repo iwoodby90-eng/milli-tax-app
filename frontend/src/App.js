@@ -26,18 +26,20 @@ import Quarterly from "@/pages/Quarterly";
 import More from "@/pages/More";
 import Retirement from "@/pages/Retirement";
 import Investing from "@/pages/Investing";
-import Referral from "@/pages/Referral";
 import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
 import Paywall from "@/pages/Paywall";
 import Wealth from "@/pages/Wealth";
 import MilliCents from "@/pages/MilliCents";
+import Savings from "@/pages/Savings";
+import Accounts from "@/pages/Accounts";
+import Vehicles from "@/pages/Vehicles";
 
-/* ──────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
  * ErrorBoundary — prevents full white-screen crashes on iOS WKWebView.
  * If any page component throws, a branded fallback is shown instead of
  * a blank screen, with a retry button.
- * ────────────────────────────────────────────────────────────────────── */
+ * ────────────────────────────────────────────────────────────────────────── */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -122,12 +124,12 @@ function App() {
   const firstLaunch = !planSelected;
 
   const onSplashDone = () => {
-    try { localStorage.setItem("milli_splash_seen", "1"); } catch (_) { /* noop */ }
+    try { localStorage.setItem("milli_splash_seen", "1"); } catch { /* noop */ }
     setSplashDone(true);
   };
   const onPlanSelected = () => { setPlanSelected(true); };
   const onOnboardingDone = () => {
-    try { localStorage.setItem("milli_onboarding_complete", "true"); } catch (_) { /* noop */ }
+    try { localStorage.setItem("milli_onboarding_complete", "true"); } catch { /* noop */ }
     setOnboardingDone(true);
   };
 
@@ -148,6 +150,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/billing/success" element={<BillingSuccess />} />
+
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
             <Route path="/app" element={<ProtectedRoute><OnboardingGate><AppLayout><Dashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
@@ -160,12 +163,15 @@ function App() {
             <Route path="/app/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
             <Route path="/app/vault" element={<ProtectedRoute><OnboardingGate><AppLayout><Vault /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/quarterly" element={<ProtectedRoute><OnboardingGate><AppLayout><Quarterly /></AppLayout></OnboardingGate></ProtectedRoute>} />
-            <Route path="/app/more" element={<ProtectedRoute><AppLayout><More /></AppLayout></ProtectedRoute>} />
+            <Route path="/app/more" element={<ProtectedRoute><OnboardingGate><AppLayout><More /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><MilliCents /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/accounts" element={<ProtectedRoute><OnboardingGate><AppLayout><Accounts /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/vehicles" element={<ProtectedRoute><OnboardingGate><AppLayout><Vehicles /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
             <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
           </Routes>
