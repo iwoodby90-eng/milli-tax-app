@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { CaretDown, ArrowUp, ArrowDown, Info, LockKey, Target } from "@phosphor-icons/react";
 import ChromeBonsai from "@/components/ChromeBonsai";
+import BloomPetals from "@/components/BloomPetals";
 import { api } from "@/lib/api";
 
 /**
@@ -52,6 +53,30 @@ export default function Retirement() {
     return () => { alive = false; };
   }, []);
 
+  // ============ BLOOM CONFETTI on new bonsai milestone ============
+  // Fires cyan petals the moment Jordan crosses 25 / 50 / 75 / 100 % for the
+  // FIRST time. Highest tier reached is persisted per-user so a re-fetch after
+  // reload does not refire an already-celebrated tier.
+  const [petalsKey, setPetalsKey] = useState(0);
+  const petalsTimer = useRef(null);
+  useEffect(() => {
+    if (!bonsaiProgress) return;
+    const tier = bonsaiProgress >= 1 ? 4 : bonsaiProgress >= 0.75 ? 3
+               : bonsaiProgress >= 0.5 ? 2 : bonsaiProgress >= 0.25 ? 1 : 0;
+    if (tier === 0) return;
+    const storageKey = `milli_bonsai_tier_${user?.id || "self"}`;
+    let prev = 0;
+    try { prev = parseInt(localStorage.getItem(storageKey) || "0", 10); } catch { /* storage off */ }
+    if (tier > prev) {
+      try { localStorage.setItem(storageKey, String(tier)); } catch { /* storage off */ }
+      setPetalsKey(k => k + 1);
+      try { navigator.vibrate && navigator.vibrate([8, 40, 8, 40, 8]); } catch { /* haptics off */ }
+      clearTimeout(petalsTimer.current);
+      petalsTimer.current = setTimeout(() => setPetalsKey(0), 3400);
+    }
+    return () => clearTimeout(petalsTimer.current);
+  }, [bonsaiProgress, user?.id]);
+
   const SCENARIOS = [
     { id: "current",  title: "Current Plan",    active: true,  balance_num: projected,          contribution_pct: goals.contribution_pct, note: "10 yr forecast" },
     { id: "increase", title: "Increase to 20%", active: false, balance_num: 3_350_000,          contribution_pct: 20, delta: "up",   note: "10 yr forecast" },
@@ -69,6 +94,8 @@ export default function Retirement() {
           Retire in <span className="text-white/90 font-semibold">{Math.max(0, goals.retirement_year - currentYear)} years</span> · target ${Number(goals.target_income).toLocaleString("en-US")}/mo
         </p>
       </header>
+
+      {petalsKey > 0 && <BloomPetals key={petalsKey} testid="retirement-bloom-petals" />}
 
       {/* 1 · Projected Balance Hero */}
       <section

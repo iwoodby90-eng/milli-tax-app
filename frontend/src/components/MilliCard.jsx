@@ -15,7 +15,7 @@
  * The hero variant plays a slow 3-D tilt-and-flip reveal the FIRST time the
  * user opens the app each morning (once per calendar day, per device).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 /* -------- deterministic mock account number from the user id/email -------- */
@@ -50,17 +50,25 @@ export function cardMetaFor(user) {
   const expiry = `${month}/${String(year).slice(2)}`;
   const plan = (user?.plan || "elite").toString();
   const tierLabel = plan === "elite" ? "ELITE" : plan === "pro" ? "PRO" : plan === "trial" ? "MEMBER" : "BASIC";
-  return { name, number, last4, expiry, tierLabel };
+  // 3-digit CVV — derived from a DIFFERENT slice of the same seed so it stays
+  // consistent for the user across sessions but isn't the same as the last-4.
+  const cvv = digitsFrom(seed + ":cvv", 3);
+  // Billing address — prefer explicit user fields, else safe fallback.
+  const billing = user?.address_line1
+    ? `${user.address_line1}${user.address_line2 ? ", " + user.address_line2 : ""}, ${user.city || ""} ${user.state || ""} ${user.zip || ""}`.trim().replace(/\s+/g, " ")
+    : (user?.city ? `${user.city}, ${user.state || ""}`.trim() : "Address on file");
+  return { name, number, last4, expiry, tierLabel, cvv, billing };
 }
 
 /* ------------------------------- HERO CARD ------------------------------- */
 export function MilliCardHero({ user, className = "", testid = "milli-card-hero" }) {
-  const { name, number, expiry, tierLabel } = cardMetaFor(user);
+  const meta = cardMetaFor(user);
+  const { name, number, expiry, tierLabel, cvv, billing } = meta;
   const shouldReduce = useReducedMotion();
   // Play the reveal the first time this device opens the app each calendar day.
   const [reveal, setReveal] = useState(false);
   useEffect(() => {
-    if (shouldReduce) return; // respect user OS setting
+    if (shouldReduce) return;
     try {
       const today = new Date().toISOString().slice(0, 10);
       const last = localStorage.getItem("milli_card_last_reveal");
@@ -68,18 +76,71 @@ export function MilliCardHero({ user, className = "", testid = "milli-card-hero"
         localStorage.setItem("milli_card_last_reveal", today);
         setReveal(true);
       }
-    } catch (_) { /* SSR / disabled storage — silently skip */ }
+    } catch (e) { console.debug("[MilliCard] reveal flag:", e); }
   }, [shouldReduce]);
+
+  // ================================ FLIP =================================
+  // Long-press (~500ms) OR keyboard Enter/Space when focused → flip to back.
+  // Tap once on the back → flip back to front. Also honours reduced-motion.
+  const [flipped, setFlipped] = useState(false);
+  const [frozen,  setFrozen]  = useState(() => {
+    try { return localStorage.getItem(`milli_card_frozen_${user?.id || "self"}`) === "1"; }
+    catch { return false; }
+  });
+  const holdTimer = useRef(null);
+  const holdStart = useRef(0);
+
+  function startHold() {
+    holdStart.current = Date.now();
+    holdTimer.current = setTimeout(() => {
+      setFlipped(f => !f);
+      try { navigator.vibrate && navigator.vibrate(12); } catch { /* haptics unsupported */ }
+    }, 500);
+  }
+  function cancelHold() {
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+    // Short tap on the back → flip to front (long-press already handled above)
+    if (flipped && Date.now() - holdStart.current < 400) {
+      // Only respond to short taps when the card is currently flipped
+      setFlipped(false);
+    }
+  }
+  function toggleFreeze(e) {
+    e.stopPropagation();
+    const next = !frozen;
+    setFrozen(next);
+    try { localStorage.setItem(`milli_card_frozen_${user?.id || "self"}`, next ? "1" : "0"); } catch { /* storage disabled */ }
+    try { navigator.vibrate && navigator.vibrate(next ? [8, 40, 8] : 12); } catch { /* haptics unsupported */ }
+    // Best-effort backend sync — endpoint may not exist yet; log but don't block UX.
+    try {
+      import("@/lib/api").then(({ api }) => {
+        api.post("/card/freeze", { frozen: next }).catch(err =>
+          console.debug("[MilliCard] freeze sync (backend may not be wired yet):", err)
+        );
+      });
+    } catch { /* dynamic import failed */ }
+  }
 
   return (
     <div
       data-testid={testid}
       className={`relative w-full max-w-[380px] mx-auto ${className}`}
       style={{ aspectRatio: "1.586 / 1", perspective: "1400px" }}
+      onMouseDown={startHold}
+      onMouseUp={cancelHold}
+      onMouseLeave={cancelHold}
+      onTouchStart={startHold}
+      onTouchEnd={cancelHold}
+      onTouchCancel={cancelHold}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startHold(); } }}
+      onKeyUp={(e)   => { if (e.key === "Enter" || e.key === " ") cancelHold(); }}
+      role="button"
+      tabIndex={0}
+      aria-label={flipped ? "Milli Card back — CVV and billing" : "Milli Card — long-press to flip and see CVV, billing, and freeze toggle"}
     >
       <motion.div
         data-testid={`${testid}-inner`}
-        className="absolute inset-0 rounded-[22px] overflow-hidden"
+        className="absolute inset-0 rounded-[22px]"
         style={{
           transformStyle: "preserve-3d",
           boxShadow:
@@ -90,13 +151,25 @@ export function MilliCardHero({ user, className = "", testid = "milli-card-hero"
             ? { rotateY: -180, rotateX: -30, scale: 0.85, opacity: 0 }
             : { rotateY: 0, rotateX: 6, rotateZ: -8, scale: 1, opacity: 1 }
         }
-        animate={{ rotateY: 0, rotateX: 6, rotateZ: -8, scale: 1, opacity: 1 }}
+        animate={{
+          rotateY: flipped ? 180 : 0,
+          rotateX: 6,
+          rotateZ: -8,
+          scale: 1,
+          opacity: 1,
+        }}
         transition={
-          reveal
+          reveal && !flipped
             ? { duration: 1.6, ease: [0.22, 1, 0.36, 1] }
-            : { duration: 0.001 }
+            : { duration: shouldReduce ? 0.001 : 0.7, ease: [0.22, 1, 0.36, 1] }
         }
       >
+        {/* -------- FRONT FACE -------- */}
+        <div
+          className="absolute inset-0 rounded-[22px] overflow-hidden"
+          style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+          data-testid={`${testid}-front`}
+        >
         {/* base: brushed steel */}
         <div
           className="absolute inset-0"
@@ -270,6 +343,157 @@ export function MilliCardHero({ user, className = "", testid = "milli-card-hero"
           >
             {tierLabel}
           </span>
+        </div>
+        </div>
+        {/* -------- FROZEN OVERLAY (front) — subtle icy sheen when card is frozen -------- */}
+        {frozen && !flipped && (
+          <div
+            className="absolute inset-0 rounded-[22px] pointer-events-none"
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              background: "linear-gradient(135deg, rgba(180,235,255,0.35) 0%, rgba(80,140,180,0.25) 50%, rgba(0,60,90,0.4) 100%)",
+              mixBlendMode: "screen",
+              boxShadow: "inset 0 0 30px rgba(180,235,255,0.5)",
+            }}
+            data-testid={`${testid}-frozen-badge`}
+          >
+            <div className="absolute top-3 left-3 text-[10px] font-semibold tracking-[0.28em] uppercase"
+                 style={{ color: "#B4EBFF", textShadow: "0 0 6px rgba(180,235,255,0.9)" }}>
+              ❄ FROZEN
+            </div>
+          </div>
+        )}
+
+        {/* -------- BACK FACE -------- */}
+        <div
+          className="absolute inset-0 rounded-[22px] overflow-hidden"
+          style={{
+            transform: "rotateY(180deg)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            background:
+              "linear-gradient(160deg, #16181D 0%, #0B0D11 55%, #05070A 100%)",
+          }}
+          data-testid={`${testid}-back`}
+        >
+          {/* carbon-fibre weave */}
+          <div
+            className="absolute inset-0 opacity-40"
+            style={{
+              background:
+                "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 4px), repeating-linear-gradient(-45deg, rgba(0,0,0,0.35) 0 2px, transparent 2px 4px)",
+            }}
+          />
+          {/* magnetic stripe */}
+          <div
+            className="absolute left-0 right-0"
+            style={{
+              top: "18%",
+              height: "18%",
+              background: "linear-gradient(180deg, #05070A 0%, #1E2126 100%)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(255,255,255,0.05)",
+            }}
+          />
+          {/* signature strip */}
+          <div
+            className="absolute"
+            style={{
+              left: "6%",
+              right: "22%",
+              top: "44%",
+              height: "16%",
+              background: "linear-gradient(180deg, #E8ECF0 0%, #C2C6CC 100%)",
+              borderRadius: 3,
+              boxShadow: "inset 0 0 4px rgba(0,0,0,0.35)",
+            }}
+          >
+            <span
+              className="absolute inset-0 flex items-center pl-3 font-[cursive] text-black/70"
+              style={{ fontSize: "clamp(11px, 2.6vw, 14px)" }}
+            >
+              {name.split(" ").map(w => w[0] + w.slice(1).toLowerCase()).join(" ")}
+            </span>
+          </div>
+          {/* CVV box (right of signature) */}
+          <div
+            className="absolute flex flex-col items-end"
+            style={{ right: "6%", top: "44%", height: "16%", justifyContent: "center" }}
+          >
+            <div className="text-white/50 text-[8px] tracking-[0.28em] uppercase">CVV</div>
+            <div
+              className="text-white tabular-nums"
+              data-testid={`${testid}-cvv`}
+              style={{
+                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                fontWeight: 700,
+                fontSize: "clamp(14px, 3.6vw, 18px)",
+                letterSpacing: "0.18em",
+                textShadow: "0 0 8px rgba(0,229,255,0.35)",
+              }}
+            >
+              {cvv}
+            </div>
+          </div>
+
+          {/* Billing address */}
+          <div
+            className="absolute"
+            style={{ left: "6%", right: "6%", top: "64%" }}
+          >
+            <div className="text-white/45 text-[9px] tracking-[0.28em] uppercase">Billing</div>
+            <div
+              className="text-white/90 truncate"
+              data-testid={`${testid}-billing`}
+              style={{
+                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                fontSize: "clamp(9px, 2.2vw, 11px)",
+                letterSpacing: "0.06em",
+                marginTop: 2,
+              }}
+            >
+              {billing}
+            </div>
+          </div>
+
+          {/* Freeze / Unfreeze toggle */}
+          <button
+            type="button"
+            onClick={toggleFreeze}
+            data-testid={`${testid}-freeze-toggle`}
+            className="absolute flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+            style={{
+              left: "6%",
+              bottom: "8%",
+              background: frozen
+                ? "linear-gradient(135deg, rgba(180,235,255,0.25), rgba(0,90,120,0.35))"
+                : "rgba(0,229,255,0.1)",
+              border: `1px solid ${frozen ? "rgba(180,235,255,0.6)" : "rgba(0,229,255,0.5)"}`,
+              color: frozen ? "#B4EBFF" : "#7BF3FF",
+              fontFamily: "'Sora','Inter',sans-serif",
+              fontWeight: 700,
+              fontSize: "clamp(9px, 2.1vw, 11px)",
+              letterSpacing: "0.16em",
+              textShadow: `0 0 6px ${frozen ? "rgba(180,235,255,0.7)" : "rgba(0,229,255,0.6)"}`,
+              boxShadow: `0 0 12px ${frozen ? "rgba(180,235,255,0.35)" : "rgba(0,229,255,0.3)"}`,
+            }}
+          >
+            {frozen ? "❄ FROZEN · TAP TO UNFREEZE" : "🔒 FREEZE CARD"}
+          </button>
+
+          {/* Hint */}
+          <div
+            className="absolute text-white/40"
+            style={{
+              right: "6%",
+              bottom: "9%",
+              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+              fontSize: 9,
+              letterSpacing: "0.1em",
+            }}
+          >
+            tap to flip
+          </div>
         </div>
       </motion.div>
     </div>
