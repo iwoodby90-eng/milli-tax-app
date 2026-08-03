@@ -16,9 +16,9 @@ const CYAN = "#00E5FF";
 const HOLD_MS = 1600;
 const FADE_MS = 550;
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
 // Chrome M mark — same design as the splash for continuity.
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
 function ChromeM({ size = 148 }) {
   return (
     <svg
@@ -107,7 +107,7 @@ export default function SignInTransition({ show, name, mode = "back", to = "/app
           transition={{ duration: 0.2 }}
           style={{
             backgroundColor: "#050607",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Outfit", "IBM Plex Sans", system-ui, sans-serif',
             paddingTop: "var(--safe-top)",
             paddingBottom: "var(--safe-bottom)",
           }}
@@ -155,7 +155,7 @@ export default function SignInTransition({ show, name, mode = "back", to = "/app
                   "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 48%, transparent 62%)",
                 mixBlendMode: "screen",
                 WebkitMaskImage: "radial-gradient(circle at 50% 50%, #000 60%, transparent 65%)",
-                        maskImage: "radial-gradient(circle at 50% 50%, #000 60%, transparent 65%)",
+                            maskImage: "radial-gradient(circle at 50% 50%, #000 60%, transparent 65%)",
               }}
               initial={{ x: -180, opacity: 0 }}
               animate={{ x: 180,  opacity: [0, 0.95, 0] }}

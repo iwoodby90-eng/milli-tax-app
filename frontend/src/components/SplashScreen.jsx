@@ -6,18 +6,18 @@
  * screen size (including the 2732px iPad and 490px Watch mirror mode).
  *
  * Layout, top-to-bottom:
- *   1. Faint concentric arcs behind the logo (command-center vibe)
+ *   1. Faint concentric arcs behind the logo (command-centre vibe)
  *   2. Chrome M with cyan right-stroke  +  wordmark  "MILLI"
  *   3. Tagline:  "EVERY PAYOUT."
- *                "PROTECTED. AUTOMATED. FOR YOU."   ← "FOR YOU." in cyan
+ *                "PROTECTED. AUTOMATED. FOR YOU."   → "FOR YOU." in cyan
  *   4. Dotted cyan wave (SVG)
  *   5. Four outline feature icons: PROTECT · TRACK · GROW · PREPARE
- *   6. "Initializing your financial command center…"
+ *   6. "Initializing your financial command centre…"
  *
  * Non-negotiable brand elements enforced here:
- *   • Right-hand vertical stroke of the M is cyan (#00E5FF)
- *   • "FOR YOU." is cyan (#00E5FF)
- *   • Solid #0A0A0A background — no gradients that dilute the black
+ *   → Right-hand vertical stroke of the M is cyan (#00E5FF)
+ *   → "FOR YOU." is cyan (#00E5FF)
+ *   → Solid #0A0A0A background — no gradients that dilute the black
  */
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,11 +27,9 @@ const CYAN = "#00E5FF";
 const HOLD_MS = 3000;  // give the cinematic fly-in room to breathe
 const FADE_MS = 700;
 
-// -----------------------------------------------------------------------
-// Chrome M with cyan road running up through the center V.
-// Signature Milli brand mark — mirrors /public/brand/milli-icon-1024.png
-// and the reference marketing shots.
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
+// Chrome M with cyan road running up through the centre V.
+// ---------------------------------------------------------------
 function ChromeM({ size = 132 }) {
   return (
     <svg
@@ -47,7 +45,6 @@ function ChromeM({ size = 132 }) {
       }}
     >
       <defs>
-        {/* Metallic chrome — polished, deep bevel */}
         <linearGradient id="mChrome" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"  stopColor="#F4F6F8" />
           <stop offset="25%" stopColor="#D8DCE1" />
@@ -55,26 +52,21 @@ function ChromeM({ size = 132 }) {
           <stop offset="75%" stopColor="#C7CDD3" />
           <stop offset="100%" stopColor="#5B6068" />
         </linearGradient>
-        {/* Edge highlight */}
         <linearGradient id="mHi" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
-        {/* Cyan road — bright at the base, fades toward the horizon */}
         <linearGradient id="mRoad" x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%"  stopColor="#00E5FF" stopOpacity="1"    />
           <stop offset="50%" stopColor="#00E5FF" stopOpacity="0.75" />
           <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.15" />
         </linearGradient>
-        {/* Road glow */}
         <radialGradient id="mOrb" cx="50%" cy="50%" r="50%">
           <stop offset="0%"  stopColor="#FFFFFF" stopOpacity="1"   />
           <stop offset="45%" stopColor="#7CF6FF" stopOpacity="0.9" />
           <stop offset="100%" stopColor="#00E5FF" stopOpacity="0"   />
         </radialGradient>
       </defs>
-
-      {/* --- 1. Left leg + inner V (chrome M silhouette) --- */}
       <path
         d="M 20 180 L 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 180 180 L 156 180 L 156 60 L 120 128 L 100 104 L 80 128 L 44 60 L 44 180 Z"
         fill="url(#mChrome)"
@@ -82,39 +74,28 @@ function ChromeM({ size = 132 }) {
         strokeWidth="0.8"
         strokeLinejoin="round"
       />
-      {/* Bevel highlight along the top of the M */}
       <path
         d="M 20 24 L 44 20 L 88 106 L 100 88 L 112 106 L 156 20 L 180 24 L 156 26 L 112 112 L 100 96 L 88 112 L 44 26 Z"
         fill="url(#mHi)"
         opacity="0.55"
       />
-
-      {/* --- 2. Cyan road rising into the M valley --- */}
-      {/* Base flare (wide at bottom, narrows to the horizon point) */}
       <path
         d="M 78 184 L 92 108 L 100 96 L 108 108 L 122 184 Z"
         fill="url(#mRoad)"
       />
-      {/* Inner bright edge of the road */}
       <path
         d="M 88 184 L 96 110 L 100 100 L 104 110 L 112 184 Z"
         fill="#7CF6FF"
         opacity="0.55"
       />
-
-      {/* --- 3. Dashed lane markers (perspective: bigger near, smaller far) --- */}
       <rect x="99" y="164" width="2"   height="10" fill="#FFFFFF" opacity="0.95" />
       <rect x="99" y="148" width="2"   height="8"  fill="#FFFFFF" opacity="0.8"  />
       <rect x="99" y="134" width="1.6" height="6"  fill="#FFFFFF" opacity="0.65" />
       <rect x="99.2" y="122" width="1.4" height="5" fill="#FFFFFF" opacity="0.5" />
       <rect x="99.4" y="112" width="1.2" height="4" fill="#FFFFFF" opacity="0.4" />
-
-      {/* --- 4. Glowing orb at the base of the road --- */}
       <circle cx="100" cy="172" r="16" fill="url(#mOrb)" />
       <circle cx="100" cy="172" r="5"  fill="#FFFFFF" />
       <circle cx="100" cy="172" r="3"  fill="#EAF9FD" />
-
-      {/* --- 5. Arrow head at the top of the road (into the horizon) --- */}
       <path
         d="M 100 92 L 95 102 L 100 99 L 105 102 Z"
         fill="#7CF6FF"
@@ -123,9 +104,9 @@ function ChromeM({ size = 132 }) {
   );
 }
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
 // Digital wave — dotted grid displaced by two sine waves
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
 function DigitalWave() {
   const cols = 60;
   const rows = 10;
@@ -137,7 +118,6 @@ function DigitalWave() {
     for (let c = 0; c < cols; c++) {
       const x = c * dx;
       const t = c / cols;
-      // two overlaid sines give an organic ribbon
       const wave =
         Math.sin(t * Math.PI * 2.3) * 22 +
         Math.sin(t * Math.PI * 4.7 + 1.2) * 8;
@@ -175,9 +155,9 @@ function DigitalWave() {
   );
 }
 
-// -----------------------------------------------------------------------
-// Shield-with-padlock icon (Lucide's Shield doesn't ship with a lock inside)
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
+// Shield-with-padlock icon
+// ---------------------------------------------------------------
 function ShieldLockIcon({ size = 30, color = CYAN }) {
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -219,7 +199,7 @@ function FeatureIcon({ label, children, delay }) {
       </div>
       <span
         className="text-[10px] tracking-[0.22em] text-white font-medium"
-        style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+        style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}
       >
         {label}
       </span>
@@ -227,20 +207,17 @@ function FeatureIcon({ label, children, delay }) {
   );
 }
 
-// -----------------------------------------------------------------------
-// SplashScreen — animates in, then either waits for a tap (returning
-// users) OR auto-fades into the next flow (first launch).
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------
+// SplashScreen
+// ---------------------------------------------------------------
 export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade = false }) {
   const [visible, setVisible] = useState(true);
   const [readyToDismiss, setReadyToDismiss] = useState(false);
 
-  // After the intro animation lands, either auto-fade or surface the tap prompt.
   useEffect(() => {
     const t = setTimeout(() => {
       setReadyToDismiss(true);
       if (autoFade) {
-        // Give the wordmark a beat to breathe, then dissolve into the next flow
         setTimeout(() => {
           setVisible(false);
           setTimeout(() => onDone && onDone(), FADE_MS + 50);
@@ -256,7 +233,6 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
     setTimeout(() => onDone && onDone(), FADE_MS + 50);
   };
 
-  // Any pointer or Enter/Space dismisses once the tap prompt is live.
   useEffect(() => {
     if (!readyToDismiss || !visible || autoFade) return;
     const onKey = (e) => {
@@ -284,12 +260,12 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
           }}
           style={{
             backgroundColor: "#0A0A0A",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Outfit", "IBM Plex Sans", system-ui, sans-serif',
             paddingTop:    "var(--safe-top)",
             paddingBottom: "var(--safe-bottom)",
           }}
         >
-          {/* -- concentric arcs behind the logo -- */}
+          {/* -- concentric arcs -- */}
           <svg
             className="absolute inset-x-0 top-0 mx-auto pointer-events-none"
             width="120%"
@@ -336,14 +312,14 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
               animate={{ opacity: 1, scale: 1,   filter: "blur(0px)",  y: 0 }}
               transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              {/* Chrome light-sweep across the M */}
+              {/* Chrome light-sweep */}
               <motion.div
                 aria-hidden="true"
                 className="absolute pointer-events-none"
                 style={{
                   width: 132, height: 132,
                   background:
-                    "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 48%, transparent 62%)",
+                   "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 48%, transparent 62%)",
                   mixBlendMode: "screen",
                   WebkitMaskImage:
                     "radial-gradient(circle at 50% 50%, #000 60%, transparent 65%)",
@@ -354,7 +330,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                 animate={{ x: 160,  opacity: [0, 0.9, 0] }}
                 transition={{ delay: 1.05, duration: 1.2, ease: "easeOut" }}
               />
-              {/* Ambient cyan pulse ring behind the M */}
+              {/* Ambient cyan pulse ring */}
               <motion.div
                 aria-hidden="true"
                 className="absolute rounded-full pointer-events-none"
@@ -456,7 +432,6 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
               animate={{ opacity: 1 }}
               transition={{ delay: 1.35, duration: 0.6 }}
             >
-              {/* horizon line with pulsing dot */}
               <div className="relative w-56 h-px bg-white/10">
                 <motion.div
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -471,7 +446,6 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                 />
               </div>
 
-              {/* status text — hides once the tap prompt is live (or stays if auto-fading) */}
               <AnimatePresence mode="wait">
                 {(!readyToDismiss || autoFade) ? (
                   <motion.div
@@ -482,7 +456,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                     exit={{ opacity: 0 }}
                     data-testid="splash-status"
                   >
-                    Initializing your financial command center
+                    Initializing your financial command centre
                     <motion.span
                       className="inline-block ml-1"
                       animate={{ opacity: [1, 0.2, 1] }}
@@ -515,7 +489,7 @@ export default function SplashScreen({ onDone, minDurationMs = HOLD_MS, autoFade
                       transition={{ duration: 1.4, repeat: Infinity }}
                       style={{ color: CYAN, textShadow: `0 0 8px ${CYAN}` }}
                     >
-                      ›
+                      →
                     </motion.span>
                   </motion.div>
                 )}
