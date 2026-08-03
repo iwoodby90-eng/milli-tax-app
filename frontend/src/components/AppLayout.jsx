@@ -5,6 +5,7 @@ import {
   Bell, List, SignOut, House, Vault as VaultIcon, ChartLineUp,
   MapTrifold, Coins, Receipt, Wallet, FileText, Robot, Gift, GearSix,
   PiggyBank, Bank, Car,
+  FolderOpen, Calendar, CreditCard,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
@@ -13,37 +14,40 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useState } from "react";
 
 /**
- * Milli Tax Vault™ App shell.
- * Top bar:  cyan "milli" wordmark  |  bell (notifications).
- * Bottom nav: Dashboard ⨯ Activity ⨯ [raised chrome M home] ⨯ Transfers ⨯ More.
+ * Milli Tax Vault→ App shell.
+ * Top bar:  cyan "milli" wordmark left  |  bell right.
+ * Bottom nav: Dashboard ⊕ Activity ⊕ [raised chrome M home] ⊕ Transfers ⊕ More.
  * Milli AI floats above the tab bar on every screen except /app/ai.
  */
 
 const leftTabs = [
-  { to: "/app",          icon: SquaresFour,   label: "Dashboard", end: true, testid: "tab-dashboard" },
-  { to: "/app/income",   icon: ListBullets,   label: "Activity",            testid: "tab-activity"  },
+  { to: "/app",              icon: SquaresFour,   label: "Dashboard", end: true, testid: "tab-dashboard" },
+  { to: "/app/income",       icon: ListBullets,   label: "Activity",          testid: "tab-activity"   },
 ];
 const rightTabs = [
-  { to: "/app/vault",    icon: ArrowsLeftRight, label: "Transfers",         testid: "tab-transfers" },
-  { to: "/app/more",     icon: DotsThreeOutline, label: "More",             testid: "tab-more"      },
+  { to: "/app/vault",        icon: ArrowsLeftRight, label: "Transfers",        testid: "tab-transfers" },
+  { to: "/app/more",         icon: DotsThreeOutline, label: "More",            testid: "tab-more"      },
 ];
 
 const drawerNav = [
-  { to: "/app",            icon: House,        label: "Dashboard" },
-  { to: "/app/income",     icon: Wallet,       label: "Activity / Payouts" },
-  { to: "/app/vault",      icon: VaultIcon,    label: "Milli Tax Vault™" },
-  { to: "/app/wealth",     icon: ChartLineUp,  label: "Wealth (401k + Investing)" },
-  { to: "/app/mileage",    icon: MapTrifold,   label: "Mileage" },
-  { to: "/app/milli-cents",icon: Coins,        label: "Milli Cents" },
-  { to: "/app/savings",    icon: PiggyBank,    label: "Savings" },
-  { to: "/app/accounts",   icon: Bank,         label: "Accounts" },
-  { to: "/app/vehicles",  icon: Car,          label: "Vehicles" },
-  { to: "/app/quarterly",  icon: Receipt,      label: "Quarterly Taxes" },
-  { to: "/app/expenses",   icon: FileText,     label: "Expenses" },
-  { to: "/app/ai",         icon: Robot,        label: "Milli AI" },
-  { to: "/app/referral",   icon: Gift,         label: "Invite & Earn $10" },
-  { to: "/app/reports",    icon: FileText,     label: "Reports" },
-  { to: "/app/settings",   icon: GearSix,      label: "Settings" },
+  { to: "/app",              icon: House,         label: "Dashboard" },
+  { to: "/app/income",       icon: Wallet,        label: "Activity / Payouts" },
+  { to: "/app/vault",        icon: VaultIcon,     label: "Milli Tax Vault→" },
+  { to: "/app/wealth",       icon: ChartLineUp,   label: "Wealth (401k + Investing)" },
+  { to: "/app/mileage",      icon: MapTrifold,    label: "Mileage" },
+  { to: "/app/milli-cents",  icon: Coins,         label: "Milli Cents" },
+  { to: "/app/savings",      icon: PiggyBank,     label: "Savings" },
+  { to: "/app/accounts",     icon: Bank,          label: "Accounts" },
+  { to: "/app/vehicles",     icon: Car,           label: "Vehicles" },
+  { to: "/app/annual-taxes", icon: FileText,      label: "Annual Taxes" },
+  { to: "/app/documents",    icon: FolderOpen,    label: "Documents" },
+  { to: "/app/quarterly",    icon: Receipt,       label: "Quarterly Taxes" },
+  { to: "/app/expenses",     icon: FileText,      label: "Expenses" },
+  { to: "/app/ai",           icon: Robot,         label: "Milli AI" },
+  { to: "/app/subscription", icon: CreditCard,    label: "Subscription" },
+  { to: "/app/referral",     icon: Gift,          label: "Invite & Earn $10" },
+  { to: "/app/reports",      icon: FileText,      label: "Reports" },
+  { to: "/app/settings",     icon: GearSix,       label: "Settings" },
 ];
 
 function TabButton({ to, icon: Icon, label, end, testid }) {
@@ -135,7 +139,7 @@ export default function AppLayout({ children }) {
         <div aria-hidden className="h-28" />
       </main>
 
-      {/* === Bottom tab bar — 5 slots, raised chrome M center === */}
+      {/* === Bottom tab bar — 5 slots, raised chrome M home === */}
       <nav
         className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
         style={{
@@ -214,13 +218,13 @@ export default function AppLayout({ children }) {
               ))}
             </nav>
             <div className="px-6 pt-6 text-[11px] text-zinc-600 uppercase tracking-widest">
-              Signed in · {(user?.plan || "trial").toUpperCase()}
+              Signed in as {(user?.plan || "trial").toUpperCase()}
             </div>
             <div className="px-6 pt-3">
               <button
                 onClick={() => { logout(); nav("/"); }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-3 text-sm text-zinc-400 border border-white/10 rounded-xl active:bg-white/[0.04]"
                 data-testid="drawer-logout"
+                className="w-full flex items-center justify-center gap-2 px-3 py-3 text-sm text-zinc-400 border border-white/10 rounded-xl active:bg-white/[0.04]"
               >
                 <SignOut size={16} weight="bold" /> Sign Out
               </button>
@@ -232,7 +236,7 @@ export default function AppLayout({ children }) {
   );
 }
 
-/* === Raised chrome home button (matches reference: bright polished chrome disc + big M) === */
+/* === Raised chrome M home button (matches reference: bright polished chrome disc + big M) === */
 function ChromeHomeButton() {
   return (
     <div
@@ -244,7 +248,7 @@ function ChromeHomeButton() {
           "inset 0 3px 3px rgba(255,255,255,0.75), inset 0 -4px 8px rgba(0,0,0,0.55), 0 8px 22px rgba(0,0,0,0.6), 0 0 32px rgba(0,229,255,0.55), 0 14px 24px rgba(0,229,255,0.35)",
       }}
     >
-      {/* underneath cyan light bloom */}
+      {/* underworld cyan light bloom */}
       <span
         className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-2.5 rounded-full pointer-events-none"
         style={{
@@ -253,7 +257,7 @@ function ChromeHomeButton() {
           opacity: 0.95,
         }}
       />
-      {/* soft top-light highlight sheen */}
+      {/* soft top-light highlight shield */}
       <span
         className="absolute top-1 left-2 right-2 h-3 rounded-full pointer-events-none"
         style={{
