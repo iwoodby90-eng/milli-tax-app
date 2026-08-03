@@ -2,15 +2,15 @@
 module.exports = {
     darkMode: ["class"],
     content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./public/index.html"
-  ],
+      "./src/**/*.{js,jsx,ts,tsx}",
+      "./public/index.html"
+    ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', 'sans-serif'],
-        display: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
-        chrome: ['"Sora"', '"Inter"', 'system-ui', 'sans-serif'],
+        heading: ['"Outfit"', 'system-ui', 'sans-serif'],
+        sans: ['"IBM Plex Sans"', '"Inter"', 'system-ui', 'sans-serif'],
+        display: ['"Outfit"', '"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
@@ -25,8 +25,8 @@ module.exports = {
         foreground: 'hsl(var(--foreground))',
         // Milli Brand Palette — locked to design system spec.
         volt: {
-          DEFAULT: '#00E5FF',       // Electric Cyan — primary accent
-          hover: '#00B4C2',         // Deep Teal — hover / secondary
+          DEFAULT: '#D4FF00',  // Volt Yellow — primary CTA color
+          hover: '#BBE600',    // Darker Volt — hover / secondary
         },
         cyan: {
           300: '#7AF6FF',
@@ -35,17 +35,17 @@ module.exports = {
           600: '#008593',
         },
         chrome: {
-          100: '#FFFFFF',           // Alpine White
-          200: '#E6E7EA',
-          300: '#C0C0C0',           // Polished Silver
+          100: '#FFFFFF',     // Alpine White
+          200: '#E6E7E8',
+          300: '#C0C0C0',     // Polished Silver
           400: '#8A8F98',
           500: '#5B6068',
         },
         // Layered darks — matches the design system swatches exactly.
-        obsidian: '#07090B',        // Deep Black
-        charcoal: '#0E1114',        // Carbon Charcoal
-        surface: '#161A1F',         // Card surface (from the design system)
-        hairline: '#232830',        // Thin metallic border tone
+        obsidian: '#07090B',   // Deep Black
+        charcoal: '#0E1114',   // Carbon Charcoal
+        surface: '#161A1F',    // Card surface (from the design system)
+        hairline: '#232830',   // Thin metallic border tone
         danger: '#FF5C67',
         success: '#39D98A',
         warning: '#FFB547',
@@ -93,8 +93,8 @@ module.exports = {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
         'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } },
         'pulse-volt': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(0, 229, 255, 0.55)' },
-          '50%': { boxShadow: '0 0 0 16px rgba(0, 229, 255, 0)' }
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(212, 255, 0, 0.55)' },
+          '50%': { boxShadow: '0 0 0 16px rgba(212, 255, 0, 0)' }
         },
         'glow-pulse': {
           '0%, 100%': { boxShadow: '0 0 24px rgba(0, 229, 255, 0.18), inset 0 0 24px rgba(0, 229, 255, 0.04)' },
