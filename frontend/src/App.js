@@ -1,5 +1,5 @@
-import "@/App.css";
-import { useState } from "react";
+import "@App.css";
+import { useState, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
@@ -33,6 +33,67 @@ import Paywall from "@/pages/Paywall";
 import Wealth from "@/pages/Wealth";
 import MilliCents from "@/pages/MilliCents";
 
+/* ──────────────────────────────────────────────────────────────────────
+ * ErrorBoundary — prevents full white-screen crashes on iOS WKWebView.
+ * If any page component throws, a branded fallback is shown instead of
+ * a blank screen, with a retry button.
+ * ────────────────────────────────────────────────────────────────────── */
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("[Milli] ErrorBoundary caught:", error, info);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false });
+    if (typeof window !== "undefined") window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0A0A0A] px-6 text-center"
+          data-testid="error-boundary-fallback"
+        >
+          <div
+            className="mb-6 text-5xl font-bold tracking-tight"
+            style={{ fontFamily: '"Outfit", system-ui, sans-serif' }}
+          >
+            <span className="text-white">M</span>
+            <span className="text-volt">I</span>
+            <span className="text-white">LL</span>
+            <span className="text-volt">I</span>
+          </div>
+          <p className="mb-2 text-lg font-medium text-white">
+            Something went wrong
+          </p>
+          <p className="mb-8 max-w-xs text-sm text-white/50">
+            An unexpected error occurred. Try reloading the app.
+          </p>
+          <button
+            onClick={this.handleRetry}
+            data-testid="error-boundary-retry"
+            className="rounded-lg bg-volt px-6 py-3 text-sm font-bold uppercase tracking-wide text-black transition-transform hover:-translate-y-0.5 active:translate-y-0"
+            style={{ backgroundColor: '#D4FF00' }}
+          >
+            Reload App
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function OnboardingGate({ children }) {
   const { user } = useAuth();
   if (user && user.onboarding_complete === false) return <Navigate to="/onboarding" replace />;
@@ -40,9 +101,12 @@ function OnboardingGate({ children }) {
 }
 
 function App() {
-  // Show splash only on first session entry (per browser session)
+  // Show splash only on first session entry.
+  // FIX: Use localStorage instead of sessionStorage — in Capacitor/iOS WKWebView,
+  // sessionStorage gets cleared when the app is backgrounded or killed, causing
+  // the splash to re-trigger on every app resume. localStorage persists correctly.
   const [splashDone, setSplashDone] = useState(() => {
-    try { return sessionStorage.getItem("milli_splash_seen") === "1"; } catch { return false; }
+    try { return localStorage.getItem("milli_splash_seen") === "1"; } catch { return false; }
   });
   // Tier must be selected before onboarding is unlocked (persistent).
   const [planSelected, setPlanSelected] = useState(() => {
@@ -58,7 +122,7 @@ function App() {
   const firstLaunch = !planSelected;
 
   const onSplashDone = () => {
-    try { sessionStorage.setItem("milli_splash_seen", "1"); } catch (_) { /* noop */ }
+    try { localStorage.setItem("milli_splash_seen", "1"); } catch (_) { /* noop */ }
     setSplashDone(true);
   };
   const onPlanSelected = () => { setPlanSelected(true); };
@@ -75,6 +139,7 @@ function App() {
         {splashDone && planSelected && !onboardingDone && (
           <OnboardingCarousel onFinish={onOnboardingDone} />
         )}
+        <ErrorBoundary>
         <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -106,7 +171,8 @@ function App() {
           </Routes>
           <Toaster theme="dark" />
         </AuthProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+        </ErrorBoundary>
       </div>
     </div>
   );
