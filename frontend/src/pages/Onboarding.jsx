@@ -82,7 +82,7 @@ export default function Onboarding() {
             mpg: parseFloat(data.vehicle.mpg || 25),
             default: true,
           });
-        } catch (_) { /* non-fatal */ }
+        } catch (e) { console.debug("[Onboarding] step 1 non-fatal:", e); }
       }
       // Request iOS Always-On location if the user opted in
       if (data.location_permission === "granted") {
@@ -92,7 +92,7 @@ export default function Onboarding() {
             const mod = await import("@capacitor/geolocation");
             await mod.Geolocation.requestPermissions({ permissions: ["location"] });
           }
-        } catch (_) { /* native plugin missing on web — fine */ }
+        } catch (e) { console.debug("[Onboarding] native plugin missing on web:", e); }
       }
       await refresh();
       toast.success("Milli is ready");

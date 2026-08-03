@@ -22,8 +22,8 @@ export default function AIAssistant() {
     const q = text ?? input;
     if (!q.trim() || streaming) return;
     setInput("");
-    const userMsg = { role: "user", content: q };
-    setMessages((m) => [...m, userMsg, { role: "assistant", content: "" }]);
+    const userMsg = { id: `u-${Date.now()}`, role: "user", content: q };
+    setMessages((m) => [...m, userMsg, { id: `a-${Date.now()}`, role: "assistant", content: "" }]);
     setStreaming(true);
 
     try {
@@ -174,7 +174,7 @@ export default function AIAssistant() {
             </div>
           )}
           {messages.map((m, i) => (
-            <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
+            <div key={m.id || `msg-${i}`} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
               {m.role === "assistant" && (
                 <div className="flex-shrink-0"><WeeboAvatar size={28} state="idle" /></div>
               )}

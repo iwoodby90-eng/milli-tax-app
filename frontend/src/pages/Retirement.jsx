@@ -39,6 +39,7 @@ export default function Retirement() {
 
   // Bonsai growth reflects vault progress toward the annual tax goal —
   // the tree grows and blooms as Jordan's Milli Tax Vault™ climbs milestones.
+  // Fetch-once on mount — subsequent updates come via a full page navigation.
   const [bonsaiProgress, setBonsaiProgress] = useState(0);
   useEffect(() => {
     let alive = true;
@@ -47,7 +48,7 @@ export default function Retirement() {
       const bal  = Number(data?.savings_balance || 0);
       const goal = Number(data?.tax_goal || 20000);
       setBonsaiProgress(Math.max(0, Math.min(1, bal / Math.max(1, goal))));
-    }).catch(() => {});
+    }).catch((e) => { console.debug("[Retirement] tax summary fetch:", e); });
     return () => { alive = false; };
   }, []);
 
@@ -298,8 +299,8 @@ function ProjectionChart({ projected, range }) {
             </defs>
             <path d={areaD} fill="url(#rt-area)" />
             <path d={pathD} fill="none" stroke="#00E5FF" strokeWidth={2.5} strokeLinecap="round" filter="url(#rt-glow)" />
-            {points.map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r={3} fill="#00E5FF" stroke="#05070A" strokeWidth={1.5} />
+            {points.map((p) => (
+              <circle key={`pt-${p.x}-${p.y}`} cx={p.x} cy={p.y} r={3} fill="#00E5FF" stroke="#05070A" strokeWidth={1.5} />
             ))}
           </svg>
           {/* Hover callout at end */}
@@ -509,7 +510,7 @@ function MiniSpark({ up }) {
     <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} className="mt-1.5" preserveAspectRatio="none">
       <path d={d} fill="none" stroke="#00E5FF" strokeWidth={1.5} strokeLinecap="round"
             style={{ filter: "drop-shadow(0 0 4px rgba(0,229,255,0.6))" }} />
-      {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r={1.5} fill="#00E5FF" />)}
+      {pts.map((p) => <circle key={`sp-${p[0]}-${p[1]}`} cx={p[0]} cy={p[1]} r={1.5} fill="#00E5FF" />)}
     </svg>
   );
 }
@@ -535,7 +536,10 @@ function RetirementGoalsCard({ goals, setGoals }) {
       });
       const { toast } = await import("sonner");
       toast.success("Goals saved");
-    } catch (_) { /* keep local only if backend rejects */ }
+    } catch (e) {
+      // Backend rejected the save — keep the local optimistic update but log for diagnosis
+      console.warn("[Retirement] Goals save failed, keeping local state:", e);
+    }
     setEditing(false);
   }
 

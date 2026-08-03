@@ -240,28 +240,28 @@ export default function ChromeBonsai({ size = 220, progress = 1 }) {
 
           {/* Micro-leaf specks */}
           <g fill="#EAECEF" opacity="0.85">
-            {LEAF_SPECKS.map(([x, y, r], i) => (
-              <circle key={i} cx={x} cy={y} r={r} />
+            {LEAF_SPECKS.map(([x, y, r]) => (
+              <circle key={`ls-${x}-${y}`} cx={x} cy={y} r={r} />
             ))}
           </g>
           {/* Cyan leaf glints */}
           <g fill="#7BF3FF" opacity="0.9" style={{ filter: "drop-shadow(0 0 3px rgba(0,229,255,0.9))" }}>
-            {LEAF_GLINTS.map(([x, y, r], i) => (
-              <circle key={i} cx={x} cy={y} r={r} />
+            {LEAF_GLINTS.map(([x, y, r]) => (
+              <circle key={`lg-${x}-${y}`} cx={x} cy={y} r={r} />
             ))}
           </g>
 
           {/* ==================== MILESTONE BLOOMS ==================== */}
           {/* Halo glow behind each bloom */}
           <g filter="url(#cb-bloom-glow)" opacity={bloomGlow}>
-            {BLOOM_POSITIONS.slice(0, bloomCount).map(([x, y], i) => (
-              <circle key={`bg-${i}`} cx={x} cy={y} r={4} fill="#00E5FF" />
+            {BLOOM_POSITIONS.slice(0, bloomCount).map(([x, y]) => (
+              <circle key={`bg-${x}-${y}`} cx={x} cy={y} r={4} fill="#00E5FF" />
             ))}
           </g>
           {/* Bright bloom bud */}
           <g>
-            {BLOOM_POSITIONS.slice(0, bloomCount).map(([x, y], i) => (
-              <g key={`b-${i}`}>
+            {BLOOM_POSITIONS.slice(0, bloomCount).map(([x, y]) => (
+              <g key={`b-${x}-${y}`}>
                 <circle cx={x} cy={y} r={2.6} fill="url(#cb-bloom)" />
                 <circle cx={x - 0.6} cy={y - 0.6} r={0.9} fill="#FFFFFF" opacity="0.9" />
               </g>

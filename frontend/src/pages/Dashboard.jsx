@@ -68,8 +68,8 @@ export default function Dashboard() {
       thisMonth: Number(summary?.vault_this_month || 0),
       streak,
       firstName,
-    }).catch(() => {});
-  }, [summary?.savings_balance, summary?.tax_goal, summary?.vault_this_month, streak, user?.name, summary]);
+    }).catch((e) => { console.debug("[Dashboard] widget bridge:", e); });
+  }, [summary, streak, user?.name]);
 
   if (!summary) {
     return (

@@ -28,7 +28,7 @@ export default function Settings() {
         api.get("/smart/investing").catch(() => ({ data: null })),
       ]);
       setVault(v.data); setRetire(r.data); setInvest(i.data);
-    } catch (_) { /* accounts optional — silent fallback */ }
+    } catch (e) { console.debug("[Settings] accounts load failed (optional):", e); }
   }
   useEffect(() => { loadAccounts(); }, []);
 

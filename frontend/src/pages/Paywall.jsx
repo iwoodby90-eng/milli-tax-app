@@ -24,7 +24,7 @@ export default function Paywall() {
     const r = await purchase(selected);
     if (r.ok) {
       toast.success("Welcome to Milli. Your plan is active.");
-      try { await refresh?.(); } catch (_) { /* noop */ }
+      try { await refresh?.(); } catch (e) { console.debug("[Paywall] auth refresh:", e); }
       nav("/app");
     } else if (r.error) {
       toast.error(r.error.message || "Purchase failed. Please try again.");
@@ -37,7 +37,7 @@ export default function Paywall() {
       const r = await restore();
       if (r.restored > 0) {
         toast.success(`Restored ${r.restored} subscription(s).`);
-        try { await refresh?.(); } catch (_) { /* noop */ }
+        try { await refresh?.(); } catch (e) { console.debug("[Paywall] auth refresh after purchase:", e); }
         nav("/app");
       } else {
         toast.message("No prior purchases found on this Apple ID.");

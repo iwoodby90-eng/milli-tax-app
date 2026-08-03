@@ -42,7 +42,7 @@ export default function Register() {
     try {
       const raw = localStorage.getItem("milli_selected_plan");
       if (raw) setPlan(JSON.parse(raw));
-    } catch (_) { /* noop */ }
+    } catch (e) { console.debug("[Register] post-signup refresh:", e); }
   }, []);
   const chargeDateLabel = useMemo(() => {
     if (!plan?.first_charge_at) return null;
