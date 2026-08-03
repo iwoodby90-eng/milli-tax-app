@@ -31,7 +31,6 @@ dist/
 dist
 
 # Environment files (comprehensive coverage)
-
 *token.json*
 *credentials.json*
 
@@ -44,11 +43,11 @@ dump.rdb
 
 # System files
 .DS_Store
-*.pem
+*.perm
 
 # Python
 __pycache__/
-*pyc*
+*pyc
 venv/
 .venv/
 
@@ -57,6 +56,7 @@ chainlit.md
 .chainlit
 .ipynb_checkpoints/
 .ac
+.emergent/
 
 # Deployment
 .vercel
@@ -65,10 +65,10 @@ chainlit.md
 agenthub/agents/youtube/db
 
 # Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
+*/*/*.zip
+*/*/*.tar.gz
+*/*/*.tar
+*/*/*.tgz
 *.pack
 *.deb
 *.dylib
