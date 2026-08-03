@@ -10,14 +10,18 @@
   },
   "ios": {
     "contentInset": "always",
-    "backgroundColor": "#000000",
-    "limitsNavigationsToAppBoundDomains": false
+    "backgroundColor": "#050607",
+    "limitsNavigationsToAppBoundDomains": false,
+    "scrollEnabled": false
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1500,
-      "backgroundColor": "#000000",
-      "showSpinner": false
+      "backgroundColor": "#050607",
+      "showSpinner": false,
+      "androidScale": 1,
+      "splashFullScreen": true,
+      "splashImmersive": true
     }
   }
 }
