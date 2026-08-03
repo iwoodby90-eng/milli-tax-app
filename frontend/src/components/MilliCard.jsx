@@ -153,8 +153,8 @@ export function MilliCardHero({ user, className = "", testid = "milli-card-hero"
         }
         animate={{
           rotateY: flipped ? 180 : 0,
-          rotateX: 6,
-          rotateZ: -8,
+          rotateX: flipped ? 0 : 6,
+          rotateZ: flipped ? 0 : -8,
           scale: 1,
           opacity: 1,
         }}
