@@ -7,7 +7,7 @@ and jurisdiction rules can evolve independently of the rest of the application.
 
 Everything is a **pure function** — no HTTP, no DB — so the engine is trivially
 unit-testable and swappable when we plug in a real provider (Avalara, TaxJar,
-Corved, Intuit ProTax, etc.) behind the ``TaxCalculator`` integration interface.
+Corvee, Intuit ProTax, etc.) behind the ``TaxCalculator`` integration interface.
 
 Numbers reflect current published US federal rates. Update the constants when
 the IRS issues new schedules.
@@ -24,7 +24,7 @@ from typing import Iterable, Literal, Optional
 # ============================================================================
 
 FilingStatus = Literal["single", "married_joint", "married_separate",
-                      "head_of_household", "qualifying_widow"]
+                       "head_of_household", "qualifying_widow"]
 BusinessType = Literal["sole_prop", "llc", "s_corp", "partnership"]
 
 # --- Self-Employment tax (Schedule SE) --------------------------------------
@@ -108,8 +108,7 @@ STATE_EFFECTIVE_RATES: dict[str, float] = {
     "MT": 0.059, "NE": 0.0684, "NM": 0.049, "ND": 0.049,
     "OK": 0.0475, "RI": 0.0599, "VT": 0.0875, "WV": 0.065,
     "CT": 0.0699, "DE": 0.066, "HI": 0.079, "SC": 0.0699,
-    "DC": 0.0925, "AL": 0.05, "NY": 0.0685, "OR": 0.0875,
-    "MS": 0.05, "ND": 0.049,
+    "DC": 0.0925, "AL": 0.05,
 }
 DEFAULT_STATE_RATE = 0.05
 
@@ -120,7 +119,7 @@ QUARTERLY_DUE_DATES = [
 ]
 
 # --- Mileage (2025 IRS standard mileage rates) ------------------------------
-IRS_MILEAGE_RATE_BUSINESSNESS = 0.70
+IRS_MILEAGE_RATE_BUSINESS = 0.70
 IRS_MILEAGE_RATE_MEDICAL = 0.21
 IRS_MILEAGE_RATE_CHARITABLE = 0.14
 
@@ -157,6 +156,16 @@ class TaxBreakdown:
     total_tax: float
     effective_rate: float
     breakdown_by_state: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
+class QuarterlyPlan:
+    year: int
+    annual_estimated_tax: float
+    quarterly_amount: float
+    already_paid: float
+    remaining_owed: float
+    quarters: list[dict]
 
 
 # ============================================================================
@@ -204,7 +213,7 @@ def calc_additional_medicare(net_earnings: float, profile: TaxProfile) -> float:
 
 
 def calc_qbi_deduction(net_se_income: float, se_tax_half: float,
-                       profile: TaxProfile) -> float:
+                      profile: TaxProfile) -> float:
     """Simplified §199A: 20% of net SE income minus half SE tax."""
     if not profile.take_qbi or net_se_income <= 0:
         return 0.0
@@ -290,7 +299,7 @@ def per_payout_reserve_rate(profile: TaxProfile,
     """
     if projected_annual_gross > 0:
         breakdown = calc_total_tax(projected_annual_gross,
-                                    projected_annual_deductions, profile)
+                                   projected_annual_deductions, profile)
         return {
             "federal": round(breakdown.federal_income_tax / projected_annual_gross, 4),
             "se": round(breakdown.se_tax / projected_annual_gross, 4),
@@ -298,7 +307,7 @@ def per_payout_reserve_rate(profile: TaxProfile,
             "total": max(0.0, min(0.45, breakdown.effective_rate)),
             "source": "projected_annual",
         }
-    # Cold-start: conservative bracket
+    # Cold-start: conservative brackets
     fed = 0.12
     se = SE_TAX_RATE
     st = state_rate(profile.home_state)
@@ -310,7 +319,7 @@ def per_payout_reserve_rate(profile: TaxProfile,
 def quarterly_plan(year: int, profile: TaxProfile, ytd_gross: float,
                     ytd_deductions: float,
                     quarterly_payments_made: Iterable[dict],
-                    today: Optional[date] = None) -> "QuarterlyPlan":
+                    today: Optional[date] = None) -> QuarterlyPlan:
     """Compute the four-quarter plan for the year."""
     today = today or date.today()
     # Project full-year based on YTD run-rate.
@@ -353,7 +362,7 @@ def quarterly_plan(year: int, profile: TaxProfile, ytd_gross: float,
 def mileage_deduction(business_miles: float, medical_miles: float = 0.0,
                       charitable_miles: float = 0.0) -> dict:
     """IRS standard mileage deduction (2025 rates)."""
-    biz = round(business_miles * IRS_MILEAGE_RATE_BUSINESSNESS, 2)
+    biz = round(business_miles * IRS_MILEAGE_RATE_BUSINESS, 2)
     med = round(medical_miles * IRS_MILEAGE_RATE_MEDICAL, 2)
     cha = round(charitable_miles * IRS_MILEAGE_RATE_CHARITABLE, 2)
     return {
@@ -365,7 +374,7 @@ def mileage_deduction(business_miles: float, medical_miles: float = 0.0,
         "charitable_deduction": cha,
         "total_deduction": round(biz + med + cha, 2),
         "rates": {
-            "business": IRS_MILEAGE_RATE_BUSINESSNESS,
+            "business": IRS_MILEAGE_RATE_BUSINESS,
             "medical": IRS_MILEAGE_RATE_MEDICAL,
             "charitable": IRS_MILEAGE_RATE_CHARITABLE,
         },
