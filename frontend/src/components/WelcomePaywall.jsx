@@ -22,7 +22,6 @@ import { IAP_PRODUCTS } from "@/hooks/useStoreKit";
 
 const CYAN = "#00E5FF";
 
-// Same 3 tiers the native paywall uses — priced identically.
 const TIERS = IAP_PRODUCTS;
 
 function formatChargeDate(d) {
@@ -63,7 +62,7 @@ export default function WelcomePaywall({ onSelected }) {
       transition={{ duration: 0.6 }}
       style={{
         backgroundColor: "#050607",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Outfit", "IBM Plex Sans", system-ui, sans-serif',
         paddingTop:    "calc(var(--safe-top) + 12px)",
         paddingBottom: "calc(var(--safe-bottom) + 140px)",
         backgroundImage:
@@ -72,7 +71,6 @@ export default function WelcomePaywall({ onSelected }) {
           "repeating-linear-gradient(-45deg, rgba(255,255,255,0.010) 0 2px, transparent 2px 6px)",
       }}
     >
-      {/* Hero */}
       <div className="flex flex-col items-center px-6 text-center">
         <MilliLogo size={72} />
         <div className="chrome-text font-display text-3xl tracking-[0.2em] mt-3">MILLI</div>
@@ -88,7 +86,6 @@ export default function WelcomePaywall({ onSelected }) {
         </p>
       </div>
 
-      {/* Tier cards */}
       <div className="px-4 flex flex-col gap-3 mt-6">
         {TIERS.map((t) => {
           const isActive = selected === t.id;
@@ -149,7 +146,6 @@ export default function WelcomePaywall({ onSelected }) {
         })}
       </div>
 
-      {/* Sticky CTA */}
       <div
         className="fixed left-0 right-0 z-40 px-4 pt-3"
         style={{
@@ -191,7 +187,6 @@ export default function WelcomePaywall({ onSelected }) {
             </motion.button>
           </AnimatePresence>
 
-          {/* Trial disclosure — exact billing date + amount */}
           <p
             className="text-[11px] text-white/70 text-center px-2 leading-relaxed"
             data-testid="welcome-trial-disclosure"
