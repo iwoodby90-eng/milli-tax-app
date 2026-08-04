@@ -37,14 +37,13 @@ import Vehicles from "@/pages/Vehicles";
 import Documents from "@/pages/Documents";
 import AnnualTaxes from "@/pages/AnnualTaxes";
 import Subscription from "@/pages/Subscription";
+import CardOrder from "@/pages/CardOrder";
 import AdminDashboard from "@/pages/AdminDashboard";
 import SecuritySettings from "@/pages/SecuritySettings";
 import TierGate from "@/components/TierGate";
 
 /* ──────────────────────────────────────────────────────────────
  * ErrorBoundary — prevents full-screen crashes on iOS WKWebView.
- * If any page component throws, a branded fallback is shown instead
- * of a blank screen, with a retry button.
  * ────────────────────────────────────────────────────────────── */
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -173,6 +172,7 @@ function App() {
             <Route path="/app/documents" element={<ProtectedRoute><OnboardingGate><AppLayout><Documents /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/annual-taxes" element={<ProtectedRoute><OnboardingGate><AppLayout><AnnualTaxes /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/subscription" element={<ProtectedRoute><OnboardingGate><AppLayout><Subscription /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/card-order" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["elite"]} featureName="Milli Visa Elite Card"><CardOrder /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/security" element={<ProtectedRoute><OnboardingGate><AppLayout><SecuritySettings /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/admin" element={<ProtectedRoute><OnboardingGate><AppLayout><AdminDashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />

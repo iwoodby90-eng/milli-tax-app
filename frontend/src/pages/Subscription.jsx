@@ -50,7 +50,7 @@ const PLANS = [
     features: [
       "Everything in Pro",
       "Milli Checking Account",
-      "Milli Visa Debit Card",
+      "Milli Visa Debit Card (metal or titanium)",
       "Banking partner integration",
       "Identity verification (KYC)",
       "Concierge support",
@@ -66,7 +66,7 @@ export default function Subscription() {
   const [billingCycle, setBillingCycle] = useState("monthly");
 
   return (
-    <div className="px-5 sm:px-6 pt-4 pb-6 max-w-2xl mx-auto space-y-4">
+    <div className="px-5 sm:px-6 pt-4 pb-6 max-w-2xl mx-auto space-y-6">
       <header>
         <h1
           className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
@@ -113,12 +113,79 @@ export default function Subscription() {
         </div>
       </section>
 
+      {/* Elite Card CTA */}
+      {currentPlan === "elite" && (
+        <section
+          className="rounded-3xl p-5 relative overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, rgba(212,255,0,0.08) 0%, rgba(10,14,18,0.95) 60%)",
+            border: "1.5px solid rgba(212,255,0,0.3)",
+          }}
+        >
+          <div className="flex items-start gap-4">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #F5F6F8 0%, #B8BCC2 38%, #8F9399 58%, #2E3136 100%)",
+              }}
+            >
+              <CreditCard size={26} weight="fill" className="text-white/80" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <Crown size={16} weight="fill" className="text-[#D4FF00]" />
+                <h3 className="text-white text-[16px] font-bold">Milli Visa Elite Card</h3>
+              </div>
+              <p className="text-zinc-400 text-[13px] mt-1 leading-relaxed">
+                Order your premium metal or titanium debit card. Included with your Elite membership.
+              </p>
+              <a
+                href="/app/card-order"
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl bg-[#D4FF00] text-black text-[13px] font-bold active:scale-[0.99] transition"
+              >
+                Order your card
+                <ArrowRight size={15} weight="bold" />
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Upgrade CTA for non-Elite */}
+      {currentPlan !== "elite" && (
+        <section
+          className="rounded-3xl p-5"
+          style={{
+            background: "linear-gradient(135deg, rgba(212,255,0,0.06) 0%, rgba(10,14,18,0.9) 100%)",
+            border: "1px solid rgba(212,255,0,0.15)",
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <Crown size={20} weight="fill" className="text-[#D4FF00] mt-0.5" />
+            <div>
+              <h3 className="text-white text-[15px] font-semibold">Upgrade to Elite for the Visa card</h3>
+              <p className="text-zinc-400 text-[13px] mt-1">
+                Get the Milli Visa Elite debit card in brushed metal or aerospace titanium, plus checking, banking, and concierge support.
+              </p>
+              <a
+                href="/app/pricing"
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl bg-[#D4FF00] text-black text-[13px] font-bold active:scale-[0.99] transition"
+              >
+                Upgrade now
+                <ArrowRight size={15} weight="bold" />
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="flex items-center justify-center gap-2 milli-card rounded-full p-1.5 w-fit mx-auto">
         <button
           onClick={() => setBillingCycle("monthly")}
           className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition ${
             billingCycle === "monthly" ? "bg-volt text-black" : "text-zinc-400"
           }`}
+          style={billingCycle === "monthly" ? { backgroundColor: '#D4FF00' } : {}}
         >
           Monthly
         </button>
@@ -127,6 +194,7 @@ export default function Subscription() {
           className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition ${
             billingCycle === "annual" ? "bg-volt text-black" : "text-zinc-400"
           }`}
+          style={billingCycle === "annual" ? { backgroundColor: '#D4FF00' } : {}}
         >
           Annual (Save 20%)
         </button>
