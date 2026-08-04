@@ -6,9 +6,16 @@ Add these routes to the FastAPI app in server.py by calling:
     register_card_routes(app, db_pool)
 """
 import logging
-from fastapi import APIRouter, HTTPException, Depends
+import json
+import os
+from fastapi import APIRouter, HTTPException, Depends, Request, Header
 
-from card_issuer import create_card_order, get_card_order, CARD_ORDERS_SCHEMA
+from card_issuer import (
+    create_card_order,
+    get_card_order,
+    sync_card_status_from_stripe,
+    CARD_ORDERS_SCHEMA,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +26,6 @@ def register_card_routes(app, db_pool):
     @app.post("/api/card/order")
     async def place_card_order(request: Request):
         """Place a new card order. User must be on Elite plan."""
-        # Get user from auth context
         user = request.state.user
         if not user:
             raise HTTPException(status_code=401, detail="Not authenticated")
@@ -83,11 +89,64 @@ def register_card_routes(app, db_pool):
 
         async with db_pool.acquire() as db:
             row = await db.fetchrow(
-                "SELECT * FROM card_orders WHERE id = $1 AND user_id = $2",
+                """SELECT * FROM card_orders WHERE id = $1 AND user_id = $2""",
                 order_id, user["id"],
             )
             if not row:
                 raise HTTPException(status_code=404, detail="Order not found")
             return dict(row)
 
-    logger.info("Card order routes registered")
+    @app.post("/api/card/webhook")
+    async def stripe_card_webhook(request: Request, stripe_signature: str = Header(None)):
+        """
+        Stripe webhook endpoint for card status updates.
+        Stripe sends events when a physical card is manufactured, shipped, or delivered.
+        Configure this URL in Stripe Dashboard > Developers > Webhooks.
+        """
+        payload = await request.body()
+
+        # Verify Stripe webhook signature
+        stripe_secret_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        webhook_secret = os.environ.get("STRIPE_CARD_WEBHOOK_SECRET", "")
+
+        if not stripe_secret_key or not webhook_secret:
+            logger.warning("Stripe webhook secret not configured")
+            raise HTTPException(status_code=503, detail="Webhook not configured")
+
+        import stripe
+        stripe.api_key = stripe_secret_key
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, stripe_signature, webhook_secret
+            )
+        except stripe.error.SignatureVerificationError:
+            raise HTTPException(status_code=400, detail="Invalid signature")
+        except Exception as e:
+            logger.error(f"Webhook construction failed: {e}")
+            raise HTTPException(status_code=400, detail="Invalid payload")
+
+        # Handle card-related events
+        if event["type"] == "issuing_card.created":
+            logger.info(f"Stripe card created event: {event['data']['object']['id']}")
+        elif event["type"] == "issuing_card.updated":
+            card_obj = event["data"]["object"]
+            stripe_card_id = card_obj["id"]
+            # Map Stripe card status to our order status
+            stripe_status = card_obj.get("status", "")
+            status_map = {
+                "pending": "production",   # Card being manufactured
+                "active": "shipped",       # Card shipped and active
+                "inactive": "submitted",   # Card created but not yet active
+            }
+            new_status = status_map.get(stripe_status)
+            if new_status:
+                async with db_pool.acquire() as db:
+                    await sync_card_status_from_stripe(db, stripe_card_id, new_status)
+
+        elif event["type"] == "issuing_cardholder.created":
+            logger.info(f"Stripe cardholder created: {event['data']['object']['id']}")
+
+        return {"received": True}
+
+    logger.info("Card order routes registered (with Stripe webhook)")
