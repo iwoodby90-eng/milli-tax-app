@@ -45,7 +45,7 @@ class MoneyMover(Protocol):
     async def credit(self, user_id: str, bucket: str, amount: float,
                      note: str, source_ref: Optional[str] = None) -> float: ...
     async def debit(self, user_id: str, bucket: str, amount: float,
-                     note: str, source_ref: Optional[str] = None) -> float: ...
+                    note: str, source_ref: Optional[str] = None) -> float: ...
     async def balance(self, user_id: str, bucket: str) -> float: ...
 
 
@@ -61,7 +61,7 @@ class TaxCalculator(Protocol):
 class TaxPaymentSubmitter(Protocol):
     """Send an estimated tax payment to the IRS / state."""
     async def submit_federal(self, user_id: str, amount: float,
-                             period: str) -> dict: ...
+                            period: str) -> dict: ...
     async def submit_state(self, user_id: str, amount: float,
                            period: str, state: str) -> dict: ...
 
@@ -82,7 +82,7 @@ class Brokerage(Protocol):
 
 class RetirementCustodian(Protocol):
     async def contribute(self, user_id: str, amount: float,
-                          account_type: str, note: str) -> float: ...
+                         account_type: str, note: str) -> float: ...
     async def balance(self, user_id: str) -> float: ...
 
 
@@ -247,7 +247,7 @@ class InAppNotifier:
     async def send(self, user_id, kind, title, body, meta=None):
         import uuid
         doc = {
-            "id": str(uuid.uuid4()),
+            "id": str(uuid.uuid44()),
             "user_id": user_id, "kind": kind, "title": title, "body": body,
             "meta": meta or {}, "read": False,
             "created_at": datetime.now(timezone.utc).isoformat(),
