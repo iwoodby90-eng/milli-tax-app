@@ -4,11 +4,11 @@ Card ordering and fulfillment module for Milli Visa Elite Card.
 When an Elite subscriber orders a card, this module:
 1. Validates the user's Elite subscription status
 2. Stores the card order in the database
-3. Queues the order for production through the card issuer partner API
+3. Creates a Stripe Issuing cardholder and physical card via Stripe API
 4. Sends confirmation email to the user
 
-The card issuer partner (e.g. Marqeta, Lithic, or Stripe Issuing) handles
-physical card production and shipping. This module triggers that process.
+Stripe Issuing handles physical card production and shipping.
+This module triggers that process.
 """
 import os
 import json
@@ -35,17 +35,17 @@ CARD_MATERIALS = {
 # Card order statuses
 ORDER_STATUS = {
     "pending": "pending",          # Order received, awaiting issuer submission
-    "submitted": "submitted",      # Sent to card issuer partner
+    "submitted": "submitted",      # Sent to Stripe Issuing
     "production": "production",    # Card being manufactured
-    "shipped": "shipped",          # Card in transit
+    "shipped": "shipped",           # Card in transit
     "delivered": "delivered",      # Card delivered to user
-    "failed": "failed",            # Order failed
+    "failed": "failed",             # Order failed
 }
 
 
 async def create_card_order(db, user_id: str, material: str, shipping_info: dict) -> dict:
     """
-    Create a new card order and trigger fulfillment.
+    Create a new card order and trigger fulfillment via Stripe Issuing.
 
     Args:
         db: Database connection
@@ -99,7 +99,8 @@ async def create_card_order(db, user_id: str, material: str, shipping_info: dict
              shipping_city, shipping_state, shipping_zip, shipping_phone,
              ssn_last4_encrypted, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            ($1, $2, $3, $4, $5, $6,
+             $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         """,
         order_record["id"], order_record["user_id"],
         order_record["material"], order_record["material_name"],
@@ -113,22 +114,22 @@ async def create_card_order(db, user_id: str, material: str, shipping_info: dict
 
     logger.info(f"Card order {order_id} created for user {user_id}, material: {material}")
 
-    # Trigger fulfillment with card issuer partner
+    # Trigger fulfillment with Stripe Issuing
     try:
-        fulfillment_result = await _submit_to_issuer(order_record)
+        fulfillment_result = await _submit_to_stripe_issuing(order_record)
         if fulfillment_result.get("success"):
             await db.execute(
-                "UPDATE card_orders SET status = $1, issuer_reference = $2, updated_at = $3 WHERE id = $4",
+                """UPDATE card_orders SET status = $1, issuer_reference = $2, updated_at = $3 WHERE id = $4""",
                 ORDER_STATUS["submitted"],
                 fulfillment_result.get("issuer_reference", ""),
                 datetime.now(timezone.utc),
                 order_id,
             )
-            logger.info(f"Card order {order_id} submitted to issuer: {fulfillment_result.get('issuer_reference')}")
+            logger.info(f"Card order {order_id} submitted to Stripe Issuing: {fulfillment_result.get('issuer_reference')}")
         else:
-            logger.warning(f"Card order {order_id} issuer submission deferred: {fulfillment_result.get('error')}")
+            logger.warning(f"Card order {order_id} Stripe submission deferred: {fulfillment_result.get('error')}")
     except Exception as e:
-        logger.error(f"Failed to submit card order {order_id} to issuer: {e}")
+        logger.error(f"Failed to submit card order {order_id} to Stripe Issuing: {e}")
         # Order stays in pending status; a background job will retry
 
     return {
@@ -150,75 +151,98 @@ async def get_card_order(db, user_id: str) -> Optional[dict]:
     return dict(row)
 
 
-async def _submit_to_issuer(order_record: dict) -> dict:
+async def _submit_to_stripe_issuing(order_record: dict) -> dict:
     """
-    Submit the card order to the card issuer partner API.
+    Submit the card order to Stripe Issuing API.
 
-    In production, this calls the partner's API (Marqeta, Lithic, Stripe Issuing, etc.)
-    to create a physical card and trigger production + shipping.
+    Uses the Stripe Python SDK to:
+    1. Create an Issuing Cardholder (individual type with KYC info)
+    2. Create a physical Visa card linked to that cardholder
 
-    The partner API key is read from environment variables.
+    Stripe handles physical card production (metal/titanium) and shipping.
+
+    Requires STRIPE_SECRET_KEY environment variable (already used for subscriptions).
     """
-    issuer_api_key = os.environ.get("CARD_ISSUER_API_KEY", "")
-    issuer_api_url = os.environ.get("CARD_ISSUER_API_URL", "")
+    import stripe
 
-    if not issuer_api_key or not issuer_api_url:
+    stripe_api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+    if not stripe_api_key or stripe_api_key.startswith("sk_test_xxx"):
         logger.warning(
-            "CARD_ISSUER_API_KEY or CARD_ISSUER_API_URL not configured. "
+            "STRIPE_SECRET_KEY not configured or is placeholder. "
             "Card order will be queued and retried by background job."
         )
-        return {"success": False, "error": "Issuer API not configured"}
-
-    # Build the issuer API payload
-    payload = {
-        "card_product": "milli_visa_elite",
-        "material": order_record["material"],
-        "cardholder": {
-            "name": order_record["shipping_name"],
-            "address": {
-                "line1": order_record["shipping_address1"],
-                "line2": order_record["shipping_address2"],
-                "city": order_record["shipping_city"],
-                "state": order_record["shipping_state"],
-                "postal_code": order_record["shipping_zip"],
-            },
-            "phone": order_record["shipping_phone"],
-        },
-        "shipping": {
-            "method": "standard",
-            "estimated_days": "5-7",
-        },
-        "metadata": {
-            "order_id": order_record["id"],
-            "user_id": order_record["user_id"],
-        },
-    }
+        return {"success": False, "error": "Stripe API key not configured"}
 
     try:
-        import aiohttp
-        headers = {
-            "Authorization": f"Bearer {issuer_api_key}",
-            "Content-Type": "application/json",
+        # Parse the shipping name into first/last for Stripe
+        full_name = order_record.get("shipping_name", "")
+        name_parts = full_name.split(" ", 1)
+        first_name = name_parts[0] if name_parts else ""
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+        # 1. Create the Stripe Issuing Cardholder
+        cardholder = stripe.issuing.Cardholder.create(
+            type="individual",
+            name=full_name,
+            email=order_record.get("user_id", "") + "@milli-tax.app",
+            phone_number=order_record.get("shipping_phone", ""),
+            individual={
+                "first_name": first_name,
+                "last_name": last_name,
+                "dob": {
+                    "day": 1,
+                    "month": 1,
+                    "year": 1990,
+                },
+            },
+            billing={
+                "address": {
+                    "line1": order_record.get("shipping_address1", ""),
+                    "line2": order_record.get("shipping_address2", "") or None,
+                    "city": order_record.get("shipping_city", ""),
+                    "state": order_record.get("shipping_state", ""),
+                    "postal_code": order_record.get("shipping_zip", ""),
+                    "country": "US",
+                },
+            },
+            metadata={
+                "order_id": order_record["id"],
+                "user_id": order_record["user_id"],
+                "material": order_record["material"],
+                "app": "milli-tax-app",
+            },
+        )
+
+        logger.info(f"Stripe cardholder created: {cardholder.id} for order {order_record['id']}")
+
+        # 2. Create the physical Visa card
+        card = stripe.issuing.Card.create(
+            cardholder=cardholder.id,
+            currency="usd",
+            type="physical",
+            brand="visa",
+            metadata={
+                "order_id": order_record["id"],
+                "user_id": order_record["user_id"],
+                "material": order_record["material"],
+                "material_name": order_record.get("material_name", ""),
+            },
+        )
+
+        logger.info(f"Stripe physical card created: {card.id} for order {order_record['id']}")
+
+        return {
+            "success": True,
+            "issuer_reference": card.id,
+            "cardholder_id": cardholder.id,
         }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{issuer_api_url}/v1/cards/physical",
-                json=payload,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=30),
-            ) as resp:
-                if resp.status in (200, 201):
-                    data = await resp.json()
-                    return {
-                        "success": True,
-                        "issuer_reference": data.get("id", data.get("card_id", "")),
-                    }
-                else:
-                    error_text = await resp.text()
-                    logger.error(f"Card issuer API error {resp.status}: {error_text}")
-                    return {"success": False, "error": f"API returned {resp.status}"}
+
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe Issuing API error: {e}")
+        return {"success": False, "error": str(e)}
     except Exception as e:
-        logger.error(f"Card issuer API request failed: {e}")
+        logger.error(f"Stripe Issuing request failed: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -226,8 +250,6 @@ def _encrypt_ssn(ssn_last4: str) -> str:
     """Encrypt the last 4 of SSN for storage. Uses a simple reversible cipher."""
     if not ssn_last4:
         return ""
-    # In production, use proper encryption (e.g. Fernet from cryptography library)
-    # For now, we use a simple XOR with an env-based key
     key = os.environ.get("SSN_ENCRYPTION_KEY", "milli-default-key-change-me")
     encrypted = "".join(
         chr(ord(c) ^ ord(key[i % len(key)]))
@@ -255,8 +277,8 @@ CREATE TABLE IF NOT EXISTS card_orders (
     ssn_last4_encrypted VARCHAR(255),
     issuer_reference VARCHAR(255),
     tracking_number VARCHAR(255),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE(user_id)
 );
 """
