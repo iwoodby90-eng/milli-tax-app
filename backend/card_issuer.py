@@ -35,12 +35,12 @@ CARD_MATERIALS = {
 
 # Card order statuses
 ORDER_STATUS = {
-    "pending": "pending",        # Order received, awaiting Stripe submission
-    "submitted": "submitted",    # Cardholder + card created in Stripe
-    "production": "production",  # Card being manufactured (Stripe status: pending)
-    "shipped": "shipped",        # Card in transit (Stripe status: active + shipped)
-    "delivered": "delivered",    # Card delivered to user
-    "failed": "failed",          # Order failed
+    "pending": "pending",       # Order received, awaiting Stripe submission
+    "submitted": "submitted",   # Cardholder + card created in Stripe
+    "production": "production", # Card being manufactured (Stripe status: pending)
+    "shipped": "shipped",       # Card in transit (Stripe status: active + shipped)
+    "delivered": "delivered",   # Card delivered to user
+    "failed": "failed",         # Order failed
 }
 
 
@@ -123,8 +123,9 @@ async def create_card_order(db, user_id: str, material: str, shipping_info: dict
         fulfillment_result = await _submit_to_stripe_issuing(order_record)
         if fulfillment_result.get("success"):
             await db.execute(
-                """UPDATE card_orders SET status = $1, issuer_reference = $2, updated_at = $3 WHERE id = $4""",
+                """UPDATE card_orders SET status = $1, stripe_cardholder_id = $2, stripe_card_id = $3, updated_at = $4 WHERE id = $5""",
                 ORDER_STATUS["submitted"],
+                fulfillment_result.get("stripe_cardholder_id", ""),
                 fulfillment_result.get("stripe_card_id", ""),
                 datetime.now(timezone.utc),
                 order_id,
@@ -161,7 +162,7 @@ async def sync_card_status_from_stripe(db, stripe_card_id: str, new_status: str)
     Called when Stripe sends a card.status_updated or card.shipped webhook.
     """
     await db.execute(
-        """UPDATE card_orders SET status = $1, updated_at = $2 WHERE issuer_reference = $3""",
+        """UPDATE card_orders SET status = $1, updated_at = $2 WHERE stripe_card_id = $3""",
         new_status,
         datetime.now(timezone.utc),
         stripe_card_id,
@@ -279,10 +280,11 @@ CREATE TABLE IF NOT EXISTS card_orders (
     shipping_zip VARCHAR(20) NOT NULL,
     shipping_phone VARCHAR(30) NOT NULL,
     ssn_last4_encrypted VARCHAR(255),
-    issuer_reference VARCHAR(255),
+    stripe_cardholder_id VARCHAR(255),
+    stripe_card_id VARCHAR(255),
     tracking_number VARCHAR(255),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE(user_id)
 );
 """

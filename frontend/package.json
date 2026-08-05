@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@capacitor-community/background-geolocation": "^7.0.1",
+    "@capacitor-community/biometric-auth": "^7.1.0",
     "@capacitor/android": "^7.4.2",
     "@capacitor/app": "^7.0.1",
     "@capacitor/core": "^7.4.2",
