@@ -1,6 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
+import TierGate from '../components/TierGate';
+import { calculateEstimatedTax } from '../utils/taxCalc';
+import { formatCurrency, formatDate } from '../utils/formatters';
 
 // Test 1: App renders without crashing
 describe('App Integration', () => {
@@ -17,8 +20,6 @@ describe('App Integration', () => {
 });
 
 // Test 2: TierGate component
-import TierGate from '../components/TierGate';
-
 describe('TierGate', () => {
   const mockChild = <div data-testid="gated-content">Gated Content</div>;
 
@@ -49,8 +50,6 @@ describe('TierGate', () => {
 });
 
 // Test 3: Tax calculation utility
-import { calculateEstimatedTax } from '../utils/taxCalc';
-
 describe('Tax Calculation', () => {
   it('calculates self-employment tax correctly', () => {
     const income = 50000;
@@ -73,8 +72,6 @@ describe('Tax Calculation', () => {
 });
 
 // Test 4: Formatting utilities
-import { formatCurrency, formatDate } from '../utils/formatters';
-
 describe('Formatters', () => {
   it('formats currency correctly', () => {
     expect(formatCurrency(1234.56)).toMatch(/\$1,234\.56/);
