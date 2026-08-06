@@ -1,4 +1,4 @@
-import "@App.css";
+import "@/App.css";
 import { useState, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -163,9 +163,9 @@ function App() {
             <Route path="/app/more" element={<ProtectedRoute><OnboardingGate><AppLayout><More /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
-            <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/referal" element={<ProtectedRoute><OnboardingGate><AppLayout><Referal /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
-            <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro","elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro", "elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/accounts" element={<ProtectedRoute><OnboardingGate><AppLayout><Accounts /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/vehicles" element={<ProtectedRoute><OnboardingGate><AppLayout><Vehicles /></AppLayout></OnboardingGate></ProtectedRoute>} />
