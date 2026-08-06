@@ -1,0 +1,32 @@
+name: Apply release patch
+
+on:
+  push:
+    branches:
+      - agent/fix-capacitor7-build-regressions
+    paths:
+      - scripts/patch_release.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-capacitor7-build-regressions
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python scripts/patch_release.py
+      - run: python -m compileall -q backend
+      - name: Commit patched files
+        run: |
+          rm -f scripts/patch_release.py .github/workflows/apply-release-patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete 2026 rules and native launch fixes"
+          git push origin HEAD:agent/fix-capacitor7-build-regressions
