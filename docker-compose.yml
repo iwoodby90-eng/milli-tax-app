@@ -21,7 +21,11 @@ services:
       MONGO_URL: mongodb://mongo:27017
       DB_NAME: ${DB_NAME:-milli}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-before-production}
+      APP_ENV: ${APP_ENV:-development}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,capacitor://localhost,http://localhost,https://localhost}
+      DEMO_MODE_ENABLED: ${DEMO_MODE_ENABLED:-false}
+      DEMO_SEED_SECRET: ${DEMO_SEED_SECRET:-}
+      ALLOW_UNVERIFIED_STOREKIT: ${ALLOW_UNVERIFIED_STOREKIT:-false}
 
       PLAID_CLIENT_ID: ${PLAID_CLIENT_ID:-not-configured}
       PLAID_SECRET: ${PLAID_SECRET:-not-configured}
