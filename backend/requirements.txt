@@ -30,7 +30,6 @@ requests==2.34.2
 plaid-python==40.1.0
 stripe==14.4.1
 alpaca-py==0.16.0
-emergentintegrations==0.2.0
 
 # AI, OCR, reporting, and market data
 google-cloud-vision==3.4.5
