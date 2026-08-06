@@ -2,13 +2,13 @@
 Comprehensive Phase 2 tests for the Milli financial engine.
 
 Covers:
-    ‒ Tax Engine (pure math): SE, federal, state, QBI, quarterly plan, mileage
-    ‒ Autopilot Engine: full 9-step pipeline, immutable receipts, feature gating
-    ‒ Dashboard snapshot: Available to Spend, Tax Ready Score, balance sync
-    ‒ Trip classification + mileage summary
-    ‒ Milli AI insights
-    ‒ Notifications
-    ‒ Plan / feature gating (retirement + investing locked on basic/core)
+    • Tax Engine (pure math): SE, federal, state, QBI, quarterly plan, mileage
+    • Autopilot Engine: full 9-step pipeline, immutable receipts, feature gating
+    • Dashboard snapshot: Available to Spend, Tax Ready Score, balance sync
+    • Trip classification + mileage summary
+    • Milli AI insights
+    • Notifications
+    • Plan / feature gating (retirement + investing locked on basic/core)
 
 Run with: pytest /app/backend/tests/test_phase2_engine.py -v
 """
@@ -28,9 +28,9 @@ from tax_engine import (
 )
 
 
-# ============================================================================
+# ============================================================
 # Tax Engine — pure functions, no DB needed
-# ============================================================================
+# ============================================================
 
 class TestTaxEngine:
 
@@ -86,11 +86,15 @@ class TestTaxEngine:
         assert calc_qbi_deduction(50_000, 3_500, profile) == 0.0
 
     def test_additional_medicare_kicks_in_at_threshold(self):
-        # Single filer, $250k SE income − will exceed $200k threshold.
-        addl = calc_additional_medicare(250_000, "single")
+        # Single filer, $250k SE income — will exceed $200k threshold.
+        profile = TaxProfile(filing_status="single")
+        addl = calc_additional_medicare(250_000, profile)
         assert addl > 0
+        # calc_additional_medicare applies NET_EARNINGS_FACTOR (0.9235)
+        # to the input before comparing to the threshold.
+        # Expected: (250_000 * 0.9235 - 200_000) * 0.009 = 277.88
         assert addl == pytest.approx(
-            (250_000 - 200_000) * 0.009, abs=1.0)
+            (250_000 * 0.9235 - 200_000) * 0.009, abs=1.0)
 
     def test_calc_total_tax_low_income_no_tax_state(self):
         profile = TaxProfile(home_state="TX")
@@ -110,7 +114,7 @@ class TestTaxEngine:
         assert result.federal_income_tax > 0
         assert result.state_income_tax > 0
         # Additional Medicare kicks in above $200k for single filers
-        # ($280k net ÷ 0.9235 factor = $258,580, well above threshold)
+        # ($280k net × 0.9235 factor = $258,580, well above threshold)
         assert result.additional_medicare_tax > 0
 
     def test_per_payout_rate_cold_start(self):
@@ -146,8 +150,8 @@ class TestTaxEngine:
     def test_mileage_deduction_uses_2025_rates(self):
         result = mileage_deduction(1000, 100, 50)
         assert result["business_deduction"] == 700.0    # 1000 × $0.70
-        assert result["medical_deduction"] == 21.0        # 100 × $0.21
-        assert result["charitable_deduction"] == 7.0      # 50 × $0.14
+        assert result["medical_deduction"] == 21.0      # 100 × $0.21
+        assert result["charitable_deduction"] == 7.0    # 50 × $0.14
         assert result["total_deduction"] == 728.0
 
     def test_profile_from_user_defaults_are_safe(self):
@@ -169,9 +173,9 @@ class TestTaxEngine:
         assert p.dependents == 2
 
 
-# ============================================================================
+# ============================================================
 # Autopilot Engine — integration with in-memory Mongo
-# ============================================================================
+# ============================================================
 
 @pytest.fixture
 async def db():
@@ -267,7 +271,7 @@ class TestAutopilotEngine:
         payout = {"id": "p3", "amount": 150.0, "platform": "Lyft",
                   "date": "2026-07-10"}
         receipt = await run_autopilot(db, user, payout)
-        # Recompute hash from stored fields − must match.
+        # Recompute hash from stored fields — must match.
         stored = await db.autopilot_receipts.find_one({"id": receipt["id"]},
                                                        {"_id": 0})
         original_hash = stored.pop("hash")

@@ -10,7 +10,7 @@ Milli is an iOS + iPad + Apple Watch app that automates tax tracking, estimation
 - **Tax Vault**: Secure document storage with Face ID protection
 - **1099 & Schedule C**: Import and generate tax forms
 - **Annual Taxes**: Full annual tax filing preview and preparation
-- **State-by-State Tax Engine**: Full 2025 IRS tax brackets and state tax calculations
+- **State-by-State Tax Engine**: Full 2025/2026 IRS tax brackets and state tax calculations
 - **Tax Payment**: IRS Direct Pay and card-based tax payments
 - **E-Filing**: IRS Modernized e-File API integration (via TaxBandits)
 
@@ -49,13 +49,12 @@ Milli is an iOS + iPad + Apple Watch app that automates tax tracking, estimation
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Frontend | React + Tailwind CSS + Capacitor (iOS) |
-| Backend | Python / FastAPI |
-| Database | PostgreSQL |
-| Cache | Redis |
-| Tax Engine | Custom Python module (2025 IRS constants, state brackets, quarterly planning) |
-| iOS | Native Capacitor bridge, Storyboard launch screen, PrivacyInfo.xcprivacy |
+|-------|------------|
+| Frontend | React 18 + Tailwind CSS 3 + Capacitor 7 (iOS) |
+| Backend | Python 3.11 / FastAPI |
+| Database | MongoDB (via Motor async driver) |
+| Tax Engine | Custom Python module (2025/2026 IRS constants, state brackets, quarterly planning) |
+| iOS | Native Capacitor bridge, Storyboard launch screen, PrivacyInfo.xcprivacy, UIScene lifecycle |
 | Design | Dark theme, neon cyan (#00E5FF), Volt Yellow (#D4FF00) CTA, glassmorphism, carbon-fiber pattern |
 | Fonts | Outfit (headings), IBM Plex Sans (body), JetBrains Mono (monospace) |
 | Payments | Stripe (subscriptions + Issuing for card fulfillment) |
@@ -66,16 +65,17 @@ Milli is an iOS + iPad + Apple Watch app that automates tax tracking, estimation
 | E-Filing | TaxBandits API |
 | Notifications | Apple Push Notification Service (APNs) |
 | Testing | Jest + React Testing Library (frontend), pytest (backend) |
-| Infra | Docker Compose (PostgreSQL, Redis, backend, frontend) |
+| CI/CD | GitHub Actions (frontend build + ESLint + tests, backend install + engine tests, iOS sync + CocoaPods + Xcode build) |
+| Infra | Docker Compose (MongoDB, backend, frontend) |
 
 ## Project Structure
 
 ```
 milli-tax-app/
-├── frontend/                # React app + Capacitor iOS wrapper
+├── frontend/                    # React app + Capacitor iOS wrapper
 │   ├── src/
-│   │   ├── App.js           # Routes, ErrorBoundary, app entry
-│   │   ├── pages/            # 28 page components
+│   │   ├── App.js               # Routes, ErrorBoundary, app entry
+│   │   ├── pages/               # 28 page components
 │   │   │   ├── Dashboard.jsx
 │   │   │   ├── Income.jsx
 │   │   │   ├── Expenses.jsx
@@ -87,7 +87,7 @@ milli-tax-app/
 │   │   │   ├── Savings.jsx
 │   │   │   ├── Accounts.jsx       # Elite-gated
 │   │   │   ├── Vehicles.jsx
-│   │   │   ├── CardOrder.jsx       # Elite Visa Card opt-in
+│   │   │   ├── CardOrder.jsx      # Elite Visa Card opt-in
 │   │   │   ├── Documents.jsx
 │   │   │   ├── AnnualTaxes.jsx
 │   │   │   ├── Subscription.jsx
@@ -105,52 +105,52 @@ milli-tax-app/
 │   │   │   ├── Paywall.jsx
 │   │   │   ├── Pricing.jsx
 │   │   │   └── ...
-│   │   ├── components/       # Shared UI components
-│   │   │   ├── AppLayout.jsx      # Drawer nav + bottom tab bar
-│   │   │   ├── TierGate.jsx       # Subscription tier gating
-│   │   │   ├── MilliCard.jsx      # Animated card visual
-│   │   │   ├── SplashScreen.jsx   # Production splash
+│   │   ├── components/           # Shared UI components
+│   │   │   ├── AppLayout.jsx     # Drawer nav + bottom tab bar
+│   │   │   ├── TierGate.jsx      # Subscription tier gating
+│   │   │   ├── MilliCard.jsx     # Animated card visual
+│   │   │   ├── SplashScreen.jsx  # Production splash
 │   │   │   ├── ProtectedRoute.jsx
 │   │   │   ├── BankConnections.jsx
 │   │   │   ├── SmartAccount.jsx
 │   │   │   └── ...
-│   │   ├── styles/           # design-system.css with brand tokens
-│   │   └── tests/            # Frontend unit tests
-│   ├── ios/                  # Xcode project (Capacitor)
+│   │   ├── styles/               # design-system.css with brand tokens
+│   │   └── tests/                # Frontend unit tests
+│   ├── ios/                      # Xcode project (Capacitor)
 │   └── capacitor.config.json
-├── backend/                 # Python FastAPI + tax engine
-│   ├── server.py             # Main API server (auth, users, tax, expenses, etc.)
-│   ├── tax_engine.py         # Tax calculation engine (2025 IRS + state)
-│   ├── autopilot.py          # Automated tax planning
-│   ├── integrations.py       # Stripe, Plaid, Alpaca, banking, KYC, OCR, e-filing
-│   ├── card_issuer.py        # Stripe Issuing card fulfillment
-│   ├── card_routes.py        # Card order + webhook endpoints
-│   ├── plaid_client.py       # Plaid bank connection client
-│   ├── plaid_webhook.py      # Plaid transaction webhook receiver
-│   ├── apns.py               # Apple Push Notifications
-│   ├── notifications.py      # Notification service
-│   ├── taxbandits.py         # TaxBandits e-filing integration
-│   ├── schedule_c_pdf.py     # Schedule C PDF generation
-│   ├── market.py             # Market data service
-│   ├── main.py               # App factory + route registration
-│   ├── migrations/           # Database migrations
-│   ├── tests/                # Backend test suite
+├── backend/                      # Python FastAPI + tax engine
+│   ├── server.py                 # Main API server (auth, users, tax, expenses, etc.)
+│   ├── tax_engine.py             # Tax calculation engine (2025/2026 IRS + state)
+│   ├── autopilot.py              # Automated tax planning
+│   ├── integrations.py           # Stripe, Plaid, Alpaca, banking, KYC, OCR, e-filing
+│   ├── card_issuer.py            # Stripe Issuing card fulfillment
+│   ├── card_routes.py            # Card order + webhook endpoints
+│   ├── plaid_client.py           # Plaid bank connection client
+│   ├── plaid_webhook.py          # Plaid transaction webhook receiver
+│   ├── apns.py                   # Apple Push Notifications
+│   ├── notifications.py          # Notification service
+│   ├── taxbandits.py             # TaxBandits e-filing integration
+│   ├── schedule_c_pdf.py         # Schedule C PDF generation
+│   ├── market.py                 # Market data service
+│   ├── main.py                   # App factory + route registration
+│   ├── migrations/               # Database migrations
+│   ├── tests/                    # Backend test suite
 │   ├── Dockerfile
 │   └── requirements.txt
-├── docker-compose.yml        # PostgreSQL + Redis + backend + frontend
-├── .env.example              # All environment variables
-├── design_guidelines.json    # Brand design system spec
-├── APP_STORE_METADATA.md     # App Store listing metadata
-├── IOS_BUILD_GUIDE.md        # Xcode build instructions
-└── scripts/                  # Build and utility scripts
+├── docker-compose.yml            # MongoDB + backend + frontend
+├── .env.example                  # All environment variables
+├── design_guidelines.json        # Brand design system spec
+├── APP_STORE_METADATA.md         # App Store listing metadata
+├── IOS_BUILD_GUIDE.md            # Xcode build instructions
+└── scripts/                      # Build and utility scripts
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ (see `.nvmrc`)
-- Python 3.10+
+- Node.js 22+ (see `.nvmrc`)
+- Python 3.11+
 - Xcode 15+ (for iOS builds)
 - Docker & Docker Compose (for local infra)
 
@@ -175,7 +175,7 @@ python server.py       # Starts FastAPI server on :5000
 ### Full Stack with Docker
 
 ```bash
-docker-compose up -d   # PostgreSQL, Redis, backend, frontend
+docker-compose up -d   # MongoDB, backend, frontend
 ```
 
 ### Tests
@@ -190,27 +190,36 @@ cd backend
 pytest
 ```
 
+### CI/CD
+
+The repo includes a [GitHub Actions workflow](.github/workflows/validate.yml) that runs on every push to `main` and every PR:
+
+- **Frontend**: npm install → ESLint → production build → native startup HTML verification → Jest tests
+- **Backend**: pip install → Python compilation → production API import → MongoDB-backed engine tests → 2025/2026 tax tests
+- **iOS**: npm install → production build → Capacitor sync → CocoaPods install → Xcode simulator compilation
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values. Key variables:
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
+| `MONGO_URL` | MongoDB connection string |
 | `JWT_SECRET` | JWT token signing secret |
-| `STRIPE_SECRET_KEY` | Stripe API key (subscriptions + Issuing) |
+| `STRIPE_API_KEY` / `STRIPE_SECRET_KEY` | Stripe API keys (subscriptions + Issuing) |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature verification |
 | `PLAID_CLIENT_ID` / `PLAID_SECRET` | Plaid bank integration |
 | `PLAID_WEBHOOK_URL` | Plaid transaction webhook endpoint |
 | `APNS_TEAM_ID` / `APNS_KEY_ID` | Apple Push Notifications |
-| `TAXBANDITS_CLIENT_ID` / `TAXBANDITS_SECRET` | TaxBandits e-filing |
+| `TAXBANDITS_CLIENT_ID` / `TAXBANDITS_CLIENT_SECRET` | TaxBandits e-filing |
 | `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` | Alpaca brokerage |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Google Cloud Vision (OCR) |
 | `PERSONA_API_KEY` / `PERSONA_TEMPLATE_ID` | KYC verification |
 | `APPLE_CLIENT_ID` / `APPLE_TEAM_ID` / `APPLE_KEY_ID` | Apple Sign In |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Sign In |
 | `REACT_APP_API_URL` | Frontend API base URL |
+| `DEMO_MODE_ENABLED` | Demo data seeding (disabled by default, never in production) |
+| `ALLOW_UNVERIFIED_STOREKIT` | Unverified StoreKit fallback (false for production) |
 
 ## iOS Build & App Store
 
