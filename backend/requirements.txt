@@ -31,9 +31,8 @@ plaid-python==40.1.0
 stripe==14.4.1
 alpaca-py==0.16.0
 
-# AI, OCR, reporting, and market data
+# OCR, reporting, and market data
 google-cloud-vision==3.4.5
-google-genai==2.10.0
 reportlab==5.0.0
 yfinance==1.5.2
 
