@@ -38,6 +38,11 @@ jobs:
         env:
           CI: "false"
         run: npm run build
+      - name: Verify native startup HTML
+        run: |
+          test -f build/index.html
+          grep -q '<div id="root"></div>' build/index.html
+          ! grep -q 'assets.emergent.sh' build/index.html
       - run: npm test -- --runInBand
 
   backend:
@@ -80,7 +85,7 @@ jobs:
         env:
           PYTHONPATH: .
           MONGO_URL: mongodb://127.0.0.1:27017
-        run: pytest -q tests/test_phase2_engine.py tests/test_2025_tax_constants.py
+        run: pytest -q tests/test_phase2_engine.py tests/test_2025_tax_constants.py tests/test_2026_tax_constants.py
 
   ios:
     name: Capacitor iOS sync and CocoaPods
