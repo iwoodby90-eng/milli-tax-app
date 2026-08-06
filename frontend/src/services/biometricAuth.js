@@ -13,7 +13,7 @@ import { Capacitor } from '@capacitor/core';
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 /**
- * Check if biometric authentication is available on the device
+ * Check if biometric authentication is available on the device.
  * @returns {Promise<Object>} {available, biometryType}
  */
 export async function checkBiometricAvailability() {
@@ -23,18 +23,27 @@ export async function checkBiometricAvailability() {
 
   try {
     const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
-    const result = await NativeBiometric.isAvailable();
+    const result = await NativeBiometric.isAvailable({ useFallback: true });
+
     return {
-      available: result.available,
-      biometryType: result.biometryType || 'face',
+      available: Boolean(result.isAvailable),
+      biometryType: result.biometryType ?? 0,
+      authenticationStrength: result.authenticationStrength ?? 0,
+      deviceIsSecure: Boolean(result.deviceIsSecure),
+      strongBiometryIsAvailable: Boolean(result.strongBiometryIsAvailable),
+      errorCode: result.errorCode,
     };
-  } catch {
-    return { available: false, biometryType: 'none', reason: 'Plugin not installed' };
+  } catch (error) {
+    return {
+      available: false,
+      biometryType: 'none',
+      reason: error instanceof Error ? error.message : 'Plugin not installed',
+    };
   }
 }
 
 /**
- * Authenticate with biometrics (Face ID / Touch ID)
+ * Authenticate with biometrics (Face ID / Touch ID).
  * @returns {Promise<Object>} Authentication result
  */
 export async function authenticateWithBiometrics() {
@@ -43,13 +52,16 @@ export async function authenticateWithBiometrics() {
   }
 
   const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
-  const result = await NativeBiometric.verifyIdentity({
+
+  await NativeBiometric.verifyIdentity({
     reason: 'Authenticate to access Milli',
-    cancelTitle: 'Cancel',
-    allowDeviceCredential: true,
+    title: 'Unlock Milli',
+    negativeButtonText: 'Cancel',
+    useFallback: true,
+    fallbackTitle: 'Use device passcode',
   });
 
-  return result;
+  return { authenticated: true };
 }
 
 /**
@@ -189,10 +201,10 @@ export async function refreshAuthToken(refreshToken) {
  */
 export async function isBiometricEnabled(userId) {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/biometric/status?userId=${userId}`);
+    const response = await fetch(`${API_BASE}/api/auth/biometric/status?userId=${encodeURIComponent(userId)}`);
     if (!response.ok) return false;
     const data = await response.json();
-    return data.enabled;
+    return Boolean(data.enabled);
   } catch {
     return false;
   }
