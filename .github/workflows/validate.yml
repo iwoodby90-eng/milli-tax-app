@@ -51,6 +51,21 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -r requirements.txt
       - run: python -m compileall -q .
+      - name: Import production API
+        env:
+          MONGO_URL: mongodb://127.0.0.1:27017
+          DB_NAME: milli_ci
+          JWT_SECRET: ci-only-secret-that-is-longer-than-32-bytes
+          APP_ENV: test
+          CORS_ORIGINS: http://localhost:3000
+          PLAID_CLIENT_ID: not-configured
+          PLAID_SECRET: not-configured
+          PLAID_ENV: sandbox
+          EMERGENT_LLM_KEY: not-configured
+          STRIPE_API_KEY: not-configured
+          DEMO_MODE_ENABLED: "false"
+          ALLOW_UNVERIFIED_STOREKIT: "false"
+        run: python -c "import server; assert server.app.title == 'Milli API'"
       - run: pytest -q tests/test_phase2_engine.py tests/test_2025_tax_constants.py
 
   ios:
