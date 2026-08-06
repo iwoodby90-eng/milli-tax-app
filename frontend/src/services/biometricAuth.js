@@ -1,6 +1,6 @@
 /**
  * Biometric & MFA Authentication Service
- * 
+ *
  * Provides:
  * - Face ID / Touch ID via Capacitor plugins
  * - TOTP-based MFA (Google Authenticator compatible)
@@ -22,8 +22,8 @@ export async function checkBiometricAvailability() {
   }
 
   try {
-    const { BiometricAuth } = await import('@capacitor-community/biometric-auth');
-    const result = await BiometricAuth.checkBiometrics();
+    const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
+    const result = await NativeBiometric.isAvailable();
     return {
       available: result.available,
       biometryType: result.biometryType || 'face',
@@ -42,8 +42,8 @@ export async function authenticateWithBiometrics() {
     throw new Error('Biometric authentication is only available on native platforms');
   }
 
-  const { BiometricAuth } = await import('@capacitor-community/biometric-auth');
-  const result = await BiometricAuth.authenticate({
+  const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
+  const result = await NativeBiometric.verifyIdentity({
     reason: 'Authenticate to access Milli',
     cancelTitle: 'Cancel',
     allowDeviceCredential: true,
