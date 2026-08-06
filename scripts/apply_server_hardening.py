@@ -6,6 +6,7 @@ shape changes, preventing a partial or ambiguous patch.
 """
 from pathlib import Path
 
+# Keep this script deterministic: each replacement must match exactly once.
 PATH = Path(__file__).resolve().parents[1] / "backend" / "server.py"
 text = PATH.read_text(encoding="utf-8")
 
