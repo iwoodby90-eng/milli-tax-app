@@ -23,7 +23,8 @@ jobs:
       - run: python -m compileall -q backend
       - name: Commit patched files
         run: |
-          rm -f scripts/patch_release.py .github/workflows/apply-release-patch.yml
+          git checkout -- .github/workflows/validate.yml .github/workflows/inspect-2026-tax-usage.yml
+          rm -f scripts/patch_release.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
