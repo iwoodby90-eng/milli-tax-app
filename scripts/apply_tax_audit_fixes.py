@@ -103,13 +103,12 @@ patch(
 
 pytest_ini = ROOT / "backend" / "pytest.ini"
 pytest_ini.write_text(
-    """[pytest]\n"
+    "[pytest]\n"
     "# Keep two deterministic workers while enabling native async fixtures.\n"
     "required_plugins = pytest-xdist pytest-asyncio\n"
     "addopts = -n 2 --dist loadscope\n"
     "asyncio_mode = auto\n"
-    "asyncio_default_fixture_loop_scope = function\n"
-    """,
+    "asyncio_default_fixture_loop_scope = function\n",
     encoding="utf-8",
 )
 
