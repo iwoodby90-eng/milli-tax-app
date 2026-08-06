@@ -42,7 +42,7 @@ export default function Savings() {
   const handleAddGoal = () => {
     if (!newGoal.name || !newGoal.target) return;
     const goal = {
-      id: `custom-${Date.now()}`,
+      id: "custom-" + Date.now(),
       name: newGoal.name,
       target: parseFloat(newGoal.target),
       saved: 0,
@@ -87,13 +87,13 @@ export default function Savings() {
           <div>
             <div className="text-zinc-400 text-[12px] uppercase tracking-wider font-chrome">Total Saved</div>
             <div className="font-display text-[32px] font-bold text-white leading-none mt-1">
-              ${totalSaved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {totalSaved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
           <div className="text-right">
             <div className="text-zinc-400 text-[12px] uppercase tracking-wider font-chrome">Target</div>
             <div className="font-display text-[20px] font-semibold text-zinc-300 mt-1">
-              ${totalTarget.toLocaleString()}
+              {totalTarget.toLocaleString()}
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function Savings() {
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
-              width: `${overallProgress}%`,
+              width: overallProgress + "%",
               background: "linear-gradient(90deg, #D4FF00, #00E5FF)",
             }}
           />
@@ -149,7 +149,7 @@ export default function Savings() {
                 style={{
                   background: c,
                   transform: newGoal.color === c ? "scale(1.2)" : "scale(1)",
-                  boxShadow: newGoal.color === c ? `0 0 12px ${c}` : "none",
+                  boxShadow: newGoal.color === c ? "0 0 12px " + c : "none",
                 }}
               />
             ))}
@@ -157,7 +157,7 @@ export default function Savings() {
           <button
             onClick={handleAddGoal}
             data-testid="savings-add-goal-confirm"
-            className="w-full rounded-xl py-3 text-[14px] font-bold uppercase tracking-wide text-black transition-transform active:scale-[0.99]"
+            className="w-full rounded-xl py-3 text-[14px] font-bold uppercase tracking-wider text-black transition-transform active:scale-[0.99]"
             style={{ background: "#D4FF00" }}
           >
             Create Goal
@@ -182,14 +182,14 @@ export default function Savings() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: `${goal.color}15`, border: `1px solid ${goal.color}40` }}
+                  style={{ background: goal.color + "15", border: "1px solid " + goal.color + "40" }}
                 >
                   <PiggyBank size={20} weight="fill" style={{ color: goal.color }} />
                 </div>
                 <div>
                   <div className="text-white font-semibold text-[15px]">{goal.name}</div>
                   <div className="text-zinc-500 text-[12px] font-chrome">
-                    {isComplete ? "Goal reached!" : `$${remaining.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} to go"}
+                    {isComplete ? "Goal reached!" : "$" + remaining.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " to go"}
                   </div>
                 </div>
               </div>
@@ -205,17 +205,17 @@ export default function Savings() {
             <div>
               <div className="flex items-baseline justify-between mb-2">
                 <span className="font-display text-[22px] font-bold text-white">
-                  ${goal.saved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {goal.saved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-zinc-400 text-[13px] font-chrome">
-                  of ${goal.target.toLocaleString()}
+                  of {goal.target.toLocaleString()}
                 </span>
               </div>
               <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
-                    width: `${progress}%`,
+                    width: progress + "%",
                     background: isComplete
                       ? "linear-gradient(90deg, #D4FF00, #00E5FF)"
                       : goal.color,
@@ -240,7 +240,7 @@ export default function Savings() {
                 />
                 <button
                   onClick={() => handleContribute(goal.id)}
-                  data-testid={`savings-contribute-${goal.id}`}
+                  data-testid={"savings-contribute-" + goal.id}
                   className="rounded-xl px-4 py-2.5 text-[13px] font-bold text-black"
                   style={{ background: "#D4FF00" }}
                 >
