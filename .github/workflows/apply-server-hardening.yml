@@ -1,0 +1,30 @@
+name: Apply server hardening
+
+on:
+  push:
+    branches:
+      - agent/fix-capacitor7-build-regressions
+    paths:
+      - scripts/apply_server_hardening.py
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-capacitor7-build-regressions
+          fetch-depth: 0
+      - run: python scripts/apply_server_hardening.py
+      - name: Verify and commit patch
+        run: |
+          python -m py_compile backend/server.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/server.py
+          git commit -m "Harden production backend routes"
+          git push origin HEAD:agent/fix-capacitor7-build-regressions
