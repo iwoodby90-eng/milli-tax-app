@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { MilliCardHero } from "@/components/MilliCard";
 import {
-  Check, Crown, Shield, Truck, CreditCard, Sparkles, ArrowRight, ArrowLeft,
+  Check, Crown, Shield, Truck, CreditCard, Sparkle, ArrowRight, ArrowLeft,
 } from "@phosphor-icons/react";
 
 const MATERIALS = [
@@ -18,10 +18,10 @@ const MATERIALS = [
   {
     id: "titanium",
     name: "Aerospace Titanium",
-    description: "Ultra-light Grade 5 titanium with a gunmetal finish. Scratch-resistant, hypoallergenic, and 45% lighter than steel.",
+    description: "Ultra-light Grade 5 titanium with a gunmetal finish. Scratch-resistant, hypollergenic, and 45% lighter than steel.",
     price: 49,
     badge: "+$49 one-time",
-    icon: Sparkles,
+    icon: Sparkle,
     accent: "linear-gradient(135deg, #6B7280 0%, #4B5563 30%, #374151 60%, #1F2937 100%)",
   },
 ];
@@ -103,9 +103,7 @@ export default function CardOrder() {
         {[1, 2, 3].map((s) => (
           <div
             key={s}
-            className={`flex-1 h-1 rounded-full transition ${
-              step >= s ? "bg-[#D4FF00]" : "bg-white/10"
-            }`}
+            className={`flex-1 h-1 rounded-full transition ${step >= s ? "bg-[#D4FF00]" : "bg-white/10"}`}
           />
         ))}
       </div>
@@ -148,7 +146,7 @@ export default function CardOrder() {
                   >
                     <Icon size={22} weight="fill" className="text-white/80" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-white text-[16px] font-semibold">{m.name}</span>
                       {selected && <Check size={18} weight="bold" className="text-[#D4FF00]" />}
@@ -306,7 +304,7 @@ export default function CardOrder() {
             </p>
           </div>
           <button
-            onClick={() => window.location.href = "/app"}
+            onClick={() => (window.location.href = "/app")}
             className="px-6 py-3 rounded-xl bg-white/10 text-white text-[14px] font-medium active:scale-[0.99] transition"
           >
             Back to dashboard
