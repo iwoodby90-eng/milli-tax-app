@@ -30,9 +30,21 @@ next-env.d.ts
 dist/
 dist
 
-# Environment files (comprehensive coverage)
+# Environment and credential files
+.env
+.env.*
+*.env
 *token.json*
 *credentials.json*
+credentials.json
+service-account*.json
+GoogleService-Info.plist
+*.key
+*.pem
+*.p8
+*.p12
+*.mobileprovision
+.credentials
 
 # Logs and debug files
 npm-debug.log*
@@ -83,9 +95,3 @@ android-sdk/frontend/public/milli-source.tar.gz
 frontend/build/milli-source.tar.gz
 frontend/public/milli-source.tar.gz
 frontend/ios/App/App/public/milli-source.tar.gz
-.env
-.env.*
-*.env
-credentials.json
-*.key
-.credentials

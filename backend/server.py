@@ -4,6 +4,7 @@ import io
 import csv
 import uuid
 import logging
+import hmac
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -60,11 +61,16 @@ MONGO_URL = os.environ['MONGO_URL']
 DB_NAME = os.environ['DB_NAME']
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-PLAID_CLIENT_ID = os.environ['PLAID_CLIENT_ID']
-PLAID_SECRET = os.environ['PLAID_SECRET']
+PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID', 'not-configured')
+PLAID_SECRET = os.environ.get('PLAID_SECRET', 'not-configured')
 PLAID_ENV = os.environ.get('PLAID_ENV', 'sandbox')
-EMERGENT_LLM_KEY = os.environ['EMERGENT_LLM_KEY']
-STRIPE_API_KEY = os.environ['STRIPE_API_KEY']
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', 'not-configured')
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'not-configured')
+APP_ENV = os.environ.get('APP_ENV', 'development').strip().lower()
+DEMO_MODE_ENABLED = os.environ.get('DEMO_MODE_ENABLED', 'false').strip().lower() == 'true'
+ALLOW_UNVERIFIED_STOREKIT = (
+    os.environ.get('ALLOW_UNVERIFIED_STOREKIT', 'false').strip().lower() == 'true'
+)
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -79,6 +85,10 @@ plaid_config = plaid.Configuration(
     api_key={'clientId': PLAID_CLIENT_ID, 'secret': PLAID_SECRET},
 )
 plaid_client = plaid_api.PlaidApi(plaid.ApiClient(plaid_config))
+
+def _plaid_configured() -> bool:
+    invalid = {'', 'not-configured', 'your-plaid-client-id', 'your-plaid-secret'}
+    return PLAID_CLIENT_ID not in invalid and PLAID_SECRET not in invalid
 
 # -------------------- CONSTANTS --------------------
 GIG_PLATFORMS = {
@@ -99,8 +109,6 @@ GIG_PLATFORMS = {
     "gopuff": "GoPuff",
 }
 
-# IRS 2026 standard mileage rate (approx, configurable)
-IRS_MILEAGE_RATE = 0.70
 SE_TAX_RATE = 0.153  # Self-employment tax
 
 # State income tax rates (simplified flat estimate for top brackets — informational only)
@@ -171,7 +179,7 @@ async def get_current_user(request: Request) -> dict:
 # -------------------- MODELS --------------------
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6)
+    password: str = Field(min_length=12)
     name: str
     state: str = "TX"
 
@@ -235,7 +243,7 @@ class CheckoutIn(BaseModel):
     origin_url: str
 
 # -------------------- APP --------------------
-app = FastAPI(title="TaxHaul API")
+app = FastAPI(title="Milli API")
 api = APIRouter(prefix="/api")
 
 # -------------------- AUTH ROUTES --------------------
@@ -346,9 +354,11 @@ async def onboarding_complete(body: OnboardingIn, user: dict = Depends(get_curre
 # -------------------- PLAID ROUTES --------------------
 @api.post("/plaid/link-token")
 async def plaid_link_token(user: dict = Depends(get_current_user)):
+    if not _plaid_configured():
+        raise HTTPException(status_code=503, detail='Plaid is not configured')
     req = LinkTokenCreateRequest(
         products=[Products("transactions")],
-        client_name="TaxHaul",
+        client_name="Milli",
         country_codes=[CountryCode("US")],
         language="en",
         user=LinkTokenCreateRequestUser(client_user_id=user["id"]),
@@ -362,6 +372,8 @@ async def plaid_link_token(user: dict = Depends(get_current_user)):
 
 @api.post("/plaid/exchange")
 async def plaid_exchange(body: PublicTokenIn, user: dict = Depends(get_current_user)):
+    if not _plaid_configured():
+        raise HTTPException(status_code=503, detail='Plaid is not configured')
     try:
         exch = plaid_client.item_public_token_exchange(
             ItemPublicTokenExchangeRequest(public_token=body.public_token)
@@ -579,7 +591,10 @@ async def end_trip(trip_id: str, body: TripEndIn, user: dict = Depends(get_curre
     elif body.miles is not None:
         miles = max(0.0, float(body.miles))
     miles = round(miles, 2)
-    deductible = round(miles * IRS_MILEAGE_RATE, 2)
+    from tax_engine import mileage_rate_for_date
+    trip_date = trip.get("start_time") or date.today().isoformat()
+    mileage_rate = mileage_rate_for_date(trip_date, "business", int(str(trip_date)[:4]))
+    deductible = round(miles * mileage_rate, 2)
     await db.trips.update_one(
         {"id": trip_id},
         {"$set": {
@@ -590,6 +605,7 @@ async def end_trip(trip_id: str, body: TripEndIn, user: dict = Depends(get_curre
             "end_address": body.end_address,
             "miles": miles,
             "deductible_value": deductible,
+            "mileage_rate": mileage_rate,
             "points": [p.dict() for p in (body.points or [])],
         }},
     )
@@ -610,7 +626,11 @@ async def manual_trip(body: ManualTripIn, user: dict = Depends(get_current_user)
         "start_time": f"{body.date}T00:00:00Z",
         "end_time": f"{body.date}T00:00:00Z",
         "miles": miles,
-        "deductible_value": round(miles * IRS_MILEAGE_RATE, 2),
+        "deductible_value": round(
+            miles * __import__("tax_engine").mileage_rate_for_date(body.date, "business", int(str(body.date)[:4])),
+            2,
+        ),
+        "mileage_rate": __import__("tax_engine").mileage_rate_for_date(body.date, "business", int(str(body.date)[:4])),
         "manual": True,
         "notes": body.notes,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -649,24 +669,18 @@ async def classify_trip(trip_id: str, body: TripClassifyIn,
                         user: dict = Depends(get_current_user)):
     if body.classification not in TRIP_CATEGORIES:
         raise HTTPException(400, f"classification must be one of {sorted(TRIP_CATEGORIES)}")
-    from tax_engine import (
-        IRS_MILEAGE_RATE_BUSINESS,
-        IRS_MILEAGE_RATE_MEDICAL,
-        IRS_MILEAGE_RATE_CHARITABLE,
-    )
+    from tax_engine import mileage_rate_for_date
     trip = await db.trips.find_one({"id": trip_id, "user_id": user["id"]})
     if not trip:
         raise HTTPException(404, "Trip not found")
     miles = float(trip.get("miles") or 0.0)
-    rate = {
-        "business": IRS_MILEAGE_RATE_BUSINESS,
-        "medical": IRS_MILEAGE_RATE_MEDICAL,
-        "charitable": IRS_MILEAGE_RATE_CHARITABLE,
-    }.get(body.classification, 0.0)
+    trip_date = trip.get("start_time") or trip.get("date") or trip.get("created_at")
+    rate = mileage_rate_for_date(trip_date, body.classification, int(str(trip_date or date.today().isoformat())[:4]))
     deductible = round(miles * rate, 2)
     patch = {
         "classification": body.classification,
         "deductible_value": deductible,
+        "mileage_rate": rate,
         "reviewed_at": datetime.now(timezone.utc).isoformat(),
     }
     if body.vehicle_id:
@@ -730,7 +744,7 @@ async def delete_vehicle(vehicle_id: str, user: dict = Depends(get_current_user)
 @api.get("/mileage/summary")
 async def mileage_summary(user: dict = Depends(get_current_user),
                            year: Optional[int] = None):
-    from tax_engine import mileage_deduction
+    from tax_engine import mileage_deduction_for_trips
     year = year or datetime.now(timezone.utc).year
     trips = await db.trips.find(
         {"user_id": user["id"], "status": "completed"},
@@ -749,14 +763,12 @@ async def mileage_summary(user: dict = Depends(get_current_user),
             "charitable": "charitable", "commute": "commuting",
         }.get(t.get("purpose"), "needs_review")
 
-    biz = sum(t["miles"] for t in trips if _bucket(t) == "business")
-    med = sum(t["miles"] for t in trips if _bucket(t) == "medical")
-    cha = sum(t["miles"] for t in trips if _bucket(t) == "charitable")
     review_count = sum(1 for t in trips if _bucket(t) == "needs_review")
+    summary = mileage_deduction_for_trips(trips, year)
 
     return {
         "year": year,
-        **mileage_deduction(biz, med, cha),
+        **summary,
         "trips_count": len(trips),
         "trips_needing_review": review_count,
     }
@@ -1039,18 +1051,22 @@ async def tax_summary(user: dict = Depends(get_current_user), year: Optional[int
     trips = [t for t in trips if (t.get("start_time") or "").startswith(str(year))]
     expenses = [e for e in expenses if e["date"].startswith(str(year))]
 
-    gross = sum(d["amount"] for d in deposits)
-    miles = sum(t.get("miles", 0) for t in trips)
-    mileage_deduction = round(miles * IRS_MILEAGE_RATE, 2)
-    expense_total = sum(e["amount"] for e in expenses)
-    net_income = max(0.0, gross - mileage_deduction - expense_total)
+    from tax_engine import calc_total_tax, mileage_deduction_for_trips, mileage_rates_for_date, profile_from_user
 
-    se_tax = round(net_income * SE_TAX_RATE, 2)
+    gross = sum(d["amount"] for d in deposits)
+    mileage = mileage_deduction_for_trips(trips, year)
+    miles = mileage["business_miles"] + mileage["medical_miles"] + mileage["charitable_miles"]
+    mileage_deduction = mileage["total_deduction"]
+    expense_total = sum(e["amount"] for e in expenses)
+    profile = profile_from_user({**user, "tax_year": year})
+    tax = calc_total_tax(gross, mileage_deduction + expense_total, profile)
+    net_income = tax.net_earnings_from_se
+    se_tax = tax.se_tax
+    fed_income_tax = tax.federal_income_tax
+    state_tax = tax.state_income_tax
     state_rate = STATE_TAX_RATES.get(user.get("state", "TX"), 0.0)
-    # Approximate fed income tax on top of SE @ a simple 12% bracket
-    fed_income_tax = round(max(0.0, net_income - se_tax/2) * 0.12, 2)
-    state_tax = round(net_income * state_rate, 2)
-    estimated_tax = round(se_tax + fed_income_tax + state_tax, 2)
+    estimated_tax = tax.total_tax
+    year_end_rates = mileage_rates_for_date(date(year, 12, 31), year)
 
     today = date.today()
     due_dates = _quarter_due_dates(year)
@@ -1080,7 +1096,8 @@ async def tax_summary(user: dict = Depends(get_current_user), year: Optional[int
         },
         "savings_recommended": round(deposits_savings, 2),
         "savings_balance": round(user.get("tax_savings_balance", 0.0), 2),
-        "irs_mileage_rate": IRS_MILEAGE_RATE,
+        "irs_mileage_rate": year_end_rates["business"],
+        "irs_mileage_rate_periods": mileage["rate_periods"],
         "deposits_count": len(deposits),
         "trips_count": len(trips),
     }
@@ -1093,12 +1110,12 @@ async def ai_chat(body: ChatIn, user: dict = Depends(get_current_user)):
         api_key=EMERGENT_LLM_KEY,
         session_id=sid,
         system_message=(
-            "You are TaxHaul AI, a tax assistant for gig delivery drivers (Uber, DoorDash, Spark, "
+            "You are Milli AI, a tax assistant for gig delivery drivers (Uber, DoorDash, Spark, "
             "Lyft, Instacart, Amazon Flex). Give clear, practical answers about Schedule C, "
             "Schedule SE, quarterly estimated taxes, the standard mileage deduction, and common "
             "gig driver deductions. Be concise and confident. Always include the disclaimer that "
             "you are not a CPA and the user should verify with a tax professional for complex "
-            f"situations. The current IRS standard mileage rate is ${IRS_MILEAGE_RATE}/mi."
+            "situations. Mileage rates can change during a tax year, so always use the trip date when calculating a deduction."
         ),
     ).with_model("gemini", "gemini-3-flash-preview")
 
@@ -1215,7 +1232,7 @@ def _pdf_schedule_c(user: dict, summary: dict, deposits: list, trips: list, expe
     c.drawString(50, y, "Schedule C — Profit or Loss From Business (Worksheet)")
     y -= 25
     c.setFont("Helvetica", 10)
-    c.drawString(50, y, f"Prepared by TaxHaul  |  Tax Year: {summary['year']}")
+    c.drawString(50, y, f"Prepared by Milli  |  Tax Year: {summary['year']}")
     y -= 18
     c.drawString(50, y, f"Taxpayer: {user.get('name')}  |  Email: {user.get('email')}  |  State: {user.get('state')}")
     y -= 28
@@ -1233,7 +1250,7 @@ def _pdf_schedule_c(user: dict, summary: dict, deposits: list, trips: list, expe
         cat_totals[e["category"]] = cat_totals.get(e["category"], 0) + e["amount"]
     for cat, amt in cat_totals.items():
         c.drawString(70, y, f"{cat.title()}: ${amt:,.2f}"); y -= 14
-    c.drawString(70, y, f"9. Car & truck (standard mileage {summary['total_miles']:.1f} mi @ ${IRS_MILEAGE_RATE}/mi): ${summary['mileage_deduction']:,.2f}"); y -= 14
+    c.drawString(70, y, f"9. Car & truck (date-aware standard mileage; {summary['total_miles']:.1f} mi): ${summary['mileage_deduction']:,.2f}"); y -= 14
     c.drawString(70, y, f"28. Total expenses: ${(summary['expense_total'] + summary['mileage_deduction']):,.2f}"); y -= 24
 
     c.setFont("Helvetica-Bold", 12)
@@ -1250,7 +1267,7 @@ def _pdf_schedule_c(user: dict, summary: dict, deposits: list, trips: list, expe
     c.drawString(50, y, f"TOTAL Estimated Tax Owed: ${summary['estimated_tax']:,.2f}"); y -= 30
 
     c.setFont("Helvetica-Oblique", 9)
-    c.drawString(50, 40, "This is a worksheet generated by TaxHaul. It is not an official IRS form. Consult a tax professional before filing.")
+    c.drawString(50, 40, "This is a worksheet generated by Milli. It is not an official IRS form. Consult a tax professional before filing.")
     c.showPage()
     c.save()
     return buf.getvalue()
@@ -1818,8 +1835,14 @@ async def record_quarterly_payment(body: QuarterlyPaymentIn, user: dict = Depend
 
 # -------------------- DEMO MODE --------------------
 @api.post("/demo/seed")
-async def demo_seed():
-    """Create or refresh demo user 'Jordan Taylor' and return a token."""
+async def demo_seed(request: Request):
+    """Create or refresh the demo account in explicitly enabled local environments."""
+    if APP_ENV == "production" or not DEMO_MODE_ENABLED:
+        raise HTTPException(status_code=404, detail="Not found")
+    expected_secret = os.environ.get("DEMO_SEED_SECRET", "")
+    supplied_secret = request.headers.get("X-Demo-Seed-Secret", "")
+    if not expected_secret or not hmac.compare_digest(supplied_secret, expected_secret):
+        raise HTTPException(status_code=403, detail="Invalid demo seed secret")
     email = "demo@milli.app"
     user = await db.users.find_one({"email": email})
     if user:
@@ -1933,7 +1956,8 @@ async def demo_seed():
             "start_time": f"{d_date.isoformat()}T09:00:00Z",
             "end_time": f"{d_date.isoformat()}T17:00:00Z",
             "miles": miles,
-            "deductible_value": round(miles * IRS_MILEAGE_RATE, 2),
+            "deductible_value": round(miles * __import__("tax_engine").mileage_rate_for_date(d_date, "business", d_date.year), 2),
+            "mileage_rate": __import__("tax_engine").mileage_rate_for_date(d_date, "business", d_date.year),
             "manual": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
@@ -2172,6 +2196,10 @@ class IAPValidateIn(BaseModel):
 
 @api.post("/subscriptions/verify-receipt")
 async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_current_user)):
+    if not body.transactionId or not body.transactionId.strip():
+        raise HTTPException(status_code=400, detail="Missing transactionId")
+    if body.productId and body.productId not in IAP_PRODUCT_TO_PLAN:
+        raise HTTPException(status_code=400, detail="Unknown StoreKit product")
     """
     Verify a StoreKit 2 transaction with Apple and upgrade the user's plan.
 
@@ -2184,10 +2212,13 @@ async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_cur
     try:
         token = _generate_apple_iap_token()
     except HTTPException:
-        # Fallback: trust the client transactionId only in Sandbox/dev
-        if APPLE_IAP_ENV.lower() != "production":
-            logging.warning("Apple IAP creds missing — accepting sandbox txn %s optimistically", body.transactionId)
-            plan = IAP_PRODUCT_TO_PLAN.get(body.productId or "", "pro")
+        # Unverified StoreKit is never allowed in production and must be
+        # explicitly enabled for local/TestFlight development.
+        if APP_ENV != "production" and ALLOW_UNVERIFIED_STOREKIT:
+            plan = IAP_PRODUCT_TO_PLAN.get(body.productId or "")
+            if not plan:
+                raise HTTPException(status_code=400, detail="Unknown StoreKit product")
+            logging.warning("Accepting explicitly enabled unverified sandbox txn %s", body.transactionId)
             await db.users.update_one(
                 {"id": user["id"]},
                 {"$set": {
@@ -2220,7 +2251,9 @@ async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_cur
     decoded = jwt.decode(jws, options={"verify_signature": False})
     product_id = decoded.get("productId")
     expires_ms = decoded.get("expiresDate")
-    plan = IAP_PRODUCT_TO_PLAN.get(product_id, "pro")
+    plan = IAP_PRODUCT_TO_PLAN.get(product_id)
+    if not plan:
+        raise HTTPException(status_code=400, detail="Apple returned an unknown StoreKit product")
 
     await db.users.update_one(
         {"id": user["id"]},
@@ -2241,6 +2274,11 @@ async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_cur
 
 @api.post("/subscriptions/webhook")
 async def apple_iap_webhook(request: Request):
+    if APP_ENV == "production":
+        # The current implementation does not yet validate Apple's x5c JWS
+        # certificate chain. Reject production webhooks rather than trust
+        # attacker-controlled unsigned claims.
+        raise HTTPException(status_code=503, detail="Verified Apple webhook handling is not configured")
     """
     App Store Server Notifications V2 endpoint. Configure this URL in
     App Store Connect > App Information > App Store Server Notifications.
@@ -2539,10 +2577,13 @@ async def schedule_c_pdf(user: dict = Depends(get_current_user), year: Optional[
         cat = e.get("category", "other")
         exp_by_cat[cat] = exp_by_cat.get(cat, 0) + float(e.get("amount", 0))
 
+    from tax_engine import mileage_deduction_for_trips
+
     trips = await db.trips.find(q, {"_id": 0}).to_list(5000)
-    trips = [t for t in trips if str(t.get("date", "")).startswith(str(y))]
-    business_miles = round(sum(float(t.get("miles", 0)) for t in trips), 1)
-    mileage_deduction = round(business_miles * 0.70, 2)
+    trips = [t for t in trips if str(t.get("start_time") or t.get("date") or "").startswith(str(y))]
+    mileage = mileage_deduction_for_trips(trips, y)
+    business_miles = mileage["business_miles"]
+    mileage_deduction = mileage["business_deduction"]
 
     total_expenses = round(sum(exp_by_cat.values()) + mileage_deduction, 2)
     net_profit = round(gross_receipts - total_expenses, 2)
@@ -2596,10 +2637,18 @@ except Exception as _me:
 
 app.include_router(api)
 
+_cors_origins = [
+    origin.strip()
+    for origin in os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
+    if origin.strip()
+]
+if APP_ENV == 'production' and '*' in _cors_origins:
+    raise RuntimeError('Wildcard CORS is forbidden in production')
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=_cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

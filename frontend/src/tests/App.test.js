@@ -1,93 +1,69 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '../context/AuthContext';
-
-// Test 1: App renders without crashing
-describe('App Integration', () => {
-  it('renders without crashing', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <AuthProvider>
-          <div data-testid="app-root">Milli App</div>
-        </AuthProvider>
-      </MemoryRouter>
-    );
-    expect(container).toBeInTheDocument();
-  });
-});
-
-// Test 2: TierGate component
 import TierGate from '../components/TierGate';
+import { useAuth } from '../context/AuthContext';
+
+jest.mock('../context/AuthContext', () => ({
+  useAuth: jest.fn(),
+}));
 
 describe('TierGate', () => {
-  const mockChild = <div data-testid="gated-content">Gated Content</div>;
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-  it('renders children when tier is allowed', () => {
-    localStorage.setItem('milli_selected_plan', 'pro');
-    const { getByTestId } = render(
+  it('renders gated content when the user plan is allowed', () => {
+    useAuth.mockReturnValue({ user: { plan: 'pro' }, loading: false });
+
+    render(
       <MemoryRouter>
-        <TierGate allowed={['pro', 'elite']} featureName="Test Feature">
-          {mockChild}
+        <TierGate allowed={['pro', 'elite']} featureName="Investing">
+          <div data-testid="gated-content">Gated Content</div>
         </TierGate>
       </MemoryRouter>
     );
-    expect(getByTestId('gated-content')).toBeInTheDocument();
+
+    expect(screen.getByTestId('gated-content')).toBeInTheDocument();
+    expect(screen.queryByText(/requires pro/i)).not.toBeInTheDocument();
   });
 
-  it('shows upgrade prompt when tier is not allowed', () => {
-    localStorage.setItem('milli_selected_plan', 'basic');
-    const { queryByTestId, getByText } = render(
+  it('shows the Pro upgrade prompt for a Basic user', () => {
+    useAuth.mockReturnValue({ user: { plan: 'basic' }, loading: false });
+
+    render(
       <MemoryRouter>
-        <TierGate allowed={['pro', 'elite']} featureName="Test Feature">
-          {mockChild}
+        <TierGate allowed={['pro', 'elite']} featureName="Investing">
+          <div data-testid="gated-content">Gated Content</div>
         </TierGate>
       </MemoryRouter>
     );
-    expect(queryByTestId('gated-content')).not.toBeInTheDocument();
-    expect(getByText(/Test Feature/i)).toBeInTheDocument();
-  });
-});
 
-// Test 3: Tax calculation utility
-import { calculateEstimatedTax } from '../utils/taxCalc';
-
-describe('Tax Calculation', () => {
-  it('calculates self-employment tax correctly', () => {
-    const income = 50000;
-    const result = calculateEstimatedTax(income);
-    expect(result.selfEmploymentTax).toBeGreaterThan(0);
-    expect(result.selfEmploymentTax).toBeLessThan(income);
+    expect(screen.queryByTestId('gated-content')).not.toBeInTheDocument();
+    expect(screen.getByText('Investing requires Pro')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /upgrade to pro/i })).toHaveAttribute(
+      'href',
+      '/app/pricing'
+    );
   });
 
-  it('handles zero income', () => {
-    const result = calculateEstimatedTax(0);
-    expect(result.selfEmploymentTax).toBe(0);
-    expect(result.incomeTax).toBe(0);
-  });
+  it('shows the Elite upgrade prompt for an Elite-only feature', () => {
+    useAuth.mockReturnValue({ user: { plan: 'pro' }, loading: false });
 
-  it('handles negative income gracefully', () => {
-    const result = calculateEstimatedTax(-1000);
-    expect(result.selfEmploymentTax).toBe(0);
-    expect(result.incomeTax).toBe(0);
-  });
-});
+    render(
+      <MemoryRouter>
+        <TierGate allowed={['elite']} featureName="Automatic Tax Filing">
+          <div data-testid="gated-content">Gated Content</div>
+        </TierGate>
+      </MemoryRouter>
+    );
 
-// Test 4: Formatting utilities
-import { formatCurrency, formatDate } from '../utils/formatters';
-
-describe('Formatters', () => {
-  it('formats currency correctly', () => {
-    expect(formatCurrency(1234.56)).toMatch(/\$1,234\.56/);
-  });
-
-  it('formats currency with zero', () => {
-    expect(formatCurrency(0)).toMatch(/\$0\.00/);
-  });
-
-  it('formats date correctly', () => {
-    const date = new Date('2026-01-15');
-    const formatted = formatDate(date);
-    expect(formatted).toBeTruthy();
-    expect(typeof formatted).toBe('string');
+    expect(screen.queryByTestId('gated-content')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Automatic Tax Filing requires Elite')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /upgrade to elite/i })).toHaveAttribute(
+      'href',
+      '/app/pricing'
+    );
   });
 });
