@@ -4,14 +4,13 @@ on:
   push:
     branches:
       - agent/fix-capacitor7-build-regressions
-    paths:
-      - scripts/patch_release.py
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
