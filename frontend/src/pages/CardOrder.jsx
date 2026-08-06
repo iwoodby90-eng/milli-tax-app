@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { MilliCardHero } from "@/components/MilliCard";
 import {
-  Check, Crown, Shield, Truck, CreditCard, Sparkles, ArrowRight, ArrowLeft,
+  Check, Crown, Shield, Truck, CreditCard, Sparkle, ArrowRight, ArrowLeft,
 } from "@phosphor-icons/react";
 
 const MATERIALS = [
@@ -21,7 +21,7 @@ const MATERIALS = [
     description: "Ultra-light Grade 5 titanium with a gunmetal finish. Scratch-resistant, hypoallergenic, and 45% lighter than steel.",
     price: 49,
     badge: "+$49 one-time",
-    icon: Sparkles,
+    icon: Sparkle,
     accent: "linear-gradient(135deg, #6B7280 0%, #4B5563 30%, #374151 60%, #1F2937 100%)",
   },
 ];
@@ -89,7 +89,7 @@ export default function CardOrder() {
         <div className="flex items-center gap-2 mb-1">
           <Crown size={24} weight="fill" className="text-[#D4FF00]" />
           <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}>
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif' }}>
             Milli Visa Elite Card
           </h1>
         </div>
@@ -122,7 +122,6 @@ export default function CardOrder() {
               />
             </div>
           </div>
-
           <h2 className="text-white text-[18px] font-semibold">Choose your card material</h2>
 
           {MATERIALS.map((m) => {
@@ -251,7 +250,7 @@ export default function CardOrder() {
             <Row label="Material" value={selectedMaterial.name} />
             <Row
               label="Material fee"
-              value={selectedMaterial.price === 0 ? "Included" : `$${selectedMaterial.price}`}
+              value={selectedMaterial.price === 0 ? "Included" : `$${selectedMaterial.price}.00`}
             />
             <Row label="Shipping" value="Free (5-7 business days)" />
             <div className="border-t border-white/8 pt-3">
@@ -306,7 +305,7 @@ export default function CardOrder() {
             </p>
           </div>
           <button
-            onClick={() => window.location.href = "/app"}
+            onClick={() => (window.location.href = "/app")}
             className="px-6 py-3 rounded-xl bg-white/10 text-white text-[14px] font-medium active:scale-[0.99] transition"
           >
             Back to dashboard
