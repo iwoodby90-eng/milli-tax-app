@@ -89,7 +89,7 @@ export default function CardOrder() {
         <div className="flex items-center gap-2 mb-1">
           <Crown size={24} weight="fill" className="text-[#D4FF00]" />
           <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}>
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif' }}>
             Milli Visa Elite Card
           </h1>
         </div>
@@ -120,7 +120,6 @@ export default function CardOrder() {
               />
             </div>
           </div>
-
           <h2 className="text-white text-[18px] font-semibold">Choose your card material</h2>
 
           {MATERIALS.map((m) => {
@@ -249,7 +248,7 @@ export default function CardOrder() {
             <Row label="Material" value={selectedMaterial.name} />
             <Row
               label="Material fee"
-              value={selectedMaterial.price === 0 ? "Included" : `$${selectedMaterial.price}`}
+              value={selectedMaterial.price === 0 ? "Included" : `$${selectedMaterial.price}.00`}
             />
             <Row label="Shipping" value="Free (5-7 business days)" />
             <div className="border-t border-white/8 pt-3">
