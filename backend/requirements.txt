@@ -26,10 +26,9 @@ APScheduler==3.11.3
 httpx==0.28.1
 requests==2.34.2
 
-# Financial integrations
+# Active financial integrations
 plaid-python==40.1.0
 stripe==14.4.1
-alpaca-py==0.16.0
 
 # OCR, reporting, and market data
 google-cloud-vision==3.4.5
