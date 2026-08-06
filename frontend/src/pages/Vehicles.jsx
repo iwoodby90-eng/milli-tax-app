@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Car, Plus, TrashSimple, PencilSimple, Gauge,
-  FuelPump, Calendar, Check,
+  GasPump, Calendar, Check,
 } from "@phosphor-icons/react";
 
 const STORAGE_KEY = "milli_vehicles";
@@ -177,7 +177,7 @@ export default function Vehicles() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <FuelPump size={14} className="text-zinc-500 mb-1" />
+              <GasPump size={14} className="text-zinc-500 mb-1" />
               <div className="text-white text-[14px] font-semibold">{v.mpg || "--"}</div>
               <div className="text-zinc-600 text-[10px] font-chrome uppercase">MPG</div>
             </div>
@@ -223,7 +223,7 @@ export default function Vehicles() {
       )}
 
       <div className="text-center text-zinc-600 text-[11px] font-chrome pt-2">
-        Vehicle data is used for mileage deductions and Milli Cents™ profitability calculations.
+        Vehicle data is used for mileage deductions and Milli Cents¢ profitability calculations.
       </div>
     </div>
   );
