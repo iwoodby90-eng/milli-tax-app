@@ -128,8 +128,15 @@ class Test2025FederalBrackets:
         assert b[5] == (0.35, 626_350)
         assert b[6] == (0.37, float("inf"))
 
-    def test_married_separate_matches_single(self):
-        assert FED_BRACKETS_2025["married_separate"] == FED_BRACKETS_2025["single"]
+    def test_married_separate_bracket_thresholds(self):
+        b = FED_BRACKETS_2025["married_separate"]
+        assert b[0] == (0.10, 11_925)
+        assert b[1] == (0.12, 48_475)
+        assert b[2] == (0.22, 103_350)
+        assert b[3] == (0.24, 197_300)
+        assert b[4] == (0.32, 250_525)
+        assert b[5] == (0.35, 375_800)
+        assert b[6] == (0.37, float("inf"))
 
     def test_qualifying_widow_matches_married_joint(self):
         assert FED_BRACKETS_2025["qualifying_widow"] == FED_BRACKETS_2025["married_joint"]
@@ -142,9 +149,14 @@ class Test2025FederalBrackets:
 class Test2025FederalIncomeTax:
 
     def test_single_50k_uses_2025_brackets(self):
-        """$50k single: 10% of $11,925 + 12% of ($50,000 − $11,925)."""
+        """$50k single spans the 10%, 12%, and 22% brackets."""
         tax = calc_federal_income_tax(50_000, "single")
-        expected = round(11_925 * 0.10 + (50_000 - 11_925) * 0.12, 2)
+        expected = round(
+            11_925 * 0.10
+            + (48_475 - 11_925) * 0.12
+            + (50_000 - 48_475) * 0.22,
+            2,
+        )
         assert tax == expected
 
     def test_single_100k_uses_2025_brackets(self):

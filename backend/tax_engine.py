@@ -38,7 +38,7 @@ ADDL_MEDICARE_THRESHOLD = {
     "married_joint": 250_000,
     "married_separate": 125_000,
     "head_of_household": 200_000,
-    "qualifying_widow": 250_000,
+    "qualifying_widow": 200_000,
 }
 NET_EARNINGS_FACTOR = 0.9235     # 92.35% of net SE income is subject to SE tax
 
@@ -56,7 +56,7 @@ FED_BRACKETS_2025: dict[FilingStatus, list[tuple[float, float]]] = {
     ],
     "married_separate": [
         (0.10, 11_925), (0.12, 48_475), (0.22, 103_350),
-        (0.24, 197_300), (0.32, 250_525), (0.35, 626_350),
+        (0.24, 197_300), (0.32, 250_525), (0.35, 375_800),
         (0.37, float("inf")),
     ],
     "head_of_household": [
@@ -205,10 +205,20 @@ def calc_federal_income_tax(taxable_income: float, filing_status: FilingStatus) 
     return round(tax, 2)
 
 
-def calc_additional_medicare(net_earnings: float, profile: TaxProfile) -> float:
-    """0.9% additional Medicare tax above filing-status threshold."""
-    threshold = ADDL_MEDICARE_THRESHOLD.get(profile.filing_status, 200_000)
-    excess = max(0.0, net_earnings * NET_EARNINGS_FACTOR - threshold)
+def calc_additional_medicare(
+    medicare_taxable_income: float,
+    profile: TaxProfile | FilingStatus,
+) -> float:
+    """Return 0.9% Additional Medicare Tax above the filing threshold.
+
+    ``medicare_taxable_income`` is the amount already subject to Medicare
+    tax (Schedule SE net earnings), not gross Schedule C profit.
+    """
+    filing_status = (
+        profile.filing_status if isinstance(profile, TaxProfile) else profile
+    )
+    threshold = ADDL_MEDICARE_THRESHOLD.get(filing_status, 200_000)
+    excess = max(0.0, float(medicare_taxable_income) - threshold)
     return round(excess * ADDL_MEDICARE_RATE, 2)
 
 
@@ -255,7 +265,9 @@ def calc_total_tax(gross_se_income: float, deductions: float,
                                                   profile.filing_status)
 
     # 4) Additional Medicare (above threshold)
-    addl_medicare = calc_additional_medicare(net_se_income, profile)
+    addl_medicare = calc_additional_medicare(
+        net_se_income * NET_EARNINGS_FACTOR, profile
+    )
 
     # 5) State tax — home state on net SE income (multi-state prorate later)
     home_rate = state_rate(profile.home_state)
