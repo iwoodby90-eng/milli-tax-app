@@ -76,6 +76,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.5.2",
@@ -84,11 +85,11 @@
     "patch-package": "^8.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --watchAll=false --passWithNoTests",
-    "test:watch": "react-scripts test",
-    "test:coverage": "react-scripts test --watchAll=false --coverage --passWithNoTests",
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test --watchAll=false --passWithNoTests",
+    "test:watch": "craco test",
+    "test:coverage": "craco test --watchAll=false --coverage --passWithNoTests",
     "lint": "eslint src --max-warnings=0",
     "eject": "react-scripts eject",
     "postinstall": "patch-package"
