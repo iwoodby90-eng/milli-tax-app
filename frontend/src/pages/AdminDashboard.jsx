@@ -233,7 +233,7 @@ const AdminDashboard = () => {
         <Tab active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}>Overview</Tab>
         <Tab active={activeTab === 'users'} onClick={() => setActiveTab('users')}>Users</Tab>
         <Tab active={activeTab === 'revenue'} onClick={() => setActiveTab('revenue')}>Revenue</Tab>
-      </Tab>
+      </TabBar>
 
       {activeTab === 'overview' && (
         <>
