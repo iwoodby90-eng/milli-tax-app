@@ -1,0 +1,27 @@
+name: Inspect 2026 tax usage
+
+on:
+  push:
+    branches:
+      - agent/fix-capacitor7-build-regressions
+    paths:
+      - .github/workflows/inspect-2026-tax-usage.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show tax and mileage call sites
+        run: |
+          echo '--- server IRS_MILEAGE_RATE occurrences ---'
+          grep -n -C 4 'IRS_MILEAGE_RATE' backend/server.py || true
+          echo '--- mileage_deduction occurrences ---'
+          grep -R -n -C 3 'mileage_deduction' backend --exclude='tax_engine.py' || true
+          echo '--- calc_total_tax occurrences ---'
+          grep -R -n -C 3 'calc_total_tax' backend --exclude='tax_engine.py' || true
+          echo '--- TaxProfile occurrences ---'
+          grep -R -n -C 2 'TaxProfile' backend --exclude='tax_engine.py' || true
