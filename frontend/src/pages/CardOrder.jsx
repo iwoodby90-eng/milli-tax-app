@@ -18,7 +18,7 @@ const MATERIALS = [
   {
     id: "titanium",
     name: "Aerospace Titanium",
-    description: "Ultra-light Grade 5 titanium with a gunmetal finish. Scratch-resistant, hypollergenic, and 45% lighter than steel.",
+    description: "Ultra-light Grade 5 titanium with a gunmetal finish. Scratch-resistant, hypoallergenic, and 45% lighter than steel.",
     price: 49,
     badge: "+$49 one-time",
     icon: Sparkle,
@@ -89,7 +89,7 @@ export default function CardOrder() {
         <div className="flex items-center gap-2 mb-1">
           <Crown size={24} weight="fill" className="text-[#D4FF00]" />
           <h1 className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif' }}>
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}>
             Milli Visa Elite Card
           </h1>
         </div>
