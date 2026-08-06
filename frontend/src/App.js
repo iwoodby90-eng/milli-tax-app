@@ -40,11 +40,12 @@ import Subscription from "@/pages/Subscription";
 import CardOrder from "@/pages/CardOrder";
 import AdminDashboard from "@/pages/AdminDashboard";
 import SecuritySettings from "@/pages/SecuritySettings";
+import Referral from "@/pages/Referral";
 import TierGate from "@/components/TierGate";
 
-/* ──────────────────────────────────────────────────────────────
- * ErrorBoundary — prevents full-screen crashes on iOS WKWebView.
- * ────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────
+ * ErrorBoundary → prevents full-screen crashes on iOS WKWebView.
+ * ────────────────────────────────────────────────────────────────────────── */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -163,7 +164,7 @@ function App() {
             <Route path="/app/more" element={<ProtectedRoute><OnboardingGate><AppLayout><More /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
-            <Route path="/app/referal" element={<ProtectedRoute><OnboardingGate><AppLayout><Referal /></AppLayout></OnboardingGate></ProtectedRoute>} />
+            <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro", "elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
             <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
