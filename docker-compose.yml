@@ -42,7 +42,10 @@ services:
       APNS_ENV: ${APNS_ENV:-sandbox}
 
       TAXBANDITS_CLIENT_ID: ${TAXBANDITS_CLIENT_ID:-}
-      TAXBANDITS_SECRET: ${TAXBANDITS_SECRET:-}
+      TAXBANDITS_CLIENT_SECRET: ${TAXBANDITS_CLIENT_SECRET:-}
+      TAXBANDITS_USER_TOKEN: ${TAXBANDITS_USER_TOKEN:-}
+      TAXBANDITS_AUTH_URL: ${TAXBANDITS_AUTH_URL:-https://testoauth.expressauth.net/v2/tbsauth}
+      TAXBANDITS_API_BASE: ${TAXBANDITS_API_BASE:-https://testapi.taxbandits.com/v1.7.3}
     ports:
       - "8000:8000"
     depends_on:
