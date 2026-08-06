@@ -15,12 +15,12 @@ import MilliVaultBridge from "@/plugins/MilliVaultBridge";
  * Milli Tax Vault — Dashboard.
  * Matches the "Good morning, Alex" reference mockup exactly:
  *   1. Greeting
- *   2. Available to Spend hero (cyan glow + metallic M card graphic)
+ *   2. Available to Spend here (cyan glow + metallic M card graphic)
  *   3. Latest Payout (2-column breakdown)
  *   3.5. Milli Cents entry point
- *   4. Milli Tax Vault™ | Tax Ready Score™ (side-by-side)
+ *   4. Milli Tax Vault ⁄ Tax Ready Score⁄ (side-by-side)
  *   5. Financial Timeline
- *   6. Mileage · Retirement · Investing (3-up tiles)
+ *   6. Mileage ⊹ Retirement ⊹ Investing (3-up tiles)
  */
 export default function Dashboard() {
   const { user } = useAuth();
@@ -59,7 +59,7 @@ export default function Dashboard() {
     return count;
   })();
 
-  // Keep the iOS home-screen widget + watch complication fresh with the latest streak.
+  // Keep the iOS home-screen widget + watch compliance fresh with the latest streak.
   useEffect(() => {
     if (!summary) return;
     const firstName = user?.name?.split(" ")[0] || "";
@@ -111,7 +111,8 @@ export default function Dashboard() {
 
   // Tax Ready Score (Excellent ≥85, On Track ≥70, ...)
   const readyScore = summary?.tax_ready_score
-    ? Math.round(Math.min(100, (vaultBalance / Math.max(1, taxGoal * 0.25)) * 100));
+    ? Math.round(Math.min(100, (vaultBalance / Math.max(1, taxGoal * 0.25)) * 100))
+    : 0;
   const readyLabel = readyScore >= 85 ? "Excellent"
       : readyScore >= 70 ? "On Track"
       : readyScore >= 40 ? "Building"
@@ -128,12 +129,12 @@ export default function Dashboard() {
   return (
     <div className="px-5 sm:px-6 lg:px-10 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
 
-      {/* === Greeting === */}
+      {/*=== Greeting ===*/}
       <header className="pt-2 pb-1 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1
             className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-            style={{ fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.035em" }}
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif", letterSpacing: "-0.035em" }}
             data-testid="dashboard-greeting"
           >
             {greeting}, {firstName}
@@ -155,7 +156,7 @@ export default function Dashboard() {
               border: "1px solid rgba(0,229,255,0.5)",
               boxShadow: "0 0 14px rgba(0,229,255,0.35)",
             }}
-            title={`${streak}-day driving streak 🔥 earning Milli Cents boost`}
+            title={`${streak}-day driving streak ✦ earning Milli Cents boost`}
           >
             <FlameIcon />
             <span
@@ -171,7 +172,7 @@ export default function Dashboard() {
         )}
       </header>
 
-      {/* === 1. · Available to Spend Hero === */}
+      {/*=== 1. ⊹ Available to Spend Here ===*/}
       <section
         className="relative overflow-hidden rounded-3xl p-5 sm:p-6"
         data-testid="dashboard-available-card"
@@ -193,7 +194,7 @@ export default function Dashboard() {
             <Eye size={16} weight="regular" className="text-white/60" />
           </div>
           <div
-            className="font-chrome font-black text-white tabular-nums leading-[1] tracking-tight mt-3 text-[36px] sm:text-[44px]"
+            className="font-chrome font-black text-white tabular-nums leading-[1] mt-3 text-[36px] sm:text-[44px]"
             style={{ fontFamily: "'Outfit', sans-serif" }}
             data-testid="dashboard-available-amount"
           >
@@ -205,13 +206,13 @@ export default function Dashboard() {
             data-testid="dashboard-checking-link"
           >
             <span>Milli Checking</span>
-            <span className="tracking-widest text-white/50" data-testid="dashboard-checking-last4">▸▸▸▸ {cardMetaFor(user).last4}</span>
+            <span className="tracking-widest text-white/50" data-testid="dashboard-checking-last4">⌗⌗⌗⌗ {cardMetaFor(user).last4}</span>
             <CaretRight size={12} weight="bold" className="text-white/60" />
           </Link>
         </div>
       </section>
 
-      {/* === 1.5 · Your Milli Card === */}
+      {/*=== 1.5 ⊹ Your Milli Card ===*/}
       <section
         className="rounded-3xl p-5 sm:p-6 flex flex-col items-center gap-3"
         data-testid="dashboard-milli-card-section"
@@ -225,7 +226,7 @@ export default function Dashboard() {
           <div>
             <div className="text-white/85 text-[15px] font-semibold">Your Milli Card</div>
             <div className="text-zinc-500 text-[12px] mt-0.5">
-              Tap-to-pay ready ▸ {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
+              Tap-to-pay ready ⌗ {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
             </div>
           </div>
           <Link
@@ -240,7 +241,7 @@ export default function Dashboard() {
         <MilliCardHero user={user} testid="dashboard-milli-card" />
       </section>
 
-      {/* === 2. · Latest Payout === */}
+      {/*=== 2. ⊹ Latest Payout ===*/}
       <Link
         to="/app/income"
         className="milli-card block p-5 rounded-2xl active:scale-[0.995] transition-transform"
@@ -263,7 +264,7 @@ export default function Dashboard() {
           <div className="flex-1 min-w-[13.5px] space-y-1.5">
             <BreakdownRow label="Net Payout" value={`$${latestNet.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
             <BreakdownRow label="Taxes" value={`−$${latestTaxes.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-            <BreakdownRow label={<span>Milli Tax Vault<sup>™</sup></span>} value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
+            <BreakdownRow label={<span>Milli Tax Vault<sup>⁄</sup></span>} value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
             <div className="border-t border-white/10 pt-1.5 mt-1.5">
               <BreakdownRow label="Total" value={`$${latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} bold />
             </div>
@@ -271,7 +272,7 @@ export default function Dashboard() {
         </div>
       </Link>
 
-      {/* === 2.5 · Milli Cents Entry Point === */}
+      {/*=== 2.5 ⊹ Milli Cents Entry Point ===*/}
       <Link
         to="/app/milli-cents"
         data-testid="dashboard-milli-cents-link"
@@ -304,7 +305,7 @@ export default function Dashboard() {
         <CaretRight size={18} weight="bold" className="text-volt flex-shrink-0" />
       </Link>
 
-      {/* === 3. · Tax Vault + Ready Score (2-up) === */}
+      {/*=== 3. ⊹ Tax Vault + Ready Score (2-up) ===*/}
       <div className="grid grid-cols-2 gap-3">
         {/* Tax Vault */}
         <Link
@@ -314,7 +315,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center gap-2 mb-2">
             <Bank size={20} weight="regular" className="text-volt" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
-            <span className="text-white text-[13.5px] font-semibold">Milli Tax Vault<sup>™</sup></span>
+            <span className="text-white text-[13.5px] font-semibold">Milli Tax Vault<sup>⁄</sup></span>
           </div>
           <div className="chrome-text font-chrome font-bold text-[24px] leading-none tabular-nums">
             {vaultBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -347,13 +348,13 @@ export default function Dashboard() {
           data-testid="dashboard-ready-score-card"
           className="milli-card p-4 rounded-2xl flex flex-col items-center justify-between active:scale-[0.995] transition-transform"
         >
-          <div className="w-full text-white text-[13.5px] font-semibold">Tax Ready Score<sup>™</sup></div>
+          <div className="w-full text-white text-[13.5px] font-semibold">Tax Ready Score<sup>⁄</sup></div>
           <ReadyRing value={readyScore} label={readyLabel} />
           <div className="text-zinc-500 text-[11.5px]">Updated today</div>
         </Link>
       </div>
 
-      {/* === 4. · Financial Timeline === */}
+      {/*=== 4. ⊹ Financial Timeline ===*/}
       <section className="milli-card p-5 rounded-2xl" data-testid="dashboard-timeline-card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-white font-semibold text-[16px]">Financial Timeline</h2>
@@ -383,10 +384,10 @@ export default function Dashboard() {
         </ul>
       </section>
 
-      {/* === 5. · Federal + State Filing (Elite: download IRS-ready PDF) === */}
+      {/*=== 5. ⊹ Federal + State Filing (Elite: download IRS-ready PDF) ===*/}
       <FilingCard isElite={user?.plan === "elite"} year={now.getFullYear()} />
 
-      {/* === 6. · Mileage · Retirement · Investing (3-up) === */}
+      {/*=== 6. ⊹ Mileage ⊹ Retirement ⊹ Investing (3-up) ===*/}
       <div className="grid grid-cols-3 gap-2.5">
         <MetricTile
           to="/app/mileage"
@@ -394,7 +395,7 @@ export default function Dashboard() {
           label="Mileage"
           value={`${Math.round(milesThisMonth).toLocaleString("en-US")} mi`}
           sub="This month"
-          delta={`+$${mileageDeduction.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          delta={`+$$${mileageDeduction.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           testid="tile-mileage"
         />
         <MetricTile
@@ -422,7 +423,7 @@ export default function Dashboard() {
 
 /* ============================================================
    Sub-components
-   ========================================================== */
+   ============================================================ */
 
 function BreakdownRow({ label, value, cyan, bold }) {
   return (
@@ -431,7 +432,7 @@ function BreakdownRow({ label, value, cyan, bold }) {
       <span
         className={`tabular-nums ${bold ? "font-bold text-white" : "text-white"} ${
           cyan ? "text-volt" : ""
-        } ${cyan ? "text-volt" : ""}`}
+        }`}
         style={cyan ? { color: "#00E5FF", textShadow: "0 0 6px rgba(0,229,255,0.4)" } : {}}
       >
         {value}
@@ -526,7 +527,7 @@ function MetricTile({ to, icon: Icon, label, value, sub, delta, testid }) {
         <span className="text-volt text-[12px] font-semibold" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
           {delta}
         </span>
-        <CaretRight size={12} weight="bold" className="text-zinc-500" />
+        <CaretRight size={12} weight="bold" className="text-zinc-500 flex-shrink-0" />
       </div>
     </Link>
   );
@@ -547,7 +548,7 @@ function FlameIcon() {
 function MetallicMCard() { return null; }
 
 
-/* =========== Filing Card (Elite Schedule C download) =========== */
+/* ============ Filing Card (Elite Schedule C download) ============ */
 function FilingCard({ isElite, year }) {
   const [preview, setPreview] = useState(null);   // { url, blob } while previewing
   const [loading, setLoading] = useState(false);
@@ -631,7 +632,7 @@ function FilingCard({ isElite, year }) {
           <div className="flex-1 min-w-0">
             <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
                  style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
-              IRS-Ready ▸ Schedule C + SE
+              IRS-Ready ⌗ Schedule C + SE
             </div>
             <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
               {loading ? "Building your PDF…" : "Preview Filing PDF"}
@@ -664,7 +665,7 @@ function FilingCard({ isElite, year }) {
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} weight="duotone" className="text-volt"
                   style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
-                <div className="text-white font-semibold text-[14.5px]">Schedule C + SE ▸ {year}</div>
+                <div className="text-white font-semibold text-[14.5px]">Schedule C + SE ⌗ {year}</div>
               </div>
               <button
                 onClick={closePreview}
@@ -694,7 +695,7 @@ function FilingCard({ isElite, year }) {
               <button
                 onClick={downloadFromPreview}
                 data-testid="pdf-preview-download"
-                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obidian"
+                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obsidian"
                 style={{
                   background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
                   boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)",
