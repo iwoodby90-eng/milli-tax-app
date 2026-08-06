@@ -109,8 +109,6 @@ GIG_PLATFORMS = {
     "gopuff": "GoPuff",
 }
 
-# IRS 2026 standard mileage rate (approx, configurable)
-IRS_MILEAGE_RATE = 0.70
 SE_TAX_RATE = 0.153  # Self-employment tax
 
 # State income tax rates (simplified flat estimate for top brackets — informational only)
@@ -593,7 +591,10 @@ async def end_trip(trip_id: str, body: TripEndIn, user: dict = Depends(get_curre
     elif body.miles is not None:
         miles = max(0.0, float(body.miles))
     miles = round(miles, 2)
-    deductible = round(miles * IRS_MILEAGE_RATE, 2)
+    from tax_engine import mileage_rate_for_date
+    trip_date = trip.get("start_time") or date.today().isoformat()
+    mileage_rate = mileage_rate_for_date(trip_date, "business", int(str(trip_date)[:4]))
+    deductible = round(miles * mileage_rate, 2)
     await db.trips.update_one(
         {"id": trip_id},
         {"$set": {
@@ -604,6 +605,7 @@ async def end_trip(trip_id: str, body: TripEndIn, user: dict = Depends(get_curre
             "end_address": body.end_address,
             "miles": miles,
             "deductible_value": deductible,
+            "mileage_rate": mileage_rate,
             "points": [p.dict() for p in (body.points or [])],
         }},
     )
@@ -624,7 +626,11 @@ async def manual_trip(body: ManualTripIn, user: dict = Depends(get_current_user)
         "start_time": f"{body.date}T00:00:00Z",
         "end_time": f"{body.date}T00:00:00Z",
         "miles": miles,
-        "deductible_value": round(miles * IRS_MILEAGE_RATE, 2),
+        "deductible_value": round(
+            miles * __import__("tax_engine").mileage_rate_for_date(body.date, "business", int(str(body.date)[:4])),
+            2,
+        ),
+        "mileage_rate": __import__("tax_engine").mileage_rate_for_date(body.date, "business", int(str(body.date)[:4])),
         "manual": True,
         "notes": body.notes,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -663,24 +669,18 @@ async def classify_trip(trip_id: str, body: TripClassifyIn,
                         user: dict = Depends(get_current_user)):
     if body.classification not in TRIP_CATEGORIES:
         raise HTTPException(400, f"classification must be one of {sorted(TRIP_CATEGORIES)}")
-    from tax_engine import (
-        IRS_MILEAGE_RATE_BUSINESS,
-        IRS_MILEAGE_RATE_MEDICAL,
-        IRS_MILEAGE_RATE_CHARITABLE,
-    )
+    from tax_engine import mileage_rate_for_date
     trip = await db.trips.find_one({"id": trip_id, "user_id": user["id"]})
     if not trip:
         raise HTTPException(404, "Trip not found")
     miles = float(trip.get("miles") or 0.0)
-    rate = {
-        "business": IRS_MILEAGE_RATE_BUSINESS,
-        "medical": IRS_MILEAGE_RATE_MEDICAL,
-        "charitable": IRS_MILEAGE_RATE_CHARITABLE,
-    }.get(body.classification, 0.0)
+    trip_date = trip.get("start_time") or trip.get("date") or trip.get("created_at")
+    rate = mileage_rate_for_date(trip_date, body.classification, int(str(trip_date or date.today().isoformat())[:4]))
     deductible = round(miles * rate, 2)
     patch = {
         "classification": body.classification,
         "deductible_value": deductible,
+        "mileage_rate": rate,
         "reviewed_at": datetime.now(timezone.utc).isoformat(),
     }
     if body.vehicle_id:
@@ -744,7 +744,7 @@ async def delete_vehicle(vehicle_id: str, user: dict = Depends(get_current_user)
 @api.get("/mileage/summary")
 async def mileage_summary(user: dict = Depends(get_current_user),
                            year: Optional[int] = None):
-    from tax_engine import mileage_deduction
+    from tax_engine import mileage_deduction_for_trips
     year = year or datetime.now(timezone.utc).year
     trips = await db.trips.find(
         {"user_id": user["id"], "status": "completed"},
@@ -763,14 +763,12 @@ async def mileage_summary(user: dict = Depends(get_current_user),
             "charitable": "charitable", "commute": "commuting",
         }.get(t.get("purpose"), "needs_review")
 
-    biz = sum(t["miles"] for t in trips if _bucket(t) == "business")
-    med = sum(t["miles"] for t in trips if _bucket(t) == "medical")
-    cha = sum(t["miles"] for t in trips if _bucket(t) == "charitable")
     review_count = sum(1 for t in trips if _bucket(t) == "needs_review")
+    summary = mileage_deduction_for_trips(trips, year)
 
     return {
         "year": year,
-        **mileage_deduction(biz, med, cha),
+        **summary,
         "trips_count": len(trips),
         "trips_needing_review": review_count,
     }
@@ -1053,18 +1051,22 @@ async def tax_summary(user: dict = Depends(get_current_user), year: Optional[int
     trips = [t for t in trips if (t.get("start_time") or "").startswith(str(year))]
     expenses = [e for e in expenses if e["date"].startswith(str(year))]
 
-    gross = sum(d["amount"] for d in deposits)
-    miles = sum(t.get("miles", 0) for t in trips)
-    mileage_deduction = round(miles * IRS_MILEAGE_RATE, 2)
-    expense_total = sum(e["amount"] for e in expenses)
-    net_income = max(0.0, gross - mileage_deduction - expense_total)
+    from tax_engine import calc_total_tax, mileage_deduction_for_trips, mileage_rates_for_date, profile_from_user
 
-    se_tax = round(net_income * SE_TAX_RATE, 2)
+    gross = sum(d["amount"] for d in deposits)
+    mileage = mileage_deduction_for_trips(trips, year)
+    miles = mileage["business_miles"] + mileage["medical_miles"] + mileage["charitable_miles"]
+    mileage_deduction = mileage["total_deduction"]
+    expense_total = sum(e["amount"] for e in expenses)
+    profile = profile_from_user({**user, "tax_year": year})
+    tax = calc_total_tax(gross, mileage_deduction + expense_total, profile)
+    net_income = tax.net_earnings_from_se
+    se_tax = tax.se_tax
+    fed_income_tax = tax.federal_income_tax
+    state_tax = tax.state_income_tax
     state_rate = STATE_TAX_RATES.get(user.get("state", "TX"), 0.0)
-    # Approximate fed income tax on top of SE @ a simple 12% bracket
-    fed_income_tax = round(max(0.0, net_income - se_tax/2) * 0.12, 2)
-    state_tax = round(net_income * state_rate, 2)
-    estimated_tax = round(se_tax + fed_income_tax + state_tax, 2)
+    estimated_tax = tax.total_tax
+    year_end_rates = mileage_rates_for_date(date(year, 12, 31), year)
 
     today = date.today()
     due_dates = _quarter_due_dates(year)
@@ -1094,7 +1096,8 @@ async def tax_summary(user: dict = Depends(get_current_user), year: Optional[int
         },
         "savings_recommended": round(deposits_savings, 2),
         "savings_balance": round(user.get("tax_savings_balance", 0.0), 2),
-        "irs_mileage_rate": IRS_MILEAGE_RATE,
+        "irs_mileage_rate": year_end_rates["business"],
+        "irs_mileage_rate_periods": mileage["rate_periods"],
         "deposits_count": len(deposits),
         "trips_count": len(trips),
     }
@@ -1112,7 +1115,7 @@ async def ai_chat(body: ChatIn, user: dict = Depends(get_current_user)):
             "Schedule SE, quarterly estimated taxes, the standard mileage deduction, and common "
             "gig driver deductions. Be concise and confident. Always include the disclaimer that "
             "you are not a CPA and the user should verify with a tax professional for complex "
-            f"situations. The current IRS standard mileage rate is ${IRS_MILEAGE_RATE}/mi."
+            "situations. Mileage rates can change during a tax year, so always use the trip date when calculating a deduction."
         ),
     ).with_model("gemini", "gemini-3-flash-preview")
 
@@ -1247,7 +1250,7 @@ def _pdf_schedule_c(user: dict, summary: dict, deposits: list, trips: list, expe
         cat_totals[e["category"]] = cat_totals.get(e["category"], 0) + e["amount"]
     for cat, amt in cat_totals.items():
         c.drawString(70, y, f"{cat.title()}: ${amt:,.2f}"); y -= 14
-    c.drawString(70, y, f"9. Car & truck (standard mileage {summary['total_miles']:.1f} mi @ ${IRS_MILEAGE_RATE}/mi): ${summary['mileage_deduction']:,.2f}"); y -= 14
+    c.drawString(70, y, f"9. Car & truck (date-aware standard mileage; {summary['total_miles']:.1f} mi): ${summary['mileage_deduction']:,.2f}"); y -= 14
     c.drawString(70, y, f"28. Total expenses: ${(summary['expense_total'] + summary['mileage_deduction']):,.2f}"); y -= 24
 
     c.setFont("Helvetica-Bold", 12)
@@ -1953,7 +1956,8 @@ async def demo_seed(request: Request):
             "start_time": f"{d_date.isoformat()}T09:00:00Z",
             "end_time": f"{d_date.isoformat()}T17:00:00Z",
             "miles": miles,
-            "deductible_value": round(miles * IRS_MILEAGE_RATE, 2),
+            "deductible_value": round(miles * __import__("tax_engine").mileage_rate_for_date(d_date, "business", d_date.year), 2),
+            "mileage_rate": __import__("tax_engine").mileage_rate_for_date(d_date, "business", d_date.year),
             "manual": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
@@ -2573,10 +2577,13 @@ async def schedule_c_pdf(user: dict = Depends(get_current_user), year: Optional[
         cat = e.get("category", "other")
         exp_by_cat[cat] = exp_by_cat.get(cat, 0) + float(e.get("amount", 0))
 
+    from tax_engine import mileage_deduction_for_trips
+
     trips = await db.trips.find(q, {"_id": 0}).to_list(5000)
-    trips = [t for t in trips if str(t.get("date", "")).startswith(str(y))]
-    business_miles = round(sum(float(t.get("miles", 0)) for t in trips), 1)
-    mileage_deduction = round(business_miles * 0.70, 2)
+    trips = [t for t in trips if str(t.get("start_time") or t.get("date") or "").startswith(str(y))]
+    mileage = mileage_deduction_for_trips(trips, y)
+    business_miles = mileage["business_miles"]
+    mileage_deduction = mileage["business_deduction"]
 
     total_expenses = round(sum(exp_by_cat.values()) + mileage_deduction, 2)
     net_profit = round(gross_receipts - total_expenses, 2)
