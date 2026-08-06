@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Bank, CreditCard, Wallet, ArrowLeftRight, Plug,
+  Bank, CreditCard, Wallet, ArrowsLeftRight, Plus,
   ShieldCheck, Lock, Crown, Eye, EyeSlash, ArrowClockwise,
 } from "@phosphor-icons/react";
 
@@ -61,7 +61,7 @@ export default function Accounts() {
         </div>
         <button
           onClick={() => setShowBalances(!showBalances)}
-          className="flex items-center gap-1.5 text-zinc-400 text-[12px] font-chrome"
+          className="flex items-center center gap-1.5 text-zinc-400 text-[12px] font-chrome"
         >
           {showBalances ? <Eye size={14} /> : <EyeSlash size={14} />}
           {showBalances ? "Hide" : "Show"} Balances
@@ -92,9 +92,9 @@ export default function Accounts() {
       {/* Connect bank account */}
       <button
         className="w-full milli-card rounded-2xl py-3.5 flex items-center justify-center gap-2 text-[14px] font-semibold active:scale-[0.99] transition-transform"
-        style={{ background: "rgba(0,229,255,0.06)", border: "1px solid rgba(0,229,255,0.2)" }}
+        style={{ background: "rgba(0,229,255,0.0)", border: "1px solid rgba(0,229,255,0.2)" }}
       >
-        <Plug size={18} weight="bold" className="text-volt" />
+        <Plus size={18} weight="bold" className="text-volt" />
         <span className="text-volt">Connect Bank Account</span>
       </button>
 
@@ -109,7 +109,7 @@ export default function Accounts() {
 
       {/* Version */}
       <div className="text-center text-zinc-600 text-[11px] font-chrome pt-2">
-        Milli Tax Vault™ · v2.6.0
+        Milli Tax Vault·© v2.6.0
       </div>
     </div>
   );
@@ -117,7 +117,7 @@ export default function Accounts() {
 
 function AccountCard({ account, showBalance }) {
   const iconMap = {
-    vault: <ArrowLeftRight size={20} weight="fill" className="text-volt" />,
+    vault: <ArrowsLeftRight size={20} weight="fill" className="text-volt" />,
     chart: <Wallet size={20} weight="fill" className="text-volt" />,
     piggy: <Bank size={20} weight="fill" className="text-volt" />,
     bank: <Bank size={20} weight="fill" className="text-volt" />,
@@ -150,7 +150,7 @@ function AccountCard({ account, showBalance }) {
           ) : (
             <div className="font-display text-[18px] font-bold text-zinc-600">••••••</div>
           )}
-          <div className="text-[11px] text-zinc-500 font-chrome flex items-center gap-1 justify-end mt-0.5">
+          <div className="text-[11px] text-zinc-500 font-chrome flex items-center center gap-1 justify-end mt-0.5">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: account.status === "active" ? "#D4FF00" : "#C0C0C0" }} />
             {account.status === "active" ? "Connected" : "Pending"}
           </div>
