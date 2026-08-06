@@ -1,70 +1,108 @@
-# Getting Started with Create React App
+# Milli Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React 18 + Capacitor 7 iOS app with Tailwind CSS 3, CRACO build system, and Phosphor Icons.
+
+## Prerequisites
+
+- Node.js 22+ (see `.nvmrc`)
+- npm 9+
+
+## Quick Start
+
+```bash
+cd frontend
+npm install
+npm start              # Development server on http://localhost:3000
+```
 
 ## Available Scripts
 
-In the project directory, you can run:
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start development server (CRACO) |
+| `npm run build` | Production build to `build/` |
+| `npm test` | Run Jest test suite |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage |
+| `npm run lint` | Run ESLint (zero-warnings gate) |
+| `npx cap sync ios` | Sync web build to Capacitor iOS project |
+| `npx cap open ios` | Open Xcode project |
 
-### `npm start`
+## Build Pipeline
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The production build uses CRACO (Create React App Configuration Override) with:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Tailwind CSS 3** via PostCSS
+- **Path aliases** (`@/` → `src/`) via `craco.config.js`
+- **ESLint** error gate (build fails on lint errors)
+- **Jest** with React Testing Library
 
-### `npm test`
+### Rebuild from scratch
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+rm -rf node_modules package-lock.json build
+npm install
+npm run build
+```
 
-### `npm run build`
+## iOS Integration
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The Capacitor iOS project lives in `ios/App/`. After a web build:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npx cap sync ios        # Sync web assets to Xcode project
+cd ios/App
+pod install             # Install CocoaPods dependencies
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Then open `App.xcworkspace` in Xcode to build and run on simulator or device.
 
-### `npm run eject`
+## Key Dependencies
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Package | Purpose |
+|---------|---------|
+| `react` / `react-dom` 18 | UI framework |
+| `tailwindcss` 3 | Utility-first CSS |
+| `@phosphor-icons/react` 2.x | Icon library |
+| `@radix-ui/react-*` | Accessible UI primitives |
+| `framer-motion` | Animations |
+| `recharts` | Charts and graphs |
+| `@stripe/stripe-js` | Stripe payments |
+| `react-plaid-link` | Plaid bank linking |
+| `@react-oauth/google` | Google Sign-In |
+| `@capacitor/*` 7.x | Native iOS bridge |
+| `@capgo/capacitor-native-biometric` | Face ID / Touch ID |
+| `embla-carousel-react` | Carousel component |
+| `react-router-dom` 6 | Client-side routing |
+| `@tanstack/react-query` | Server state management |
+| `axios` | HTTP client |
+| `zustand` | State management |
+| `date-fns` | Date utilities |
+| `sonner` | Toast notifications |
+| `lucide-react` | Secondary icon library |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Design System
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **Theme**: Dark (#050607 background)
+- **Primary**: Neon Cyan (#00E5FF)
+- **CTA**: Volt Yellow (#D4FF00)
+- **Fonts**: Outfit (headings), IBM Plex Sans (body), JetBrains Mono (monospace)
+- **Style**: Glassmorphism, carbon-fiber patterns, cinematic dark UI
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Testing
 
-## Learn More
+```bash
+npm test                         # Run all tests
+npm run test:watch               # Watch mode
+npm run test:coverage            # With coverage report
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Tests use Jest + React Testing Library. Test files live alongside components in `src/__tests__/` or as `*.test.js` files.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Linting
 
-### Code Splitting
+```bash
+npm run lint                     # ESLint with zero-warnings gate
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+ESLint extends `react-app` with `no-unused-vars` set to `"warn"`.
