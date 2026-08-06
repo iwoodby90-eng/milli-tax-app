@@ -43,6 +43,11 @@ jobs:
   backend:
     name: Backend install and engine tests
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7-jammy
+        ports:
+          - 27017:27017
     defaults:
       run:
         working-directory: backend
@@ -74,6 +79,7 @@ jobs:
       - name: Run tax engine tests
         env:
           PYTHONPATH: .
+          MONGO_URL: mongodb://127.0.0.1:27017
         run: pytest -q tests/test_phase2_engine.py tests/test_2025_tax_constants.py
 
   ios:
