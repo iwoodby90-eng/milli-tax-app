@@ -66,7 +66,10 @@ jobs:
           DEMO_MODE_ENABLED: "false"
           ALLOW_UNVERIFIED_STOREKIT: "false"
         run: python -c "import server; assert server.app.title == 'Milli API'"
-      - run: pytest -q tests/test_phase2_engine.py tests/test_2025_tax_constants.py
+      - name: Run tax engine tests
+        env:
+          PYTHONPATH: .
+        run: pytest -q tests/test_phase2_engine.py tests/test_2025_tax_constants.py
 
   ios:
     name: Capacitor iOS sync and CocoaPods
