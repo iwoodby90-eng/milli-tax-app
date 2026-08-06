@@ -49,12 +49,12 @@ Milli is an iOS + iPad + Apple Watch app that automates tax tracking, estimation
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
+|---|---|
 | Frontend | React 18 + Tailwind CSS 3 + Capacitor 7 (iOS) |
 | Backend | Python 3.11 / FastAPI |
 | Database | MongoDB (via Motor async driver) |
 | Tax Engine | Custom Python module (2025/2026 IRS constants, state brackets, quarterly planning) |
-| iOS | Native Capacitor bridge, Storyboard launch screen, PrivacyInfo.xcprivacy, UIScene lifecycle |
+| iOS | Native Capacitor bridge, Storyboard launch screen, PrivacyInfo.xcprivacy, app-based lifecycle (Capacitor standard) |
 | Design | Dark theme, neon cyan (#00E5FF), Volt Yellow (#D4FF00) CTA, glassmorphism, carbon-fiber pattern |
 | Fonts | Outfit (headings), IBM Plex Sans (body), JetBrains Mono (monospace) |
 | Payments | Stripe (subscriptions + Issuing for card fulfillment) |
@@ -85,9 +85,9 @@ milli-tax-app/
 │   │   │   ├── Investing.jsx
 │   │   │   ├── Retirement.jsx
 │   │   │   ├── Savings.jsx
-│   │   │   ├── Accounts.jsx       # Elite-gated
+│   │   │   ├── Accounts.jsx     # Elite-gated
 │   │   │   ├── Vehicles.jsx
-│   │   │   ├── CardOrder.jsx      # Elite Visa Card opt-in
+│   │   │   ├── CardOrder.jsx    # Elite Visa Card opt-in
 │   │   │   ├── Documents.jsx
 │   │   │   ├── AnnualTaxes.jsx
 │   │   │   ├── Subscription.jsx
@@ -105,44 +105,44 @@ milli-tax-app/
 │   │   │   ├── Paywall.jsx
 │   │   │   ├── Pricing.jsx
 │   │   │   └── ...
-│   │   ├── components/           # Shared UI components
-│   │   │   ├── AppLayout.jsx     # Drawer nav + bottom tab bar
-│   │   │   ├── TierGate.jsx      # Subscription tier gating
-│   │   │   ├── MilliCard.jsx     # Animated card visual
-│   │   │   ├── SplashScreen.jsx  # Production splash
+│   │   ├── components/          # Shared UI components
+│   │   │   ├── AppLayout.jsx    # Drawer nav + bottom tab bar
+│   │   │   ├── TierGate.jsx     # Subscription tier gating
+│   │   │   ├── MilliCard.jsx    # Animated card visual
+│   │   │   ├── SplashScreen.jsx # Production splash
 │   │   │   ├── ProtectedRoute.jsx
 │   │   │   ├── BankConnections.jsx
 │   │   │   ├── SmartAccount.jsx
 │   │   │   └── ...
-│   │   ├── styles/               # design-system.css with brand tokens
-│   │   └── tests/                # Frontend unit tests
-│   ├── ios/                      # Xcode project (Capacitor)
-│   └── capacitor.config.json
-├── backend/                      # Python FastAPI + tax engine
-│   ├── server.py                 # Main API server (auth, users, tax, expenses, etc.)
-│   ├── tax_engine.py             # Tax calculation engine (2025/2026 IRS + state)
-│   ├── autopilot.py              # Automated tax planning
-│   ├── integrations.py           # Stripe, Plaid, Alpaca, banking, KYC, OCR, e-filing
-│   ├── card_issuer.py            # Stripe Issuing card fulfillment
-│   ├── card_routes.py            # Card order + webhook endpoints
-│   ├── plaid_client.py           # Plaid bank connection client
-│   ├── plaid_webhook.py          # Plaid transaction webhook receiver
-│   ├── apns.py                   # Apple Push Notifications
-│   ├── notifications.py          # Notification service
-│   ├── taxbandits.py             # TaxBandits e-filing integration
-│   ├── schedule_c_pdf.py         # Schedule C PDF generation
-│   ├── market.py                 # Market data service
-│   ├── main.py                   # App factory + route registration
-│   ├── migrations/               # Database migrations
-│   ├── tests/                    # Backend test suite
+│   │   ├── styles/              # design-system.css with brand tokens
+│   │   ├── tests/               # Frontend unit tests
+│   ├── ios/                    # Xcode project (Capacitor)
+│   │   ├── capacitor.config.json
+├── backend/                    # Python FastAPI + tax engine
+│   ├── server.py               # Main API server (auth, users, tax, expenses, etc.)
+│   ├── tax_engine.py           # Tax calculation engine (2025/2026 IRS + state)
+│   ├── autopilot.py            # Automated tax planning
+│   ├── integrations.py        # Stripe, Plaid, Alpaca, banking, KYC, OCR, e-filing
+│   ├── card_issuer.py          # Stripe Issuing card fulfillment
+│   ├── card_routes.py          # Card order + webhook endpoints
+│   ├── plaid_client.py         # Plaid bank connection client
+│   ├── plaid_webhook.py        # Plaid transaction webhook receiver
+│   ├── apns.py                 # Apple Push Notifications
+│   ├── notifications.py        # Notification service
+│   ├── taxbandits.py           # TaxBandits e-filing integration
+│   ├── schedule_c_pdf.py       # Schedule C PDF generation
+│   ├── market.py              # Market data service
+│   ├── main.py                # App factory + route registration
+│   ├── migrations/             # Database migrations
+│   ├── tests/                  # Backend test suite
 │   ├── Dockerfile
-│   └── requirements.txt
-├── docker-compose.yml            # MongoDB + backend + frontend
-├── .env.example                  # All environment variables
-├── design_guidelines.json        # Brand design system spec
-├── APP_STORE_METADATA.md         # App Store listing metadata
-├── IOS_BUILD_GUIDE.md            # Xcode build instructions
-└── scripts/                      # Build and utility scripts
+│   ├── requirements.txt
+├── docker-compose.yml          # MongoDB + backend + frontend
+├── .env.example                # All environment variables
+├── design_guidelines.json      # Brand design system spec
+├── APP_STORE_METADATA.md       # App Store listing metadata
+├── IOS_BUILD_GUIDE.md          # Xcode build instructions
+└── scripts/                    # Build and utility scripts
 ```
 
 ## Getting Started
@@ -159,9 +159,9 @@ milli-tax-app/
 ```bash
 cd frontend
 npm install
-npm start              # Development server
-npm run build          # Production build
-npx cap sync ios       # Sync to Xcode project
+npm start                # Development server
+npm run build            # Production build
+npx cap sync ios         # Sync to Xcode project
 ```
 
 ### Backend
@@ -169,13 +169,13 @@ npx cap sync ios       # Sync to Xcode project
 ```bash
 cd backend
 pip install -r requirements.txt
-python server.py       # Starts FastAPI server on :5000
+python server.py         # Starts FastAPI server on :5000
 ```
 
 ### Full Stack with Docker
 
 ```bash
-docker-compose up -d   # MongoDB, backend, frontend
+docker-compose up -d     # MongoDB, backend, frontend
 ```
 
 ### Tests
@@ -203,7 +203,7 @@ The repo includes a [GitHub Actions workflow](.github/workflows/validate.yml) th
 Copy `.env.example` to `.env` and fill in your values. Key variables:
 
 | Variable | Purpose |
-|----------|---------|
+|---|---|
 | `MONGO_URL` | MongoDB connection string |
 | `JWT_SECRET` | JWT token signing secret |
 | `STRIPE_API_KEY` / `STRIPE_SECRET_KEY` | Stripe API keys (subscriptions + Issuing) |
