@@ -61,11 +61,11 @@ MONGO_URL = os.environ['MONGO_URL']
 DB_NAME = os.environ['DB_NAME']
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-PLAID_CLIENT_ID = os.environ['PLAID_CLIENT_ID']
-PLAID_SECRET = os.environ['PLAID_SECRET']
+PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID', 'not-configured')
+PLAID_SECRET = os.environ.get('PLAID_SECRET', 'not-configured')
 PLAID_ENV = os.environ.get('PLAID_ENV', 'sandbox')
-EMERGENT_LLM_KEY = os.environ['EMERGENT_LLM_KEY']
-STRIPE_API_KEY = os.environ['STRIPE_API_KEY']
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', 'not-configured')
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'not-configured')
 APP_ENV = os.environ.get('APP_ENV', 'development').strip().lower()
 DEMO_MODE_ENABLED = os.environ.get('DEMO_MODE_ENABLED', 'false').strip().lower() == 'true'
 ALLOW_UNVERIFIED_STOREKIT = (
@@ -2247,7 +2247,9 @@ async def verify_apple_receipt(body: IAPValidateIn, user: dict = Depends(get_cur
     decoded = jwt.decode(jws, options={"verify_signature": False})
     product_id = decoded.get("productId")
     expires_ms = decoded.get("expiresDate")
-    plan = IAP_PRODUCT_TO_PLAN.get(product_id, "pro")
+    plan = IAP_PRODUCT_TO_PLAN.get(product_id)
+    if not plan:
+        raise HTTPException(status_code=400, detail="Apple returned an unknown StoreKit product")
 
     await db.users.update_one(
         {"id": user["id"]},
