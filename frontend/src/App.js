@@ -43,9 +43,9 @@ import SecuritySettings from "@/pages/SecuritySettings";
 import Referral from "@/pages/Referral";
 import TierGate from "@/components/TierGate";
 
-/* ──────────────────────────────────────────────────────────────────
- * ErrorBoundary — prevents full-screen crashes on iOS WKWebView.
- * ────────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────────
+ * ErrorBoundary – prevents full-screen crashes on iOS WKWebView.
+ * ────────────────────────────────────────────────────────────────────────── */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -74,7 +74,7 @@ class ErrorBoundary extends Component {
         >
           <div
             className="mb-6 text-5xl font-bold tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}
+            style={{ fontFamily: 'Outfit', system-ui, sans-serif }}
           >
             <span className="text-white">M</span>
             <span className="text-volt">I</span>
@@ -137,48 +137,50 @@ function App() {
         <ErrorBoundary>
           <BrowserRouter>
             {!splashDone && <Splash onDone={onSplashDone} autoFade={firstLaunch} />}
-            {splashDone && !planSelected && <WelcomePaywall onSelected={onPlanSelected} />}
+            {splashDone && !planSelected && <WelcomePaywall onSelect={onPlanSelected} />}
             {splashDone && planSelected && !onboardingDone && (
               <OnboardingCarousel onFinish={onOnboardingDone} />
             )}
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/marketing" element={<MarketingStudio />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/billing/success" element={<BillingSuccess />} />
+            <AuthProvider>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/marketing" element={<MarketingStudio />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/billing/success" element={<BillingSuccess />} />
 
-              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
-              <Route path="/app" element={<ProtectedRoute><OnboardingGate><AppLayout><Dashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/income" element={<ProtectedRoute><OnboardingGate><AppLayout><Income /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/mileage" element={<ProtectedRoute><OnboardingGate><AppLayout><Mileage /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/expenses" element={<ProtectedRoute><OnboardingGate><AppLayout><Expenses /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/ai" element={<ProtectedRoute><OnboardingGate><AppLayout><AIAssistant /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/reports" element={<ProtectedRoute><OnboardingGate><AppLayout><Reports /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/pricing" element={<ProtectedRoute><AppLayout><Pricing /></AppLayout></ProtectedRoute>} />
-              <Route path="/app/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
-              <Route path="/app/vault" element={<ProtectedRoute><OnboardingGate><AppLayout><Vault /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/quarterly" element={<ProtectedRoute><OnboardingGate><AppLayout><Quarterly /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/more" element={<ProtectedRoute><OnboardingGate><AppLayout><More /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro", "elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/accounts" element={<ProtectedRoute><OnboardingGate><AppLayout><Accounts /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/vehicles" element={<ProtectedRoute><OnboardingGate><AppLayout><Vehicles /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/documents" element={<ProtectedRoute><OnboardingGate><AppLayout><Documents /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/annual-taxes" element={<ProtectedRoute><OnboardingGate><AppLayout><AnnualTaxes /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/subscription" element={<ProtectedRoute><OnboardingGate><AppLayout><Subscription /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/card-order" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["elite"]} featureName="Milli Visa Elite Card"><CardOrder /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/security" element={<ProtectedRoute><OnboardingGate><AppLayout><SecuritySettings /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/app/admin" element={<ProtectedRoute><OnboardingGate><AppLayout><AdminDashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
-              <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
-              <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
-            </Routes>
-            <Toaster theme="dark" />
+                <Route path="/app" element={<ProtectedRoute><OnboardingGate><AppLayout><Dashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/income" element={<ProtectedRoute><OnboardingGate><AppLayout><Income /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/mileage" element={<ProtectedRoute><OnboardingGate><AppLayout><Mileage /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/expenses" element={<ProtectedRoute><OnboardingGate><AppLayout><Expenses /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/ai" element={<ProtectedRoute><OnboardingGate><AppLayout><AIAssistant /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/reports" element={<ProtectedRoute><OnboardingGate><AppLayout><Reports /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/pricing" element={<ProtectedRoute><AppLayout><Pricing /></AppLayout></ProtectedRoute>} />
+                <Route path="/app/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
+                <Route path="/app/vault" element={<ProtectedRoute><OnboardingGate><AppLayout><Vault /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/quarterly" element={<ProtectedRoute><OnboardingGate><AppLayout><Quarterly /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/more" element={<ProtectedRoute><OnboardingGate><AppLayout><More /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/retirement" element={<ProtectedRoute><OnboardingGate><AppLayout><Retirement /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro", "elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/accounts" element={<ProtectedRoute><OnboardingGate><AppLayout><Accounts /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/vehicles" element={<ProtectedRoute><OnboardingGate><AppLayout><Vehicles /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/documents" element={<ProtectedRoute><OnboardingGate><AppLayout><Documents /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/annual-taxes" element={<ProtectedRoute><OnboardingGate><AppLayout><AnnualTaxes /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/subscription" element={<ProtectedRoute><OnboardingGate><AppLayout><Subscription /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/card-order" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["elite"]} featureName="Milli Visa Elite Card"><CardOrder /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/security" element={<ProtectedRoute><OnboardingGate><AppLayout><SecuritySettings /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/admin" element={<ProtectedRoute><OnboardingGate><AppLayout><AdminDashboard /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
+                <Route path="/app/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
+              </Routes>
+              <Toaster theme="dark" />
+            </AuthProvider>
           </BrowserRouter>
         </ErrorBoundary>
       </div>
