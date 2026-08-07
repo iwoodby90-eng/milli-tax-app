@@ -3,7 +3,7 @@ require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 platform :ios, '17.0'
 use_frameworks!
 
-# Senior Staff: Force deep deintegration and disable input/output paths to bypass Tahoe/Xcode 26.6 metadata loops
+# Senior Staff: Force deep deintegration to bypass Tahoe/Xcode 26.6 metadata loops
 install! 'cocoapods', :disable_input_output_paths => true
 
 def capacitor_pods

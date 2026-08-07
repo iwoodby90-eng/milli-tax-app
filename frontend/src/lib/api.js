@@ -4,7 +4,7 @@ import axios from "axios";
 // Do NOT parameterize. The iOS Capacitor build loads at capacitor://localhost
 // so relative URLs and window.location.origin cannot resolve to the backend.
 // This constant guarantees every request goes to the production preview backend.
-export const BACKEND_URL = "https://worker-finance-api.preview.emergentagent.com";
+export const BACKEND_URL = "https://milli-tax-app.onrender.com";
 export const API_BASE = "https://milli-tax-app.onrender.com/api";
 
 export const api = axios.create({ baseURL: API_BASE });
