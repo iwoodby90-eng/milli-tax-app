@@ -140,7 +140,7 @@ export default function AppLayout({ children }) {
       </header>
 
       {/* === Main content === */}
-      <main className="flex-1 native-scroll relative z-10" data-testid="app-main-scroll">
+      <main className="flex-1 overflow-y-auto native-scroll relative z-10" data-testid="app-main-scroll">
         {children}
         <div aria-hidden className="h-28" />
       </main>
@@ -249,54 +249,77 @@ export default function AppLayout({ children }) {
   );
 }
 
-/* === Chrome M Dial — Raised home button matching the Bel Air Cockpit spec === */
+/* === Chrome M Dial — Glass-encased logo housing (Bel Air Cockpit) === */
 function ChromeDialM() {
   return (
     <div
-      className="w-[68px] h-[68px] rounded-full flex items-center justify-center relative"
+      className="w-[72px] h-[72px] rounded-full flex items-center justify-center relative select-none"
       style={{
+        // Deep dark housing — matches the logo's dark square bg
         background:
-          "radial-gradient(circle at 32% 24%, #FDFDFE 0%, #E8ECEF 22%, #B2B7BD 48%, #7A8087 72%, #3F454B 92%, #22272C 100%)",
-        boxShadow:
-          "inset 0 3px 3px rgba(255,255,255,0.75), inset 0 -4px 8px rgba(0,0,0,0.55), 0 8px 22px rgba(0,0,0,0.6), 0 0 32px rgba(0,229,255,0.55), 0 14px 24px rgba(0,229,255,0.35)",
+          "radial-gradient(circle at 40% 30%, #1A2028 0%, #0D1117 40%, #070A0D 100%)",
+        // Outer teal rim glow + deep physical inset shadow
+        boxShadow: [
+          "0 0 0 1.5px rgba(0,229,255,0.55)",
+          "0 0 0 3px rgba(0,229,255,0.12)",
+          "0 0 28px rgba(0,229,255,0.45)",
+          "inset 0 2px 3px rgba(255,255,255,0.12)",
+          "inset 0 -3px 6px rgba(0,0,0,0.7)",
+          "0 10px 32px rgba(0,0,0,0.75)",
+          "0 16px 28px rgba(0,229,255,0.25)",
+        ].join(", "),
       }}
     >
-      {/* underworld cyan light bloom */}
+      {/* Teal inner border ring */}
       <span
-        className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-2.5 rounded-full pointer-events-none"
+        className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: "rgba(0,229,255,0.95)",
-          filter: "blur(7px)",
-          opacity: 0.95,
+          border: "1.5px solid rgba(0,229,255,0.35)",
+          borderRadius: "50%",
         }}
       />
-      {/* soft top-light shield */}
-      <span
-        className="absolute top-1 left-2 right-2 h-3 rounded-full pointer-events-none"
+
+      {/* The actual Milli logo mark — centered inside */}
+      <div
+        className="relative z-10"
         style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)",
-          filter: "blur(2px)",
-        }}
-      />
-      {/* Big polished chrome M — logo-aligned angular style */}
-      <span
-        style={{
-          fontFamily: "'Sora','Inter',sans-serif",
-          fontWeight: 900,
-          fontSize: 38,
-          lineHeight: 1,
-          background: "linear-gradient(180deg, #FFFFFF 0%, #E8ECEF 30%, #6E7379 62%, #24272C 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          letterSpacing: "-0.05em",
+          width: 48,
+          height: 48,
           filter:
-            "drop-shadow(0 2px 0 rgba(0,0,0,0.55)) drop-shadow(0 -1px 0 rgba(255,255,255,0.35))",
-          position: "relative",
-          zIndex: 2,
+            "drop-shadow(0 0 8px rgba(0,229,255,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.6))",
         }}
       >
-        M
-      </span>
+        <img
+          src="/brand/milli-mark-192.png"
+          alt="M"
+          draggable={false}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
+
+      {/* Glass lens overlay — top half highlight (makes it feel encased) */}
+      <span
+        className="absolute inset-0 rounded-full pointer-events-none z-20"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 45%, rgba(0,0,0,0) 55%)",
+          borderRadius: "50%",
+        }}
+      />
+
+      {/* Cyan light bloom beneath dial */}
+      <span
+        className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-3 rounded-full pointer-events-none z-0"
+        style={{
+          background: "rgba(0,229,255,0.9)",
+          filter: "blur(8px)",
+        }}
+      />
     </div>
   );
 }
+

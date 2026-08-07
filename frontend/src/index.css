@@ -63,3 +63,17 @@
     .font-display { font-family: -apple-system, BlinkMacSystemFont, "Outfit", "IBM Plex Sans", "Inter", system-ui, sans-serif; letter-spacing: -0.025em; }
     .font-chrome { font-family: -apple-system, BlinkMacSystemFont, "Outfit", "IBM Plex Sans", "Inter", system-ui, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 }
+.native-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent page-level body scroll lock from blocking child scroll */
+html, body {
+  overscroll-behavior: none;
+}
+
+/* Hide scrollbars but keep scrollability */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

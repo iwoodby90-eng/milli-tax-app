@@ -25,8 +25,8 @@ module.exports = {
         foreground: 'hsl(var(--foreground))',
         // Milli Brand Palette — locked to design system spec.
         volt: {
-          DEFAULT: '#D4FF00',  // Volt Yellow — primary CTA color
-          hover: '#BBE600',    // Darker Volt — hover / secondary
+          DEFAULT: '#00E5FF',  // Milli Teal — primary CTA / brand accent
+          hover: '#00C4D8',    // Milli Teal Hover
         },
         cyan: {
           300: '#7AF6FF',

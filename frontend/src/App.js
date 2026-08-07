@@ -30,6 +30,7 @@ import Onboarding from "@/pages/Onboarding";
 import MarketingStudio from "@/pages/MarketingStudio";
 import Paywall from "@/pages/Paywall";
 import Wealth from "@/pages/Wealth";
+import Activity from "@/pages/Activity";
 import MilliCents from "@/pages/MilliCents";
 import Savings from "@/pages/Savings";
 import Accounts from "@/pages/Accounts";
@@ -166,6 +167,7 @@ function App() {
                 <Route path="/app/investing" element={<ProtectedRoute><OnboardingGate><AppLayout><Investing /></AppLayout></OnboardingGate></ProtectedRoute>} />
                 <Route path="/app/referral" element={<ProtectedRoute><OnboardingGate><AppLayout><Referral /></AppLayout></OnboardingGate></ProtectedRoute>} />
                 <Route path="/app/wealth" element={<ProtectedRoute><OnboardingGate><AppLayout><Wealth /></AppLayout></OnboardingGate></ProtectedRoute>} />
+                <Route path="/app/activity" element={<ProtectedRoute><OnboardingGate><AppLayout><Activity /></AppLayout></OnboardingGate></ProtectedRoute>} />
                 <Route path="/app/milli-cents" element={<ProtectedRoute><OnboardingGate><AppLayout><TierGate allowed={["pro", "elite"]} featureName="Milli Cents"><MilliCents /></TierGate></AppLayout></OnboardingGate></ProtectedRoute>} />
                 <Route path="/app/savings" element={<ProtectedRoute><OnboardingGate><AppLayout><Savings /></AppLayout></OnboardingGate></ProtectedRoute>} />
                 <Route path="/app/accounts" element={<ProtectedRoute><OnboardingGate><AppLayout><Accounts /></AppLayout></OnboardingGate></ProtectedRoute>} />

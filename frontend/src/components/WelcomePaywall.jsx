@@ -49,7 +49,7 @@ export default function WelcomePaywall({ onSelect }) {
       };
       localStorage.setItem("milli_selected_plan", JSON.stringify(record));
     } catch (e) { console.debug("[WelcomePaywall] localStorage save:", e); }
-    onSelect && onSelect(tier);
+    onSelect?.(tier);
   }
 
   const bgStyle = {
