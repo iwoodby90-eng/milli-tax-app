@@ -3,10 +3,10 @@ import { useAuth } from "@/context/AuthContext";
 import {
   SquaresFour, ListBullets, ArrowsLeftRight, DotsThreeOutline,
   Bell, List, SignOut, House, Vault as VaultIcon, ChartLineUp,
-  MapTrifold, Coins, Receipt, Wallet, FileText, Robot, Gift, GearSix,
+  MapTrifold, Coins, Receipt, Wallet, FileText, Gift, GearSix,
   PiggyBank, Bank, Car,
   FolderOpen, Calendar, CreditCard,
-  ShieldCheck, ChartBar,
+  ShieldCheck, ChartBar, Gauge,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import MilliFAB from "@/components/MilliFAB";
@@ -15,19 +15,19 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useState } from "react";
 
 /**
- * Milli Tax Vault — App shell.
- * Top bar:  cyan "milli" wordmark left  |  bell right.
- * Bottom nav: Dashboard ⟶ Activity ⟶ [raised chrome M home] ⟶ Transfers ⟶ More.
- * Milli AI floats above the tab bar on every screen except /app/ai.
+ * Milli Tax Vault — App shell (v4.9 Bel Air Cockpit).
+ * Top bar:  28px logo + SF Pro Display "MILLI" wordmark left  |  bell right.
+ * Bottom nav: VAULT ⟶ WEALTH ⟶ [raised chrome M dial] ⟶ ACTIVITY ⟶ COCKPIT.
+ * Milli AI floats as a persistent sphere at bottom-right (no tab).
  */
 
 const leftTabs = [
-  { to: "/app",              icon: SquaresFour,    label: "Dashboard", end: true, testid: "tab-dashboard" },
-  { to: "/app/income",       icon: ListBullets,   label: "Activity",            testid: "tab-activity"   },
+  { to: "/app/vault",    icon: VaultIcon,   label: "VAULT",    testid: "tab-vault" },
+  { to: "/app/wealth",   icon: ChartLineUp, label: "WEALTH",   testid: "tab-wealth" },
 ];
 const rightTabs = [
-  { to: "/app/vault",        icon: ArrowsLeftRight, label: "Transfers",          testid: "tab-transfers" },
-  { to: "/app/more",         icon: DotsThreeOutline, label: "More",             testid: "tab-more"      },
+  { to: "/app/activity", icon: ListBullets,  label: "ACTIVITY", testid: "tab-activity" },
+  { to: "/app/cockpit",  icon: Gauge,        label: "COCKPIT",  testid: "tab-cockpit" },
 ];
 
 const drawerNav = [
@@ -44,7 +44,6 @@ const drawerNav = [
   { to: "/app/documents",    icon: FolderOpen,      label: "Documents" },
   { to: "/app/quarterly",    icon: Receipt,        label: "Quarterly Taxes" },
   { to: "/app/expenses",     icon: FileText,       label: "Expenses" },
-  { to: "/app/ai",           icon: Robot,          label: "Milli AI" },
   { to: "/app/subscription", icon: CreditCard,     label: "Subscription" },
   { to: "/app/security",     icon: ShieldCheck,    label: "Security & Auth" },
   { to: "/app/referral",     icon: Gift,           label: "Invite & Earn $10" },
@@ -71,7 +70,7 @@ function TabButton({ to, icon: Icon, label, end, testid }) {
       {({ isActive }) => (
         <>
           <Icon size={22} weight={isActive ? "fill" : "regular"} />
-          <span className="text-[10.5px] font-medium tracking-wide truncate max-w-full">
+          <span className="text-[10px] font-semibold tracking-[0.08em] truncate max-w-full uppercase">
             {label}
           </span>
         </>
@@ -93,7 +92,7 @@ export default function AppLayout({ children }) {
     <div className="carbon-bg app-aura text-white min-h-full flex flex-col relative">
       <div className="aura-streak" aria-hidden />
 
-      {/* === Top bar — cyan wordmark left, bell right === */}
+      {/* === Top bar — 28px logo + SF Pro Display "MILLI" wordmark left, bell right === */}
       <header
         className="sticky top-0 z-40 backdrop-blur-2xl"
         style={{
@@ -105,20 +104,24 @@ export default function AppLayout({ children }) {
           <button
             data-testid="mobile-menu-btn"
             onClick={() => setDrawerOpen(true)}
-            className="active:opacity-60 flex items-center gap-1"
+            className="active:opacity-60 flex items-center gap-2"
           >
             <List size={20} weight="bold" className="text-zinc-400 sm:hidden" />
+            <MilliLogo size={28} />
             <span
-              className="font-display text-[26px] leading-none lowercase select-none"
+              className="font-display text-[22px] leading-none select-none"
               style={{
-                color: "#00E5FF",
-                fontWeight: 500,
-                letterSpacing: "-0.01em",
-                textShadow: "0 0 18px rgba(0,229,255,0.55)",
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                background: "linear-gradient(180deg, #FFFFFF 0%, #E0E4E8 40%, #A0A8B0 70%, #6E7379 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 8px rgba(0,229,255,0.35))",
               }}
               data-testid="topbar-brand"
             >
-              milli
+              MILLI
             </span>
           </button>
           <button
@@ -142,7 +145,7 @@ export default function AppLayout({ children }) {
         <div aria-hidden className="h-28" />
       </main>
 
-      {/* === Bottom tab bar — 5 slots, raised chrome M home === */}
+      {/* === Bottom tab bar — 4-tab Bel Air Cockpit + raised chrome M dial === */}
       <nav
         className="sticky bottom-0 z-40 backdrop-blur-2xl border-t border-white/[0.06]"
         style={{
@@ -156,7 +159,7 @@ export default function AppLayout({ children }) {
           <div className="w-[76px] flex-shrink-0" aria-hidden />
           {rightTabs.map((t) => <TabButton key={t.to} {...t} />)}
 
-          {/* Raised chrome M home button */}
+          {/* Raised chrome M dial — center home button */}
           <NavLink
             to="/app"
             end
@@ -164,12 +167,12 @@ export default function AppLayout({ children }) {
             aria-label="Home"
             className="absolute left-1/2 -translate-x-1/2 -top-7 active:scale-95 transition-transform"
           >
-            <ChromeHomeButton />
+            <ChromeDialM />
           </NavLink>
         </div>
       </nav>
 
-      {/* Persistent Milli AI floating avatar */}
+      {/* Persistent Milli AI floating sphere — bottom-right, NOT a tab */}
       <MilliFAB />
 
       {/* Notification sheet */}
@@ -193,12 +196,19 @@ export default function AppLayout({ children }) {
             <div className="flex items-center gap-3 px-6 mb-6">
               <MilliLogo size={32} />
               <div>
-                <div
-                  className="font-display text-[22px] leading-none lowercase"
-                  style={{ color: "#00E5FF", fontWeight: 500, textShadow: "0 0 12px rgba(0,229,255,0.5)" }}
+                <span
+                  className="font-display text-[20px] leading-none select-none"
+                  style={{
+                    fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    background: "linear-gradient(180deg, #FFFFFF 0%, #E0E4E8 40%, #A0A8B0 70%, #6E7379 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
                 >
-                  milli
-                </div>
+                  MILLI
+                </span>
                 <div className="text-[10px] text-zinc-600 uppercase tracking-widest mt-1">Tax Vault</div>
               </div>
             </div>
@@ -239,8 +249,8 @@ export default function AppLayout({ children }) {
   );
 }
 
-/* === Raised chrome M home button (matches reference: bright polished chrome disc + big M) === */
-function ChromeHomeButton() {
+/* === Chrome M Dial — Raised home button matching the Bel Air Cockpit spec === */
+function ChromeDialM() {
   return (
     <div
       className="w-[68px] h-[68px] rounded-full flex items-center justify-center relative"
@@ -268,7 +278,7 @@ function ChromeHomeButton() {
           filter: "blur(2px)",
         }}
       />
-      {/* Big polished chrome M — directly on the disc */}
+      {/* Big polished chrome M — logo-aligned angular style */}
       <span
         style={{
           fontFamily: "'Sora','Inter',sans-serif",
