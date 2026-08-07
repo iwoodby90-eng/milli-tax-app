@@ -10,7 +10,7 @@ fresh Mac to a signed, uploaded App Store build in about 45 minutes.
 - **macOS Sonoma 14.5+** with **Xcode 15.4+**
 - **Apple Developer account** ($99/yr) with a valid team
 - **CocoaPods**: `sudo gem install cocoapods` or `brew install cocoapods`
-- **Node 20+** (matches the pod build environment)
+- **Node 22+** (matches the pod build environment)
 - A physical iPhone if you want to test background GPS (the simulator
   fakes GPS)
 
@@ -29,7 +29,8 @@ npx cap sync ios            # copies + syncs plugin native pods
 ```
 
 Verify the sync log lists all 5 Capacitor plugins:
-`background-geolocation`, `app`, `preferences`, `splash-screen`, `status-bar`.
+`@capacitor-community/background-geolocation`, `app`, `preferences`,
+`splash-screen`, `status-bar`.
 
 ## 2 · Open in Xcode
 
@@ -136,26 +137,26 @@ cd /app/frontend/ios/App
 
 # 1. Archive
 xcodebuild -workspace App.xcworkspace \
-           -scheme App \
-           -configuration Release \
-           -destination "generic/platform=iOS" \
-           -archivePath ./build/Milli.xcarchive \
-           archive
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath ./build/Milli.xcarchive \
+            archive
 
 # 2. Export a signed .ipa using the pre-baked ExportOptions.plist
 xcodebuild -exportArchive \
-           -archivePath ./build/Milli.xcarchive \
-           -exportPath ./build/ipa \
-           -exportOptionsPlist ./ExportOptions.plist
+            -archivePath ./build/Milli.xcarchive \
+            -exportPath ./build/ipa \
+            -exportOptionsPlist ./ExportOptions.plist
 
 # 3. Upload to App Store Connect using an app-specific password.
 #    Generate one at https://appleid.apple.com → Sign-in & Security →
 #    App-Specific Passwords, then export it as APP_STORE_PASSWORD.
 xcrun altool --upload-app \
-             --type ios \
-             --file ./build/ipa/App.ipa \
-             --username iwoodby90@gmail.com \
-             --password "$APP_STORE_PASSWORD"
+            --type ios \
+            --file ./build/ipa/App.ipa \
+            --username iwoodby90@gmail.com \
+            --password "$APP_STORE_PASSWORD"
 ```
 
 ## 8 · App Store Connect submission
@@ -190,20 +191,20 @@ Typical review turnaround: 24–72 hours.
 
 ```
 /app/frontend/
-├── build/                          # yarn build output (copied into iOS bundle)
-├── capacitor.config.json           # appId, appName, plugin config
+├── build/                    # yarn build output (copied into iOS bundle)
+├── capacitor.config.json       # appId, appName, plugin config
 ├── ios/App/
-│   ├── App.xcworkspace             # open THIS in Xcode
-│   ├── App.xcodeproj/              # do not open directly
+│   ├── App.xcworkspace          # open THIS in Xcode
+│   ├── App.xcodeproj/          # do not open directly
 │   ├── App/
-│   │   ├── Info.plist              # permission strings + background modes
+│   │   ├── Info.plist          # permission strings + background modes
 │   │   ├── Base.lproj/
-│   │   │   └── LaunchScreen.storyboard   # dark noir + centered M
+│   │   │   ├── LaunchScreen.storyboard   # dark noir + centered M
 │   │   ├── Assets.xcassets/
-│   │   │   └── AppIcon.appiconset/       # 16 icon sizes + 1024 master
-│   │   └── public/                       # copied React build (do not edit)
-│   └── Podfile                     # Capacitor + community plugins
-└── src/                            # React source (edit here)
+│   │   │   ├── AppIcon.appiconset/        # 16 icon sizes + 1024 master
+│   │   ├── public/              # copied React build (do not edit)
+│   ├── Podfile                  # Capacitor + community plugins
+└── src/                         # React source (edit here)
 ```
 
 ---
