@@ -74,7 +74,7 @@ class ErrorBoundary extends Component {
         >
           <div
             className="mb-6 text-5xl font-bold tracking-tight"
-            style={{ fontFamily: 'Outfit', system-ui, sans-serif }}
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}
           >
             <span className="text-white">M</span>
             <span className="text-volt">I</span>
