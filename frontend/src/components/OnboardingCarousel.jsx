@@ -61,7 +61,7 @@ export default function OnboardingCarousel({ onFinish }) {
 
   return (
     <div
-      className="absolute inset-0 z-[150] carbon-bg text-white flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[160] carbon-bg text-white flex flex-col overflow-hidden"
       data-testid="onboarding-carousel"
       style={{
         paddingTop: "calc(var(--safe-top) + 12px)",

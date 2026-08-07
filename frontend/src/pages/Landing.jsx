@@ -66,7 +66,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="col-span-12 lg:col-span-5 grid grid-cols-2 gap-3 relative">
+          <div className="hidden lg:grid col-span-12 lg:col-span-5 grid-cols-2 gap-3 relative">
             {/* Phone-like preview */}
             <div className="col-span-2 milli-card p-5 relative overflow-hidden">
               <div className="flex items-center justify-between mb-4">
