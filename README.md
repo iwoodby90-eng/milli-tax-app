@@ -74,8 +74,8 @@ Milli is an iOS + iPad + Apple Watch app that automates tax tracking, estimation
 milli-tax-app/
 ├── frontend/                    # React app + Capacitor iOS wrapper
 │   ├── src/
-│   │   ├── App.js               # Routes, ErrorBoundary, app entry
-│   │   ├── pages/               # 28 page components
+│   │   ├── App.js               # Routes, ErrorBoundary, BrowserRouter, AuthProvider
+│   │   ├── pages/               # 32 page components
 │   │   │   ├── Dashboard.jsx
 │   │   │   ├── Income.jsx
 │   │   │   ├── Expenses.jsx
@@ -84,6 +84,7 @@ milli-tax-app/
 │   │   │   ├── MilliCents.jsx
 │   │   │   ├── Investing.jsx
 │   │   │   ├── Retirement.jsx
+│   │   │   ├── Wealth.jsx
 │   │   │   ├── Savings.jsx
 │   │   │   ├── Accounts.jsx     # Elite-gated
 │   │   │   ├── Vehicles.jsx
@@ -91,10 +92,13 @@ milli-tax-app/
 │   │   │   ├── Documents.jsx
 │   │   │   ├── AnnualTaxes.jsx
 │   │   │   ├── Subscription.jsx
+│   │   │   ├── BillingSuccess.jsx
 │   │   │   ├── Quarterly.jsx
 │   │   │   ├── Reports.jsx
 │   │   │   ├── AdminDashboard.jsx
 │   │   │   ├── SecuritySettings.jsx
+│   │   │   ├── Settings.jsx
+│   │   │   ├── More.jsx
 │   │   │   ├── AIAssistant.jsx
 │   │   │   ├── MarketingStudio.jsx
 │   │   │   ├── Referral.jsx
@@ -102,9 +106,9 @@ milli-tax-app/
 │   │   │   ├── Landing.jsx
 │   │   │   ├── Login.jsx
 │   │   │   ├── Register.jsx
-│   │   │   ├── PayPal.jsx
+│   │   │   ├── Paywall.jsx
 │   │   │   ├── Pricing.jsx
-│   │   │   └── ...
+│   │   │   ...
 │   │   ├── components/          # Shared UI components
 │   │   │   ├── AppLayout.jsx    # Drawer nav + bottom tab bar
 │   │   │   ├── TierGate.jsx     # Subscription tier gating
@@ -113,28 +117,28 @@ milli-tax-app/
 │   │   │   ├── ProtectedRoute.jsx
 │   │   │   ├── BankConnections.jsx
 │   │   │   ├── SmartAccount.jsx
-│   │   │   └── ...
+│   │   │   ...
 │   │   ├── styles/              # design-system.css with brand tokens
 │   │   ├── tests/               # Frontend unit tests
 │   ├── ios/                     # Xcode project (Capacitor)
 │   │   ├── capacitor.config.json
-│   ├── backend/                  # Python FastAPI + tax engine
-│   ├── server.py                # Main API server (auth, users, tax, expenses, etc.)
-│   ├── tax_engine.py            # Tax calculation engine (2025/2026 IRS + state)
-│   ├── autopilot.py             # Automated tax planning
-│   ├── integrations.py          # Stripe, Plaid, Alpaca, banking, KYC, OCR, e-filing
-│   ├── card_issuer.py           # Stripe Issuing card fulfillment
-│   ├── card_routes.py           # Card order + webhook endpoints
-│   ├── plaid_client.py          # Plaid bank connection client
-│   ├── plaid_webhook.py         # Plaid transaction webhook receiver
-│   ├── apns.py                  # Apple Push Notifications
-│   ├── notifications.py        # Notification service
-│   ├── taxbandits.py            # TaxBandits e-filing integration
-│   ├── schedule_c_pdf.py       # Schedule C PDF generation
-│   ├── market.py                # Market data service
-│   ├── main.py                  # App factory + route registration
-│   ├── migrations/              # Database migrations
-│   ├── tests/                   # Backend test suite
+│   ├── backend/                 # Python FastAPI + tax engine
+│   │   ├── server.py            # Main API server (auth, users, tax, expenses, etc.)
+│   │   ├── tax_engine.py        # Tax calculation engine (2025/2026 IRS + state)
+│   │   ├── autopilot.py         # Automated tax planning
+│   │   ├── integrations.py      # Stripe, Plaid, Alpaca, banking, KYC, OCR, e-filing
+│   │   ├── card_issuer.py       # Stripe Issuing card fulfillment
+│   │   ├── card_routes.py       # Card order + webhook endpoints
+│   │   ├── plaid_client.py      # Plaid bank connection client
+│   │   ├── plaid_webhook.py     # Plaid transaction webhook receiver
+│   │   ├── apns.py              # Apple Push Notifications
+│   │   ├── notifications.py     # Notification service
+│   │   ├── taxbandits.py        # TaxBandits e-filing integration
+│   │   ├── schedule_c_pdf.py    # Schedule C PDF generation
+│   │   ├── market.py            # Market data service
+│   │   ├── main.py              # App factory + route registration
+│   │   ├── migrations/          # Database migrations
+│   │   ├── tests/               # Backend test suite
 │   ├── Dockerfile
 │   ├── requirements.txt
 ├── docker-compose.yml           # MongoDB + backend + frontend
@@ -142,7 +146,7 @@ milli-tax-app/
 ├── design_guidelines.json       # Brand design system spec
 ├── APP_STORE_METADATA.md        # App Store listing metadata
 ├── IOS_BUILD_GUIDE.md           # Xcode build instructions
-└── scripts/                     # Build and utility scripts
+├── scripts/                     # Build and utility scripts
 ```
 
 ## Getting Started
@@ -159,9 +163,9 @@ milli-tax-app/
 ```bash
 cd frontend
 npm install
-npm start                 # Development server
-npm run build            # Production build
-npx cap sync ios         # Sync to Xcode project
+npm start                    # Development server
+npm run build                # Production build
+npx cap sync ios             # Sync to Xcode project
 ```
 
 ### Backend
@@ -169,13 +173,13 @@ npx cap sync ios         # Sync to Xcode project
 ```bash
 cd backend
 pip install -r requirements.txt
-python server.py         # Starts FastAPI server on :5000
+python server.py             # Starts FastAPI server on :5000
 ```
 
 ### Full Stack with Docker
 
 ```bash
-docker-compose up -d     # MongoDB, backend, frontend
+docker-compose up -d         # MongoDB, backend, frontend
 ```
 
 ### Tests
@@ -203,7 +207,7 @@ The repo includes a [GitHub Actions workflow](.github/workflows/validate.yml) th
 Copy `.env.example` to `.env` and fill in your values. Key variables:
 
 | Variable | Purpose |
-|---------|---------|
+|---------|--------|
 | `MONGO_URL` | MongoDB connection string |
 | `JWT_SECRET` | JWT token signing secret |
 | `STRIPE_API_KEY` / `STRIPE_SECRET_KEY` | Stripe API keys (subscriptions + Issuing) |
@@ -215,7 +219,7 @@ Copy `.env.example` to `.env` and fill in your values. Key variables:
 | `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` | Alpaca brokerage |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Google Cloud Vision (OCR) |
 | `PERSONA_API_KEY` / `PERSONA_TEMPLATE_ID` | KYC verification |
-| `REACT_APP_API_URL` | Frontend API base URL |
+| `REACT_APP_API_URI` | Frontend API base URL |
 | `DEMO_MODE_ENABLED` | Demo data seeding (disabled by default, never in production) |
 | `ALLOW_UNVERIFIED_STOREKIT` | Unverified StoreKit fallback (false for production) |
 
