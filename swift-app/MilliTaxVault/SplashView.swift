@@ -3,237 +3,227 @@ import SwiftUI
 struct SplashView: View {
     var onComplete: (() -> Void)? = nil
     
-    @State private var phase1LeftOffset: CGFloat = -60
-    @State private var phase1RightOffset: CGFloat = 60
-    @State private var phase2DotScale: CGFloat = 1.0
-    @State private var phase2DotOpacity: Double = 0
-    @State private var phase3RingSize: CGFloat = 0
-    @State private var phase3RingOpacity: Double = 0
-    @State private var phase4LabelsOpacity: Double = 0
-    @State private var phase4LabelsOffset: CGFloat = 8
-    @State private var phase5LineWidth: CGFloat = 0
-    @State private var phase5LineOpacity: Double = 0
-    @State private var phase6CrossDissolve = false
-    @State private var phase6TextOpacity: Double = 0
-    @State private var phase6ProgressWidth: CGFloat = 0
-    @State private var displayedText = ""
-    @State private var phase7Opacity: Double = 1.0
-    
-    private let typewriterText = "App Initializing..."
+    // Animation state
+    @State private var leftOffset: CGFloat = -300
+    @State private var rightOffset: CGFloat = 300
+    @State private var mergeScale: CGFloat = 0.85
+    @State private var mergeOpacity: Double = 0
+    @State private var bloomOpacity: Double = 0
+    @State private var bloomScale: CGFloat = 0.3
+    @State private var wordmarkOpacity: Double = 0
+    @State private var wordmarkOffset: CGFloat = 20
+    @State private var taglineOpacity: Double = 0
+    @State private var bgOpacity: Double = 1
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // Background
+            Color(hex: "050508")
+                .ignoresSafeArea()
             
-            if !phase6CrossDissolve {
-                logoAnimationView
-            } else {
-                bootScreenView
-            }
-        }
-        .ignoresSafeArea()
-        .opacity(phase7Opacity)
-        .preferredColorScheme(.dark)
-        .onAppear {
-            startAnimationSequence()
-        }
-    }
-    
-    // MARK: - Logo Animation (Phases 1-5)
-    
-    private var logoAnimationView: some View {
-        GeometryReader { geo in
-            ZStack {
-                // Phase 5: Radiating lines
-                ForEach(0..<8, id: \.self) { i in
-                    Rectangle()
-                        .fill(Color(hex: "C0C0C0"))
-                        .frame(width: phase5LineWidth, height: 1)
-                        .offset(x: phase5LineWidth / 2)
-                        .rotationEffect(.degrees(Double(i) * 45))
-                        .opacity(phase5LineOpacity)
-                }
+            // Ambient background glow
+            RadialGradient(
+                colors: [Color(hex: "00B4FF").opacity(0.06), Color.clear],
+                center: .center,
+                startRadius: 0,
+                endRadius: 300
+            )
+            .ignoresSafeArea()
+            .opacity(mergeOpacity)
+            
+            VStack(spacing: 0) {
+                Spacer()
                 
-                // Phase 3: Expanding ring
-                Circle()
-                    .stroke(Color.milliAccent.opacity(0.6), lineWidth: 2)
-                    .frame(width: phase3RingSize, height: phase3RingSize)
-                    .opacity(phase3RingOpacity)
-                
-                // Phase 4: Labels
-                VStack {
-                    Text("TAX")
-                        .font(.caption)
-                        .tracking(4)
-                        .foregroundColor(.milliAccent)
-                        .offset(y: -50)
+                // M ANIMATION CONTAINER
+                ZStack {
+                    // Bloom flash on merge
+                    Circle()
+                        .fill(Color(hex: "00B4FF").opacity(0.15))
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 30)
+                        .scaleEffect(bloomScale)
+                        .opacity(bloomOpacity)
                     
-                    Spacer().frame(height: 100)
+                    // LEFT HALF of M — slides in from left
+                    LeftMShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "FFFFFF"), Color(hex: "AAAAAA"), Color(hex: "CCCCCC")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 80, height: 110)
+                        .offset(x: leftOffset)
                     
-                    HStack(spacing: 80) {
-                        Text("MILES")
-                            .font(.caption)
-                            .tracking(4)
-                            .foregroundColor(.milliAccent)
-                        
-                        Text("WEALTH")
-                            .font(.caption)
-                            .tracking(4)
-                            .foregroundColor(.milliAccent)
-                    }
-                    .offset(y: 30)
-                }
-                .opacity(phase4LabelsOpacity)
-                .offset(y: phase4LabelsOffset)
-                
-                // Phase 1: Split M letter — NO .clipped() on container
-                HStack(spacing: 0) {
+                    // RIGHT HALF of M — slides in from right
+                    RightMShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "CCCCCC"), Color(hex: "AAAAAA"), Color(hex: "FFFFFF")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 80, height: 110)
+                        .offset(x: rightOffset)
+                    
+                    // MERGED M — appears after halves converge
                     Text("M")
-                        .font(.system(size: 120, weight: .black))
-                        .chromeGradient()
-                        .frame(width: 40, alignment: .trailing)
-                        .clipped()
-                        .offset(x: phase1LeftOffset)
-                    
-                    Text("M")
-                        .font(.system(size: 120, weight: .black))
-                        .chromeGradient()
-                        .frame(width: 40, alignment: .leading)
-                        .clipped()
-                        .offset(x: phase1RightOffset)
+                        .font(.system(size: 110, weight: .black, design: .default))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color(hex: "7ADEFD"),
+                                    Color(hex: "FFFFFF"),
+                                    Color(hex: "00B4FF"),
+                                    Color(hex: "FFFFFF"),
+                                    Color(hex: "7ADEFD")
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: Color(hex: "00B4FF").opacity(0.6), radius: 20)
+                        .shadow(color: Color.white.opacity(0.3), radius: 6)
+                        .scaleEffect(mergeScale)
+                        .opacity(mergeOpacity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(height: 130)
                 
-                // Phase 2: Glowing dot
-                Circle()
-                    .fill(Color.milliAccent)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: .milliAccent, radius: 8)
-                    .scaleEffect(phase2DotScale)
-                    .opacity(phase2DotOpacity)
+                Spacer().frame(height: 28)
+                
+                // WORDMARK
+                VStack(spacing: 6) {
+                    Text("MILLI")
+                        .font(.system(size: 36, weight: .black, design: .default))
+                        .tracking(12)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(hex: "FFFFFF"), Color(hex: "CCCCCC")],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    Text("TAX VAULT")
+                        .font(.system(size: 13, weight: .semibold, design: .default))
+                        .tracking(8)
+                        .foregroundColor(Color(hex: "00B4FF"))
+                        .shadow(color: Color(hex: "00B4FF").opacity(0.5), radius: 4)
+                }
+                .opacity(wordmarkOpacity)
+                .offset(y: wordmarkOffset)
+                
+                Spacer().frame(height: 16)
+                
+                // TAGLINE
+                Text("Your Financial Cockpit")
+                    .font(.system(size: 13, weight: .regular, design: .default))
+                    .tracking(2)
+                    .foregroundColor(Color(hex: "8B8BA0"))
+                    .opacity(taglineOpacity)
+                
+                Spacer()
             }
-            .frame(width: geo.size.width, height: geo.size.height)
         }
+        .opacity(bgOpacity)
         .ignoresSafeArea()
+        .onAppear { runAnimation() }
     }
     
-    // MARK: - Boot Screen (Phase 6)
-    
-    private var bootScreenView: some View {
-        VStack(spacing: 20) {
-            Text("MILLI TAX VAULT")
-                .font(.system(size: 32, weight: .bold))
-                .chromeGradient()
-            
-            Text(displayedText)
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                .foregroundColor(.milliMuted)
-                .frame(height: 20)
-            
-            GeometryReader { geo in
-                Capsule()
-                    .fill(Color.milliAccent)
-                    .frame(width: phase6ProgressWidth * geo.size.width, height: 2)
-            }
-            .frame(height: 2)
-            .padding(.horizontal, 60)
-        }
-        .opacity(phase6TextOpacity)
-    }
-    
-    // MARK: - Animation Sequence
-    
-    private func startAnimationSequence() {
-        // Phase 1: M halves slide in (0.0 - 0.8s)
-        withAnimation(.easeOut(duration: 0.8)) {
-            phase1LeftOffset = 0
-            phase1RightOffset = 0
+    private func runAnimation() {
+        // Phase 1: Slide halves in (0 → 0.6s)
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+            leftOffset = 0
+            rightOffset = 0
         }
         
-        // Phase 2: Glowing dot (0.7 - 1.0s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-            phase2DotOpacity = 1.0
-            withAnimation(.easeInOut(duration: 0.15).repeatCount(3, autoreverses: true)) {
-                phase2DotScale = 1.5
+        // Phase 2: Bloom flash (0.5s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.easeOut(duration: 0.25)) {
+                bloomOpacity = 1
+                bloomScale = 1.4
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    phase2DotOpacity = 0
-                    phase2DotScale = 1.0
-                }
+            withAnimation(.easeIn(duration: 0.3).delay(0.2)) {
+                bloomOpacity = 0
             }
         }
         
-        // Phase 3: Expanding ring (1.0 - 1.6s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            phase3RingOpacity = 1.0
-            withAnimation(.easeOut(duration: 0.6)) {
-                phase3RingSize = 160
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    phase3RingOpacity = 0
-                }
+        // Phase 3: Merged M appears (0.55s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                mergeOpacity = 1
+                mergeScale = 1.0
+                leftOffset = -300
+                rightOffset = 300
             }
         }
         
-        // Phase 4: Labels appear (1.4 - 2.2s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            withAnimation(.easeOut(duration: 0.6)) {
-                phase4LabelsOpacity = 1.0
-                phase4LabelsOffset = 0
+        // Phase 4: Wordmark rises up (1.1s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            withAnimation(.easeOut(duration: 0.5)) {
+                wordmarkOpacity = 1
+                wordmarkOffset = 0
             }
         }
         
-        // Phase 5: Radiating lines (2.2 - 2.8s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
-            phase5LineOpacity = 0.8
+        // Phase 5: Tagline (1.5s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation(.easeOut(duration: 0.4)) {
-                phase5LineWidth = UIScreen.main.bounds.width * 0.4
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    phase5LineOpacity = 0
-                }
+                taglineOpacity = 1
             }
         }
         
-        // Phase 6: Cross-dissolve to boot screen (2.8 - 3.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                phase6CrossDissolve = true
-            }
-            withAnimation(.easeIn(duration: 0.4)) {
-                phase6TextOpacity = 1.0
-            }
-            startTypewriter()
-            withAnimation(.easeInOut(duration: 0.8)) {
-                phase6ProgressWidth = 1.0
+        // Phase 6: Fade to app (2.6s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                bgOpacity = 0
             }
         }
         
-        // Phase 7: Fade out and call completion (3.8 - 4.2s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.8) {
-            withAnimation(.easeInOut(duration: 0.4)) {
-                phase7Opacity = 0
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                onComplete?()
-            }
-        }
-    }
-    
-    private func startTypewriter() {
-        displayedText = ""
-        let characters = Array(typewriterText)
-        for (index, character) in characters.enumerated() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.05) {
-                displayedText += String(character)
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.1) {
+            onComplete?()
         }
     }
 }
 
-#Preview {
-    SplashView()
+// Left half of the M letterform (angular, bold strokes)
+struct LeftMShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.3, y: 0))
+        path.addLine(to: CGPoint(x: w, y: h * 0.55))
+        path.addLine(to: CGPoint(x: w, y: h))
+        path.addLine(to: CGPoint(x: w * 0.65, y: h))
+        path.addLine(to: CGPoint(x: w * 0.65, y: h * 0.72))
+        path.addLine(to: CGPoint(x: w * 0.22, y: h * 0.22))
+        path.addLine(to: CGPoint(x: w * 0.22, y: h))
+        path.addLine(to: CGPoint(x: 0, y: h))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// Right half of the M letterform (mirror)
+struct RightMShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        path.move(to: CGPoint(x: w, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.7, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: h * 0.55))
+        path.addLine(to: CGPoint(x: 0, y: h))
+        path.addLine(to: CGPoint(x: w * 0.35, y: h))
+        path.addLine(to: CGPoint(x: w * 0.35, y: h * 0.72))
+        path.addLine(to: CGPoint(x: w * 0.78, y: h * 0.22))
+        path.addLine(to: CGPoint(x: w * 0.78, y: h))
+        path.addLine(to: CGPoint(x: w, y: h))
+        path.closeSubpath()
+        return path
+    }
 }
