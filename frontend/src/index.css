@@ -1,3 +1,10 @@
+:root {
+  --safe-top: env(safe-area-inset-top, 44px);
+  --safe-bottom: env(safe-area-inset-bottom, 34px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import url('./styles/design-system.css');
 
@@ -67,13 +74,33 @@
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
   overscroll-behavior-y: contain;
+  height: 100%;
 }
 
 /* Prevent page-level body scroll lock from blocking child scroll */
-html, body {
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
   overscroll-behavior: none;
 }
 
-/* Hide scrollbars but keep scrollability */
+/* Premium no-scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Cinematic app background */
+.carbon-bg {
+  background: #050607;
+}
+
+/* Prevent tap highlight on interactive elements */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

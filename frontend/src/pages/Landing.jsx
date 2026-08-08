@@ -16,7 +16,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen carbon-bg text-white">
       {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-hairline backdrop-blur-xl bg-obsidian/80">
+      <header className="sticky top-0 z-40 border-b border-hairline backdrop-blur-xl bg-obsidian/80" style={{ paddingTop: "var(--safe-top)" }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between px-5 py-4">
           <Link to="/" className="flex items-center gap-3" data-testid="landing-logo">
             <MilliLogo size={32} />

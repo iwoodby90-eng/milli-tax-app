@@ -1,10 +1,8 @@
 /**
- * Register — premium iOS-native sign-up screen.
+ * Register — WWDC-quality cinematic sign-up screen.
  *
- * Single-column phone-first layout. Reads the previously-selected tier
- * from `localStorage.milli_selected_plan` (set by WelcomePaywall) and
- * displays a "Starting: Milli <Tier> · Free until <date>" banner, then
- * posts the account with the pending plan to the backend.
+ * Full-bleed dark background with radial teal glow, Milli logo + wordmark,
+ * floating-label inputs, plan tier pill, and cinematic CTA.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,7 +11,7 @@ import { api, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
-  ArrowRight, User, EnvelopeSimple, Lock, MapPin, Eye, EyeSlash, Sparkle, Star,
+  ArrowRight, User, EnvelopeSimple, Lock, MapPin, Eye, EyeSlash, Star,
 } from "@phosphor-icons/react";
 import MilliLogo from "@/components/MilliLogo";
 import SignInTransition from "@/components/SignInTransition";
@@ -61,7 +59,6 @@ export default function Register() {
         first_charge_at: plan?.first_charge_at || null,
       });
       setSession(data.token, data.user);
-      // Fire the cinematic "Welcome to Milli, {first_name}." handoff
       setTransition({ name: data.user?.name || form.name });
     } catch (err) {
       toast.error(formatApiError(err));
@@ -71,26 +68,21 @@ export default function Register() {
 
   return (
     <div
-      className="relative w-full min-h-full overflow-y-auto native-scroll text-white"
       data-testid="register-screen"
       style={{
-        paddingTop:    "calc(var(--safe-top) + 20px)",
-        paddingBottom: "calc(var(--safe-bottom) + 40px)",
-        backgroundColor: "#050607",
-        backgroundImage:
-          "radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,229,255,0.20), transparent 65%)," +
-          "radial-gradient(ellipse 40% 30% at 10% 80%, rgba(0,229,255,0.08), transparent 70%)," +
-          "radial-gradient(ellipse 40% 30% at 90% 60%, rgba(0,229,255,0.08), transparent 70%)," +
-          "repeating-linear-gradient(45deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 6px)," +
-          "repeating-linear-gradient(-45deg, rgba(255,255,255,0.010) 0 2px, transparent 2px 6px)",
+        minHeight: "100dvh",
+        background: "radial-gradient(ellipse 80% 60% at 50% 110%, rgba(0,229,255,0.18) 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #050607 0%, #080C0F 100%)",
+        display: "flex",
+        flexDirection: "column",
+        paddingLeft: 24,
+        paddingRight: 24,
+        paddingTop: "calc(var(--safe-top) + 32px)",
+        paddingBottom: "calc(var(--safe-bottom) + 32px)",
       }}
     >
-      <div className="absolute top-3 left-3 w-5 h-5 border-l border-t" style={{ borderColor: "rgba(0,229,255,0.4)" }} />
-      <div className="absolute bottom-3 right-3 w-5 h-5 border-r border-b" style={{ borderColor: "rgba(0,229,255,0.4)" }} />
-
-      {/* Hero */}
+      {/* Logo + Wordmark */}
       <motion.div
-        className="flex flex-col items-center px-6 pt-4"
+        className="flex flex-col items-center"
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -99,39 +91,58 @@ export default function Register() {
           <motion.div
             aria-hidden="true"
             className="absolute inset-0 rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(0,229,255,0.35), transparent 70%)", filter: "blur(10px)" }}
+            style={{
+              background: "radial-gradient(circle, rgba(0,229,255,0.35), transparent 70%)",
+              filter: "blur(12px)",
+            }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
           />
-          <MilliLogo size={72} className="relative" />
+          <MilliLogo size={64} className="relative" />
         </div>
-        <div className="chrome-text font-display text-[24px] tracking-[0.24em] mt-3">MILLI</div>
+        <span
+          className="mt-3 font-display text-[20px] tracking-[0.24em] select-none"
+          style={{
+            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            fontWeight: 700,
+            background: "linear-gradient(180deg, #FFFFFF 0%, #E0E4E8 40%, #A0A8B0 70%, #6E7379 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 8px rgba(0,229,255,0.3))",
+          }}
+        >
+          MILLI
+        </span>
       </motion.div>
 
-      {/* Title */}
+      {/* Headline + Subtitle */}
       <motion.div
-        className="px-6 mt-5 text-center"
+        className="mt-8 text-center"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] uppercase tracking-[0.28em] font-semibold mb-3"
-             style={{ background: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.32)", color: CYAN }}>
-          <Sparkle size={10} weight="fill" /> 3-day free trial
-        </div>
-        <h1 className="font-display font-black text-[30px] leading-[1.05] tracking-tight">
-          <span className="chrome-text">Lock in your</span>{" "}
-          <span style={{ color: CYAN, textShadow: "0 0 22px rgba(0,229,255,0.4)" }}>deductions.</span>
+        <h1
+          style={{
+            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+            fontSize: 32,
+            fontWeight: 700,
+            color: "#FFFFFF",
+            letterSpacing: "-0.02em",
+            lineHeight: 1.1,
+          }}
+        >
+          Create your account.
         </h1>
-        <p className="text-zinc-400 mt-2 text-[13.5px] max-w-[300px] mx-auto">
-          No card charged today. Cancel anytime before day 3.
+        <p style={{ color: "#a1a1aa", fontSize: 16, marginTop: 8 }}>
+          Tax season starts now.
         </p>
       </motion.div>
 
       {/* Selected plan pill */}
       {plan && (
         <motion.div
-          className="mx-5 mt-5 rounded-2xl px-4 py-3 flex items-center gap-3"
+          className="mt-6 rounded-2xl px-4 py-3 flex items-center gap-3"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
@@ -155,7 +166,7 @@ export default function Register() {
             )}
           </div>
           <Link
-            to="/"
+            to="/welcome"
             data-testid="register-change-plan"
             className="text-[11px] uppercase tracking-[0.18em] font-semibold active:opacity-60"
             style={{ color: CYAN }}
@@ -168,7 +179,7 @@ export default function Register() {
       {/* Form */}
       <motion.form
         onSubmit={onSubmit}
-        className="mt-5 px-5 flex flex-col gap-4"
+        className="mt-6 flex flex-col gap-4 flex-1"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -205,28 +216,29 @@ export default function Register() {
           {STATES.map((s) => <option key={s} value={s} className="bg-[#0A0C0F] text-white">{s}</option>)}
         </FloatingField>
 
+        {/* Create Account button */}
         <motion.button
           type="submit"
           disabled={submitting}
           data-testid="register-submit"
-          whileTap={{ scale: 0.985 }}
-          className="mt-2 relative w-full py-4 rounded-full uppercase tracking-[0.24em] text-[13px] font-bold inline-flex items-center justify-center gap-3 disabled:opacity-60 overflow-hidden"
+          whileTap={{ scale: 0.98 }}
           style={{
-            background: "linear-gradient(180deg, #00E5FF 0%, #00B8D4 100%)",
-            color: "#001217",
-            boxShadow: "0 0 26px rgba(0,229,255,0.55), 0 0 60px rgba(0,229,255,0.22)",
+            width: "100%",
+            height: 50,
+            borderRadius: 16,
+            background: CYAN,
+            color: "#000000",
+            fontWeight: 700,
+            fontSize: 16,
+            letterSpacing: "0.04em",
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 0 28px rgba(0,229,255,0.45), 0 4px 16px rgba(0,229,255,0.25)",
+            marginTop: 8,
           }}
+          className="disabled:opacity-60 active:opacity-90"
         >
-          <motion.span
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)" }}
-            initial={{ x: "-120%" }}
-            animate={{ x: "120%" }}
-            transition={{ duration: 2.6, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
-          />
-          <span className="relative flex items-center gap-2">
-            {submitting ? "Creating account…" : (<>Start 3-day trial <ArrowRight size={14} weight="bold" /></>)}
-          </span>
+          {submitting ? "Creating account…" : "Create Account"}
         </motion.button>
 
         <p className="text-[10.5px] text-white/40 text-center leading-relaxed px-2 mt-1">
@@ -236,23 +248,30 @@ export default function Register() {
             <> Your card is charged {plan.price_display} on {chargeDateLabel} unless you cancel.</>
           )}
         </p>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Sign In link */}
+        <motion.div
+          className="text-center text-[14px] text-zinc-400 pb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.55, duration: 0.6 }}
+        >
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            data-testid="register-link-login"
+            className="font-semibold active:opacity-70"
+            style={{ color: CYAN }}
+          >
+            Sign In
+          </Link>
+        </motion.div>
       </motion.form>
 
-      <motion.div
-        className="mt-6 px-5 text-center text-[13px] text-zinc-400"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.55, duration: 0.6 }}
-      >
-        Already have an account?{" "}
-        <Link to="/login" data-testid="register-link-login"
-          className="font-semibold inline-flex items-center gap-1 active:opacity-70"
-          style={{ color: CYAN, textShadow: "0 0 12px rgba(0,229,255,0.35)" }}>
-          Sign in <ArrowRight size={11} weight="bold" />
-        </Link>
-      </motion.div>
-
-      {/* Cinematic handoff — plays after successful register, then navigates */}
+      {/* Cinematic handoff */}
       <SignInTransition
         show={!!transition}
         mode="welcome"

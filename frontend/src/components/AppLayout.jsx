@@ -140,7 +140,11 @@ export default function AppLayout({ children }) {
       </header>
 
       {/* === Main content === */}
-      <main className="flex-1 overflow-y-auto native-scroll relative z-10" data-testid="app-main-scroll">
+      <main
+        className="flex-1 overflow-y-auto native-scroll relative z-10"
+        style={{ WebkitOverflowScrolling: "touch" }}
+        data-testid="app-main-scroll"
+      >
         {children}
         <div aria-hidden className="h-28" />
       </main>
@@ -253,73 +257,107 @@ export default function AppLayout({ children }) {
 function ChromeDialM() {
   return (
     <div
-      className="w-[72px] h-[72px] rounded-full flex items-center justify-center relative select-none"
-      style={{
-        // Deep dark housing — matches the logo's dark square bg
-        background:
-          "radial-gradient(circle at 40% 30%, #1A2028 0%, #0D1117 40%, #070A0D 100%)",
-        // Outer teal rim glow + deep physical inset shadow
-        boxShadow: [
-          "0 0 0 1.5px rgba(0,229,255,0.55)",
-          "0 0 0 3px rgba(0,229,255,0.12)",
-          "0 0 28px rgba(0,229,255,0.45)",
-          "inset 0 2px 3px rgba(255,255,255,0.12)",
-          "inset 0 -3px 6px rgba(0,0,0,0.7)",
-          "0 10px 32px rgba(0,0,0,0.75)",
-          "0 16px 28px rgba(0,229,255,0.25)",
-        ].join(", "),
-      }}
+      className="relative select-none"
+      style={{ width: 72, height: 72 }}
     >
-      {/* Teal inner border ring */}
-      <span
-        className="absolute inset-0 rounded-full pointer-events-none"
+      {/* Outer cyan bloom glow — beneath the dial */}
+      <div
+        aria-hidden
         style={{
-          border: "1.5px solid rgba(0,229,255,0.35)",
+          position: "absolute",
+          bottom: -6,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 56,
+          height: 14,
           borderRadius: "50%",
+          background: "rgba(0,229,255,0.85)",
+          filter: "blur(10px)",
+          zIndex: 0,
         }}
       />
 
-      {/* The actual Milli logo mark — centered inside */}
+      {/* Main dial housing */}
       <div
-        className="relative z-10"
         style={{
-          width: 48,
-          height: 48,
-          filter:
-            "drop-shadow(0 0 8px rgba(0,229,255,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.6))",
+          position: "relative",
+          zIndex: 1,
+          width: 72,
+          height: 72,
+          borderRadius: "50%",
+          background: "radial-gradient(circle at 38% 28%, #1C2530 0%, #0E151C 45%, #060A0D 100%)",
+          boxShadow: [
+            "0 0 0 1.5px rgba(0,229,255,0.6)",
+            "0 0 0 3.5px rgba(0,229,255,0.10)",
+            "0 0 22px rgba(0,229,255,0.5)",
+            "inset 0 1.5px 3px rgba(255,255,255,0.14)",
+            "inset 0 -4px 8px rgba(0,0,0,0.75)",
+            "0 8px 24px rgba(0,0,0,0.8)",
+            "0 14px 32px rgba(0,229,255,0.2)",
+          ].join(", "),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
         }}
       >
+        {/* Teal inner ring */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            border: "1.5px solid rgba(0,229,255,0.38)",
+            pointerEvents: "none",
+            zIndex: 3,
+          }}
+        />
+
+        {/* Logo image */}
         <img
           src="/brand/milli-mark-192.png"
           alt="M"
           draggable={false}
           style={{
-            width: "100%",
-            height: "100%",
+            width: 46,
+            height: 46,
             objectFit: "contain",
+            position: "relative",
+            zIndex: 2,
+            filter: "drop-shadow(0 0 10px rgba(0,229,255,0.55)) drop-shadow(0 2px 6px rgba(0,0,0,0.7))",
+          }}
+        />
+
+        {/* Glass dome overlay — top half diffuse highlight */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            background: "linear-gradient(175deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.07) 40%, rgba(0,0,0,0) 55%)",
+            pointerEvents: "none",
+            zIndex: 4,
+          }}
+        />
+
+        {/* Bottom inner shadow — depth illusion */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: "10%",
+            right: "10%",
+            height: "40%",
+            borderRadius: "0 0 50% 50%",
+            background: "linear-gradient(0deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%)",
+            pointerEvents: "none",
+            zIndex: 4,
           }}
         />
       </div>
-
-      {/* Glass lens overlay — top half highlight (makes it feel encased) */}
-      <span
-        className="absolute inset-0 rounded-full pointer-events-none z-20"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 45%, rgba(0,0,0,0) 55%)",
-          borderRadius: "50%",
-        }}
-      />
-
-      {/* Cyan light bloom beneath dial */}
-      <span
-        className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-3 rounded-full pointer-events-none z-0"
-        style={{
-          background: "rgba(0,229,255,0.9)",
-          filter: "blur(8px)",
-        }}
-      />
     </div>
   );
 }
-
