@@ -18,7 +18,7 @@ struct SplashView: View {
     var body: some View {
         ZStack {
             // Background
-            Color(hex: "050508")
+            Color.milliBackground
                 .ignoresSafeArea()
             
             // Ambient background glow

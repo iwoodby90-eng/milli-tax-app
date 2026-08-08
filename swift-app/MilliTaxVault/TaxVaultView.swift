@@ -1,132 +1,87 @@
 import SwiftUI
 
-// MARK: - TaxVaultView
-
 struct TaxVaultView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    private let transactions: [VaultTransaction] = [
-        VaultTransaction(title: "Payout Allocation", date: "May 10, 2024", amount: "+$72.91"),
-        VaultTransaction(title: "Payout Allocation", date: "May 9, 2024", amount: "+$69.21"),
-        VaultTransaction(title: "Manual Transfer", date: "May 8, 2024", amount: "+$250.00"),
-        VaultTransaction(title: "Interest Earned", date: "May 7, 2024", amount: "+$1.27"),
-        VaultTransaction(title: "Payout Allocation", date: "May 6, 2024", amount: "+$66.11"),
-    ]
-
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 28) {
-                    titleSection
-                    balanceSection
-                    progressRing
-                    statPills
-                    addToVaultButton
-                    transactionsSection
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-            }
-            .background(Color.milliBackground.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Title
-
-    private var titleSection: some View {
-        HStack(spacing: 0) {
-            Text("MILLI TAX VAULT")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .kerning(1.5)
-            Text("\u{2122}")
-                .font(.caption)
-                .foregroundColor(.white)
-                .baselineOffset(8)
-        }
-    }
-
-    // MARK: - Balance
-
-    private var balanceSection: some View {
-        VStack(spacing: 4) {
-            Text("RESERVE BALANCE")
-                .font(.caption)
-                .foregroundColor(.milliMuted)
-                .kerning(1.0)
-
-            Text("$5,284.17")
-                .font(.system(size: 46, weight: .bold))
-                .foregroundColor(.white)
-
-            Text("23.4% of annual target")
-                .font(.caption)
-                .foregroundColor(.milliMuted)
-        }
-    }
-
-    // MARK: - Progress Ring
-
-    private var progressRing: some View {
         ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.1), lineWidth: 16)
-                .frame(width: 160, height: 160)
+            Color.milliBackground.ignoresSafeArea()
 
-            Circle()
-                .trim(from: 0, to: 0.234)
-                .stroke(
-                    Color.milliAccent,
-                    style: StrokeStyle(lineWidth: 16, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .frame(width: 160, height: 160)
+            VStack(spacing: 0) {
+                MilliPageHeader(title: "MILLI TAX VAULT\u{2122}", showBack: true)
 
-            Text("23%")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.milliAccent)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        // Reserve Balance
+                        reserveBalanceCard
+
+                        // Goal Stats
+                        goalStatsRow
+
+                        // Add to Vault CTA
+                        addToVaultButton
+
+                        // Transactions
+                        transactionsSection
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 100)
+                }
+            }
         }
-        .padding(.vertical, 8)
     }
 
-    // MARK: - Stat Pills
+    // MARK: - Reserve Balance
 
-    private var statPills: some View {
+    private var reserveBalanceCard: some View {
+        MilliCard {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("RESERVE BALANCE")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundColor(.milliTextSecondary)
+                    Text("$5,284.17")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("23.4% of annual target")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.milliTextSecondary)
+                }
+
+                Spacer()
+
+                CircularProgressView(progress: 0.234, size: 64, lineWidth: 5)
+            }
+        }
+    }
+
+    // MARK: - Goal Stats Row
+
+    private var goalStatsRow: some View {
         HStack(spacing: 12) {
-            statPill(title: "Annual Target", value: "$22,500.00")
-            statPill(title: "Target Date", value: "Dec 31, 2024")
-        }
-    }
+            MilliCard {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("ANNUAL TARGET")
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundColor(.milliTextSecondary)
+                    Text("$22,500.00")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
 
-    private func statPill(title: String, value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption2)
-                .foregroundColor(.milliMuted)
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
+            MilliCard {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("TARGET DATE")
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundColor(.milliTextSecondary)
+                    Text("Dec 31, 2024")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color.milliCard)
-        .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.milliAccent.opacity(0.3), lineWidth: 1)
-        )
     }
 
     // MARK: - Add to Vault Button
@@ -134,12 +89,11 @@ struct TaxVaultView: View {
     private var addToVaultButton: some View {
         Button(action: {}) {
             Text("Add to Vault")
-                .font(.headline)
-                .fontWeight(.bold)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color.milliAccent)
+                .frame(height: 48)
+                .background(Color.milliCyan)
                 .cornerRadius(12)
         }
     }
@@ -150,58 +104,60 @@ struct TaxVaultView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("TRANSACTIONS")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.milliMuted)
-                    .kerning(1.2)
+                    .font(.system(size: 13, weight: .semibold))
+                    .tracking(0.5)
+                    .foregroundColor(.milliTextSecondary)
                 Spacer()
-                Button("View All") {}
-                    .font(.caption)
-                    .foregroundColor(.milliAccent)
+                Button(action: {}) {
+                    Text("View All")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.milliCyan)
+                }
             }
 
             VStack(spacing: 0) {
-                ForEach(Array(transactions.enumerated()), id: \.element.id) { index, transaction in
-                    transactionRow(transaction)
-                    if index < transactions.count - 1 {
-                        Divider().background(Color.white.opacity(0.08))
-                    }
-                }
+                transactionRow(icon: "arrow.down.circle.fill", label: "Payout Allocation", date: "May 10, 2024", amount: "+$72.91")
+                transactionRow(icon: "arrow.down.circle.fill", label: "Payout Allocation", date: "May 9, 2024", amount: "+$69.21")
+                transactionRow(icon: "arrow.right.circle.fill", label: "Manual Transfer", date: "Jul 2021", amount: "+$250.00")
+                transactionRow(icon: "percent", label: "Interest Earned", date: "May 7, 2024", amount: "+$1.27")
+                transactionRow(icon: "arrow.down.circle.fill", label: "Payout Allocation", date: "May 6, 2024", amount: "+$86.11")
             }
-            .padding(16)
-            .milliCard()
+            .background(Color.milliCard)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.milliCardBorder, lineWidth: 0.5)
+            )
         }
     }
 
-    private func transactionRow(_ transaction: VaultTransaction) -> some View {
-        HStack {
+    private func transactionRow(icon: String, label: String, date: String, amount: String) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color.milliCyan.opacity(0.12))
+                .frame(width: 32, height: 32)
+                .overlay(
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.milliCyan)
+                )
+
             VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.title)
-                    .font(.subheadline)
+                Text(label)
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
-                Text(transaction.date)
-                    .font(.caption)
-                    .foregroundColor(.milliMuted)
+                Text(date)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(.milliTextSecondary)
             }
+
             Spacer()
-            Text(transaction.amount)
-                .font(.headline)
+
+            Text(amount)
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.milliGreen)
         }
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
-}
-
-// MARK: - Transaction Model
-
-struct VaultTransaction: Identifiable {
-    let id = UUID()
-    let title: String
-    let date: String
-    let amount: String
-}
-
-#Preview {
-    TaxVaultView()
-        .preferredColorScheme(.dark)
 }

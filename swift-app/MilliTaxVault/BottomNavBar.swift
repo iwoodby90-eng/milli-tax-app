@@ -2,11 +2,13 @@ import SwiftUI
 import UIKit
 
 // MARK: - App Tab Enum
+
 enum AppTab: Equatable {
-    case vault, wealth, home, activity, cockpit
+    case vault, payouts, home, mileage, more
 }
 
-// MARK: - Blur Background (native UIKit blur)
+// MARK: - Blur Background
+
 struct BlurView: UIViewRepresentable {
     var style: UIBlurEffect.Style = .systemUltraThinMaterialDark
     func makeUIView(context: Context) -> UIVisualEffectView {
@@ -15,22 +17,58 @@ struct BlurView: UIViewRepresentable {
     func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
 }
 
+// MARK: - Angular M Shape (logo lettermark)
+
+struct AngularMShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width, h = rect.height
+        let stroke: CGFloat = w * 0.18
+        // Left vertical
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: stroke, y: 0))
+        path.addLine(to: CGPoint(x: stroke, y: h * 0.55))
+        // Left diagonal down to V center
+        path.addLine(to: CGPoint(x: w * 0.5, y: h * 0.5))
+        // Right diagonal up from V center
+        path.addLine(to: CGPoint(x: w - stroke, y: h * 0.55))
+        path.addLine(to: CGPoint(x: w - stroke, y: 0))
+        path.addLine(to: CGPoint(x: w, y: 0))
+        path.addLine(to: CGPoint(x: w, y: h))
+        path.addLine(to: CGPoint(x: w - stroke, y: h))
+        path.addLine(to: CGPoint(x: w - stroke, y: h * 0.72))
+        path.addLine(to: CGPoint(x: w * 0.5, y: h * 0.62))
+        path.addLine(to: CGPoint(x: stroke, y: h * 0.72))
+        path.addLine(to: CGPoint(x: stroke, y: h))
+        path.addLine(to: CGPoint(x: 0, y: h))
+        path.closeSubpath()
+        return path
+    }
+}
+
 // MARK: - Bel Air Nav Bar
+
 struct BelAirNavBar: View {
     @Binding var selectedTab: AppTab
     @State private var mDialPressed = false
     @State private var mDialGlow = false
-    
+
     var body: some View {
         ZStack(alignment: .top) {
-            // Native blur background — real glass, not fake
+            // Blur background
             BlurView(style: .systemUltraThinMaterialDark)
                 .ignoresSafeArea(edges: .bottom)
                 .overlay(
-                    // Top chrome specularity line
                     VStack(spacing: 0) {
+                        // Chrome specularity line at top
                         LinearGradient(
-                            colors: [Color.white.opacity(0.18), Color.clear],
+                            colors: [
+                                Color.white.opacity(0.0),
+                                Color.white.opacity(0.2),
+                                Color.white.opacity(0.35),
+                                Color.white.opacity(0.2),
+                                Color.white.opacity(0.0)
+                            ],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -39,14 +77,13 @@ struct BelAirNavBar: View {
                     }
                 )
                 .overlay(
-                    // Subtle dark tint
                     LinearGradient(
-                        colors: [Color.black.opacity(0.45), Color.black.opacity(0.25)],
+                        colors: [Color.black.opacity(0.5), Color.black.opacity(0.25)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-            
+
             VStack(spacing: 0) {
                 HStack(alignment: .center, spacing: 0) {
                     // LEFT: Vault
@@ -56,40 +93,39 @@ struct BelAirNavBar: View {
                         tab: .vault,
                         selectedTab: $selectedTab
                     )
-                    
-                    // LEFT: Wealth
+
+                    // LEFT: Payouts
                     NavTabButton(
-                        icon: "chart.line.uptrend.xyaxis",
-                        label: "Wealth",
-                        tab: .wealth,
+                        icon: "arrow.down.circle.fill",
+                        label: "Payouts",
+                        tab: .payouts,
                         selectedTab: $selectedTab
                     )
-                    
-                    // CENTER: M Dial — the crown jewel
-                    MDial(selectedTab: $selectedTab, isPressed: $mDialPressed, isGlowing: $mDialGlow)
+
+                    // CENTER: M Dial
+                    MDialButton(selectedTab: $selectedTab, isPressed: $mDialPressed, isGlowing: $mDialGlow)
                         .frame(width: 80)
-                        .offset(y: -22)
-                    
-                    // RIGHT: Activity
+                        .offset(y: -14)
+
+                    // RIGHT: Mileage
                     NavTabButton(
-                        icon: "waveform.path.ecg",
-                        label: "Activity",
-                        tab: .activity,
+                        icon: "car.fill",
+                        label: "Mileage",
+                        tab: .mileage,
                         selectedTab: $selectedTab
                     )
-                    
-                    // RIGHT: Cockpit
+
+                    // RIGHT: More
                     NavTabButton(
-                        icon: "dial.medium.fill",
-                        label: "Cockpit",
-                        tab: .cockpit,
+                        icon: "ellipsis",
+                        label: "More",
+                        tab: .more,
                         selectedTab: $selectedTab
                     )
                 }
                 .padding(.top, 12)
                 .padding(.horizontal, 8)
-                
-                // Safe area spacer
+
                 Spacer(minLength: 0)
                     .frame(height: safeAreaBottom)
             }
@@ -101,7 +137,7 @@ struct BelAirNavBar: View {
             }
         }
     }
-    
+
     private var safeAreaBottom: CGFloat {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
@@ -109,14 +145,15 @@ struct BelAirNavBar: View {
     }
 }
 
-// MARK: - M Dial (the center home button)
-struct MDial: View {
+// MARK: - M Dial Button (center home)
+
+struct MDialButton: View {
     @Binding var selectedTab: AppTab
     @Binding var isPressed: Bool
     @Binding var isGlowing: Bool
-    
+
     var isHome: Bool { selectedTab == .home }
-    
+
     var body: some View {
         Button(action: {
             let impact = UIImpactFeedbackGenerator(style: .medium)
@@ -132,112 +169,98 @@ struct MDial: View {
             }
         }) {
             ZStack {
-                // LAYER 1: Outer glow ring (when home is active)
+                // LAYER 1: Outer glow (active)
                 if isHome {
                     Circle()
-                        .fill(Color(hex: "00B4FF").opacity(isGlowing ? 0.20 : 0.08))
-                        .frame(width: 88, height: 88)
+                        .fill(Color.milliCyan.opacity(isGlowing ? 0.15 : 0.06))
+                        .frame(width: 80, height: 80)
                         .blur(radius: 8)
                 }
-                
-                // LAYER 2: Chrome outer bezel
+
+                // LAYER 2: Chrome outer bezel (AngularGradient)
                 Circle()
                     .fill(
                         AngularGradient(
                             colors: [
                                 Color(hex: "6A6A6A"),
-                                Color(hex: "CCCCCC"),
+                                Color(hex: "DDDDDD"),
                                 Color(hex: "4A4A4A"),
-                                Color(hex: "AAAAAA"),
-                                Color(hex: "555555"),
                                 Color(hex: "BBBBBB"),
+                                Color(hex: "555555"),
+                                Color(hex: "CCCCCC"),
                                 Color(hex: "6A6A6A")
                             ],
                             center: .center
                         )
                     )
-                    .frame(width: 72, height: 72)
-                    .shadow(color: Color.black.opacity(0.7), radius: 8, x: 0, y: 4)
-                    .shadow(color: Color.white.opacity(0.1), radius: 2, x: 0, y: -1)
-                
-                // LAYER 3: Inner dark well
+                    .frame(width: 54, height: 54)
+                    .shadow(color: Color.black.opacity(0.7), radius: 6, x: 0, y: 3)
+                    .shadow(color: Color.white.opacity(0.08), radius: 2, x: 0, y: -1)
+
+                // LAYER 3: Dark inner well (RadialGradient)
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: "2A2A2A"),
-                                Color(hex: "111111"),
-                                Color(hex: "0A0A0A")
+                                Color(hex: "222222"),
+                                Color(hex: "0E0E0E"),
+                                Color(hex: "080808")
                             ],
                             center: .init(x: 0.4, y: 0.35),
                             startRadius: 0,
-                            endRadius: 30
+                            endRadius: 22
                         )
                     )
-                    .frame(width: 60, height: 60)
+                    .frame(width: 44, height: 44)
                     .overlay(
                         Circle()
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
                     )
-                
-                // LAYER 4: M lettermark with chrome gradient
-                Text("M")
-                    .font(.system(size: 28, weight: .black, design: .default))
-                    .foregroundStyle(
+
+                // LAYER 4: Angular M lettermark
+                AngularMShape()
+                    .fill(
                         LinearGradient(
                             colors: isHome
-                                ? [Color(hex: "7ADEFD"), Color(hex: "FFFFFF"), Color(hex: "00B4FF"), Color(hex: "FFFFFF")]
+                                ? [Color(hex: "7ADEFD"), Color.white, Color(hex: "00B4FF"), Color.white]
                                 : [Color(hex: "AAAAAA"), Color(hex: "EEEEEE"), Color(hex: "999999")],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: isHome ? Color(hex: "00B4FF").opacity(0.8) : Color.clear, radius: 6)
-                
-                // LAYER 5: Cyan runway accent stripe (active only)
-                if isHome {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "00B4FF"), Color(hex: "7ADEFD")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: 28, height: 2.5)
-                        .shadow(color: Color(hex: "00B4FF"), radius: 6)
-                        .offset(y: 25)
-                }
-                
-                // LAYER 6: Top specular highlight
+                    .frame(width: 18, height: 20)
+                    .shadow(color: isHome ? Color.milliCyan.opacity(0.7) : Color.clear, radius: 5)
+
+                // LAYER 5: Top specular highlight
                 Ellipse()
                     .fill(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.22), Color.clear],
+                            colors: [Color.white.opacity(0.18), Color.clear],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .frame(width: 32, height: 14)
-                    .offset(y: -18)
-                    .blur(radius: 2)
+                    .frame(width: 24, height: 10)
+                    .offset(y: -14)
+                    .blur(radius: 1.5)
             }
-            .scaleEffect(isPressed ? 0.88 : 1.0)
+            .scaleEffect(isPressed ? 0.9 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressed)
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - Individual Nav Tab Button
+// MARK: - Nav Tab Button
+
 struct NavTabButton: View {
     let icon: String
     let label: String
     let tab: AppTab
     @Binding var selectedTab: AppTab
-    
+
     var isSelected: Bool { selectedTab == tab }
-    
+
     var body: some View {
         Button(action: {
             let impact = UIImpactFeedbackGenerator(style: .light)
@@ -247,43 +270,22 @@ struct NavTabButton: View {
             }
         }) {
             VStack(spacing: 3) {
-                ZStack {
-                    // Active indicator background
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(hex: "00B4FF").opacity(0.12))
-                            .frame(width: 36, height: 28)
-                    }
-                    
-                    Image(systemName: icon)
-                        .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
-                        .foregroundStyle(
-                            isSelected
-                            ? LinearGradient(
-                                colors: [Color(hex: "00B4FF"), Color(hex: "7ADEFD")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                              )
-                            : LinearGradient(
-                                colors: [Color(hex: "6B6B7A"), Color(hex: "5A5A68")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                              )
-                        )
-                        .shadow(color: isSelected ? Color(hex: "00B4FF").opacity(0.5) : Color.clear, radius: 4)
-                }
-                .frame(height: 28)
-                
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? Color.milliCyan : Color.milliTextTertiary)
+                    .shadow(color: isSelected ? Color.milliCyan.opacity(0.5) : Color.clear, radius: 4)
+                    .frame(height: 24)
+
                 Text(label)
-                    .font(.system(size: 9, weight: isSelected ? .semibold : .regular, design: .default))
-                    .foregroundColor(isSelected ? Color(hex: "00B4FF") : Color(hex: "5A5A68"))
+                    .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? Color.milliCyan : Color.milliTextTertiary)
                     .tracking(isSelected ? 0.3 : 0)
-                
-                // Active dot indicator
+
+                // Active dot
                 Circle()
-                    .fill(isSelected ? Color(hex: "00B4FF") : Color.clear)
+                    .fill(isSelected ? Color.milliCyan : Color.clear)
                     .frame(width: 3, height: 3)
-                    .shadow(color: isSelected ? Color(hex: "00B4FF") : Color.clear, radius: 3)
+                    .shadow(color: isSelected ? Color.milliCyan : Color.clear, radius: 3)
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())

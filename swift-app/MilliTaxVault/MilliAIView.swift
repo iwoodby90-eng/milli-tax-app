@@ -1,208 +1,155 @@
 import SwiftUI
 
-// MARK: - Chat Message Model
-
-struct ChatMessage: Identifiable {
-    let id = UUID()
-    let isUser: Bool
-    let text: String
-    let actionButton: String?
-
-    init(isUser: Bool, text: String, actionButton: String? = nil) {
-        self.isUser = isUser
-        self.text = text
-        self.actionButton = actionButton
-    }
-}
-
-// MARK: - MilliAIView
-
 struct MilliAIView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var inputText: String = ""
-    @State private var messages: [ChatMessage] = [
-        ChatMessage(
-            isUser: false,
-            text: "Hi there \u{1f44b} I'm Milli AI. I'm here to help you save on taxes and build wealth. What would you like to know?"
-        ),
-        ChatMessage(
-            isUser: true,
-            text: "How much will I owe in taxes this year?"
-        ),
-        ChatMessage(
-            isUser: false,
-            text: "Based on your income so far, I estimate you'll owe $1,247 for Q2 taxes.",
-            actionButton: "View Tax Estimate"
-        ),
-        ChatMessage(
-            isUser: true,
-            text: "How can I reduce my taxes?"
-        ),
-        ChatMessage(
-            isUser: false,
-            text: "Great question. You could save an estimated $420 by tracking more deductions.",
-            actionButton: "Show Deductions"
-        ),
+    @State private var messageText = ""
+
+    private let messages: [(role: String, text: String, button: String?)] = [
+        ("bot", "Hi Alex, I'm Milli AI. I'm here to help you save on taxes and build wealth. What would you like to know?", nil),
+        ("user", "How much will I owe in taxes this year?", nil),
+        ("bot", "Based on your income so far, I estimate you'll owe $1,247 for Q2 taxes.", "View Tax Estimate"),
+        ("user", "How can I reduce my taxes?", nil),
+        ("bot", "Great question. You could save an estimated $420 by tracking more deductions.", "Show Deductions")
     ]
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            Color.milliBackground.ignoresSafeArea()
+
             VStack(spacing: 0) {
-                chatScrollView
-                inputBar
-            }
-            .background(Color.milliBackground.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                    }
-                }
-                ToolbarItem(placement: .principal) {
+                // Header
+                HStack {
+                    Spacer()
                     Text("MILLI AI")
-                        .font(.headline)
-                        .fontWeight(.bold)
+                        .font(.system(size: 17, weight: .semibold))
+                        .tracking(1)
                         .foregroundColor(.white)
-                        .kerning(1.5)
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    Spacer()
                     Button(action: {}) {
                         Image(systemName: "ellipsis")
+                            .font(.system(size: 17, weight: .medium))
                             .foregroundColor(.white)
                     }
                 }
-            }
-        }
-    }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
 
-    // MARK: - Chat Scroll View
-
-    private var chatScrollView: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(messages) { message in
-                        if message.isUser {
-                            userBubble(message)
-                        } else {
-                            aiBubble(message)
+                // Chat messages
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        ForEach(0..<messages.count, id: \.self) { index in
+                            let msg = messages[index]
+                            if msg.role == "bot" {
+                                botBubble(text: msg.text, button: msg.button)
+                            } else {
+                                userBubble(text: msg.text)
+                            }
                         }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 20)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
-            }
-            .onChange(of: messages.count) { _, _ in
-                if let lastMessage = messages.last {
-                    withAnimation {
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                    }
-                }
+
+                // Input bar
+                inputBar
             }
         }
     }
 
-    // MARK: - AI Bubble
+    // MARK: - Bot Bubble
 
-    private func aiBubble(_ message: ChatMessage) -> some View {
+    private func botBubble(text: String, button: String?) -> some View {
         HStack(alignment: .top, spacing: 10) {
+            // Robot icon
             Circle()
-                .fill(Color.milliAccent.opacity(0.2))
-                .frame(width: 32, height: 32)
+                .fill(Color.milliCyan.opacity(0.12))
+                .frame(width: 28, height: 28)
                 .overlay(
-                    Text("M")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.milliAccent)
+                    Image(systemName: "cpu")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.milliCyan)
                 )
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(message.text)
-                    .font(.subheadline)
+                Text(text)
+                    .font(.system(size: 15, weight: .regular))
                     .foregroundColor(.white)
                     .padding(12)
                     .background(Color.milliCard)
-                    .cornerRadius(16)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.milliCardBorder, lineWidth: 0.5)
+                    )
 
-                if let actionButton = message.actionButton {
+                if let btn = button {
                     Button(action: {}) {
-                        Text(actionButton)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.milliAccent)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.milliAccent, lineWidth: 1)
-                            )
+                        Text(btn)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.milliCyan)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.milliCyan.opacity(0.12))
+                            .cornerRadius(8)
                     }
                 }
             }
 
             Spacer(minLength: 40)
         }
-        .id(message.id)
     }
 
     // MARK: - User Bubble
 
-    private func userBubble(_ message: ChatMessage) -> some View {
+    private func userBubble(text: String) -> some View {
         HStack {
             Spacer(minLength: 60)
 
-            Text(message.text)
-                .font(.subheadline)
+            Text(text)
+                .font(.system(size: 15, weight: .regular))
                 .foregroundColor(.white)
                 .padding(12)
-                .background(Color.milliAccent)
-                .cornerRadius(16)
+                .background(
+                    LinearGradient(
+                        colors: [Color.milliCyan, Color(hex: "0088CC")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(14)
         }
-        .id(message.id)
     }
 
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        HStack(spacing: 12) {
-            TextField("Ask Milli AI anything...", text: $inputText)
-                .font(.subheadline)
+        HStack(spacing: 10) {
+            TextField("Ask Milli AI anything...", text: $messageText)
+                .font(.system(size: 15))
                 .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .background(Color.milliCard)
-                .cornerRadius(24)
+                .cornerRadius(22)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 22)
+                        .stroke(Color.milliCardBorder, lineWidth: 0.5)
                 )
 
-            Button(action: { sendMessage() }) {
-                Image(systemName: "paperplane.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
-                    .background(Color.milliAccent)
-                    .clipShape(Circle())
+            Button(action: {}) {
+                Circle()
+                    .fill(Color.milliCyan)
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    )
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(Color.milliBackground)
     }
-
-    // MARK: - Send Message
-
-    private func sendMessage() {
-        guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        let newMessage = ChatMessage(isUser: true, text: inputText)
-        messages.append(newMessage)
-        inputText = ""
-    }
-}
-
-#Preview {
-    MilliAIView()
-        .preferredColorScheme(.dark)
 }
