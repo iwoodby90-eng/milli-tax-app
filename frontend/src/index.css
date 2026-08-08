@@ -104,3 +104,38 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+
+/* ── Milli Keyframe Animations (fallback — also imported via milli-keyframes.css) ── */
+@keyframes milli-breathe {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(0,229,255,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(0,229,255,0.8)) drop-shadow(0 0 40px rgba(0,229,255,0.35)) drop-shadow(0 3px 8px rgba(0,0,0,0.5));
+    transform: scale(1.035);
+  }
+}
+
+@keyframes milli-shimmer {
+  0%, 72% { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+  76% { opacity: 1; }
+  88% { transform: translateX(160%) skewX(-18deg); opacity: 0; }
+  100% { transform: translateX(160%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes milli-splash-bloom {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { opacity: 0.7; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes milli-particle-burst {
+  0% { transform: scale(0) translate(0, 0); opacity: 1; }
+  100% { transform: scale(1) translate(var(--tx), var(--ty)); opacity: 0; }
+}
+
+@keyframes milli-fab-glow {
+  0%, 100% { box-shadow: 0 0 18px rgba(0,229,255,0.4), 0 4px 16px rgba(0,0,0,0.4); }
+  50% { box-shadow: 0 0 32px rgba(0,229,255,0.7), 0 4px 24px rgba(0,0,0,0.5); }
+}
