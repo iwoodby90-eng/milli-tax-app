@@ -10,17 +10,11 @@ import {
 import { EliteBadge } from "@/components/MilliPrimitives";
 import { MilliCardHero, MilliCardMini, cardMetaFor } from "@/components/MilliCard";
 import MilliVaultBridge from "@/plugins/MilliVaultBridge";
+import MilliLogo from "@/components/MilliLogo";
 
 /**
  * Milli Tax Vault — Dashboard.
- * Matches the "Good morning, Alex" reference mockup exactly:
- *   1. Greeting
- *   2. Available to Spend here (cyan glow + metallic M card graphic)
- *   3. Latest Payout (2-column breakdown)
- *   3.5. Milli Cents entry point
- *   4. Milli Tax Vault ⁄ Tax Ready Score⁄ (side-by-side)
- *   5. Financial Timeline
- *   6. Mileage ⊹ Retirement ⊹ Investing (3-up tiles)
+ * WWDC-quality cinematic hero screen. Bloomberg Terminal meets Apple Wallet meets Bentley cockpit.
  */
 export default function Dashboard() {
   const { user } = useAuth();
@@ -40,7 +34,6 @@ export default function Dashboard() {
   }
   useEffect(() => { load(); }, []);
 
-  // Compute driving-day streak — done pre-return so hooks/effects can depend on it.
   const streak = (() => {
     if (!trips || !trips.length) return 0;
     const daySet = new Set(
@@ -59,7 +52,6 @@ export default function Dashboard() {
     return count;
   })();
 
-  // Keep the iOS home-screen widget + watch compliance fresh with the latest streak.
   useEffect(() => {
     if (!summary) return;
     const firstName = user?.name?.split(" ")[0] || "";
@@ -74,8 +66,9 @@ export default function Dashboard() {
 
   if (!summary) {
     return (
-      <div className="p-12 font-mono text-volt animate-pulse text-center">
-        [ LOADING MILLI... ]
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <MilliLogo size={48} animate={true} />
+        <p style={{ color: "#6B7280", fontSize: 14, letterSpacing: "-0.01em" }}>Loading your vault...</p>
       </div>
     );
   }
@@ -85,7 +78,6 @@ export default function Dashboard() {
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
-  // Available to spend = gross - reserved (fallback logic if fields missing)
   const availableToSpend =
     Number(summary?.available_to_spend) ||
     Math.max(
@@ -109,7 +101,6 @@ export default function Dashboard() {
   const taxGoal = Number(summary?.tax_goal || 20000);
   const vaultPct = Math.min(100, Math.round((vaultBalance / Math.max(1, taxGoal)) * 100));
 
-  // Tax Ready Score (Excellent ≥85, On Track ≥70, ...)
   const readyScore = summary?.tax_ready_score
     ? Math.round(Math.min(100, (vaultBalance / Math.max(1, taxGoal * 0.25)) * 100))
     : 0;
@@ -118,30 +109,30 @@ export default function Dashboard() {
       : readyScore >= 40 ? "Building"
       : "Start";
 
-  // Mileage
   const milesThisMonth = summary?.mileage?.business_miles || trips.reduce((a, t) => a + Number(t.miles || 0), 0);
   const mileageDeduction = summary?.mileage?.business_deduction || Math.round(milesThisMonth * 0.70 * 100) / 100;
 
-  // Wealth
   const retirement = Number(summary?.retirement_balance || 0);
   const invest = Number(summary?.invest_balance || 0);
 
   return (
-    <div className="px-5 sm:px-6 lg:px-10 pt-4 pb-6 max-w-2xl mx-auto space-y-5">
-
+    <div
+      style={{
+        padding: "16px 24px calc(var(--safe-bottom, 34px) + 32px) 24px",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Outfit", system-ui, sans-serif',
+        maxWidth: 640,
+        margin: "0 auto",
+      }}
+    >
       {/*=== Greeting ===*/}
-      <header className="pt-2 pb-1 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1
-            className="font-chrome font-bold text-white text-[28px] sm:text-[32px] leading-tight tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif", letterSpacing: "-0.035em" }}
-            data-testid="dashboard-greeting"
-          >
+      <header style={{ paddingTop: 8, paddingBottom: 4, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#FFFFFF", letterSpacing: "-0.035em", lineHeight: 1.15, margin: 0 }} data-testid="dashboard-greeting">
             {greeting}, {firstName}
           </h1>
-          <p className="text-zinc-400 text-[15px] mt-1" data-testid="dashboard-subgreeting">
+          <p style={{ color: "#9CA3AF", fontSize: 15, marginTop: 4 }} data-testid="dashboard-subgreeting">
             {streak > 1
-              ? `You're on a ${streak}-day earning streak, ${firstName}.`
+              ? `You're on a ${streak}-day earning streak.`
               : (deposits?.length ?? 0) > 0
                 ? `Here's your money, ${firstName}.`
                 : `Welcome to Milli, ${firstName}.`}
@@ -150,298 +141,261 @@ export default function Dashboard() {
         {streak > 0 && (
           <div
             data-testid="dashboard-streak-pill"
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full mt-1"
             style={{
+              flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 12px", borderRadius: 999, marginTop: 4,
               background: "rgba(0,229,255,0.08)",
               border: "1px solid rgba(0,229,255,0.5)",
               boxShadow: "0 0 14px rgba(0,229,255,0.35)",
             }}
-            title={`${streak}-day driving streak ✦ earning Milli Cents boost`}
           >
             <FlameIcon />
-            <span
-              className="font-chrome font-bold text-[15px] tabular-nums text-volt leading-none"
-              style={{ textShadow: "0 0 6px rgba(0,229,255,0.55)" }}
-            >
+            <span style={{ fontWeight: 700, fontSize: 15, color: "#00E5FF", fontVariantNumeric: "tabular-nums", textShadow: "0 0 6px rgba(0,229,255,0.55)" }}>
               {streak}
             </span>
-            <span className="text-zinc-400 text-[10px] uppercase tracking-widest leading-none">
+            <span style={{ color: "#6B7280", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.14em" }}>
               day{streak === 1 ? "" : "s"}
             </span>
           </div>
         )}
       </header>
 
-      {/*=== 1. ⊹ Available to Spend Here ===*/}
+      <div style={{ height: 20 }} />
+
+      {/*=== 1. Available to Spend — HERO TEAL CARD ===*/}
       <section
-        className="relative overflow-hidden rounded-3xl p-5 sm:p-6"
         data-testid="dashboard-available-card"
         style={{
-          background:
-            "linear-gradient(135deg, rgba(0,180,200,0.30) 0%, rgba(0,229,255,0.10) 35%, rgba(10,14,18,0.85) 70%, rgba(10,14,18,0.95) 100%)",
-          border: "1px solid rgba(0,229,255,0.55)",
-          boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.10), 0 0 28px rgba(0,229,255,0.35), 0 0 60px rgba(0,229,255,0.15), 0 18px 44px rgba(0,0,0,0.55)",
+          position: "relative", overflow: "hidden", borderRadius: 24, padding: "24px 24px 20px",
+          background: "linear-gradient(135deg, rgba(0,180,200,0.22), rgba(0,229,255,0.07) 45%, rgba(5,6,7,0.9))",
+          border: "1px solid rgba(0,229,255,0.45)",
+          boxShadow: "0 0 32px rgba(0,229,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1), 0 16px 48px rgba(0,0,0,0.4)",
         }}
       >
-        {/* Milli card mini badge floated in the top-right so the amount has full width */}
-        <div className="absolute top-4 right-4 sm:top-5 sm:right-5 pointer-events-none">
+        <div style={{ position: "absolute", top: 20, right: 20, pointerEvents: "none" }}>
           <MilliCardMini user={user} />
         </div>
-        <div className="relative z-10 min-w-0">
-          <div className="flex items-center gap-2 text-white/80 text-[14px] font-medium">
-            <span>Available to Spend</span>
-            <Eye size={16} weight="regular" className="text-white/60" />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#6B7280", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
+            AVAILABLE TO SPEND
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Eye size={16} weight="regular" color="rgba(255,255,255,0.5)" />
           </div>
           <div
-            className="font-chrome font-black text-white tabular-nums leading-[1] mt-3 text-[36px] sm:text-[44px]"
-            style={{ fontFamily: "'Outfit', sans-serif" }}
             data-testid="dashboard-available-amount"
+            style={{
+              fontSize: 44, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.04em",
+              fontVariantNumeric: "tabular-nums", lineHeight: 1, marginTop: 8,
+              fontFamily: '"Outfit", system-ui, sans-serif',
+            }}
           >
             {availableToSpend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <Link
             to="/app/vault"
-            className="mt-3 inline-flex items-center gap-1.5 text-white/70 text-[13px] active:opacity-70"
             data-testid="dashboard-checking-link"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.6)", fontSize: 13, marginTop: 12, textDecoration: "none" }}
           >
             <span>Milli Checking</span>
-            <span className="tracking-widest text-white/50" data-testid="dashboard-checking-last4">⌗⌗⌗⌗ {cardMetaFor(user).last4}</span>
-            <CaretRight size={12} weight="bold" className="text-white/60" />
+            <span style={{ letterSpacing: "0.12em", color: "rgba(255,255,255,0.4)" }} data-testid="dashboard-checking-last4">⌗⌗⌗⌗ {cardMetaFor(user).last4}</span>
+            <CaretRight size={12} weight="bold" color="rgba(255,255,255,0.5)" />
           </Link>
         </div>
       </section>
 
-      {/*=== 1.5 ⊹ Your Milli Card ===*/}
+      <div style={{ height: 16 }} />
+
+      {/*=== 1.5 Your Milli Card ===*/}
       <section
-        className="rounded-3xl p-5 sm:p-6 flex flex-col items-center gap-3"
         data-testid="dashboard-milli-card-section"
         style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.35) 100%)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+          borderRadius: 24, padding: "20px 24px",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+          background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
         }}
       >
-        <div className="w-full flex items-center justify-between">
+        <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div className="text-white/85 text-[15px] font-semibold">Your Milli Card</div>
-            <div className="text-zinc-500 text-[12px] mt-0.5">
-              Tap-to-pay ready ⌗ {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
+            <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: 600 }}>Your Milli Card</div>
+            <div style={{ color: "#4B5563", fontSize: 12, marginTop: 2 }}>
+              Tap-to-pay ready · {user?.plan === "elite" ? "Elite metal edition" : user?.plan === "pro" ? "Pro edition" : "Virtual card"}
             </div>
           </div>
-          <Link
-            to="/app/more"
-            data-testid="dashboard-card-manage"
-            className="text-volt text-[13px] font-semibold"
-            style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}
-          >
+          <Link to="/app/more" data-testid="dashboard-card-manage" style={{ color: "#00E5FF", fontSize: 13, fontWeight: 600, textDecoration: "none", textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
             Manage
           </Link>
         </div>
         <MilliCardHero user={user} testid="dashboard-milli-card" />
       </section>
 
-      {/*=== 2. ⊹ Latest Payout ===*/}
+      <div style={{ height: 16 }} />
+
+      {/*=== 2. Latest Payout ===*/}
       <Link
         to="/app/income"
-        className="milli-card block p-5 rounded-2xl active:scale-[0.995] transition-transform"
         data-testid="dashboard-latest-payout-card"
+        style={{
+          display: "block", borderRadius: 20, padding: 20, textDecoration: "none",
+          background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
+        }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-semibold text-[17px]">Latest Payout</h2>
-          <CaretRight size={16} weight="bold" className="text-zinc-500" />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: "#fff", letterSpacing: "-0.02em", margin: 0 }}>Latest Payout</h2>
+          <CaretRight size={16} weight="bold" color="#4B5563" />
         </div>
-        <div className="flex gap-5">
-          {/* Left */}
-          <div className="flex-1 min-w-0">
-            <div className="text-zinc-400 text-[12.5px]">Gross Payout</div>
-            <div className="chrome-text font-chrome font-bold text-[26px] leading-tight mt-1 tabular-nums">
+        <div style={{ display: "flex", gap: 20 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "#9CA3AF", fontSize: 12 }}>Gross Payout</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums", marginTop: 4 }}>
               {latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-zinc-500 text-[12.5px] mt-2">{latestDate}</div>
+            <div style={{ color: "#4B5563", fontSize: 12, marginTop: 8 }}>{latestDate}</div>
           </div>
-          {/* Right */}
-          <div className="flex-1 min-w-[13.5px] space-y-1.5">
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
             <BreakdownRow label="Net Payout" value={`$${latestNet.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
             <BreakdownRow label="Taxes" value={`−$${latestTaxes.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-            <BreakdownRow label={<span>Milli Tax Vault<sup>⁄</sup></span>} value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
-            <div className="border-t border-white/10 pt-1.5 mt-1.5">
+            <BreakdownRow label="Milli Tax Vault" value={`−$${latestVault.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cyan />
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 6, marginTop: 2 }}>
               <BreakdownRow label="Total" value={`$${latestGross.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} bold />
             </div>
           </div>
         </div>
       </Link>
 
-      {/*=== 2.5 ⊹ Milli Cents Entry Point ===*/}
+      <div style={{ height: 16 }} />
+
+      {/*=== 2.5 Milli Cents ===*/}
       <Link
         to="/app/milli-cents"
         data-testid="dashboard-milli-cents-link"
-        className="group flex items-center gap-3 p-4 rounded-2xl active:scale-[0.995] transition-transform"
         style={{
-          background:
-            "radial-gradient(circle at 86% 0%, rgba(0,229,255,0.15), transparent 28%), linear-gradient(180deg, rgba(16,29,36,0.96) 0%, rgba(6,11,14,0.98) 100%)",
+          display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 20, textDecoration: "none",
+          background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
           border: "1px solid rgba(0,229,255,0.38)",
           boxShadow: "0 0 24px rgba(0,229,255,0.10), inset 0 1px 0 rgba(255,255,255,0.06)",
         }}
       >
-        <div
-          className="flex items-center justify-center w-11 h-11 rounded-2xl text-volt flex-shrink-0"
-          style={{
-            background: "rgba(0,229,255,0.10)",
-            border: "1px solid rgba(0,229,255,0.25)",
-            boxShadow: "0 0 17px rgba(0,229,255,0.11)",
-          }}
-        >
-          <Gauge size={24} weight="duotone" />
+        <div style={{
+          width: 44, height: 44, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(0,229,255,0.10)", border: "1px solid rgba(0,229,255,0.25)", boxShadow: "0 0 17px rgba(0,229,255,0.11)",
+        }}>
+          <Gauge size={24} weight="duotone" color="#00E5FF" />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-volt text-[11px] font-bold tracking-[0.12em] uppercase">
-            Milli Cents
-          </div>
-          <div className="text-white/85 text-[13px] font-medium mt-0.5">
-            Analyze live offers before you accept.
-          </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: "#00E5FF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" }}>Milli Cents</div>
+          <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 500, marginTop: 2 }}>Analyze live offers before you accept.</div>
         </div>
-        <CaretRight size={18} weight="bold" className="text-volt flex-shrink-0" />
+        <CaretRight size={18} weight="bold" color="#00E5FF" />
       </Link>
 
-      {/*=== 3. ⊹ Tax Vault + Ready Score (2-up) ===*/}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Tax Vault */}
+      <div style={{ height: 16 }} />
+
+      {/*=== 3. Tax Vault + Ready Score (2-up) ===*/}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Link
           to="/app/vault"
           data-testid="dashboard-vault-card"
-          className="milli-card p-4 rounded-2xl flex flex-col items-center justify-between active:scale-[0.995] transition-transform"
+          style={{
+            borderRadius: 20, padding: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", textDecoration: "none",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+            border: "1px solid rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
+          }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Bank size={20} weight="regular" className="text-volt" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
-            <span className="text-white text-[13.5px] font-semibold">Milli Tax Vault<sup>⁄</sup></span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <Bank size={20} weight="regular" color="#00E5FF" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
+            <span style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>Milli Tax Vault</span>
           </div>
-          <div className="chrome-text font-chrome font-bold text-[24px] leading-none tabular-nums">
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums" }}>
             {vaultBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div className="text-volt text-[12px] mt-1.5" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
+          <div style={{ color: "#00E5FF", fontSize: 12, marginTop: 6, textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
             +{vaultThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this month
           </div>
-          {/* progress */}
-          <div className="mt-3 flex items-center gap-2 w-full">
-            <div className="flex-1 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${vaultPct}%`,
-                  background: "linear-gradient(90deg, #00E5FF 0%, #4DE0FF 100%)",
-                  boxShadow: "0 0 12px rgba(0,229,255,0.7)",
-                }}
-              />
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
+            <div style={{ flex: 1, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 999, width: `${vaultPct}%`, background: "linear-gradient(90deg, #00E5FF 0%, #4DE0FF 100%)", boxShadow: "0 0 12px rgba(0,229,255,0.7)", transition: "width 1s ease" }} />
             </div>
-            <span className="text-zinc-400 text-[11px] tabular-nums">{vaultPct}%</span>
+            <span style={{ color: "#9CA3AF", fontSize: 11, fontVariantNumeric: "tabular-nums" }}>{vaultPct}%</span>
           </div>
-          <div className="text-zinc-500 text-[11.5px] mt-2">
+          <div style={{ color: "#4B5563", fontSize: 11, marginTop: 8 }}>
             {now.getFullYear()} Tax Goal: ${taxGoal.toLocaleString("en-US")}
           </div>
         </Link>
 
-        {/* Tax Ready Score */}
         <Link
           to="/app/quarterly"
           data-testid="dashboard-ready-score-card"
-          className="milli-card p-4 rounded-2xl flex flex-col items-center justify-between active:scale-[0.995] transition-transform"
+          style={{
+            borderRadius: 20, padding: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", textDecoration: "none",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+            border: "1px solid rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
+          }}
         >
-          <div className="w-full text-white text-[13.5px] font-semibold">Tax Ready Score<sup>⁄</sup></div>
+          <div style={{ width: "100%", color: "#fff", fontSize: 13, fontWeight: 600 }}>Tax Ready Score</div>
           <ReadyRing value={readyScore} label={readyLabel} />
-          <div className="text-zinc-500 text-[11.5px]">Updated today</div>
+          <div style={{ color: "#4B5563", fontSize: 11 }}>Updated today</div>
         </Link>
       </div>
 
-      {/*=== 4. ⊹ Financial Timeline ===*/}
-      <section className="milli-card p-5 rounded-2xl" data-testid="dashboard-timeline-card">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-white font-semibold text-[16px]">Financial Timeline</h2>
-          <Link
-            to="/app/income"
-            className="text-volt text-[13.5px] font-semibold"
-            style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}
-            data-testid="dashboard-timeline-viewall"
-          >
+      <div style={{ height: 16 }} />
+
+      {/*=== 4. Financial Timeline ===*/}
+      <section
+        data-testid="dashboard-timeline-card"
+        style={{
+          borderRadius: 20, padding: 20,
+          background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: "#fff", letterSpacing: "-0.02em", margin: 0 }}>Financial Timeline</h2>
+          <Link to="/app/income" data-testid="dashboard-timeline-viewall" style={{ color: "#00E5FF", fontSize: 13, fontWeight: 600, textDecoration: "none", textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
             View all
           </Link>
         </div>
-        <ul className="space-y-2">
-          <TimelineRow
-            month="JUN" day="15"
-            icon={Receipt}
-            label="Estimated Tax Payment"
-            amount="$1,240.00"
-          />
-          <TimelineRow
-            month="SEP" day="15"
-            icon={FileText}
-            label="Q3 Estimated Tax"
-            amount="$1,310.00"
-            last
-          />
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          <TimelineRow month="JUN" day="15" icon={Receipt} label="Estimated Tax Payment" amount="$1,240.00" />
+          <TimelineRow month="SEP" day="15" icon={FileText} label="Q3 Estimated Tax" amount="$1,310.00" last />
         </ul>
       </section>
 
-      {/*=== 5. ⊹ Federal + State Filing (Elite: download IRS-ready PDF) ===*/}
+      <div style={{ height: 16 }} />
+
+      {/*=== 5. Filing Card ===*/}
       <FilingCard isElite={user?.plan === "elite"} year={now.getFullYear()} />
 
-      {/*=== 6. ⊹ Mileage ⊹ Retirement ⊹ Investing (3-up) ===*/}
-      <div className="grid grid-cols-3 gap-2.5">
-        <MetricTile
-          to="/app/mileage"
-          icon={Gauge}
-          label="Mileage"
-          value={`${Math.round(milesThisMonth).toLocaleString("en-US")} mi`}
-          sub="This month"
-          delta={`+$$${mileageDeduction.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          testid="tile-mileage"
-        />
-        <MetricTile
-          to="/app/retirement"
-          icon={Plant}
-          label="Retirement"
-          value={`$${Math.round(retirement).toLocaleString("en-US")}`}
-          sub="Total Balance"
-          delta="+7.2%"
-          testid="tile-retirement"
-        />
-        <MetricTile
-          to="/app/investing"
-          icon={ChartLineUp}
-          label="Investing"
-          value={`$${Math.round(invest).toLocaleString("en-US")}`}
-          sub="Total Balance"
-          delta="+5.6%"
-          testid="tile-investing"
-        />
+      <div style={{ height: 16 }} />
+
+      {/*=== 6. Mileage / Retirement / Investing (3-up) ===*/}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <MetricTile to="/app/mileage" icon={Gauge} label="Mileage" value={`${Math.round(milesThisMonth).toLocaleString("en-US")} mi`} sub="This month" delta={`+$${mileageDeduction.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} testid="tile-mileage" />
+        <MetricTile to="/app/retirement" icon={Plant} label="Retirement" value={`$${Math.round(retirement).toLocaleString("en-US")}`} sub="Total Balance" delta="+7.2%" testid="tile-retirement" />
+        <MetricTile to="/app/investing" icon={ChartLineUp} label="Investing" value={`$${Math.round(invest).toLocaleString("en-US")}`} sub="Total Balance" delta="+5.6%" testid="tile-investing" />
       </div>
     </div>
   );
 }
 
-/* ============================================================
-   Sub-components
-   ============================================================ */
+/* ============================================================ Sub-components ============================================================ */
 
 function BreakdownRow({ label, value, cyan, bold }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className={`text-zinc-400 ${bold ? "font-semibold text-white" : ""}`}>{label}</span>
-      <span
-        className={`tabular-nums ${bold ? "font-bold text-white" : "text-white"} ${
-          cyan ? "text-volt" : ""
-        }`}
-        style={cyan ? { color: "#00E5FF", textShadow: "0 0 6px rgba(0,229,255,0.4)" } : {}}
-      >
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <span style={{ color: bold ? "#fff" : "#9CA3AF", fontSize: 13, fontWeight: bold ? 600 : 400 }}>{label}</span>
+      <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: bold ? 700 : 500, color: cyan ? "#00E5FF" : "#fff", textShadow: cyan ? "0 0 6px rgba(0,229,255,0.4)" : "none" }}>
         {value}
       </span>
     </div>
   );
 }
 
-/* Small circular Tax Ready Score ring (fits inside the 2-up card) */
 function ReadyRing({ value = 0, label = "Excellent" }) {
   const size = 100;
   const stroke = 7;
@@ -449,31 +403,14 @@ function ReadyRing({ value = 0, label = "Excellent" }) {
   const c = 2 * Math.PI * r;
   const offset = c - (Math.max(0, Math.min(100, value)) / 100) * c;
   return (
-    <div
-      className="relative"
-      style={{ width: size, height: size, filter: "drop-shadow(0 0 16px rgba(0,229,255,0.35))" }}
-    >
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,229,255,0.15)" strokeWidth={stroke} />
-        <circle
-          cx={size/2} cy={size/2} r={r}
-          fill="none"
-          stroke="#00E5FF"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)" }}
-        />
+    <div style={{ position: "relative", width: size, height: size, filter: "drop-shadow(0 0 16px rgba(0,229,255,0.35))" }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,229,255,0.12)" strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#00E5FF" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)" }} />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="chrome-text font-chrome font-bold text-[26px] leading-none tabular-nums">{Math.round(value)}</div>
-        <div
-          className="text-volt text-[10px] font-semibold uppercase tracking-widest mt-0.5"
-          style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}
-        >
-          {label}
-        </div>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.round(value)}</div>
+        <div style={{ color: "#00E5FF", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", marginTop: 2, textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>{label}</div>
       </div>
     </div>
   );
@@ -481,27 +418,17 @@ function ReadyRing({ value = 0, label = "Excellent" }) {
 
 function TimelineRow({ month, day, icon: Icon, label, amount, last }) {
   return (
-    <li>
-      <div className={`flex items-center gap-3 py-2.5 ${last ? "" : "border-b border-white/[0.05]"}`}>
-        {/* date circle */}
-        <div
-          className="w-11 h-11 rounded-full flex flex-col items-center justify-center flex-shrink-0"
-          style={{
-            border: "1.5px solid rgba(0,229,255,0.55)",
-            background: "rgba(0,229,255,0.05)",
-            boxShadow: "0 0 12px rgba(0,229,255,0.25)",
-          }}
-        >
-          <span className="text-volt text-[9px] font-bold tracking-wider leading-none uppercase">{month}</span>
-          <span className="text-white text-[13px] font-bold leading-none mt-0.5">{day}</span>
-        </div>
-        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center flex-shrink-0">
-          <Icon size={16} weight="regular" className="text-white/70" />
-        </div>
-        <div className="flex-1 min-w-0 text-white text-[14.5px] truncate">{label}</div>
-        <div className="text-white font-semibold text-[15px] tabular-nums whitespace-nowrap">{amount}</div>
-        <CaretRight size={14} weight="bold" className="text-zinc-600 flex-shrink-0" />
+    <li style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ width: 44, height: 44, borderRadius: 999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1.5px solid rgba(0,229,255,0.55)", background: "rgba(0,229,255,0.05)", boxShadow: "0 0 12px rgba(0,229,255,0.25)" }}>
+        <span style={{ color: "#00E5FF", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>{month}</span>
+        <span style={{ color: "#fff", fontSize: 13, fontWeight: 700, marginTop: 1 }}>{day}</span>
       </div>
+      <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon size={16} weight="regular" color="rgba(255,255,255,0.6)" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0, color: "#fff", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+      <div style={{ color: "#fff", fontWeight: 600, fontSize: 15, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{amount}</div>
+      <CaretRight size={14} weight="bold" color="#4B5563" style={{ flexShrink: 0 }} />
     </li>
   );
 }
@@ -511,46 +438,39 @@ function MetricTile({ to, icon: Icon, label, value, sub, delta, testid }) {
     <Link
       to={to}
       data-testid={testid}
-      className="milli-card p-3 rounded-2xl flex flex-col justify-between min-h-[130px] active:scale-[0.98] transition-transform"
+      style={{
+        borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 130, textDecoration: "none",
+        background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
+      }}
     >
-      <div className="flex items-center gap-1.5">
-        <Icon size={16} weight="regular" className="text-volt" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.5))" }} />
-        <span className="text-zinc-300 text-[11.5px] font-semibold">{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <Icon size={16} weight="regular" color="#00E5FF" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.5))" }} />
+        <span style={{ color: "#9CA3AF", fontSize: 11, fontWeight: 600 }}>{label}</span>
       </div>
       <div>
-        <div className="chrome-text font-chrome font-bold text-[17px] leading-tight tabular-nums truncate">
-          {value}
-        </div>
-        <div className="text-zinc-500 text-[10.5px] mt-0.5">{sub}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
+        <div style={{ color: "#4B5563", fontSize: 10, marginTop: 2 }}>{sub}</div>
       </div>
-      <div className="flex items-center justify-between">
-        <span className="text-volt text-[12px] font-semibold" style={{ textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>
-          {delta}
-        </span>
-        <CaretRight size={12} weight="bold" className="text-zinc-500 flex-shrink-0" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ color: "#00E5FF", fontSize: 12, fontWeight: 600, textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>{delta}</span>
+        <CaretRight size={12} weight="bold" color="#4B5563" />
       </div>
     </Link>
   );
 }
 
-/* Small cyan flame icon for streak pill */
 function FlameIcon() {
   return (
-    <svg width="12" height="14" viewBox="0 0 12 14" fill="none"
-         style={{ filter: "drop-shadow(0 0 4px rgba(0,229,255,0.7))" }}>
-      <path d="M6 1 C4 3 3 5 3 7 C3 9.5 4.5 12 6 12 C7.5 12 9 9.5 9 7 C9 5.5 8 4 7 3 C7 4 6.5 4.5 6 4.5 C5.5 4.5 5 4 6 1 Z"
-            fill="#00E5FF" stroke="#7BF3FF" strokeWidth="0.4" />
+    <svg width="12" height="14" viewBox="0 0 12 14" fill="none" style={{ filter: "drop-shadow(0 0 4px rgba(0,229,255,0.7))" }}>
+      <path d="M6 1 C4 3 3 5 3 7 C3 9.5 4.5 12 6 12 C7.5 12 9 9.5 9 7 C9 5.5 8 4 7 3 C7 4 6.5 4.5 6 4.5 C5.5 4.5 5 4 6 1 Z" fill="#00E5FF" stroke="#7BF3FF" strokeWidth="0.4" />
     </svg>
   );
 }
 
-/* Legacy MetallicMCard replaced by <MilliCardMini />. Left as no-op for safety. */
-function MetallicMCard() { return null; }
-
-
-/* ============ Filing Card (Elite Schedule C download) ============ */
 function FilingCard({ isElite, year }) {
-  const [preview, setPreview] = useState(null);   // { url, blob } while previewing
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   async function openPreview() {
@@ -590,24 +510,21 @@ function FilingCard({ isElite, year }) {
       <Link
         to="/app/pricing"
         data-testid="dashboard-filing-card"
-        className="milli-card rounded-2xl p-5 block active:scale-[0.995] transition-transform"
+        style={{
+          display: "block", borderRadius: 20, padding: 20, textDecoration: "none",
+          background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)",
+        }}
       >
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0 w-11 h-11 rounded-2xl border border-volt/50 bg-volt/[0.06] flex items-center justify-center"
-               style={{ boxShadow: "0 0 14px rgba(0,229,255,0.3)" }}>
-            <ShieldCheck size={22} weight="duotone" className="text-volt" />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 16, border: "1px solid rgba(0,229,255,0.5)", background: "rgba(0,229,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 14px rgba(0,229,255,0.3)", flexShrink: 0 }}>
+            <ShieldCheck size={22} weight="duotone" color="#00E5FF" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
-                 style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
-              Federal + State Filing
-            </div>
-            <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
-              Upgrade to Elite
-            </div>
-            <div className="text-zinc-400 text-[12px] mt-0.5">
-              Elite unlocks the IRS-Ready Schedule C + SE PDF.
-            </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "#00E5FF", fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>Federal + State Filing</div>
+            <div style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginTop: 4 }}>Upgrade to Elite</div>
+            <div style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>Elite unlocks the IRS-Ready Schedule C + SE PDF.</div>
           </div>
           <EliteBadge size={54} />
         </div>
@@ -621,88 +538,45 @@ function FilingCard({ isElite, year }) {
         onClick={openPreview}
         disabled={loading}
         data-testid="dashboard-filing-card"
-        className="milli-card rounded-2xl p-5 w-full text-left active:scale-[0.995] transition-transform disabled:opacity-70"
-        style={{ border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 18px rgba(0,229,255,0.22)" }}
+        style={{
+          width: "100%", textAlign: "left", borderRadius: 20, padding: 20, cursor: "pointer",
+          background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+          border: "1px solid rgba(0,229,255,0.35)",
+          boxShadow: "0 0 18px rgba(0,229,255,0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
+          opacity: loading ? 0.7 : 1,
+        }}
       >
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0 w-11 h-11 rounded-2xl border border-volt/50 bg-volt/[0.06] flex items-center justify-center"
-               style={{ boxShadow: "0 0 14px rgba(0,229,255,0.35)" }}>
-            <ShieldCheck size={22} weight="duotone" className="text-volt" />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 16, border: "1px solid rgba(0,229,255,0.5)", background: "rgba(0,229,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 14px rgba(0,229,255,0.35)", flexShrink: 0 }}>
+            <ShieldCheck size={22} weight="duotone" color="#00E5FF" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.28em] text-volt"
-                 style={{ textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>
-              IRS-Ready ⌗ Schedule C + SE
-            </div>
-            <div className="chrome-text font-chrome font-bold text-[18px] leading-tight mt-1">
-              {loading ? "Building your PDF…" : "Preview Filing PDF"}
-            </div>
-            <div className="text-zinc-400 text-[12px] mt-0.5">
-              Review before downloading. Attach in FreeTaxUSA / TurboTax or hand to your CPA.
-            </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "#00E5FF", fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", textShadow: "0 0 8px rgba(0,229,255,0.5)" }}>IRS-Ready · Schedule C + SE</div>
+            <div style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginTop: 4 }}>{loading ? "Building your PDF…" : "Preview Filing PDF"}</div>
+            <div style={{ color: "#9CA3AF", fontSize: 12, marginTop: 2 }}>Review before downloading.</div>
           </div>
           <EliteBadge size={54} />
         </div>
       </button>
 
       {preview && (
-        <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
-          onClick={closePreview}
-          data-testid="pdf-preview-modal"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
-            style={{
-              background: "linear-gradient(180deg, rgba(15,18,22,0.98) 0%, rgba(5,7,10,0.98) 100%)",
-              border: "1px solid rgba(0,229,255,0.35)",
-              boxShadow: "0 0 40px rgba(0,229,255,0.25), 0 30px 80px rgba(0,0,0,0.7)",
-              maxHeight: "92vh",
-            }}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={18} weight="duotone" className="text-volt"
-                  style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
-                <div className="text-white font-semibold text-[14.5px]">Schedule C + SE ⌗ {year}</div>
+        <div onClick={closePreview} data-testid="pdf-preview-modal" style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 720, borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column", background: "linear-gradient(180deg, rgba(15,18,22,0.98), rgba(5,7,10,0.98))", border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 40px rgba(0,229,255,0.25), 0 30px 80px rgba(0,0,0,0.7)", maxHeight: "92vh" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <ShieldCheck size={18} weight="duotone" color="#00E5FF" style={{ filter: "drop-shadow(0 0 6px rgba(0,229,255,0.6))" }} />
+                <div style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>Schedule C + SE · {year}</div>
               </div>
-              <button
-                onClick={closePreview}
-                data-testid="pdf-preview-close"
-                className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center active:opacity-60"
-                aria-label="Close"
-              >
-                <span className="text-white text-[18px] leading-none">✕</span>
+              <button onClick={closePreview} data-testid="pdf-preview-close" style={{ width: 36, height: 36, borderRadius: 999, background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+                <span style={{ color: "#fff", fontSize: 18 }}>✕</span>
               </button>
             </div>
-            <div className="flex-1 min-h-0 bg-zinc-100">
-              <iframe
-                title="Schedule C Preview"
-                src={preview.url}
-                className="w-full h-full"
-                style={{ minHeight: "60vh", border: "0" }}
-                data-testid="pdf-preview-iframe"
-              />
+            <div style={{ flex: 1, minHeight: 0, background: "#f1f1f1" }}>
+              <iframe title="Schedule C Preview" src={preview.url} style={{ width: "100%", height: "100%", minHeight: "60vh", border: 0 }} data-testid="pdf-preview-iframe" />
             </div>
-            <div className="flex gap-2 px-4 py-3 border-t border-white/[0.06]">
-              <button
-                onClick={closePreview}
-                className="flex-1 rounded-xl py-3 text-white/80 text-[13px] font-semibold border border-white/10 active:opacity-70"
-              >
-                Close
-              </button>
-              <button
-                onClick={downloadFromPreview}
-                data-testid="pdf-preview-download"
-                className="flex-1 rounded-xl py-3 font-bold text-[13px] text-obsidian"
-                style={{
-                  background: "linear-gradient(180deg, #00E5FF 0%, #00B4D0 100%)",
-                  boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)",
-                }}
-              >
-                Download PDF
-              </button>
+            <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <button onClick={closePreview} style={{ flex: 1, borderRadius: 16, padding: "12px 0", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", cursor: "pointer" }}>Close</button>
+              <button onClick={downloadFromPreview} data-testid="pdf-preview-download" style={{ flex: 1, borderRadius: 16, padding: "12px 0", fontWeight: 700, fontSize: 13, color: "#000", background: "linear-gradient(180deg, #00E5FF, #00B4D0)", boxShadow: "0 0 20px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.5)", border: "none", cursor: "pointer" }}>Download PDF</button>
             </div>
           </div>
         </div>

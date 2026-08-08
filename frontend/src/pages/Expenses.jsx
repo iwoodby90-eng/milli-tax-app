@@ -2,10 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { api, money, formatApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { Receipt, Plus, Trash, Camera, Sparkle } from "@phosphor-icons/react";
+import { Receipt, Plus, Trash, Camera, Sparkle, CaretRight } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
+import MilliLogo from "@/components/MilliLogo";
+
+const PAGE_STYLE = { padding: "16px 24px calc(var(--safe-bottom, 34px) + 32px) 24px", fontFamily: '-apple-system, BlinkMacSystemFont, "Outfit", system-ui, sans-serif', maxWidth: 640, margin: "0 auto" };
+const SURFACE = { background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)" };
+const HERO_AMBER = { background: "linear-gradient(135deg, rgba(255,176,0,0.18), rgba(255,200,50,0.06) 45%, rgba(5,6,7,0.9))", border: "1px solid rgba(255,176,0,0.45)", borderRadius: 24, boxShadow: "0 0 32px rgba(255,176,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1), 0 16px 48px rgba(0,0,0,0.4)" };
 
 const CATS = ["gas", "maintenance", "supplies", "food", "insurance", "phone", "parking", "tolls", "other"];
+const CAT_ICONS = { gas: "⛽", maintenance: "🔧", supplies: "📦", food: "🍔", insurance: "🛡️", phone: "📱", parking: "🅿️", tolls: "🛣️", other: "📋" };
 
 export default function Expenses() {
   const { user } = useAuth();
@@ -47,101 +53,126 @@ export default function Expenses() {
     finally { setScanning(false); if (fileRef.current) fileRef.current.value = ""; }
   }
 
-  const total = expenses.reduce((s, e) => s + e.amount, 0);
-  const byCat = expenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] || 0) + e.amount; return acc; }, {});
+  const total = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const byCat = expenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] || 0) + Number(e.amount || 0); return acc; }, {});
+  const topCats = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 4);
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl">
-      <div className="flex justify-between items-end mb-8 flex-wrap gap-4">
+    <div style={PAGE_STYLE}>
+      {/* Header */}
+      <header style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <div className="text-volt font-mono text-xs uppercase tracking-[0.3em]">// Expenses</div>
-          <h1 className="font-display font-black text-4xl tracking-tighter mt-1">Deductions</h1>
-          <p className="text-zinc-400 mt-1">Track gas, supplies, phone — anything used for work.</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#FFFFFF", letterSpacing: "-0.035em", margin: 0 }}>Expenses</h1>
+          <p style={{ color: "#9CA3AF", fontSize: 15, marginTop: 4 }}>Track deductions. Keep more money.</p>
         </div>
-        <div className="flex gap-2">
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onScan(e.target.files?.[0])} data-testid="expense-file-input" />
-          <button
-            data-testid="expense-scan-btn"
-            disabled={!isPaid || scanning}
-            onClick={() => isPaid ? fileRef.current?.click() : toast.error("Upgrade to Pro to use AI receipt scanner")}
-            className="px-4 py-2.5 border border-volt text-volt text-xs font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:bg-volt hover:text-obsidian transition-colors disabled:opacity-40"
-          >
-            <Camera size={14} weight="bold" /> {scanning ? "Scanning..." : "Scan receipt (AI)"}
-          </button>
-          <button
-            data-testid="expense-add"
-            onClick={() => { setPrefill(null); setShowForm(true); }}
-            className="btn-volt px-4 py-2.5 text-xs font-bold uppercase tracking-wider inline-flex items-center gap-2"
-          ><Plus size={14} weight="bold" /> Add</button>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => onScan(e.target.files?.[0])} data-testid="expense-file-input" />
+          <IconBtn testid="expense-scan-btn" disabled={!isPaid || scanning} onClick={() => isPaid ? fileRef.current?.click() : toast.error("Upgrade to Pro to use AI receipt scanner")} icon={Camera} />
+          <IconBtn testid="expense-add" onClick={() => { setPrefill(null); setShowForm(true); }} icon={Plus} />
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Stat label="YTD total" value={money(total)} accent />
-        <Stat label="Gas" value={money(byCat.gas || 0)} />
-        <Stat label="Phone" value={money(byCat.phone || 0)} />
-        <Stat label="Maintenance" value={money(byCat.maintenance || 0)} />
-      </div>
+      <div style={{ height: 20 }} />
 
+      {/* Hero Card — Total YTD */}
+      <section style={{ ...HERO_AMBER, padding: "24px" }} data-testid="expenses-hero">
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#6B7280", letterSpacing: "0.14em", textTransform: "uppercase" }}>YTD DEDUCTIONS</div>
+        <div style={{ fontSize: 38, fontWeight: 800, color: "#fff", letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums", marginTop: 8 }}>
+          ${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </div>
+        <div style={{ color: "#FFB000", fontSize: 13, marginTop: 6 }}>
+          {expenses.length} expense{expenses.length !== 1 ? "s" : ""} logged this year
+        </div>
+      </section>
+
+      <div style={{ height: 16 }} />
+
+      {/* AI Scanner upsell (non-paid) */}
       {!isPaid && (
-        <div className="milli-card border-volt p-5 mb-6 flex items-center gap-4">
-          <Sparkle size={24} className="text-volt" weight="fill" />
-          <div className="flex-1">
-            <div className="font-display font-bold">Snap & forget</div>
-            <div className="text-sm text-zinc-400">AI receipt scanner reads totals, dates, and categories from your photos. Pro plan unlocks it.</div>
+        <section style={{ ...SURFACE, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }} data-testid="expenses-upgrade-card">
+          <div style={{ width: 40, height: 40, borderRadius: 14, background: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Sparkle size={18} weight="fill" color="#00E5FF" />
           </div>
-          <Link to="/app/pricing" className="px-4 py-2 border border-volt text-volt text-xs font-bold uppercase tracking-wider hover:bg-volt hover:text-obsidian transition-colors">Upgrade</Link>
-        </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Snap & forget</div>
+            <div style={{ color: "#6B7280", fontSize: 12, marginTop: 2 }}>AI receipt scanner reads totals, dates & categories from your photos.</div>
+          </div>
+          <Link to="/app/pricing" style={{ color: "#00E5FF", fontSize: 11, fontWeight: 700, textDecoration: "none", letterSpacing: "0.08em", textTransform: "uppercase", textShadow: "0 0 8px rgba(0,229,255,0.4)" }}>Upgrade</Link>
+        </section>
       )}
 
-      <div className="milli-card p-6">
-        <div className="font-display font-bold text-lg mb-4">Expense ledger</div>
+      {/* Category breakdown */}
+      {topCats.length > 0 && (
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }} data-testid="expenses-categories">
+          {topCats.map(([cat, amt]) => (
+            <div key={cat} style={{ ...SURFACE, padding: "14px 16px" }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>{CAT_ICONS[cat] || "📋"}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B7280", letterSpacing: "0.12em", textTransform: "uppercase" }}>{cat}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>${amt.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Expense Ledger */}
+      <section style={SURFACE} data-testid="expenses-ledger">
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600, color: "#fff", margin: 0 }}>Expense Ledger</h2>
+          <span style={{ color: "#6B7280", fontSize: 12 }}>{expenses.length} items</span>
+        </div>
         {expenses.length === 0 ? (
-          <div className="text-center py-12">
-            <Receipt size={40} className="text-zinc-700 mx-auto" weight="bold" />
-            <div className="font-display font-bold mt-3">No expenses logged</div>
+          <div style={{ padding: "40px 20px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <MilliLogo size={40} animate={false} />
+            <div style={{ color: "#fff", fontWeight: 600, fontSize: 15 }}>No expenses yet</div>
+            <div style={{ color: "#4B5563", fontSize: 13 }}>Tap + to add your first deduction.</div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="font-mono text-xs uppercase text-zinc-500 tracking-widest">
-                <tr className="border-b border-hairline">
-                  <th className="text-left py-2 px-2">Date</th>
-                  <th className="text-left py-2 px-2">Category</th>
-                  <th className="text-left py-2 px-2">Merchant</th>
-                  <th className="text-right py-2 px-2">Amount</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody className="font-mono">
-                {expenses.map((e) => (
-                  <tr key={e.id} className="border-b border-hairline/60 hover:bg-white/5" data-testid={`expense-row-${e.id}`}>
-                    <td className="py-2.5 px-2 text-zinc-400">{e.date}</td>
-                    <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-white/5 border border-hairline text-xs uppercase">{e.category}</span></td>
-                    <td className="py-2.5 px-2 text-zinc-400">{e.merchant}</td>
-                    <td className="py-2.5 px-2 text-right font-bold">{money(e.amount)}</td>
-                    <td className="py-2.5 px-2 text-right">
-                      <button onClick={() => del(e.id)} data-testid={`expense-delete-${e.id}`} className="text-zinc-500 hover:text-danger"><Trash size={14} weight="bold" /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {expenses.map((e, idx) => (
+              <ExpenseRow key={e.id || idx} expense={e} last={idx === expenses.length - 1} onDelete={() => del(e.id)} />
+            ))}
+          </ul>
         )}
-      </div>
+      </section>
 
       {showForm && <ExpenseDialog initial={prefill} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
     </div>
   );
 }
 
-function Stat({ label, value, accent }) {
+/* ============ Sub-components ============ */
+
+function IconBtn({ icon: Icon, testid, onClick, disabled }) {
   return (
-    <div className="milli-card p-5">
-      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500">{label}</div>
-      <div className={`font-display font-black text-3xl mt-2 ${accent ? "text-volt" : ""}`}>{value}</div>
-    </div>
+    <button data-testid={testid} onClick={onClick} disabled={disabled} style={{ width: 36, height: 36, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,6,7,0.8)", border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 10px rgba(0,229,255,0.2)", cursor: "pointer", opacity: disabled ? 0.4 : 1 }}>
+      <Icon size={16} weight="regular" color="#00E5FF" />
+    </button>
+  );
+}
+
+function ExpenseRow({ expense, last, onDelete }) {
+  const e = expense;
+  const cat = e.category || "other";
+  const date = new Date(e.date || e.created_at || Date.now());
+  const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const amt = Number(e.amount || 0);
+
+  return (
+    <li data-testid={`expense-row-${e.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: "rgba(255,176,0,0.08)", border: "1px solid rgba(255,176,0,0.25)" }}>
+        {CAT_ICONS[cat] || "📋"}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.merchant || cat}</div>
+        <div style={{ color: "#4B5563", fontSize: 11 }}>{dateStr} · {cat}</div>
+      </div>
+      <div style={{ color: "#fff", fontWeight: 700, fontSize: 15, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+        −${amt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </div>
+      <button onClick={onDelete} data-testid={`expense-delete-${e.id}`} style={{ color: "#4B5563", background: "none", border: "none", padding: 6, cursor: "pointer" }}>
+        <Trash size={14} weight="regular" />
+      </button>
+    </li>
   );
 }
 
@@ -165,40 +196,28 @@ function ExpenseDialog({ initial, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="milli-card p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="font-display font-bold text-xl mb-4">{initial ? "Confirm expense" : "Add expense"}</div>
-        <div className="space-y-3">
-          <FieldInput id="exp-date" label="Date" type="date" value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
-          <FieldInput id="exp-amount" label="Amount ($)" type="number" step="0.01" value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} />
-          <FieldSelect id="exp-category" label="Category" value={form.category} onChange={(v) => setForm({ ...form, category: v })} options={CATS} />
-          <FieldInput id="exp-merchant" label="Merchant" value={form.merchant} onChange={(v) => setForm({ ...form, merchant: v })} />
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 12 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, borderRadius: 24, padding: 20, background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))", border: "1px solid rgba(0,229,255,0.35)", boxShadow: "0 0 32px rgba(0,229,255,0.25)" }}>
+        <div style={{ color: "#fff", fontWeight: 600, fontSize: 17, marginBottom: 16 }}>{initial ? "Confirm expense" : "Add expense"}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Field label="Date"><input data-testid="exp-date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle} /></Field>
+          <Field label="Amount ($)"><input data-testid="exp-amount" type="number" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} style={inputStyle} /></Field>
+          <Field label="Category"><select data-testid="exp-category" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
+            {CATS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select></Field>
+          <Field label="Merchant"><input data-testid="exp-merchant" type="text" placeholder="Shell, Costco..." value={form.merchant} onChange={e => setForm({ ...form, merchant: e.target.value })} style={inputStyle} /></Field>
         </div>
-        <div className="flex gap-2 mt-6">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-hairline text-xs font-bold uppercase tracking-wider">Cancel</button>
-          <button data-testid="exp-save" onClick={save} disabled={busy || !form.amount} className="flex-1 btn-volt px-4 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50">{busy ? "Saving..." : "Save"}</button>
+        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+          <button onClick={onClose} style={{ flex: 1, borderRadius: 16, padding: "12px 0", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", cursor: "pointer" }}>Cancel</button>
+          <button data-testid="exp-save" onClick={save} disabled={busy || !form.amount} style={{ flex: 1, borderRadius: 16, padding: "12px 0", fontWeight: 700, fontSize: 13, color: "#000", background: "linear-gradient(180deg, #00E5FF, #00B4D0)", boxShadow: "0 0 20px rgba(0,229,255,0.4)", border: "none", cursor: "pointer", opacity: (busy || !form.amount) ? 0.5 : 1 }}>{busy ? "Saving..." : "Save"}</button>
         </div>
       </div>
     </div>
   );
 }
 
-function FieldInput({ label, id, onChange, ...props }) {
-  return (
-    <div>
-      <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 mb-1">{label}</label>
-      <input id={id} data-testid={id} onChange={(e) => onChange(e.target.value)} {...props} className="w-full bg-transparent border border-hairline px-3 py-2 font-mono text-sm focus:outline-none focus:border-volt" />
-    </div>
-  );
-}
+const inputStyle = { width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 12px", color: "#fff", fontSize: 14, outline: "none" };
 
-function FieldSelect({ label, id, value, onChange, options }) {
-  return (
-    <div>
-      <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 mb-1">{label}</label>
-      <select id={id} data-testid={id} value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-obsidian border border-hairline px-3 py-2 font-mono text-sm focus:outline-none focus:border-volt">
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </div>
-  );
+function Field({ label, children }) {
+  return <div><label style={{ display: "block", color: "#6B7280", fontSize: 11, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</label>{children}</div>;
 }

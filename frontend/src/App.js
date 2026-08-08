@@ -1,4 +1,5 @@
 import "@/App.css";
+import "@/styles/milli-keyframes.css";
 import { useState, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";

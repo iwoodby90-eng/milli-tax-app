@@ -1,48 +1,63 @@
 /**
- * MilliLogo — official Milli Tax Vault app logo.
- * Renders the chrome-M-with-cyan-stripe icon (PNG, retina) at any pixel size.
- * If the image fails to load, falls back to a plain "M" chip so the UI never breaks.
+ * MilliLogo — animated, transparent-background Milli mark.
+ * Breathes with a teal glow pulse at sizes >= 40px.
  */
 import { useState } from "react";
 
-const LOGO_SRC = "/brand/milli-mark-192.png";
+const LOGO_SRC = "/brand/milli-logo-transparent.png";
 
-export default function MilliLogo({ size = 32, className = "", style, ...rest }) {
+export default function MilliLogo({ size = 32, animate = true, className = "", style, ...rest }) {
   const [failed, setFailed] = useState(false);
+  const shouldAnimate = animate && size >= 40;
 
   if (failed) {
     return (
-      <div
-        className={`inline-flex items-center justify-center rounded-lg font-black chrome-text ${className}`}
+      <span
+        className={`inline-flex items-center justify-center font-black ${className}`}
         style={{
-          width: size,
-          height: size,
-          fontSize: size * 0.55,
-          background: "linear-gradient(135deg, #0f1216 0%, #05070A 100%)",
-          border: "1px solid rgba(0,229,255,0.35)",
-          boxShadow: "0 0 12px rgba(0,229,255,0.35)",
+          width: size, height: size,
+          fontSize: size * 0.6,
+          color: "#00E5FF",
+          textShadow: "0 0 14px rgba(0,229,255,0.75)",
+          background: "transparent",
           ...style,
         }}
-        {...rest}
-      >
-        M
-      </div>
+      >M</span>
     );
   }
+
   return (
-    <img
-      src={LOGO_SRC}
-      alt="Milli Tax Vault"
-      draggable={false}
-      onError={() => setFailed(true)}
-      className={`inline-block ${className}`}
-      style={{
-        width: size,
-        height: size,
-        objectFit: "contain",
-        ...style,
-      }}
-      {...rest}
-    />
+    <span
+      className={`relative inline-flex items-center justify-center flex-shrink-0 ${className}`}
+      style={{ width: size, height: size, ...style }}
+    >
+      <img
+        src={LOGO_SRC}
+        alt="Milli"
+        draggable={false}
+        onError={() => setFailed(true)}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          display: "block",
+          animation: shouldAnimate ? "milli-breathe 3.5s ease-in-out infinite" : undefined,
+        }}
+        {...rest}
+      />
+      {shouldAnimate && (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.28) 50%, transparent 75%)",
+            animation: "milli-shimmer 6s ease-in-out infinite",
+            pointerEvents: "none",
+            borderRadius: "50%",
+          }}
+        />
+      )}
+    </span>
   );
 }
