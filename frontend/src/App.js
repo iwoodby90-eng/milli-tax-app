@@ -70,32 +70,37 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0A0A0A] px-6 text-center"
-          data-testid="error-boundary-fallback"
-        >
-          <div
-            className="mb-6 text-5xl font-bold tracking-tight"
-            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}
-          >
-            <span className="text-white">M</span>
-            <span className="text-volt">I</span>
-            <span className="text-white">LL</span>
-            <span className="text-volt">I</span>
-          </div>
-          <p className="mb-2 text-lg font-medium text-white">
+        <div style={{
+          minHeight: "100dvh",
+          background: "#050607",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 32,
+          fontFamily: '-apple-system, system-ui, sans-serif',
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚡</div>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
             Something went wrong
-          </p>
-          <p className="mb-8 max-w-xs text-sm text-white/50">
-            An unexpected error occurred. Try reloading the app.
-          </p>
+          </div>
+          <div style={{ color: "#6B7280", fontSize: 14, marginBottom: 32, textAlign: "center" }}>
+            Milli hit an unexpected error. Tap below to restart.
+          </div>
           <button
-            onClick={this.handleRetry}
-            data-testid="error-boundary-retry"
-            className="rounded-lg bg-volt px-6 py-3 text-sm font-bold uppercase tracking-wide text-black transition-transform hover:-translate-y-0.5 active:translate-y-0"
-            style={{ backgroundColor: '#D4FF00' }}
+            onClick={() => window.location.reload()}
+            style={{
+              background: "#00E5FF",
+              color: "#000",
+              border: "none",
+              borderRadius: 14,
+              padding: "14px 32px",
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
           >
-            Reload App
+            Restart Milli
           </button>
         </div>
       );
