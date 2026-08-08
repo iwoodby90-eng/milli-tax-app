@@ -49,7 +49,7 @@ struct TaxVaultView: View {
                 .fontWeight(.bold)
                 .foregroundColor(.white)
                 .kerning(1.5)
-            Text("\u2122")
+            Text("\u{2122}")
                 .font(.caption)
                 .foregroundColor(.white)
                 .baselineOffset(8)
