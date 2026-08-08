@@ -4,7 +4,8 @@ import SwiftUI
 struct MilliTaxVaultApp: App {
     var body: some Scene {
         WindowGroup {
-            SplashView()
+            ContentView()
+                .preferredColorScheme(.dark)
         }
     }
 }

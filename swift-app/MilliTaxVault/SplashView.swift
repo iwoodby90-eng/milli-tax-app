@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SplashView: View {
-    @State private var showMainApp = false
+    var onComplete: (() -> Void)? = nil
     
     @State private var phase1LeftOffset: CGFloat = -60
     @State private var phase1RightOffset: CGFloat = 60
@@ -22,98 +22,99 @@ struct SplashView: View {
     private let typewriterText = "App Initializing..."
     
     var body: some View {
-        if showMainApp {
-            ContentView()
-                .preferredColorScheme(.dark)
-        } else {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                if !phase6CrossDissolve {
-                    logoAnimationView
-                } else {
-                    bootScreenView
-                }
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            if !phase6CrossDissolve {
+                logoAnimationView
+            } else {
+                bootScreenView
             }
-            .opacity(phase7Opacity)
-            .preferredColorScheme(.dark)
-            .onAppear {
-                startAnimationSequence()
-            }
+        }
+        .ignoresSafeArea()
+        .opacity(phase7Opacity)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            startAnimationSequence()
         }
     }
     
     // MARK: - Logo Animation (Phases 1-5)
     
     private var logoAnimationView: some View {
-        ZStack {
-            // Phase 5: Radiating lines
-            ForEach(0..<8, id: \.self) { i in
-                Rectangle()
-                    .fill(Color(hex: "C0C0C0"))
-                    .frame(width: phase5LineWidth, height: 1)
-                    .offset(x: phase5LineWidth / 2)
-                    .rotationEffect(.degrees(Double(i) * 45))
-                    .opacity(phase5LineOpacity)
-            }
-            
-            // Phase 3: Expanding ring
-            Circle()
-                .stroke(Color.milliAccent.opacity(0.6), lineWidth: 2)
-                .frame(width: phase3RingSize, height: phase3RingSize)
-                .opacity(phase3RingOpacity)
-            
-            // Phase 4: Labels
-            VStack {
-                Text("TAX")
-                    .font(.caption)
-                    .tracking(4)
-                    .foregroundColor(.milliAccent)
-                    .offset(y: -50)
-                
-                Spacer().frame(height: 100)
-                
-                HStack(spacing: 80) {
-                    Text("MILES")
-                        .font(.caption)
-                        .tracking(4)
-                        .foregroundColor(.milliAccent)
-                    
-                    Text("WEALTH")
-                        .font(.caption)
-                        .tracking(4)
-                        .foregroundColor(.milliAccent)
+        GeometryReader { geo in
+            ZStack {
+                // Phase 5: Radiating lines
+                ForEach(0..<8, id: \.self) { i in
+                    Rectangle()
+                        .fill(Color(hex: "C0C0C0"))
+                        .frame(width: phase5LineWidth, height: 1)
+                        .offset(x: phase5LineWidth / 2)
+                        .rotationEffect(.degrees(Double(i) * 45))
+                        .opacity(phase5LineOpacity)
                 }
-                .offset(y: 30)
-            }
-            .opacity(phase4LabelsOpacity)
-            .offset(y: phase4LabelsOffset)
-            
-            // Phase 1: Split M letter
-            HStack(spacing: 0) {
-                Text("M")
-                    .font(.system(size: 120, weight: .black))
-                    .chromeGradient()
-                    .frame(width: 40, alignment: .trailing)
-                    .clipped()
-                    .offset(x: phase1LeftOffset)
                 
-                Text("M")
-                    .font(.system(size: 120, weight: .black))
-                    .chromeGradient()
-                    .frame(width: 40, alignment: .leading)
-                    .clipped()
-                    .offset(x: phase1RightOffset)
+                // Phase 3: Expanding ring
+                Circle()
+                    .stroke(Color.milliAccent.opacity(0.6), lineWidth: 2)
+                    .frame(width: phase3RingSize, height: phase3RingSize)
+                    .opacity(phase3RingOpacity)
+                
+                // Phase 4: Labels
+                VStack {
+                    Text("TAX")
+                        .font(.caption)
+                        .tracking(4)
+                        .foregroundColor(.milliAccent)
+                        .offset(y: -50)
+                    
+                    Spacer().frame(height: 100)
+                    
+                    HStack(spacing: 80) {
+                        Text("MILES")
+                            .font(.caption)
+                            .tracking(4)
+                            .foregroundColor(.milliAccent)
+                        
+                        Text("WEALTH")
+                            .font(.caption)
+                            .tracking(4)
+                            .foregroundColor(.milliAccent)
+                    }
+                    .offset(y: 30)
+                }
+                .opacity(phase4LabelsOpacity)
+                .offset(y: phase4LabelsOffset)
+                
+                // Phase 1: Split M letter — NO .clipped() on container
+                HStack(spacing: 0) {
+                    Text("M")
+                        .font(.system(size: 120, weight: .black))
+                        .chromeGradient()
+                        .frame(width: 40, alignment: .trailing)
+                        .clipped()
+                        .offset(x: phase1LeftOffset)
+                    
+                    Text("M")
+                        .font(.system(size: 120, weight: .black))
+                        .chromeGradient()
+                        .frame(width: 40, alignment: .leading)
+                        .clipped()
+                        .offset(x: phase1RightOffset)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                // Phase 2: Glowing dot
+                Circle()
+                    .fill(Color.milliAccent)
+                    .frame(width: 8, height: 8)
+                    .shadow(color: .milliAccent, radius: 8)
+                    .scaleEffect(phase2DotScale)
+                    .opacity(phase2DotOpacity)
             }
-            
-            // Phase 2: Glowing dot
-            Circle()
-                .fill(Color.milliAccent)
-                .frame(width: 8, height: 8)
-                .shadow(color: .milliAccent, radius: 8)
-                .scaleEffect(phase2DotScale)
-                .opacity(phase2DotOpacity)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
+        .ignoresSafeArea()
     }
     
     // MARK: - Boot Screen (Phase 6)
@@ -211,13 +212,13 @@ struct SplashView: View {
             }
         }
         
-        // Phase 7: Fade out and transition (3.8 - 4.2s)
+        // Phase 7: Fade out and call completion (3.8 - 4.2s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.8) {
             withAnimation(.easeInOut(duration: 0.4)) {
                 phase7Opacity = 0
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                showMainApp = true
+                onComplete?()
             }
         }
     }
