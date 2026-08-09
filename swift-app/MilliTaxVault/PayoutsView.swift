@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PayoutsView: View {
+    @EnvironmentObject var appState: AppState
+    @StateObject private var viewModel = PayoutsViewModel()
     @State private var selectedSegment = 0
     private let segments = ["All", "Deposits", "Receipts"]
 
@@ -11,28 +13,26 @@ struct PayoutsView: View {
             VStack(spacing: 0) {
                 MilliPageHeader(title: "Payouts")
 
-                // Segment control
                 segmentControl
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // Autopilot badge
                         autopilotBadge
-
-                        // Main payout card
                         mainPayoutCard
-
-                        // Breakdown
                         payoutBreakdown
-
-                        // Allocation
                         allocationSection
+
+                        // Stripe subscription status
+                        if viewModel.subscriptionTier != "free" {
+                            subscriptionBadge
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 100)
                 }
             }
         }
+        .task { await viewModel.loadPayouts() }
     }
 
     // MARK: - Segment Control
@@ -81,7 +81,6 @@ struct PayoutsView: View {
         MilliCard {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
-                    // Spark icon
                     Circle()
                         .fill(
                             LinearGradient(
@@ -98,20 +97,19 @@ struct PayoutsView: View {
                         )
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Spark Driver\u{2122} Payout")
+                        Text("\(viewModel.latestPayoutSource) Payout")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("May 10, 2024 \u{2022} 9:41 AM")
+                        Text(viewModel.latestPayoutDate)
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(.milliTextSecondary)
                     }
                 }
 
-                Text("$312.64")
+                Text(viewModel.latestPayoutNet)
                     .font(.system(size: 34, weight: .bold))
                     .foregroundColor(.white)
 
-                // Status pill
                 Text("Automatically processed")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.milliGreen)
@@ -134,9 +132,9 @@ struct PayoutsView: View {
                     .foregroundColor(.milliTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                breakdownRow(label: "Gross Payout", value: "$376.65")
-                breakdownRow(label: "Platform", value: "-$24.21")
-                breakdownRow(label: "Other Adjustments", value: "-$38.80")
+                breakdownRow(label: "Gross Payout", value: viewModel.latestPayoutGross)
+                breakdownRow(label: "Platform", value: viewModel.latestPayoutPlatformFee)
+                breakdownRow(label: "Other Adjustments", value: viewModel.latestPayoutAdjustments)
 
                 Divider()
                     .background(Color.milliCardBorder)
@@ -146,7 +144,7 @@ struct PayoutsView: View {
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
                     Spacer()
-                    Text("$312.64")
+                    Text(viewModel.latestPayoutNet)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.milliCyan)
                 }
@@ -176,9 +174,9 @@ struct PayoutsView: View {
                     .tracking(0.5)
                     .foregroundColor(.milliTextSecondary)
 
-                allocationRow(color: .milliGreen, label: "Tax Vault (23%)", amount: "$72.91")
-                allocationRow(color: Color(hex: "FFB800"), label: "Mileage Deduction", amount: "$38.47")
-                allocationRow(color: .milliCyan, label: "Available to Spend", amount: "$201.26")
+                allocationRow(color: .milliGreen, label: "Tax Vault (23%)", amount: viewModel.taxAllocation)
+                allocationRow(color: Color(hex: "FFB800"), label: "Mileage Deduction", amount: viewModel.mileageDeduction)
+                allocationRow(color: .milliCyan, label: "Available to Spend", amount: viewModel.availableToSpend)
             }
         }
     }
@@ -195,6 +193,31 @@ struct PayoutsView: View {
             Text(amount)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
+        }
+    }
+
+    // MARK: - Subscription Badge (Stripe)
+
+    private var subscriptionBadge: some View {
+        MilliCard {
+            HStack(spacing: 12) {
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color(hex: "FFB800"))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("MILLI \(viewModel.subscriptionTier.uppercased())")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(0.5)
+                        .foregroundColor(Color(hex: "FFB800"))
+                    Text("Autopilot receipts & smart allocation active")
+                        .font(.system(size: 12))
+                        .foregroundColor(.milliTextSecondary)
+                }
+                Spacer()
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.milliGreen)
+            }
         }
     }
 }

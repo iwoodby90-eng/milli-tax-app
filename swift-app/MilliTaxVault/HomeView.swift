@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject var appState: AppState
+    @StateObject private var viewModel = HomeViewModel()
+
     var body: some View {
         ZStack {
             Color.milliBackground.ignoresSafeArea()
@@ -32,25 +35,16 @@ struct HomeView: View {
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // Available to Spend
                         availableToSpendCard
-
-                        // Latest Payout
                         latestPayoutCard
-
-                        // Two-column stats row 1
                         HStack(spacing: 12) {
                             taxVaultStatCard
                             taxReadyScoreCard
                         }
-
-                        // Two-column stats row 2
                         HStack(spacing: 12) {
                             quarterlyTaxesCard
                             mileageStatCard
                         }
-
-                        // Milli AI Insight
                         milliAIInsightCard
                     }
                     .padding(.horizontal, 20)
@@ -58,6 +52,7 @@ struct HomeView: View {
                 }
             }
         }
+        .task { await viewModel.loadDashboard() }
     }
 
     // MARK: - Available to Spend
@@ -76,7 +71,7 @@ struct HomeView: View {
                         .foregroundColor(.milliTextTertiary)
                 }
 
-                Text("$1,365.42")
+                Text(viewModel.availableToSpend)
                     .font(.system(size: 34, weight: .bold))
                     .foregroundColor(.white)
 
@@ -85,7 +80,6 @@ struct HomeView: View {
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.milliTextSecondary)
                     Spacer()
-                    // Sparkline
                     WaveShape()
                         .stroke(Color.milliCyan.opacity(0.5), lineWidth: 1.5)
                         .frame(width: 60, height: 20)
@@ -99,7 +93,6 @@ struct HomeView: View {
     private var latestPayoutCard: some View {
         MilliCard {
             HStack(spacing: 12) {
-                // Spark icon placeholder
                 Circle()
                     .fill(
                         LinearGradient(
@@ -120,10 +113,10 @@ struct HomeView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .tracking(0.5)
                         .foregroundColor(.milliTextSecondary)
-                    Text("$312.64")
+                    Text(viewModel.latestPayoutAmount)
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Today, 9:41 AM \u{2022} Spark Driver\u{2122}")
+                    Text("\(viewModel.latestPayoutDate) \u{2022} Spark Driver\u{2122}")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.milliTextSecondary)
                 }
@@ -146,10 +139,10 @@ struct HomeView: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.5)
                     .foregroundColor(.milliTextSecondary)
-                Text("$5,284.17")
+                Text(viewModel.vaultBalance)
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
-                Text("23% of annual target")
+                Text("\(viewModel.vaultGoalPercent)% of annual target")
                     .font(.system(size: 11, weight: .regular))
                     .foregroundColor(.milliTextSecondary)
             }
@@ -167,7 +160,7 @@ struct HomeView: View {
                     .foregroundColor(.milliTextSecondary)
 
                 HStack {
-                    Text("85")
+                    Text("\(viewModel.taxReadyScore)")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                     Spacer()
@@ -176,14 +169,14 @@ struct HomeView: View {
                             .stroke(Color.milliCyan.opacity(0.2), lineWidth: 3)
                             .frame(width: 28, height: 28)
                         Circle()
-                            .trim(from: 0, to: 0.85)
+                            .trim(from: 0, to: Double(viewModel.taxReadyScore) / 100.0)
                             .stroke(Color.milliCyan, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                             .frame(width: 28, height: 28)
                             .rotationEffect(.degrees(-90))
                     }
                 }
 
-                Text("Great - You're on track")
+                Text(viewModel.taxReadyScore >= 70 ? "Great - You're on track" : "Needs attention")
                     .font(.system(size: 11, weight: .regular))
                     .foregroundColor(.milliGreen)
             }
@@ -199,7 +192,7 @@ struct HomeView: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.5)
                     .foregroundColor(.milliTextSecondary)
-                Text("$1,247.00")
+                Text(viewModel.quarterlyEstimate)
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
                 Text("Est. due Jun 15, 2024")
@@ -218,7 +211,7 @@ struct HomeView: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.5)
                     .foregroundColor(.milliTextSecondary)
-                Text("2,345 mi")
+                Text(viewModel.quarterMiles)
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
                 Text("This quarter")

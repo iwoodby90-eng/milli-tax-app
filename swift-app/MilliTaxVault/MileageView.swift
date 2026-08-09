@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct MileageView: View {
+    @EnvironmentObject var appState: AppState
+    @StateObject private var viewModel = MileageViewModel()
+
     var body: some View {
         ZStack {
             Color.milliBackground.ignoresSafeArea()
@@ -14,15 +17,17 @@ struct MileageView: View {
                         .foregroundColor(.white)
 
                     // LIVE badge
-                    Text("LIVE")
-                        .font(.system(size: 9, weight: .bold))
-                        .tracking(0.3)
-                        .foregroundColor(.milliGreen)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.milliGreen.opacity(0.15))
-                        .cornerRadius(4)
-                        .padding(.leading, 6)
+                    if viewModel.isTracking {
+                        Text("LIVE")
+                            .font(.system(size: 9, weight: .bold))
+                            .tracking(0.3)
+                            .foregroundColor(.milliGreen)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.milliGreen.opacity(0.15))
+                            .cornerRadius(4)
+                            .padding(.leading, 6)
+                    }
 
                     Spacer()
 
@@ -38,23 +43,18 @@ struct MileageView: View {
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // Tracking status
                         trackingStatus
-
-                        // Active trip card
                         activeTripCard
-
-                        // Map placeholder
                         mapPlaceholder
-
-                        // Today stats
                         todayStatsRow
+                        trackingButton
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 100)
                 }
             }
         }
+        .task { await viewModel.loadMileage() }
     }
 
     // MARK: - Tracking Status
@@ -62,11 +62,11 @@ struct MileageView: View {
     private var trackingStatus: some View {
         HStack(spacing: 8) {
             Circle()
-                .fill(Color.milliGreen)
+                .fill(viewModel.isTracking ? Color.milliGreen : Color.milliTextTertiary)
                 .frame(width: 8, height: 8)
-            Text("Tracking Active")
+            Text(viewModel.trackingStatus)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.milliGreen)
+                .foregroundColor(viewModel.isTracking ? .milliGreen : .milliTextSecondary)
             Spacer()
         }
         .padding(.horizontal, 4)
@@ -83,7 +83,7 @@ struct MileageView: View {
                             .font(.system(size: 11, weight: .semibold))
                             .tracking(0.5)
                             .foregroundColor(.milliTextSecondary)
-                        Text("18.64 mi")
+                        Text(viewModel.activeTripMiles)
                             .font(.system(size: 34, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -106,7 +106,7 @@ struct MileageView: View {
                             .font(.system(size: 10, weight: .semibold))
                             .tracking(0.3)
                             .foregroundColor(.milliTextSecondary)
-                        Text("$9.82")
+                        Text(viewModel.activeTripDeduction)
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.milliGreen)
                     }
@@ -129,7 +129,6 @@ struct MileageView: View {
                         .stroke(Color.milliCardBorder, lineWidth: 0.5)
                 )
 
-            // Dashed route path
             Canvas { context, size in
                 var path = Path()
                 path.move(to: CGPoint(x: size.width * 0.15, y: size.height * 0.7))
@@ -144,14 +143,12 @@ struct MileageView: View {
                     style: StrokeStyle(lineWidth: 2, dash: [6, 4])
                 )
 
-                // Start dot
                 let startPoint = CGPoint(x: size.width * 0.15, y: size.height * 0.7)
                 context.fill(
                     Circle().path(in: CGRect(x: startPoint.x - 4, y: startPoint.y - 4, width: 8, height: 8)),
                     with: .color(.milliCyan)
                 )
 
-                // End dot
                 let endPoint = CGPoint(x: size.width * 0.85, y: size.height * 0.3)
                 context.fill(
                     Circle().path(in: CGRect(x: endPoint.x - 4, y: endPoint.y - 4, width: 8, height: 8)),
@@ -173,10 +170,10 @@ struct MileageView: View {
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(0.3)
                         .foregroundColor(.milliTextSecondary)
-                    Text("18.64 mi")
+                    Text(viewModel.activeTripMiles)
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
-                    Text("$9.82")
+                    Text(viewModel.activeTripDeduction)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.milliGreen)
                 }
@@ -188,14 +185,36 @@ struct MileageView: View {
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(0.3)
                         .foregroundColor(.milliTextSecondary)
-                    Text("126.37 mi")
+                    Text(viewModel.todayMiles)
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
-                    Text("$66.41")
+                    Text(viewModel.todayDeduction)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.milliGreen)
                 }
             }
+        }
+    }
+
+    // MARK: - Tracking Button
+
+    private var trackingButton: some View {
+        Button(action: {
+            Task {
+                if viewModel.isTracking {
+                    await viewModel.stopTracking()
+                } else {
+                    await viewModel.startTracking()
+                }
+            }
+        }) {
+            Text(viewModel.isTracking ? "Stop Tracking" : "Start Tracking")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(viewModel.isTracking ? Color(hex: "FF3D57") : Color.milliCyan)
+                .cornerRadius(12)
         }
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var appState: AppState
     @State private var selectedTab: AppTab = .home
     @State private var showMilliAI = false
 
