@@ -15,19 +15,19 @@ final class PayoutsViewModel: ObservableObject {
 
     // Formatted latest payout values with fallbacks
     var latestPayoutNet: String {
-        formatCurrency(latestPayout?.netAmount ?? 312.64)
+        formatCurrency(latestPayout?.amount ?? 312.64)
     }
 
     var latestPayoutGross: String {
-        formatCurrency(latestPayout?.grossAmount ?? 376.65)
+        formatCurrency(latestPayout?.amount ?? 376.65)
     }
 
     var latestPayoutPlatformFee: String {
-        formatCurrency(-(latestPayout?.platformFee ?? 24.21))
+        formatCurrency(0)
     }
 
     var latestPayoutAdjustments: String {
-        formatCurrency(-(latestPayout?.adjustments ?? 38.80))
+        formatCurrency(0)
     }
 
     var latestPayoutSource: String {
@@ -39,15 +39,16 @@ final class PayoutsViewModel: ObservableObject {
     }
 
     var taxAllocation: String {
-        formatCurrency(latestPayout?.taxAllocation ?? 72.91)
+        formatCurrency(latestPayout?.savingsSetAside ?? 72.91)
     }
 
     var mileageDeduction: String {
-        formatCurrency(latestPayout?.mileageDeduction ?? 38.47)
+        formatCurrency(0)
     }
 
     var availableToSpend: String {
-        formatCurrency(latestPayout?.availableToSpend ?? 201.26)
+        let amt = (latestPayout?.amount ?? 312.64) - (latestPayout?.savingsSetAside ?? 72.91)
+        return formatCurrency(amt)
     }
 
     // MARK: - Actions
@@ -56,7 +57,7 @@ final class PayoutsViewModel: ObservableObject {
         guard api.isAuthenticated else { return }
         isLoading = true
         do {
-            payouts = try await api.request(path: "/payouts")
+            payouts = try await api.request(path: "/deposits")
             latestPayout = payouts.first
         } catch {
             // Use fallback data
@@ -73,7 +74,6 @@ final class PayoutsViewModel: ObservableObject {
     }
 
     func requestPayout() async {
-        // Placeholder for future Stripe payout functionality
         errorMessage = nil
     }
 

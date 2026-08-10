@@ -6,6 +6,17 @@ struct ContentView: View {
     @State private var showMilliAI = false
 
     var body: some View {
+        Group {
+            if appState.isAuthenticated {
+                authenticatedContent
+            } else {
+                LoginView()
+                    .environmentObject(appState)
+            }
+        }
+    }
+
+    private var authenticatedContent: some View {
         ZStack(alignment: .bottom) {
             // Full screen background
             Color.milliBackground.ignoresSafeArea()

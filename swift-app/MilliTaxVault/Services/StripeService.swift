@@ -16,9 +16,16 @@ final class StripeService {
         let currentPeriodEnd: String?
 
         enum CodingKeys: String, CodingKey {
-            case tier
+            case tier = "plan"
             case active
-            case currentPeriodEnd = "current_period_end"
+            case currentPeriodEnd = "stripe_active_until"
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            tier = try c.decodeIfPresent(String.self, forKey: .tier) ?? "trial"
+            active = try c.decodeIfPresent(Bool.self, forKey: .active) ?? false
+            currentPeriodEnd = try c.decodeIfPresent(String.self, forKey: .currentPeriodEnd)
         }
     }
 
@@ -32,17 +39,17 @@ final class StripeService {
         }
     }
 
-    /// Get current subscription status.
+    /// Get current subscription status from user profile.
     func getSubscriptionStatus() async throws -> SubscriptionStatus {
-        return try await api.request(path: "/billing/status")
+        return try await api.request(path: "/auth/me")
     }
 
     /// Create a Stripe checkout session for subscription upgrade.
-    func createCheckoutSession(tier: String) async throws -> CheckoutSession {
+    func createCheckoutSession(tier: String, originURL: String) async throws -> CheckoutSession {
         return try await api.request(
             method: "POST",
-            path: "/billing/checkout",
-            body: ["tier": tier]
+            path: "/stripe/checkout",
+            body: ["tier": tier, "origin_url": originURL]
         )
     }
 
@@ -51,7 +58,7 @@ final class StripeService {
         struct PortalResponse: Decodable { let url: String }
         let response: PortalResponse = try await api.request(
             method: "POST",
-            path: "/billing/portal"
+            path: "/stripe/portal"
         )
         return response.url
     }

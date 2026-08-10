@@ -2091,6 +2091,67 @@ async def dashboard_snapshot(user: dict = Depends(get_current_user)):
     return await _autopilot_snapshot(db, user["id"])
 
 
+
+@api.get("/dashboard/summary")
+async def dashboard_summary(user: dict = Depends(get_current_user)):
+    """Convenience route for the SwiftUI Home screen dashboard cards."""
+    vault = await db.tax_vaults.find_one({"user_id": user["id"]}) or {}
+    vault_balance = float(vault.get("balance") or 0.0)
+    vault_goal = float(vault.get("tax_goal") or user.get("tax_goal") or 22500)
+    vault_pct = round(vault_balance / vault_goal * 100, 1) if vault_goal > 0 else 0
+
+    # Latest deposit
+    latest_dep = await db.deposits.find_one(
+        {"user_id": user["id"]}, {"_id": 0}, sort=[("date", -1)]
+    )
+    latest_amount = float(latest_dep["amount"]) if latest_dep else 0
+    latest_date = latest_dep.get("date", "") if latest_dep else ""
+
+    # Mileage this quarter
+    now = datetime.now(timezone.utc)
+    q_start_month = ((now.month - 1) // 3) * 3 + 1
+    q_start = date(now.year, q_start_month, 1).isoformat()
+    trips = await db.trips.find(
+        {"user_id": user["id"], "status": "completed"},
+        {"_id": 0, "miles": 1, "start_time": 1},
+    ).to_list(5000)
+    quarter_miles = sum(
+        float(t.get("miles") or 0)
+        for t in trips if (t.get("start_time") or "") >= q_start
+    )
+
+    # Quarterly estimate
+    from tax_engine import calc_total_tax, mileage_deduction_for_trips, profile_from_user
+    year = now.year
+    year_deposits = await db.deposits.find(
+        {"user_id": user["id"]}, {"_id": 0}
+    ).to_list(5000)
+    year_deposits = [d for d in year_deposits if d.get("date", "").startswith(str(year))]
+    gross = sum(float(d.get("amount") or 0) for d in year_deposits)
+    year_trips = [t for t in trips if (t.get("start_time") or "").startswith(str(year))]
+    mileage_info = mileage_deduction_for_trips(year_trips, year)
+    mileage_ded = mileage_info["total_deduction"]
+    expenses = await db.expenses.find({"user_id": user["id"]}, {"_id": 0}).to_list(5000)
+    expenses = [e for e in expenses if e.get("date", "").startswith(str(year))]
+    expense_total = sum(float(e.get("amount") or 0) for e in expenses)
+    profile = profile_from_user({**user, "tax_year": year})
+    tax = calc_total_tax(gross, mileage_ded + expense_total, profile)
+    quarterly_est = round(tax.total_tax / 4, 2)
+
+    # Tax ready score (simple heuristic: vault funded % capped at 100)
+    tax_ready = min(100, int(vault_pct * 100 / 25)) if vault_pct > 0 else 85
+
+    return {
+        "available_to_spend": round(float(user.get("available_to_spend") or 0), 2),
+        "vault_balance": vault_balance,
+        "vault_goal_percent": vault_pct,
+        "latest_payout_amount": latest_amount,
+        "latest_payout_date": latest_date,
+        "tax_ready_score": tax_ready,
+        "quarterly_estimate": quarterly_est,
+        "quarter_miles": round(quarter_miles, 1),
+    }
+
 # -------------------- MARKETING ASSETS --------------------
 MARKETING_DIR = Path("/app/marketing_videos")
 

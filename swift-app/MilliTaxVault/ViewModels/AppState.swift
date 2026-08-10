@@ -42,6 +42,27 @@ final class AppState: ObservableObject {
         isLoading = false
     }
 
+    func register(name: String, email: String, password: String) async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let response: AuthResponse = try await api.request(
+                method: "POST",
+                path: "/auth/register",
+                body: ["name": name, "email": email, "password": password]
+            )
+            api.authToken = response.token
+            api.userId = response.user.id
+            currentUser = response.user
+            isAuthenticated = true
+        } catch let error as APIService.APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
     func logout() {
         api.clearAuth()
         currentUser = nil

@@ -22,15 +22,15 @@ final class MileageViewModel: ObservableObject {
     }
 
     var todayMiles: String {
-        String(format: "%.2f mi", summary.todayMiles > 0 ? summary.todayMiles : 126.37)
+        String(format: "%.2f mi", summary.businessMiles > 0 ? summary.businessMiles : 126.37)
     }
 
     var todayDeduction: String {
-        formatCurrency(summary.todayDeduction > 0 ? summary.todayDeduction : 66.41)
+        formatCurrency(summary.totalDeduction > 0 ? summary.totalDeduction : 66.41)
     }
 
     var quarterMiles: String {
-        "\(Int(summary.quarterMiles > 0 ? summary.quarterMiles : 2345).formatted()) mi"
+        "\(Int(summary.totalMiles > 0 ? summary.totalMiles : 2345).formatted()) mi"
     }
 
     var trackingStatus: String {
@@ -50,7 +50,7 @@ final class MileageViewModel: ObservableObject {
         }
 
         do {
-            let trip: MileageTrip? = try await api.request(path: "/mileage/active")
+            let trip: MileageTrip? = try await api.request(path: "/trips/active")
             activeTrip = trip
             isTracking = trip?.isActive ?? false
         } catch {
@@ -63,7 +63,7 @@ final class MileageViewModel: ObservableObject {
         do {
             let trip: MileageTrip = try await api.request(
                 method: "POST",
-                path: "/mileage/start"
+                path: "/trips/start"
             )
             activeTrip = trip
             isTracking = true
@@ -75,10 +75,10 @@ final class MileageViewModel: ObservableObject {
     func stopTracking() async {
         guard let tripId = activeTrip?.id else { return }
         do {
-            try await api.requestVoid(
+            let _: MileageTrip = try await api.request(
                 method: "POST",
-                path: "/mileage/stop",
-                body: ["trip_id": tripId]
+                path: "/trips/\(tripId)/end",
+                body: ["miles": activeTrip?.miles ?? 0]
             )
             isTracking = false
             await loadMileage()

@@ -20,12 +20,12 @@ struct MoreView: View {
                                         .fill(Color.milliCyan.opacity(0.2))
                                         .frame(width: 40, height: 40)
                                         .overlay(
-                                            Text(String(user.firstName.prefix(1)))
+                                            Text(String(user.name.prefix(1)))
                                                 .font(.system(size: 16, weight: .bold))
                                                 .foregroundColor(.milliCyan)
                                         )
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("\(user.firstName) \(user.lastName)")
+                                        Text(user.name)
                                             .font(.system(size: 15, weight: .semibold))
                                             .foregroundColor(.white)
                                         Text(user.email)

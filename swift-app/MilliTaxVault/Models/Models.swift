@@ -5,18 +5,33 @@ import Foundation
 struct MilliUser: Codable, Identifiable {
     let id: String
     let email: String
-    let firstName: String
-    let lastName: String
+    let name: String
     let tier: String?
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case id = "_id"
+        case id
         case email
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case tier
+        case name
+        case tier = "plan"
         case createdAt = "created_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+        email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        tier = try c.decodeIfPresent(String.self, forKey: .tier)
+        createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt)
+    }
+
+    init(id: String, email: String, name: String, tier: String? = nil, createdAt: String? = nil) {
+        self.id = id
+        self.email = email
+        self.name = name
+        self.tier = tier
+        self.createdAt = createdAt
     }
 }
 
@@ -36,7 +51,7 @@ struct VaultBalance: Codable {
 
     enum CodingKeys: String, CodingKey {
         case balance
-        case goal
+        case goal = "tax_goal"
         case thisMonth = "this_month"
         case streak
         case percentOfGoal = "percent_of_goal"
@@ -70,11 +85,11 @@ struct VaultTransaction: Codable, Identifiable {
     let type: String
 
     enum CodingKeys: String, CodingKey {
-        case id = "_id"
-        case title
-        case date
+        case id
+        case title = "note"
+        case date = "created_at"
         case amount
-        case type
+        case type = "direction"
     }
 
     init(from decoder: Decoder) throws {
@@ -83,10 +98,10 @@ struct VaultTransaction: Codable, Identifiable {
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
         date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
         amount = try c.decodeIfPresent(Double.self, forKey: .amount) ?? 0
-        type = try c.decodeIfPresent(String.self, forKey: .type) ?? "allocation"
+        type = try c.decodeIfPresent(String.self, forKey: .type) ?? "in"
     }
 
-    init(id: String = UUID().uuidString, title: String, date: String, amount: Double, type: String = "allocation") {
+    init(id: String = UUID().uuidString, title: String, date: String, amount: Double, type: String = "in") {
         self.id = id
         self.title = title
         self.date = date
@@ -113,26 +128,18 @@ struct Payout: Codable, Identifiable {
     let id: String
     let source: String
     let date: String
-    let grossAmount: Double
-    let platformFee: Double
-    let adjustments: Double
-    let netAmount: Double
-    let taxAllocation: Double
-    let mileageDeduction: Double
-    let availableToSpend: Double
+    let amount: Double
+    let savingsSetAside: Double
+    let platform: String
     let status: String
 
     enum CodingKeys: String, CodingKey {
-        case id = "_id"
-        case source
+        case id
+        case source = "merchant"
         case date
-        case grossAmount = "gross_amount"
-        case platformFee = "platform_fee"
-        case adjustments
-        case netAmount = "net_amount"
-        case taxAllocation = "tax_allocation"
-        case mileageDeduction = "mileage_deduction"
-        case availableToSpend = "available_to_spend"
+        case amount
+        case savingsSetAside = "savings_set_aside"
+        case platform
         case status
     }
 
@@ -141,27 +148,19 @@ struct Payout: Codable, Identifiable {
         id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
         source = try c.decodeIfPresent(String.self, forKey: .source) ?? "Spark Driver\u{2122}"
         date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
-        grossAmount = try c.decodeIfPresent(Double.self, forKey: .grossAmount) ?? 0
-        platformFee = try c.decodeIfPresent(Double.self, forKey: .platformFee) ?? 0
-        adjustments = try c.decodeIfPresent(Double.self, forKey: .adjustments) ?? 0
-        netAmount = try c.decodeIfPresent(Double.self, forKey: .netAmount) ?? 0
-        taxAllocation = try c.decodeIfPresent(Double.self, forKey: .taxAllocation) ?? 0
-        mileageDeduction = try c.decodeIfPresent(Double.self, forKey: .mileageDeduction) ?? 0
-        availableToSpend = try c.decodeIfPresent(Double.self, forKey: .availableToSpend) ?? 0
+        amount = try c.decodeIfPresent(Double.self, forKey: .amount) ?? 0
+        savingsSetAside = try c.decodeIfPresent(Double.self, forKey: .savingsSetAside) ?? 0
+        platform = try c.decodeIfPresent(String.self, forKey: .platform) ?? ""
         status = try c.decodeIfPresent(String.self, forKey: .status) ?? "processed"
     }
 
-    init(id: String = UUID().uuidString, source: String = "Spark Driver\u{2122}", date: String = "", grossAmount: Double = 0, platformFee: Double = 0, adjustments: Double = 0, netAmount: Double = 0, taxAllocation: Double = 0, mileageDeduction: Double = 0, availableToSpend: Double = 0, status: String = "processed") {
+    init(id: String = UUID().uuidString, source: String = "Spark Driver\u{2122}", date: String = "", amount: Double = 0, savingsSetAside: Double = 0, platform: String = "", status: String = "processed") {
         self.id = id
         self.source = source
         self.date = date
-        self.grossAmount = grossAmount
-        self.platformFee = platformFee
-        self.adjustments = adjustments
-        self.netAmount = netAmount
-        self.taxAllocation = taxAllocation
-        self.mileageDeduction = mileageDeduction
-        self.availableToSpend = availableToSpend
+        self.amount = amount
+        self.savingsSetAside = savingsSetAside
+        self.platform = platform
         self.status = status
     }
 }
@@ -174,15 +173,15 @@ struct MileageTrip: Codable, Identifiable {
     let endTime: String?
     let miles: Double
     let deduction: Double
-    let isActive: Bool
+    let status: String
 
     enum CodingKeys: String, CodingKey {
-        case id = "_id"
+        case id
         case startTime = "start_time"
         case endTime = "end_time"
         case miles
-        case deduction
-        case isActive = "is_active"
+        case deduction = "deductible_value"
+        case status
     }
 
     init(from decoder: Decoder) throws {
@@ -192,53 +191,51 @@ struct MileageTrip: Codable, Identifiable {
         endTime = try c.decodeIfPresent(String.self, forKey: .endTime)
         miles = try c.decodeIfPresent(Double.self, forKey: .miles) ?? 0
         deduction = try c.decodeIfPresent(Double.self, forKey: .deduction) ?? 0
-        isActive = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
+        status = try c.decodeIfPresent(String.self, forKey: .status) ?? "completed"
     }
 
-    init(id: String = UUID().uuidString, startTime: String = "", endTime: String? = nil, miles: Double = 0, deduction: Double = 0, isActive: Bool = false) {
+    init(id: String = UUID().uuidString, startTime: String = "", endTime: String? = nil, miles: Double = 0, deduction: Double = 0, status: String = "completed") {
         self.id = id
         self.startTime = startTime
         self.endTime = endTime
         self.miles = miles
         self.deduction = deduction
-        self.isActive = isActive
+        self.status = status
     }
+
+    var isActive: Bool { status == "active" }
 }
 
 struct MileageSummary: Codable {
-    let todayMiles: Double
-    let todayDeduction: Double
-    let quarterMiles: Double
-    let quarterDeduction: Double
-    let yearMiles: Double
-    let yearDeduction: Double
+    let totalMiles: Double
+    let totalDeduction: Double
+    let businessMiles: Double
+    let tripsCount: Int
+    let year: Int
 
     enum CodingKeys: String, CodingKey {
-        case todayMiles = "today_miles"
-        case todayDeduction = "today_deduction"
-        case quarterMiles = "quarter_miles"
-        case quarterDeduction = "quarter_deduction"
-        case yearMiles = "year_miles"
-        case yearDeduction = "year_deduction"
+        case totalMiles = "total_miles"
+        case totalDeduction = "total_deduction"
+        case businessMiles = "business_miles"
+        case tripsCount = "trips_count"
+        case year
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        todayMiles = try c.decodeIfPresent(Double.self, forKey: .todayMiles) ?? 0
-        todayDeduction = try c.decodeIfPresent(Double.self, forKey: .todayDeduction) ?? 0
-        quarterMiles = try c.decodeIfPresent(Double.self, forKey: .quarterMiles) ?? 0
-        quarterDeduction = try c.decodeIfPresent(Double.self, forKey: .quarterDeduction) ?? 0
-        yearMiles = try c.decodeIfPresent(Double.self, forKey: .yearMiles) ?? 0
-        yearDeduction = try c.decodeIfPresent(Double.self, forKey: .yearDeduction) ?? 0
+        totalMiles = try c.decodeIfPresent(Double.self, forKey: .totalMiles) ?? 0
+        totalDeduction = try c.decodeIfPresent(Double.self, forKey: .totalDeduction) ?? 0
+        businessMiles = try c.decodeIfPresent(Double.self, forKey: .businessMiles) ?? 0
+        tripsCount = try c.decodeIfPresent(Int.self, forKey: .tripsCount) ?? 0
+        year = try c.decodeIfPresent(Int.self, forKey: .year) ?? 2026
     }
 
-    init(todayMiles: Double = 0, todayDeduction: Double = 0, quarterMiles: Double = 0, quarterDeduction: Double = 0, yearMiles: Double = 0, yearDeduction: Double = 0) {
-        self.todayMiles = todayMiles
-        self.todayDeduction = todayDeduction
-        self.quarterMiles = quarterMiles
-        self.quarterDeduction = quarterDeduction
-        self.yearMiles = yearMiles
-        self.yearDeduction = yearDeduction
+    init(totalMiles: Double = 0, totalDeduction: Double = 0, businessMiles: Double = 0, tripsCount: Int = 0, year: Int = 2026) {
+        self.totalMiles = totalMiles
+        self.totalDeduction = totalDeduction
+        self.businessMiles = businessMiles
+        self.tripsCount = tripsCount
+        self.year = year
     }
 }
 
@@ -258,7 +255,7 @@ struct PlaidItem: Codable, Identifiable {
     let lastSynced: String?
 
     enum CodingKeys: String, CodingKey {
-        case id = "item_id"
+        case id
         case institutionName = "institution_name"
         case lastSynced = "last_synced"
     }

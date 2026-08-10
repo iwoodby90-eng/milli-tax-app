@@ -48,14 +48,31 @@ final class TaxVaultViewModel: ObservableObject {
     func loadVault() async {
         guard api.isAuthenticated else { return }
         isLoading = true
-        async let balanceTask: VaultBalance? = try? api.request(path: "/vault/balance")
-        async let transactionsTask: [VaultTransaction]? = try? api.request(path: "/vault/transactions")
-        async let banksTask: [PlaidItem]? = try? plaid.getConnectedItems()
 
-        let (bal, txns, banks) = await (balanceTask, transactionsTask, banksTask)
-        if let bal = bal { vaultBalance = bal }
-        if let txns = txns { transactions = txns }
-        if let banks = banks { connectedBanks = banks }
+        // Backend GET /vault returns the full vault object including transfers array
+        do {
+            let vaultResponse: VaultResponse = try await api.request(path: "/vault")
+            vaultBalance = VaultBalance(
+                balance: vaultResponse.balance,
+                goal: vaultResponse.taxGoal,
+                thisMonth: 0,
+                streak: 0,
+                percentOfGoal: vaultResponse.taxGoal > 0
+                    ? (vaultResponse.balance / vaultResponse.taxGoal) * 100
+                    : 0
+            )
+            transactions = vaultResponse.transfers
+        } catch {
+            // Use fallback data
+        }
+
+        do {
+            let banks: [PlaidItem] = try await plaid.getConnectedItems()
+            connectedBanks = banks
+        } catch {
+            // Silent fail
+        }
+
         isLoading = false
     }
 
@@ -114,4 +131,28 @@ final class TaxVaultViewModel: ObservableObject {
         VaultTransaction(title: "Interest Earned", date: "May 7, 2024", amount: 1.27),
         VaultTransaction(title: "Payout Allocation", date: "May 6, 2024", amount: 86.11),
     ]
+}
+
+// MARK: - Vault API Response Model (matches GET /vault backend shape)
+
+private struct VaultResponse: Decodable {
+    let id: String
+    let balance: Double
+    let taxGoal: Double
+    let transfers: [VaultTransaction]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case balance
+        case taxGoal = "tax_goal"
+        case transfers
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+        balance = try c.decodeIfPresent(Double.self, forKey: .balance) ?? 0
+        taxGoal = try c.decodeIfPresent(Double.self, forKey: .taxGoal) ?? 22500
+        transfers = try c.decodeIfPresent([VaultTransaction].self, forKey: .transfers) ?? []
+    }
 }
