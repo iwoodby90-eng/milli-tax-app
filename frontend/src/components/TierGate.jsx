@@ -15,7 +15,7 @@ export default function TierGate({ allowed = [], children, featureName = "This f
   if (allowed.includes(plan)) return children;
 
   const isEliteOnly = allowed.length === 1 && allowed[0] === "elite";
-  const upgradePlan = isEliteOnly ? "Elite" : "Pro";
+  const upgradePlan = isEliteOnly ? "MILLI Elite" : "MILLI Pro";
   const upgradePrice = isEliteOnly ? "$49.99/mo" : "$29.99/mo";
 
   return (

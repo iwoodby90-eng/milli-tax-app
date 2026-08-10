@@ -135,9 +135,9 @@ TIER_SAVINGS_RATIO = {
 
 # Subscription packages (server-side fixed pricing)
 PRICING_PACKAGES = {
-    "basic":  {"name": "Basic",  "amount": 19.99, "currency": "usd"},
-    "pro":    {"name": "Pro",    "amount": 29.99, "currency": "usd"},
-    "elite":  {"name": "Elite",  "amount": 49.99, "currency": "usd"},
+    "basic":  {"name": "MILLI Basic",  "amount": 19.99, "currency": "usd"},
+    "pro":    {"name": "MILLI Pro",    "amount": 29.99, "currency": "usd"},
+    "elite":  {"name": "MILLI Elite",  "amount": 49.99, "currency": "usd"},
 }
 
 # -------------------- AUTH HELPERS --------------------
@@ -1452,23 +1452,23 @@ async def stripe_webhook(request: Request):
 @api.get("/pricing/tiers")
 async def get_tiers():
     return [
-        {"id": "basic", "name": "Basic", "price": 19.99, "trial_days": 3, "features": [
-            "Unlimited live mileage tracking", "Plaid bank deposits sync", "Year-end mileage CSV",
-            "Quarterly tax estimates", "Email reminders",
+        {"id": "basic", "name": "MILLI Basic", "price": 19.99, "trial_days": 3, "features": [
+            "Payout tracking",
+            "Mileage tracking",
+            "Tax savings vault",
+            "Quarterly tax estimates",
         ]},
-        {"id": "pro", "name": "Pro", "price": 29.99, "trial_days": 3, "features": [
-            "Everything in Basic", "Receipt OCR scanner (AI)", "AI tax assistant chat",
-            "Schedule C worksheet PDF", "27% smart tax savings allocation",
+        {"id": "pro", "name": "MILLI Pro", "price": 29.99, "trial_days": 3, "features": [
+            "Everything in Basic",
+            "Milli Cents unlocked",
+            "Tax forms provided",
+            "Guided filing assistance",
         ], "popular": True},
-        {"id": "elite", "name": "Elite", "price": 49.99, "trial_days": 3, "features": [
+        {"id": "elite", "name": "MILLI Elite", "price": 49.99, "trial_days": 3, "features": [
             "Everything in Pro",
-            "Auto 401(k) + Brokerage contributions per deposit",
-            "Auto Federal + State tax filing (via licensed partner)",
-            "Auto-generated Schedule C + SE forms",
-            "Auto tax-savings bucket per deposit",
-            "Priority Milli AI assistant",
-            "Year-end CPA review checklist",
-            "Audit-ready mileage log",
+            "Tax forms pre-filled automatically",
+            "Auto-filed and submitted",
+            "Brushed Titanium Visa Card (3% cash back)",
         ]},
     ]
 

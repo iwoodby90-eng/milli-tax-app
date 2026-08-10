@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MoreView: View {
     @EnvironmentObject var appState: AppState
+    @State private var showSubscription = false
 
     var body: some View {
         ZStack {
@@ -42,7 +43,41 @@ struct MoreView: View {
                         moreRow(icon: "doc.text.fill", label: "Export Reports", color: .white)
                         moreRow(icon: "folder.fill", label: "Tax Documents", color: .white)
                         moreRow(icon: "building.columns.fill", label: "Connected Banks", color: .white)
-                        moreRow(icon: "creditcard.fill", label: "Subscription", color: .white)
+
+                        // Subscription row — navigates to SubscriptionView
+                        Button(action: { showSubscription = true }) {
+                            MilliCard {
+                                HStack(spacing: 14) {
+                                    Image(systemName: "creditcard.fill")
+                                        .font(.system(size: 20, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: 28)
+
+                                    Text("Subscription")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.white)
+
+                                    Spacer()
+
+                                    // Show current tier badge
+                                    if let tier = appState.currentUser?.tier {
+                                        Text(tierDisplayName(tier))
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(.milliCyan)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .background(Color.milliCyan.opacity(0.1))
+                                            .cornerRadius(6)
+                                    }
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.milliTextTertiary)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+
                         moreRow(icon: "questionmark.circle.fill", label: "Help & Support", color: .white)
                         moreRow(icon: "info.circle.fill", label: "About Milli", color: .white)
 
@@ -70,7 +105,15 @@ struct MoreView: View {
                     .padding(.bottom, 100)
                 }
             }
+
+            // Full-screen cover for Subscription
+            if showSubscription {
+                SubscriptionView()
+                    .environmentObject(appState)
+                    .transition(.move(edge: .trailing))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: showSubscription)
     }
 
     private func moreRow(icon: String, label: String, color: Color) -> some View {
@@ -91,6 +134,15 @@ struct MoreView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.milliTextTertiary)
             }
+        }
+    }
+
+    private func tierDisplayName(_ tier: String) -> String {
+        switch tier.lowercased() {
+        case "basic": return "MILLI Basic"
+        case "pro": return "MILLI Pro"
+        case "elite": return "MILLI Elite"
+        default: return "Trial"
         }
     }
 }
