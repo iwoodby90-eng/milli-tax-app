@@ -36,10 +36,13 @@ extension Color {
     static let milliCardBorder = Color(hex: "1E1E2E")
     static let milliCyan = Color(hex: "00B4FF")
     static let milliCyanLight = Color(hex: "7ADEFD")
-    static let milliTextPrimary = Color.white
-    static let milliTextSecondary = Color(hex: "8B8BA0")
-    static let milliTextTertiary = Color(hex: "5A5A6E")
+    static let milliSuccess = Color(hex: "00FF88")
+    static let milliWarning = Color(hex: "FFB800")
+    static let milliError = Color(hex: "FF3B30")
     static let milliGreen = Color(hex: "00D68F")
+    static let milliTextPrimary = Color.white
+    static let milliTextSecondary = Color(white: 0.6)
+    static let milliTextTertiary = Color(white: 0.4)
     static let milliChrome1 = Color(hex: "CCCCCC")
     static let milliChrome2 = Color(hex: "888888")
     static let milliChrome3 = Color(hex: "444444")
@@ -66,6 +69,7 @@ struct MilliCard<Content: View>: View {
 
 struct MilliPageHeader: View {
     let title: String
+    var subtitle: String? = nil
     var showBack: Bool = false
     var onBack: (() -> Void)? = nil
 
@@ -81,9 +85,16 @@ struct MilliPageHeader: View {
             if !showBack {
                 Spacer()
             }
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.white)
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(.milliTextSecondary)
+                }
+            }
             Spacer()
             Button(action: {}) {
                 Image(systemName: "bell")

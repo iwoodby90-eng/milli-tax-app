@@ -38,19 +38,68 @@ struct MoreView: View {
                             }
                         }
 
+                        // TOOLS SECTION
+                        sectionHeader("TOOLS")
+
+                        NavigationLink(destination: MilliCentsView()) {
+                            moreRowContent(icon: "centsign.circle.fill", label: "Milli Cents", color: .milliCyan)
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: ExpensesView()) {
+                            moreRowContent(icon: "creditcard.fill", label: "Expenses & Deductions", color: .milliCyan)
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: ReportsView()) {
+                            moreRowContent(icon: "chart.bar.fill", label: "Reports", color: .milliCyan)
+                        }
+                        .buttonStyle(.plain)
+
+                        // WEALTH SECTION
+                        sectionHeader("WEALTH")
+
+                        NavigationLink(destination: InvestingView()) {
+                            moreRowContent(icon: "chart.line.uptrend.xyaxis", label: "Investing", color: .milliSuccess)
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: RetirementView()) {
+                            moreRowContent(icon: "hourglass.circle.fill", label: "Retirement", color: .milliSuccess)
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: WealthOverviewView()) {
+                            moreRowContent(icon: "banknote.fill", label: "Wealth Overview", color: .milliSuccess)
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: TreeOfLifeView().environmentObject(appState)) {
+                            moreRowContent(icon: "leaf.fill", label: "Tree of Life", color: .milliSuccess, badge: "ELITE")
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: LifeEventsView()) {
+                            moreRowContent(icon: "calendar.badge.clock", label: "Life Events", color: .milliSuccess)
+                        }
+                        .buttonStyle(.plain)
+
+                        // ACCOUNT SECTION
+                        sectionHeader("ACCOUNT")
+
                         moreRow(icon: "person.circle.fill", label: "Profile & Settings", color: .white)
                         moreRow(icon: "sparkles", label: "Milli AI Assistant", color: .milliCyan)
                         moreRow(icon: "doc.text.fill", label: "Export Reports", color: .white)
                         moreRow(icon: "folder.fill", label: "Tax Documents", color: .white)
                         moreRow(icon: "building.columns.fill", label: "Connected Banks", color: .white)
 
-                        // Subscription row — navigates to SubscriptionView
+                        // Subscription row
                         Button(action: { showSubscription = true }) {
                             MilliCard {
                                 HStack(spacing: 14) {
-                                    Image(systemName: "creditcard.fill")
+                                    Image(systemName: "crown.fill")
                                         .font(.system(size: 20, weight: .medium))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.milliWarning)
                                         .frame(width: 28)
 
                                     Text("Subscription")
@@ -59,7 +108,6 @@ struct MoreView: View {
 
                                     Spacer()
 
-                                    // Show current tier badge
                                     if let tier = appState.currentUser?.tier {
                                         Text(tierDisplayName(tier))
                                             .font(.system(size: 11, weight: .semibold))
@@ -115,6 +163,57 @@ struct MoreView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: showSubscription)
     }
+
+    // MARK: - Section Header
+
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(0.8)
+                .foregroundColor(.milliTextTertiary)
+            Spacer()
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 2)
+        .padding(.leading, 4)
+    }
+
+    // MARK: - Row Content (for NavigationLink)
+
+    private func moreRowContent(icon: String, label: String, color: Color, badge: String? = nil) -> some View {
+        MilliCard {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(color)
+                    .frame(width: 28)
+
+                Text(label)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                if let badge = badge {
+                    Text(badge)
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(0.3)
+                        .foregroundColor(.milliWarning)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.milliWarning.opacity(0.12))
+                        .cornerRadius(4)
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.milliTextTertiary)
+            }
+        }
+    }
+
+    // MARK: - Static Row
 
     private func moreRow(icon: String, label: String, color: Color) -> some View {
         MilliCard {

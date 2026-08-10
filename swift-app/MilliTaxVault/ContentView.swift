@@ -22,9 +22,13 @@ struct ContentView: View {
             Color.milliBackground.ignoresSafeArea()
 
             // Page content
-            currentView
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(edges: .bottom)
+            NavigationView {
+                currentView
+                    .navigationBarHidden(true)
+            }
+            .navigationViewStyle(.stack)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea(edges: .bottom)
 
             // Floating Milli AI orb
             floatingAIButton
