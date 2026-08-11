@@ -48,7 +48,7 @@ struct RegisterView: View {
                     }
 
                     Button(action: {
-                        Task { await appState.register(name: name, email: email, password: password) }
+                        Task { await appState.register(fullName: name, email: email, password: password) }
                     }) {
                         HStack {
                             if appState.isLoading {

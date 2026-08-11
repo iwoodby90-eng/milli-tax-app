@@ -1,229 +1,154 @@
 import SwiftUI
 
 struct SplashView: View {
-    var onComplete: (() -> Void)? = nil
-    
-    // Animation state
-    @State private var leftOffset: CGFloat = -300
-    @State private var rightOffset: CGFloat = 300
-    @State private var mergeScale: CGFloat = 0.85
-    @State private var mergeOpacity: Double = 0
-    @State private var bloomOpacity: Double = 0
-    @State private var bloomScale: CGFloat = 0.3
+    var onComplete: () -> Void
+
+    // Animation phases
+    @State private var mTrimEnd: CGFloat = 0
+    @State private var glowScale: CGFloat = 0.3
+    @State private var glowOpacity: Double = 0
     @State private var wordmarkOpacity: Double = 0
-    @State private var wordmarkOffset: CGFloat = 20
     @State private var taglineOpacity: Double = 0
-    @State private var bgOpacity: Double = 1
-    
+    @State private var screenOpacity: Double = 1
+
+    private let cyan = Color(red: 0, green: 0.706, blue: 1) // #00B4FF
+
     var body: some View {
         ZStack {
-            // Background
-            Color.milliBackground
+            // Pure black background
+            Color(red: 0.031, green: 0.031, blue: 0.063) // #080810
                 .ignoresSafeArea()
-            
-            // Ambient background glow
-            RadialGradient(
-                colors: [Color(hex: "00B4FF").opacity(0.06), Color.clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 300
-            )
-            .ignoresSafeArea()
-            .opacity(mergeOpacity)
-            
+
             VStack(spacing: 0) {
                 Spacer()
-                
-                // M ANIMATION CONTAINER
+
                 ZStack {
-                    // Bloom flash on merge
+                    // Radial glow pulse behind the M
                     Circle()
-                        .fill(Color(hex: "00B4FF").opacity(0.15))
-                        .frame(width: 180, height: 180)
-                        .blur(radius: 30)
-                        .scaleEffect(bloomScale)
-                        .opacity(bloomOpacity)
-                    
-                    // LEFT HALF of M — slides in from left
-                    LeftMShape()
                         .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "FFFFFF"), Color(hex: "AAAAAA"), Color(hex: "CCCCCC")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                            RadialGradient(
+                                colors: [cyan.opacity(0.6), cyan.opacity(0.2), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 80
                             )
                         )
-                        .frame(width: 80, height: 110)
-                        .offset(x: leftOffset)
-                    
-                    // RIGHT HALF of M — slides in from right
-                    RightMShape()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "CCCCCC"), Color(hex: "AAAAAA"), Color(hex: "FFFFFF")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                        .frame(width: 160, height: 160)
+                        .scaleEffect(glowScale)
+                        .opacity(glowOpacity)
+
+                    // Geometric M drawn with trim animation
+                    MilliMPath()
+                        .trim(from: 0, to: mTrimEnd)
+                        .stroke(
+                            cyan,
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
                         )
-                        .frame(width: 80, height: 110)
-                        .offset(x: rightOffset)
-                    
-                    // MERGED M — appears after halves converge
-                    Text("M")
-                        .font(.system(size: 110, weight: .black, design: .default))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [
-                                    Color(hex: "7ADEFD"),
-                                    Color(hex: "FFFFFF"),
-                                    Color(hex: "00B4FF"),
-                                    Color(hex: "FFFFFF"),
-                                    Color(hex: "7ADEFD")
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: Color(hex: "00B4FF").opacity(0.6), radius: 20)
-                        .shadow(color: Color.white.opacity(0.3), radius: 6)
-                        .scaleEffect(mergeScale)
-                        .opacity(mergeOpacity)
+                        .shadow(color: cyan.opacity(0.8), radius: 12)
+                        .shadow(color: cyan.opacity(0.4), radius: 6)
+                        .frame(width: 80, height: 80)
                 }
-                .frame(height: 130)
-                
-                Spacer().frame(height: 28)
-                
-                // WORDMARK
-                VStack(spacing: 6) {
-                    Text("MILLI")
-                        .font(.system(size: 36, weight: .black, design: .default))
-                        .tracking(12)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "FFFFFF"), Color(hex: "CCCCCC")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                .frame(height: 160)
+
+                Spacer().frame(height: 24)
+
+                // MILLI wordmark
+                Text("MILLI")
+                    .font(.system(size: 32, weight: .bold, design: .default))
+                    .tracking(8)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white, Color(white: 0.78)],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                    
-                    Text("TAX VAULT")
-                        .font(.system(size: 13, weight: .semibold, design: .default))
-                        .tracking(8)
-                        .foregroundColor(Color(hex: "00B4FF"))
-                        .shadow(color: Color(hex: "00B4FF").opacity(0.5), radius: 4)
-                }
-                .opacity(wordmarkOpacity)
-                .offset(y: wordmarkOffset)
-                
-                Spacer().frame(height: 16)
-                
-                // TAGLINE
-                Text("Your Financial Cockpit")
-                    .font(.system(size: 13, weight: .regular, design: .default))
-                    .tracking(2)
-                    .foregroundColor(Color(hex: "8B8BA0"))
+                    )
+                    .opacity(wordmarkOpacity)
+
+                Spacer().frame(height: 10)
+
+                // Tax Vault tagline
+                Text("Tax Vault")
+                    .font(.system(size: 14, weight: .regular, design: .default))
+                    .tracking(3)
+                    .foregroundColor(Color(red: 0.545, green: 0.545, blue: 0.627)) // milliTextSecondary
                     .opacity(taglineOpacity)
-                
+
                 Spacer()
             }
         }
-        .opacity(bgOpacity)
+        .opacity(screenOpacity)
         .ignoresSafeArea()
-        .onAppear { runAnimation() }
+        .onAppear { runSequence() }
     }
-    
-    private func runAnimation() {
-        // Phase 1: Slide halves in (0 → 0.6s)
-        withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
-            leftOffset = 0
-            rightOffset = 0
-        }
-        
-        // Phase 2: Bloom flash (0.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.easeOut(duration: 0.25)) {
-                bloomOpacity = 1
-                bloomScale = 1.4
-            }
-            withAnimation(.easeIn(duration: 0.3).delay(0.2)) {
-                bloomOpacity = 0
+
+    private func runSequence() {
+        // 0.3s — Begin M draw over 0.8s
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeInOut(duration: 0.8)) {
+                mTrimEnd = 1.0
             }
         }
-        
-        // Phase 3: Merged M appears (0.55s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                mergeOpacity = 1
-                mergeScale = 1.0
-                leftOffset = -300
-                rightOffset = 300
-            }
-        }
-        
-        // Phase 4: Wordmark rises up (1.1s)
+
+        // 1.1s — Glow pulse (scale 0.3→1.5, opacity 0.6→0, duration 0.6s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            withAnimation(.easeOut(duration: 0.5)) {
-                wordmarkOpacity = 1
-                wordmarkOffset = 0
+            glowOpacity = 0.6
+            glowScale = 0.3
+            withAnimation(.easeOut(duration: 0.6)) {
+                glowScale = 1.5
+                glowOpacity = 0
             }
         }
-        
-        // Phase 5: Tagline (1.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation(.easeOut(duration: 0.4)) {
-                taglineOpacity = 1
-            }
-        }
-        
-        // Phase 6: Fade to app (2.6s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) {
+
+        // 1.7s — MILLI wordmark fades in over 0.5s
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) {
             withAnimation(.easeInOut(duration: 0.5)) {
-                bgOpacity = 0
+                wordmarkOpacity = 1.0
             }
         }
-        
+
+        // 2.2s — Tagline fades in over 0.4s
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            withAnimation(.easeInOut(duration: 0.4)) {
+                taglineOpacity = 1.0
+            }
+        }
+
+        // 3.1s — Fade entire screen to black over 0.4s
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.1) {
-            onComplete?()
+            withAnimation(.easeInOut(duration: 0.4)) {
+                screenOpacity = 0
+            }
+        }
+
+        // 3.5s — Sequence complete, call onComplete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            onComplete()
         }
     }
 }
 
-// Left half of the M letterform (angular, bold strokes)
-struct LeftMShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let w = rect.width
-        let h = rect.height
-        path.move(to: CGPoint(x: 0, y: 0))
-        path.addLine(to: CGPoint(x: w * 0.3, y: 0))
-        path.addLine(to: CGPoint(x: w, y: h * 0.55))
-        path.addLine(to: CGPoint(x: w, y: h))
-        path.addLine(to: CGPoint(x: w * 0.65, y: h))
-        path.addLine(to: CGPoint(x: w * 0.65, y: h * 0.72))
-        path.addLine(to: CGPoint(x: w * 0.22, y: h * 0.22))
-        path.addLine(to: CGPoint(x: w * 0.22, y: h))
-        path.addLine(to: CGPoint(x: 0, y: h))
-        path.closeSubpath()
-        return path
-    }
-}
+// MARK: - Geometric M Path
+// Two diagonal strokes forming an angular M silhouette:
+// bottom-left → up-right to first peak → down to center valley → up-right to second peak → down to bottom-right
 
-// Right half of the M letterform (mirror)
-struct RightMShape: Shape {
+struct MilliMPath: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        path.move(to: CGPoint(x: w, y: 0))
-        path.addLine(to: CGPoint(x: w * 0.7, y: 0))
-        path.addLine(to: CGPoint(x: 0, y: h * 0.55))
-        path.addLine(to: CGPoint(x: 0, y: h))
-        path.addLine(to: CGPoint(x: w * 0.35, y: h))
-        path.addLine(to: CGPoint(x: w * 0.35, y: h * 0.72))
-        path.addLine(to: CGPoint(x: w * 0.78, y: h * 0.22))
-        path.addLine(to: CGPoint(x: w * 0.78, y: h))
+
+        // Start at bottom-left
+        path.move(to: CGPoint(x: 0, y: h))
+        // Up-right to first peak
+        path.addLine(to: CGPoint(x: w * 0.25, y: 0))
+        // Down to center valley
+        path.addLine(to: CGPoint(x: w * 0.5, y: h * 0.5))
+        // Up-right to second peak
+        path.addLine(to: CGPoint(x: w * 0.75, y: 0))
+        // Down to bottom-right
         path.addLine(to: CGPoint(x: w, y: h))
-        path.closeSubpath()
+
         return path
     }
 }
