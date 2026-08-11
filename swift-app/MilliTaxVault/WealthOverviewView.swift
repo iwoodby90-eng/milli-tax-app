@@ -3,178 +3,122 @@ import Charts
 
 struct WealthOverviewView: View {
     @Environment(\.dismiss) private var dismiss
-    
+
     private let netWorth: Double = 48_620.00
     private let monthChange: Double = 2_340.00
-    
-    private let segments: [(label: String, value: Double, color: Color)] = [
-        ("Investments", 22802.0, .milliCyan),
-        ("Retirement", 14200.0, Color(hex: "3B82F6")),
-        ("Savings Goals", 8400.0, Color(hex: "A855F7")),
-        ("Cash", 3218.0, Color(hex: "6B7280")),
+
+    private let allocations: [(label: String, value: Double, color: Color)] = [
+        ("Investments", 22802.0, MilliPalette.accent),
+        ("Retirement", 14200.0, Color(red: 0.23, green: 0.51, blue: 0.96)),
+        ("Savings Goals", 8400.0, Color(red: 0.66, green: 0.33, blue: 0.97)),
+        ("Cash", 3218.0, MilliPalette.cardBorder),
     ]
-    
+
     var body: some View {
-        ZStack {
-            Color.milliBackground.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                MilliPageHeader(title: "Wealth Overview", showBack: true, onBack: { dismiss() })
-                
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        // Net Worth Header
-                        MilliCard {
-                            VStack(spacing: 8) {
-                                Text("TOTAL NET WORTH")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .tracking(0.5)
-                                    .foregroundColor(.milliTextSecondary)
-                                
-                                Text("$\(String(format: "%.2f", netWorth))")
-                                    .font(.system(size: 36, weight: .bold))
-                                    .foregroundColor(.white)
-                                
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.up.right")
-                                        .font(.system(size: 11, weight: .bold))
-                                    Text("+$\(String(format: "%.2f", monthChange)) this month")
-                                        .font(.system(size: 13, weight: .semibold))
-                                }
-                                .foregroundColor(.milliSuccess)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                        }
-                        
-                        // Donut Chart
-                        MilliCard {
-                            VStack(spacing: 16) {
-                                Chart(segments, id: \.label) { segment in
-                                    SectorMark(
-                                        angle: .value("Value", segment.value),
-                                        innerRadius: .ratio(0.65),
-                                        angularInset: 2
-                                    )
-                                    .foregroundStyle(segment.color)
-                                    .cornerRadius(4)
-                                }
-                                .frame(height: 200)
-                                
-                                // Legend
-                                VStack(spacing: 8) {
-                                    ForEach(segments, id: \.label) { segment in
-                                        HStack(spacing: 10) {
-                                            Circle()
-                                                .fill(segment.color)
-                                                .frame(width: 10, height: 10)
-                                            Text(segment.label)
-                                                .font(.system(size: 13, weight: .medium))
-                                                .foregroundColor(.white)
-                                            Spacer()
-                                            Text("$\(String(format: "%.0f", segment.value))")
-                                                .font(.system(size: 13, weight: .semibold))
-                                                .foregroundColor(.milliTextSecondary)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Projection Cards
-                        MilliCard {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "chart.line.uptrend.xyaxis")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.milliCyan)
-                                        Text("Retirement Projection")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(.white)
-                                    }
-                                    Text("Projected value at age 65")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.milliTextSecondary)
-                                }
-                                Spacer()
-                                Text("$1.42M")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.milliSuccess)
-                            }
-                        }
-                        
-                        MilliCard {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "target")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(Color(hex: "A855F7"))
-                                        Text("Savings Goals")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(.white)
-                                    }
-                                    Text("3 goals on track")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.milliTextSecondary)
-                                }
-                                Spacer()
-                                Text("$8,400")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(Color(hex: "A855F7"))
-                            }
-                        }
-                        
-                        MilliCard {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "arrow.up.forward.circle.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.milliCyan)
-                                        Text("Monthly Progress")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(.white)
-                                    }
-                                    Text("Invested across all accounts")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.milliTextSecondary)
-                                }
-                                Spacer()
-                                Text("$1,850")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.milliCyan)
-                            }
-                        }
-                        
-                        // Future Net Worth
-                        MilliCard {
-                            VStack(spacing: 8) {
-                                Text("FUTURE NET WORTH")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .tracking(0.5)
-                                    .foregroundColor(.milliTextSecondary)
-                                
-                                Text("$1,680,000")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.milliCyan)
-                                    .shadow(color: Color.milliCyan.opacity(0.3), radius: 8)
-                                
-                                Text("Projected at age 65")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.milliTextSecondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 16) {
+                heroCard
+                donutCard
+                projectionCards
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 88)
+        }
+        .background(MilliPalette.background.ignoresSafeArea())
+        .navigationTitle("Wealth Overview")
+    }
+
+    // MARK: - Hero
+
+    private var heroCard: some View {
+        DKCard {
+            VStack(spacing: 8) {
+                Text("Total Net Worth")
+                    .font(.subheadline)
+                    .foregroundStyle(MilliPalette.textSecondary)
+                Text(milliCurrency(netWorth))
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundStyle(MilliPalette.textPrimary)
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.right")
+                    Text("+\(milliCurrency(monthChange)) this month")
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(MilliPalette.positive)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Donut
+
+    private var donutCard: some View {
+        DKCard {
+            VStack(spacing: 16) {
+                Chart(allocations, id: \.label) { seg in
+                    SectorMark(angle: .value("Amount", seg.value), innerRadius: .ratio(0.62), angularInset: 2)
+                        .foregroundStyle(seg.color)
+                }
+                .frame(height: 180)
+
+                VStack(spacing: 8) {
+                    ForEach(allocations, id: \.label) { seg in
+                        HStack(spacing: 10) {
+                            Circle().fill(seg.color).frame(width: 10, height: 10)
+                            Text(seg.label)
+                                .font(.caption)
+                                .foregroundStyle(MilliPalette.textPrimary)
+                            Spacer()
+                            Text(milliCurrency(seg.value))
+                                .font(.caption)
+                                .foregroundStyle(MilliPalette.textSecondary)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 100)
                 }
             }
         }
-        .navigationBarHidden(true)
+    }
+
+    // MARK: - Projections
+
+    private var projectionCards: some View {
+        VStack(spacing: 10) {
+            projectionRow(icon: "chart.line.uptrend.xyaxis", title: "Retirement Projection", subtitle: "Projected at age 65", value: "$1.42M", color: MilliPalette.positive)
+            projectionRow(icon: "target", title: "Savings Goals", subtitle: "3 goals on track", value: "$8,400", color: Color(red: 0.66, green: 0.33, blue: 0.97))
+            projectionRow(icon: "arrow.up.forward.circle.fill", title: "Monthly Progress", subtitle: "Invested across all accounts", value: "$1,850", color: MilliPalette.accent)
+
+            DKCard {
+                VStack(spacing: 6) {
+                    Text("Future Net Worth")
+                        .font(.caption)
+                        .foregroundStyle(MilliPalette.textSecondary)
+                    Text("$1,680,000")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(MilliPalette.accent)
+                        .shadow(color: MilliPalette.accent.opacity(0.3), radius: 8)
+                    Text("Projected at age 65")
+                        .font(.caption2)
+                        .foregroundStyle(MilliPalette.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func projectionRow(icon: String, title: String, subtitle: String, value: String, color: Color) -> some View {
+        DKCard {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
+                        Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(MilliPalette.textPrimary)
+                    }
+                    Text(subtitle).font(.caption2).foregroundStyle(MilliPalette.textSecondary)
+                }
+                Spacer()
+                Text(value).font(.headline).foregroundStyle(color)
+            }
+        }
     }
 }
