@@ -43,6 +43,7 @@ struct MoreView: View {
                 navRow(icon: "hourglass.circle.fill", label: "Retirement", destination: AnyView(RetirementView()))
                 navRow(icon: "banknote.fill", label: "Wealth Overview", destination: AnyView(WealthOverviewView()))
                 navRow(icon: "leaf.fill", label: "Tree of Life", destination: AnyView(TreeOfLifeView()))
+                navRow(icon: "chart.line.flattrend.xyaxis", label: "Retirement Projection", destination: AnyView(RetirementProjectionView()))
                 navRow(icon: "calendar.badge.clock", label: "Life Events", destination: AnyView(LifeEventsView()))
 
                 // ACCOUNT
