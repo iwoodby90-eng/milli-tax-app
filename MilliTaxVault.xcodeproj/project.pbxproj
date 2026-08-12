@@ -16,6 +16,9 @@
 		A10022 /* MilliAIOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
 		A10023 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023; };
 		A10024 /* TaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024; };
+		A10030 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
+		A10031 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
+		A10032 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +31,9 @@
 		B10022 /* MilliAIOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIOrb.swift; sourceTree = "<group>"; };
 		B10023 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		B10024 /* TaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxVaultView.swift; sourceTree = "<group>"; };
+		B10030 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		B10031 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B10032 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B10099 /* MilliTaxVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MilliTaxVault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -56,6 +62,7 @@
 		C10003 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				C10008 /* Onboarding */,
 				B10023 /* HomeView.swift */,
 				B10024 /* TaxVaultView.swift */,
 			);
@@ -78,6 +85,16 @@
 				B10022 /* MilliAIOrb.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		C10008 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B10030 /* SplashView.swift */,
+				B10031 /* OnboardingView.swift */,
+				B10032 /* LoginView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		C10099 /* Products */ = {
@@ -148,6 +165,9 @@
 				A10022,
 				A10023,
 				A10024,
+				A10030,
+				A10031,
+				A10032,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
