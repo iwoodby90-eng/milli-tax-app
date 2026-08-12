@@ -15,7 +15,7 @@ struct ContentView: View {
                 Group {
                     switch selectedTab {
                     case .vault:
-                        VaultView()
+                        MilliTaxVaultView()
                     case .wealth:
                         WealthView()
                     case .activity:
