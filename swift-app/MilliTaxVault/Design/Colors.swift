@@ -28,24 +28,24 @@ extension Color {
     }
 }
 
-// MARK: - Milli Design System Colors
+// MARK: - Convenience Color Extensions (aligned with MilliPalette)
 
 extension Color {
-    static let milliBackground = Color(hex: "080810")
-    static let milliCard = Color(hex: "12121C")
-    static let milliCardBorder = Color(hex: "1E1E2E")
-    static let milliCyan = Color(hex: "00B4FF")
+    static let milliBackground = MilliPalette.background
+    static let milliCard = MilliPalette.card
+    static let milliCardBorder = MilliPalette.cardBorder
+    static let milliCyan = MilliPalette.accent
     static let milliCyanLight = Color(hex: "7ADEFD")
-    static let milliSuccess = Color(hex: "00FF88")
-    static let milliWarning = Color(hex: "FFB800")
-    static let milliError = Color(hex: "FF3B30")
+    static let milliSuccess = MilliPalette.positive
+    static let milliWarning = MilliPalette.warning
+    static let milliError = MilliPalette.negative
     static let milliGreen = Color(hex: "00D68F")
     static let milliTextPrimary = Color.white
-    static let milliTextSecondary = Color(white: 0.6)
-    static let milliTextTertiary = Color(white: 0.4)
-    static let milliChrome1 = Color(hex: "CCCCCC")
-    static let milliChrome2 = Color(hex: "888888")
-    static let milliChrome3 = Color(hex: "444444")
+    static let milliTextSecondary = Color.white.opacity(0.5)
+    static let milliTextTertiary = Color.white.opacity(0.3)
+    static let milliChrome1 = MilliPalette.chrome1
+    static let milliChrome2 = MilliPalette.chrome2
+    static let milliChrome3 = MilliPalette.chrome3
 }
 
 // MARK: - MilliCard Container
@@ -56,11 +56,13 @@ struct MilliCard<Content: View>: View {
     var body: some View {
         content
             .padding(16)
-            .background(Color.milliCard)
-            .cornerRadius(16)
+            .background(
+                RoundedRectangle(cornerRadius: MilliPalette.radius, style: .continuous)
+                    .fill(MilliPalette.card)
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.milliCardBorder, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: MilliPalette.radius, style: .continuous)
+                    .stroke(MilliPalette.cardBorder, lineWidth: 0.5)
             )
     }
 }
@@ -92,7 +94,7 @@ struct MilliPageHeader: View {
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.system(size: 12))
-                        .foregroundColor(.milliTextSecondary)
+                        .foregroundColor(MilliPalette.textSecondary)
                 }
             }
             Spacer()
@@ -127,7 +129,7 @@ struct CircularProgressView: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: progress)
-                .stroke(Color.milliCyan, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(MilliPalette.accent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(progress * 100))%")
                 .font(.system(size: size * 0.22, weight: .bold))

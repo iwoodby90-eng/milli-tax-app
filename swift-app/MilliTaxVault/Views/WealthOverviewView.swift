@@ -1,124 +1,124 @@
 import SwiftUI
-import Charts
 
 struct WealthOverviewView: View {
-    @Environment(\.dismiss) private var dismiss
+    @State private var netWorth: Double = 12_480.00
+    @State private var monthlyChange: Double = 860.00
+    @State private var savingsRate: Double = 0.28
+    @State private var selectedPeriod: Period = .month
 
-    private let netWorth: Double = 48_620.00
-    private let monthChange: Double = 2_340.00
-
-    private let allocations: [(label: String, value: Double, color: Color)] = [
-        ("Investments", 22802.0, MilliPalette.accent),
-        ("Retirement", 14200.0, Color(red: 0.23, green: 0.51, blue: 0.96)),
-        ("Savings Goals", 8400.0, Color(red: 0.66, green: 0.33, blue: 0.97)),
-        ("Cash", 3218.0, MilliPalette.cardBorder),
-    ]
+    enum Period: String, CaseIterable { case week = "1W", month = "1M", quarter = "3M", year = "1Y" }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 16) {
-                heroCard
-                donutCard
-                projectionCards
+        ZStack {
+            MilliPalette.background.ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    MilliPageHeader(title: "Wealth")
+
+                    // Net worth hero
+                    netWorthHero
+
+                    // Period picker
+                    MilliSegmentedPicker(
+                        options: Period.allCases,
+                        label: { $0.rawValue },
+                        selection: $selectedPeriod
+                    )
+
+                    // Chart placeholder
+                    chartCard
+
+                    // Wealth breakdown
+                    breakdownSection
+
+                    Spacer().frame(height: 20)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 88)
         }
-        .background(MilliPalette.background.ignoresSafeArea())
-        .navigationTitle("Wealth Overview")
     }
 
-    // MARK: - Hero
+    // MARK: - Net Worth Hero
 
-    private var heroCard: some View {
+    private var netWorthHero: some View {
         DKCard {
             VStack(spacing: 8) {
-                Text("Total Net Worth")
-                    .font(.subheadline)
-                    .foregroundStyle(MilliPalette.textSecondary)
+                Text("NET WORTH")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(MilliPalette.textSecondary)
+
                 Text(milliCurrency(netWorth))
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundStyle(MilliPalette.textPrimary)
+                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.up.right")
-                    Text("+\(milliCurrency(monthChange)) this month")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("+\(milliCurrency(monthlyChange)) this month")
+                        .font(.system(size: 13))
                 }
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(MilliPalette.positive)
+                .foregroundColor(MilliPalette.positive)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
     }
 
-    // MARK: - Donut
+    // MARK: - Chart
 
-    private var donutCard: some View {
+    private var chartCard: some View {
         DKCard {
-            VStack(spacing: 16) {
-                Chart(allocations, id: \.label) { seg in
-                    SectorMark(angle: .value("Amount", seg.value), innerRadius: .ratio(0.62), angularInset: 2)
-                        .foregroundStyle(seg.color)
-                }
-                .frame(height: 180)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Growth")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
 
-                VStack(spacing: 8) {
-                    ForEach(allocations, id: \.label) { seg in
-                        HStack(spacing: 10) {
-                            Circle().fill(seg.color).frame(width: 10, height: 10)
-                            Text(seg.label)
-                                .font(.caption)
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            Spacer()
-                            Text(milliCurrency(seg.value))
-                                .font(.caption)
-                                .foregroundStyle(MilliPalette.textSecondary)
-                        }
-                    }
-                }
+                // Simple sparkline chart
+                WaveShape()
+                    .stroke(
+                        LinearGradient(
+                            colors: [MilliPalette.accent.opacity(0.3), MilliPalette.accent],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                    )
+                    .frame(height: 80)
             }
         }
     }
 
-    // MARK: - Projections
+    // MARK: - Breakdown
 
-    private var projectionCards: some View {
-        VStack(spacing: 10) {
-            projectionRow(icon: "chart.line.uptrend.xyaxis", title: "Retirement Projection", subtitle: "Projected at age 65", value: "$1.42M", color: MilliPalette.positive)
-            projectionRow(icon: "target", title: "Savings Goals", subtitle: "3 goals on track", value: "$8,400", color: Color(red: 0.66, green: 0.33, blue: 0.97))
-            projectionRow(icon: "arrow.up.forward.circle.fill", title: "Monthly Progress", subtitle: "Invested across all accounts", value: "$1,850", color: MilliPalette.accent)
-
-            DKCard {
-                VStack(spacing: 6) {
-                    Text("Future Net Worth")
-                        .font(.caption)
-                        .foregroundStyle(MilliPalette.textSecondary)
-                    Text("$1,680,000")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(MilliPalette.accent)
-                        .shadow(color: MilliPalette.accent.opacity(0.3), radius: 8)
-                    Text("Projected at age 65")
-                        .font(.caption2)
-                        .foregroundStyle(MilliPalette.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    private func projectionRow(icon: String, title: String, subtitle: String, value: String, color: Color) -> some View {
+    private var breakdownSection: some View {
         DKCard {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
-                        Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(MilliPalette.textPrimary)
-                    }
-                    Text(subtitle).font(.caption2).foregroundStyle(MilliPalette.textSecondary)
-                }
-                Spacer()
-                Text(value).font(.headline).foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Breakdown")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+
+                wealthRow(label: "Tax Vault", amount: 1_648.00, color: MilliPalette.accent)
+                wealthRow(label: "Checking", amount: 4_320.00, color: MilliPalette.positive)
+                wealthRow(label: "Savings", amount: 6_512.00, color: MilliPalette.warning)
             }
+        }
+    }
+
+    private func wealthRow(label: String, amount: Double, color: Color) -> some View {
+        HStack {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundColor(MilliPalette.textSecondary)
+            Spacer()
+            Text(milliCurrency(amount))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
         }
     }
 }

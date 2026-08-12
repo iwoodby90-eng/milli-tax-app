@@ -5,127 +5,215 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showRegister = false
+    @State private var showPassword = false
 
     var body: some View {
-        if showRegister {
-            RegisterView(showRegister: $showRegister)
-                .environmentObject(appState)
-        } else {
-            loginContent
-        }
-    }
-
-    private var loginContent: some View {
         ZStack {
             MilliPalette.background.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer()
+            // Cinematic ambient glow
+            RadialGradient(
+                colors: [MilliPalette.accent.opacity(0.04), Color.clear],
+                center: .top,
+                startRadius: 50,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
 
-                // Wordmark
-                VStack(spacing: 8) {
-                    Text("MILLI")
-                        .font(.system(size: 36, weight: .bold, design: .default))
-                        .tracking(6)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.milliChrome1, .white, Color.milliChrome1],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                    Text("Tax Vault")
-                        .font(.subheadline)
-                        .foregroundStyle(MilliPalette.textSecondary)
-                }
-                .padding(.bottom, 40)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    Spacer().frame(height: 80)
 
-                // Form
-                VStack(spacing: 20) {
-                    milliTextField(label: "EMAIL", text: $email, isSecure: false)
-                    milliTextField(label: "PASSWORD", text: $password, isSecure: true)
+                    // Logo mark
+                    logoSection
 
+                    Spacer().frame(height: 48)
+
+                    // Form fields
+                    formFields
+
+                    Spacer().frame(height: 32)
+
+                    // Sign in button
+                    signInButton
+
+                    // Error message
                     if let error = appState.errorMessage {
                         Text(error)
                             .font(.caption)
-                            .foregroundStyle(MilliPalette.negative)
+                            .foregroundColor(MilliPalette.negative)
+                            .padding(.top, 12)
                             .multilineTextAlignment(.center)
                     }
 
-                    Button(action: { Task { await appState.login(email: email, password: password) } }) {
-                        HStack {
-                            if appState.isLoading {
-                                ProgressView().tint(.white).scaleEffect(0.8)
-                            } else {
-                                Text("Sign In")
-                                    .font(.headline)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(RoundedRectangle(cornerRadius: MilliPalette.radius).fill(MilliPalette.accent))
-                        .foregroundColor(.white)
-                    }
-                    .disabled(email.isEmpty || password.isEmpty || appState.isLoading)
-                    .opacity((email.isEmpty || password.isEmpty) ? 0.6 : 1.0)
+                    Spacer().frame(height: 24)
 
-                    Button(action: {}) {
-                        Text("Forgot password?")
-                            .font(.caption)
-                            .foregroundStyle(MilliPalette.textSecondary)
-                    }
+                    // Register link
+                    registerLink
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 28)
+            }
+        }
+        .sheet(isPresented: $showRegister) {
+            RegisterView().environmentObject(appState)
+        }
+    }
 
-                Spacer().frame(height: 32)
+    // MARK: - Logo Section
 
-                // Create Account ghost button
-                Button(action: { showRegister = true }) {
-                    Text("Create Account")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MilliPalette.accent)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MilliPalette.radius)
-                                .stroke(MilliPalette.accent, lineWidth: 1)
+    private var logoSection: some View {
+        VStack(spacing: 12) {
+            // Chrome M with glow
+            ZStack {
+                Circle()
+                    .fill(MilliPalette.accent.opacity(0.05))
+                    .frame(width: 100, height: 100)
+
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [MilliPalette.chrome1, MilliPalette.chrome3],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+                    .frame(width: 80, height: 80)
+
+                Text("M")
+                    .font(.system(size: 36, weight: .heavy, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [MilliPalette.chrome1, MilliPalette.accent, MilliPalette.chrome1],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                }
-                .padding(.horizontal, 24)
+                    )
+                    .shadow(color: MilliPalette.accent.opacity(0.4), radius: 6)
+            }
 
-                Spacer()
+            // Wordmark
+            Text("MILLI")
+                .font(.system(size: 28, weight: .bold))
+                .tracking(4)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.white, Color(white: 0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+            Text("TAX VAULT")
+                .font(.system(size: 12, weight: .medium))
+                .tracking(6)
+                .foregroundColor(MilliPalette.textSecondary)
+        }
+    }
+
+    // MARK: - Form Fields
+
+    private var formFields: some View {
+        VStack(spacing: 14) {
+            // Email
+            VStack(alignment: .leading, spacing: 6) {
+                Text("EMAIL")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundColor(MilliPalette.textSecondary)
+
+                TextField("", text: $email)
+                    .textContentType(.emailAddress)
+                    .autocapitalization(.none)
+                    .keyboardType(.emailAddress)
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(MilliPalette.card)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(MilliPalette.cardBorder, lineWidth: 1)
+                    )
+            }
+
+            // Password
+            VStack(alignment: .leading, spacing: 6) {
+                Text("PASSWORD")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundColor(MilliPalette.textSecondary)
+
+                HStack {
+                    if showPassword {
+                        TextField("", text: $password)
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                    } else {
+                        SecureField("", text: $password)
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                    }
+                    Button { showPassword.toggle() } label: {
+                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                            .foregroundColor(MilliPalette.textSecondary)
+                            .font(.system(size: 14))
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(MilliPalette.card)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(MilliPalette.cardBorder, lineWidth: 1)
+                )
             }
         }
     }
 
-    private func milliTextField(label: String, text: Binding<String>, isSecure: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .tracking(0.5)
-                .foregroundStyle(MilliPalette.textSecondary)
+    // MARK: - Sign In Button
 
-            Group {
-                if isSecure {
-                    SecureField("", text: text)
+    private var signInButton: some View {
+        Button {
+            Task { await appState.login(email: email, password: password) }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(MilliPalette.accent)
+                    .frame(height: 52)
+                    .shadow(color: MilliPalette.accent.opacity(0.35), radius: 12, y: 4)
+
+                if appState.isWorking {
+                    ProgressView().tint(.black)
                 } else {
-                    TextField("", text: text)
-                        .autocapitalization(.none)
-                        .keyboardType(.emailAddress)
+                    Text("Sign In")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
                 }
             }
-            .textFieldStyle(.plain)
-            .font(.system(size: 16))
-            .foregroundColor(.white)
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(MilliPalette.card)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(MilliPalette.cardBorder, lineWidth: 1)
-            )
+        }
+        .disabled(appState.isWorking || email.isEmpty || password.isEmpty)
+        .opacity(email.isEmpty || password.isEmpty ? 0.6 : 1)
+    }
+
+    // MARK: - Register Link
+
+    private var registerLink: some View {
+        Button { showRegister = true } label: {
+            HStack(spacing: 4) {
+                Text("New to Milli?")
+                    .foregroundColor(MilliPalette.textSecondary)
+                Text("Create Account")
+                    .foregroundColor(MilliPalette.accent)
+                    .fontWeight(.semibold)
+            }
+            .font(.system(size: 14))
         }
     }
 }

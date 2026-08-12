@@ -1,134 +1,142 @@
 import SwiftUI
-import Combine
 
 struct MileageView: View {
-    @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = MileageViewModel()
-
-    private let recentTrips: [(date: String, miles: Double, earnings: Double, deduction: Double)] = [
-        ("Aug 10, 2026", 42.3, 68.50, 27.94),
-        ("Aug 9, 2026", 38.1, 52.00, 25.17),
-        ("Aug 8, 2026", 55.8, 84.20, 36.83),
-        ("Aug 7, 2026", 29.4, 41.00, 19.42),
-        ("Aug 6, 2026", 61.2, 92.75, 40.39),
+    @State private var isTracking = false
+    @State private var totalMiles: Double = 1_247.6
+    @State private var totalDeduction: Double = 831.77
+    @State private var todayMiles: Double = 24.8
+    @State private var trips: [MileageTrip] = [
+        MileageTrip(startTime: "2:14 PM", endTime: "3:42 PM", miles: 24.8, deduction: 16.55, status: "completed"),
+        MileageTrip(startTime: "10:30 AM", endTime: "11:15 AM", miles: 12.2, deduction: 8.14, status: "completed"),
+        MileageTrip(startTime: "8:00 AM", endTime: "9:22 AM", miles: 18.6, deduction: 12.41, status: "completed"),
     ]
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 16) {
-                activeTripCard
-                weekSummaryGrid
-                recentTripsSection
+        ZStack {
+            MilliPalette.background.ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    MilliPageHeader(title: "Mileage")
+
+                    // Track button
+                    trackingCard
+
+                    // Stats
+                    statsRow
+
+                    // Recent trips
+                    tripsSection
+
+                    Spacer().frame(height: 20)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 88)
         }
-        .background(MilliPalette.background.ignoresSafeArea())
-        .navigationTitle("Mileage")
-        .task { await viewModel.loadMileage() }
     }
 
-    // MARK: - Active Trip
+    // MARK: - Tracking Card
 
-    private var activeTripCard: some View {
+    private var trackingCard: some View {
         DKCard {
-            VStack(spacing: 14) {
+            VStack(spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Text("Active Trip")
-                                .font(.headline)
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            if viewModel.isTracking {
-                                Text("LIVE")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(MilliPalette.positive)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Capsule().fill(MilliPalette.positive.opacity(0.15)))
-                            }
-                        }
-                        Text(viewModel.activeTripMiles)
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
-                            .foregroundStyle(MilliPalette.textPrimary)
+                        Text(isTracking ? "Tracking..." : "Ready to Drive")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text(isTracking ? "\(String(format: "%.1f", todayMiles)) mi today" : "Tap to start tracking")
+                            .font(.system(size: 12))
+                            .foregroundColor(MilliPalette.textSecondary)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("00:48:26")
-                            .font(.system(size: 16, weight: .bold, design: .monospaced))
-                            .foregroundStyle(MilliPalette.textSecondary)
-                        Text("elapsed")
-                            .font(.caption2)
-                            .foregroundStyle(MilliPalette.textSecondary)
+                    if isTracking {
+                        Circle()
+                            .fill(MilliPalette.positive)
+                            .frame(width: 10, height: 10)
+                            .overlay(
+                                Circle()
+                                    .stroke(MilliPalette.positive.opacity(0.3), lineWidth: 4)
+                            )
                     }
                 }
 
-                Button(action: {
-                    Task {
-                        if viewModel.isTracking { await viewModel.stopTracking() }
-                        else { await viewModel.startTracking() }
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        isTracking.toggle()
                     }
-                }) {
-                    Text(viewModel.isTracking ? "Stop Tracking" : "Start Tracking")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(viewModel.isTracking ? MilliPalette.negative : MilliPalette.accent)
-                        )
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: isTracking ? "stop.fill" : "location.fill")
+                            .font(.system(size: 14))
+                        Text(isTracking ? "Stop Tracking" : "Start Tracking")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundColor(isTracking ? .white : .black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(isTracking ? MilliPalette.negative : MilliPalette.accent)
+                    )
+                    .shadow(color: (isTracking ? MilliPalette.negative : MilliPalette.accent).opacity(0.3), radius: 8, y: 4)
                 }
             }
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: MilliPalette.radius, style: .continuous)
-                .stroke(viewModel.isTracking ? MilliPalette.accent : Color.clear, lineWidth: 1)
-        )
     }
 
-    // MARK: - Week Summary
+    // MARK: - Stats
 
-    private var weekSummaryGrid: some View {
-        HStack(spacing: 10) {
-            MilliStatTile(title: "Miles", value: "226.8 mi", accent: MilliPalette.textPrimary)
-            MilliStatTile(title: "Deduction", value: "$149.75", accent: MilliPalette.positive)
-            MilliStatTile(title: "Trips", value: "12", accent: MilliPalette.accent)
+    private var statsRow: some View {
+        HStack(spacing: 12) {
+            MilliStatTile(title: "Total Miles", value: String(format: "%.0f mi", totalMiles), accent: .white)
+            MilliStatTile(title: "Deduction", value: milliCurrency(totalDeduction), accent: MilliPalette.positive)
         }
     }
 
-    // MARK: - Recent Trips
+    // MARK: - Trips
 
-    private var recentTripsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Trips")
-                .font(.headline)
-                .foregroundStyle(MilliPalette.textPrimary)
+    private var tripsSection: some View {
+        DKCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Today's Trips")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
 
-            ForEach(Array(recentTrips.enumerated()), id: \.offset) { _, trip in
-                DKCard {
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(trip.date)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            Text(String(format: "%.1f miles", trip.miles))
-                                .font(.caption)
-                                .foregroundStyle(MilliPalette.textSecondary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 3) {
-                            Text(milliCurrency(trip.earnings))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            Text("-\(milliCurrency(trip.deduction))")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(MilliPalette.positive)
-                        }
+                ForEach(trips) { trip in
+                    tripRow(trip)
+                    if trip.id != trips.last?.id {
+                        Divider().background(MilliPalette.cardBorder)
                     }
                 }
             }
         }
+    }
+
+    private func tripRow(_ trip: MileageTrip) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MilliPalette.accent.opacity(0.1))
+                    .frame(width: 36, height: 36)
+                Image(systemName: "car.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(MilliPalette.accent)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(trip.startTime) - \(trip.endTime ?? "...")")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                Text(String(format: "%.1f mi", trip.miles))
+                    .font(.system(size: 11))
+                    .foregroundColor(MilliPalette.textSecondary)
+            }
+            Spacer()
+            Text(milliCurrency(trip.deduction, fraction: 2))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(MilliPalette.positive)
+        }
+        .padding(.vertical, 4)
     }
 }

@@ -1,118 +1,203 @@
 import SwiftUI
 
+// MARK: - Cockpit View (Settings & Account)
+
 struct MoreView: View {
     @EnvironmentObject var appState: AppState
+    @State private var showSubscription = false
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                // User info
-                if let user = appState.currentUser {
-                    DKCard {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                Circle()
-                                    .fill(MilliPalette.accent.opacity(0.2))
-                                    .frame(width: 48, height: 48)
-                                Text(String(user.name.prefix(1)))
-                                    .font(.title3.weight(.bold))
-                                    .foregroundStyle(MilliPalette.accent)
-                            }
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(user.name)
-                                    .font(.headline)
-                                    .foregroundStyle(MilliPalette.textPrimary)
-                                Text(user.email)
-                                    .font(.caption)
-                                    .foregroundStyle(MilliPalette.textSecondary)
-                            }
-                            Spacer()
-                        }
-                    }
+        ZStack {
+            MilliPalette.background.ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    MilliPageHeader(title: "Cockpit")
+
+                    // Profile card
+                    profileCard
+
+                    // Subscription
+                    subscriptionCard
+
+                    // Settings sections
+                    settingsSection
+
+                    // Sign out
+                    signOutButton
+
+                    Spacer().frame(height: 40)
                 }
-
-                // TOOLS
-                sectionHeader("TOOLS")
-                navRow(icon: "centsign.circle.fill", label: "Milli Cents", destination: AnyView(MilliCentsView()))
-                navRow(icon: "creditcard.fill", label: "Expenses", destination: AnyView(ExpensesView()))
-                navRow(icon: "chart.bar.fill", label: "Reports", destination: AnyView(ReportsView()))
-
-                // WEALTH
-                sectionHeader("WEALTH")
-                navRow(icon: "chart.line.uptrend.xyaxis", label: "Investments", destination: AnyView(InvestmentsView()))
-                navRow(icon: "hourglass.circle.fill", label: "Retirement", destination: AnyView(RetirementView()))
-                navRow(icon: "banknote.fill", label: "Wealth Overview", destination: AnyView(WealthOverviewView()))
-                navRow(icon: "leaf.fill", label: "Tree of Life", destination: AnyView(TreeOfLifeView()))
-                navRow(icon: "chart.line.flattrend.xyaxis", label: "Retirement Projection", destination: AnyView(RetirementProjectionView()))
-                navRow(icon: "calendar.badge.clock", label: "Life Events", destination: AnyView(LifeEventsView()))
-
-                // ACCOUNT
-                sectionHeader("ACCOUNT")
-                navRow(icon: "gearshape.fill", label: "Settings", destination: AnyView(SettingsView()))
-                navRow(icon: "crown.fill", label: "Subscription", destination: AnyView(SubscriptionView().environmentObject(appState)))
-
-                // Sign Out
-                if appState.isAuthenticated {
-                    Button(action: { appState.logout() }) {
-                        DKCard {
-                            HStack(spacing: 14) {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(MilliPalette.negative)
-                                    .frame(width: 28)
-                                Text("Sign Out")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(MilliPalette.negative)
-                                Spacer()
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 88)
         }
-        .background(MilliPalette.background.ignoresSafeArea())
-        .navigationTitle("More")
     }
 
-    // MARK: - Section Header
+    // MARK: - Profile Card
 
-    private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 11, weight: .bold))
-                .tracking(0.8)
-                .foregroundStyle(MilliPalette.textSecondary)
-            Spacer()
+    private var profileCard: some View {
+        DKCard {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [MilliPalette.accent.opacity(0.2), MilliPalette.accent.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 52, height: 52)
+                    Text(initials)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(MilliPalette.accent)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(appState.user?.name ?? "Milli User")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text(appState.user?.email ?? "")
+                        .font(.system(size: 12))
+                        .foregroundColor(MilliPalette.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundColor(MilliPalette.textSecondary)
+            }
         }
-        .padding(.top, 14)
-        .padding(.bottom, 2)
-        .padding(.leading, 4)
     }
 
-    // MARK: - Navigation Row
+    private var initials: String {
+        let name = appState.user?.name ?? ""
+        let parts = name.components(separatedBy: " ")
+        let first = parts.first?.first.map(String.init) ?? ""
+        let last = parts.count > 1 ? String(parts.last!.first!) : ""
+        return first + last
+    }
 
-    private func navRow(icon: String, label: String, destination: AnyView) -> some View {
-        NavigationLink(destination: destination) {
-            DKCard {
-                HStack(spacing: 14) {
-                    Image(systemName: icon)
-                        .font(.system(size: 20))
-                        .foregroundStyle(MilliPalette.accent)
-                        .frame(width: 28)
-                    Text(label)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(MilliPalette.textPrimary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(MilliPalette.textSecondary)
+    // MARK: - Subscription Card
+
+    private var subscriptionCard: some View {
+        DKCard {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Milli Pro")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(MilliPalette.accent)
+                    Text("Active subscription")
+                        .font(.system(size: 12))
+                        .foregroundColor(MilliPalette.textSecondary)
+                }
+                Spacer()
+                Button {
+                    showSubscription = true
+                } label: {
+                    Text("Manage")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(MilliPalette.accent)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(MilliPalette.accent.opacity(0.4), lineWidth: 1)
+                        )
                 }
             }
         }
-        .buttonStyle(.plain)
+        .sheet(isPresented: $showSubscription) {
+            SubscriptionView()
+        }
+    }
+
+    // MARK: - Settings
+
+    private var settingsSection: some View {
+        VStack(spacing: 2) {
+            settingsGroup(title: "App", items: [
+                ("bell", "Notifications"),
+                ("lock.shield", "Security"),
+                ("paintpalette", "Appearance"),
+            ])
+
+            settingsGroup(title: "Tax", items: [
+                ("building.columns", "Tax Profile"),
+                ("doc.text", "Reports"),
+                ("calendar", "Quarterly Reminders"),
+            ])
+
+            settingsGroup(title: "Support", items: [
+                ("questionmark.circle", "Help Center"),
+                ("envelope", "Contact Us"),
+                ("star", "Rate Milli"),
+            ])
+        }
+    }
+
+    private func settingsGroup(title: String, items: [(String, String)]) -> some View {
+        DKCard(padding: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundColor(MilliPalette.textSecondary)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+                    .padding(.bottom, 8)
+
+                ForEach(items, id: \.1) { item in
+                    HStack(spacing: 12) {
+                        Image(systemName: item.0)
+                            .font(.system(size: 14))
+                            .foregroundColor(MilliPalette.accent)
+                            .frame(width: 24)
+                        Text(item.1)
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(MilliPalette.textSecondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+
+                    if item.1 != items.last?.1 {
+                        Divider()
+                            .background(MilliPalette.cardBorder)
+                            .padding(.leading, 52)
+                    }
+                }
+            }
+            .padding(.bottom, 6)
+        }
+        .padding(.bottom, 12)
+    }
+
+    // MARK: - Sign Out
+
+    private var signOutButton: some View {
+        Button {
+            appState.logout()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "rectangle.portrait.and.arrow.forward")
+                    .font(.system(size: 14))
+                Text("Sign Out")
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .foregroundColor(MilliPalette.negative)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(MilliPalette.negative.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(MilliPalette.negative.opacity(0.2), lineWidth: 1)
+            )
+        }
     }
 }

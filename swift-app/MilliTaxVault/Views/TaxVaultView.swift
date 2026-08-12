@@ -1,142 +1,155 @@
 import SwiftUI
-import Combine
 
 struct TaxVaultView: View {
-    @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = TaxVaultViewModel()
+    @StateObject private var vm = TaxVaultViewModel()
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 16) {
-                heroCard
-                quarterlyGoalCard
-                addToVaultButton
-                transactionsSection
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 88)
-        }
-        .background(MilliPalette.background.ignoresSafeArea())
-        .navigationTitle("Tax Vault")
-        .task { await viewModel.loadVault() }
-    }
+        ZStack {
+            MilliPalette.background.ignoresSafeArea()
 
-    // MARK: - Hero
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    MilliPageHeader(title: "Tax Vault")
 
-    private var heroCard: some View {
-        DKCard {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Reserve Balance")
-                        .font(.subheadline)
-                        .foregroundStyle(MilliPalette.textSecondary)
-                    Text(viewModel.balanceDisplay)
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundStyle(MilliPalette.textPrimary)
-                    Text(viewModel.goalPercentDisplay)
-                        .font(.caption)
-                        .foregroundStyle(MilliPalette.textSecondary)
+                    // Vault balance hero
+                    vaultHero
+
+                    // Progress ring card
+                    progressCard
+
+                    // Transactions
+                    transactionsSection
+
+                    Spacer().frame(height: 20)
                 }
-                Spacer()
-                MilliProgressRing(progress: viewModel.goalPercent, lineWidth: 10)
-                    .frame(width: 72, height: 72)
-                    .overlay(
-                        Text("\(Int(viewModel.goalPercent * 100))%")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MilliPalette.accent)
-                    )
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
             }
         }
+        .task { await vm.loadVault() }
     }
 
-    // MARK: - Quarterly Goal
+    // MARK: - Vault Hero
 
-    private var quarterlyGoalCard: some View {
+    private var vaultHero: some View {
         DKCard {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("This Quarter's Goal")
-                    .font(.headline)
-                    .foregroundStyle(MilliPalette.textPrimary)
-                HStack {
-                    Text("Target")
-                        .font(.subheadline)
-                        .foregroundStyle(MilliPalette.textSecondary)
-                    Spacer()
-                    Text(viewModel.annualTarget)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MilliPalette.accent)
-                }
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(MilliPalette.cardBorder)
-                            .frame(height: 8)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(MilliPalette.accent)
-                            .frame(width: geo.size.width * viewModel.goalPercent, height: 8)
+            VStack(spacing: 8) {
+                Text("VAULT BALANCE")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(MilliPalette.textSecondary)
+
+                Text(vm.balanceDisplay)
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
+                Text(vm.goalPercentDisplay)
+                    .font(.system(size: 13))
+                    .foregroundColor(MilliPalette.accent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+    }
+
+    // MARK: - Progress Card
+
+    private var progressCard: some View {
+        DKCard {
+            HStack(spacing: 20) {
+                MilliProgressRing(progress: vm.goalPercent, lineWidth: 10)
+                    .frame(width: 80, height: 80)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Quarterly Goal")
+                            .font(.system(size: 11))
+                            .foregroundColor(MilliPalette.textSecondary)
+                        Text(vm.annualTarget)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Remaining")
+                            .font(.system(size: 11))
+                            .foregroundColor(MilliPalette.textSecondary)
+                        Text(milliCurrency(max(0, vm.quarterlyGoal - vm.balance)))
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(MilliPalette.warning)
                     }
                 }
-                .frame(height: 8)
+                Spacer()
             }
-        }
-    }
-
-    // MARK: - Add to Vault
-
-    private var addToVaultButton: some View {
-        Button(action: {}) {
-            Text("Add to Vault")
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(RoundedRectangle(cornerRadius: MilliPalette.radius).fill(MilliPalette.accent))
         }
     }
 
     // MARK: - Transactions
 
     private var transactionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Transactions")
-                .font(.headline)
-                .foregroundStyle(MilliPalette.textPrimary)
+        DKCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Recent Transfers")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("See All")
+                        .font(.system(size: 12))
+                        .foregroundColor(MilliPalette.accent)
+                }
 
-            ForEach(viewModel.displayTransactions) { transaction in
-                DKCard {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(MilliPalette.accent.opacity(0.12))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: iconForType(transaction.type))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(MilliPalette.accent)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(transaction.title)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            Text(transaction.date)
-                                .font(.caption2)
-                                .foregroundStyle(MilliPalette.textSecondary)
-                        }
-                        Spacer()
-                        Text(transaction.formattedAmount)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MilliPalette.positive)
+                ForEach(vm.displayTransactions) { tx in
+                    transactionRow(tx)
+                    if tx.id != vm.displayTransactions.last?.id {
+                        Divider().background(MilliPalette.cardBorder)
                     }
                 }
             }
         }
     }
 
-    private func iconForType(_ type: String) -> String {
+    private func transactionRow(_ tx: VaultTransaction) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(txColor(tx.type).opacity(0.1))
+                    .frame(width: 36, height: 36)
+                Image(systemName: txIcon(tx.type))
+                    .font(.system(size: 14))
+                    .foregroundColor(txColor(tx.type))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tx.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                Text(tx.date)
+                    .font(.system(size: 11))
+                    .foregroundColor(MilliPalette.textSecondary)
+            }
+            Spacer()
+            Text(tx.formattedAmount)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(MilliPalette.positive)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func txIcon(_ type: String) -> String {
         switch type {
-        case "interest": return "percent"
-        case "manual": return "arrow.right.circle.fill"
-        default: return "arrow.down.circle.fill"
+        case "auto": return "arrow.triangle.2.circlepath"
+        case "manual": return "arrow.up.circle.fill"
+        case "interest": return "sparkles"
+        default: return "circle.fill"
+        }
+    }
+
+    private func txColor(_ type: String) -> Color {
+        switch type {
+        case "auto": return MilliPalette.accent
+        case "manual": return MilliPalette.positive
+        case "interest": return MilliPalette.warning
+        default: return MilliPalette.textSecondary
         }
     }
 }

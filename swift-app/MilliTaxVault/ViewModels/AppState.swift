@@ -10,7 +10,10 @@ final class AppState: ObservableObject {
     @Published var isWorking = false
     @Published var errorMessage: String?
 
+    // Compatibility computed properties
     var isLoading: Bool { isWorking }
+    var isAuthenticated: Bool { phase == .authenticated }
+    var currentUser: MilliUser? { user }
 
     private let api = APIService.shared
 
@@ -38,11 +41,13 @@ final class AppState: ObservableObject {
         }
     }
 
-    func signOut() {
+    func logout() {
         api.clearAuth()
         user = nil
         phase = .unauthenticated
     }
+
+    func signOut() { logout() }
 
     private func run(_ work: @escaping () async throws -> Void) async {
         isWorking = true

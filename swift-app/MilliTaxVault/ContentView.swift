@@ -1,26 +1,32 @@
 import SwiftUI
 
+// MARK: - Tab Model (4-Tab Bel Air Cockpit + Center M Home)
+
 enum MilliTab: Int, CaseIterable {
-    case home, payouts, vault, mileage, more
+    case vault, wealth, home, activity, cockpit
+
     var title: String {
         switch self {
-        case .home: return "Home"
-        case .payouts: return "Payouts"
         case .vault: return "Vault"
-        case .mileage: return "Mileage"
-        case .more: return "More"
+        case .wealth: return "Wealth"
+        case .home: return "Home"
+        case .activity: return "Activity"
+        case .cockpit: return "Cockpit"
         }
     }
+
     var icon: String {
         switch self {
-        case .home: return "house.fill"
-        case .payouts: return "dollarsign.circle.fill"
         case .vault: return "lock.shield.fill"
-        case .mileage: return "car.fill"
-        case .more: return "ellipsis"
+        case .wealth: return "chart.line.uptrend.xyaxis"
+        case .home: return "house.fill"
+        case .activity: return "bolt.fill"
+        case .cockpit: return "gauge.with.dots.needle.67percent"
         }
     }
 }
+
+// MARK: - Content View
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
@@ -35,33 +41,74 @@ struct ContentView: View {
                 Group {
                     switch tab {
                     case .home: HomeView()
-                    case .payouts: PayoutsView()
                     case .vault: TaxVaultView()
-                    case .mileage: MileageView()
-                    case .more: MoreView()
+                    case .wealth: WealthOverviewView()
+                    case .activity: PayoutsView()
+                    case .cockpit: MoreView()
                     }
                 }
             }
-            .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 76) }
+            .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 80) }
 
-            floatingOrb
-            BottomNavBar(selection: $tab) { showAI = true }
+            // Floating Milli AI Orb (bottom-right, always visible)
+            floatingAIOrb
+
+            // Bel Air Cockpit Navigation
+            BottomNavBar(selection: $tab) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    tab = .home
+                }
+            }
         }
         .sheet(isPresented: $showAI) { MilliAIView() }
     }
 
-    private var floatingOrb: some View {
-        HStack {
+    // MARK: - Floating AI Companion
+
+    private var floatingAIOrb: some View {
+        VStack {
             Spacer()
-            Button { showAI = true } label: {
-                ZStack {
-                    Circle().fill(RadialGradient(colors: [MilliPalette.accent, MilliPalette.accent.opacity(0.4)],
-                                                 center: .center, startRadius: 1, endRadius: 26))
-                        .frame(width: 52, height: 52)
-                        .shadow(color: MilliPalette.accent.opacity(0.7), radius: 14)
-                    Image(systemName: "sparkles").foregroundStyle(.black).font(.system(size: 20, weight: .bold))
+            HStack {
+                Spacer()
+                Button { showAI = true } label: {
+                    ZStack {
+                        // Outer glow ring
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [
+                                        MilliPalette.accent.opacity(0.3),
+                                        MilliPalette.accent.opacity(0.0)
+                                    ],
+                                    center: .center,
+                                    startRadius: 18,
+                                    endRadius: 32
+                                )
+                            )
+                            .frame(width: 56, height: 56)
+
+                        // Core orb
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [MilliPalette.accent, MilliPalette.accent.opacity(0.7)],
+                                    center: .center,
+                                    startRadius: 1,
+                                    endRadius: 22
+                                )
+                            )
+                            .frame(width: 44, height: 44)
+                            .shadow(color: MilliPalette.accent.opacity(0.7), radius: 12)
+
+                        // Sparkle icon
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.black)
+                            .font(.system(size: 18, weight: .bold))
+                    }
                 }
-            }.padding(.trailing, 22).padding(.bottom, 92)
+                .padding(.trailing, 20)
+                .padding(.bottom, 96)
+            }
         }
     }
 }

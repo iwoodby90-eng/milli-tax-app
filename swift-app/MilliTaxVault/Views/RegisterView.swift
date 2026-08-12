@@ -2,121 +2,180 @@ import SwiftUI
 
 struct RegisterView: View {
     @EnvironmentObject var appState: AppState
-    @Binding var showRegister: Bool
+    @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var showPassword = false
+
+    private var passwordsMatch: Bool { !password.isEmpty && password == confirmPassword }
+    private var formValid: Bool { !name.isEmpty && !email.isEmpty && passwordsMatch }
 
     var body: some View {
         ZStack {
             MilliPalette.background.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer()
+            RadialGradient(
+                colors: [MilliPalette.accent.opacity(0.03), Color.clear],
+                center: .topTrailing,
+                startRadius: 30,
+                endRadius: 350
+            )
+            .ignoresSafeArea()
 
-                // Header
-                VStack(spacing: 8) {
-                    Text("MILLI")
-                        .font(.system(size: 28, weight: .bold))
-                        .tracking(6)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.milliChrome1, .white, Color.milliChrome1],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                    Text("Create Your Account")
-                        .font(.subheadline)
-                        .foregroundStyle(MilliPalette.textSecondary)
-                }
-                .padding(.bottom, 32)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    Spacer().frame(height: 40)
 
-                // Form
-                VStack(spacing: 16) {
-                    milliField(label: "NAME", text: $name, isSecure: false)
-                    milliField(label: "EMAIL", text: $email, isSecure: false)
-                    milliField(label: "PASSWORD", text: $password, isSecure: true)
-                    milliField(label: "CONFIRM PASSWORD", text: $confirmPassword, isSecure: true)
+                    // Header
+                    headerSection
+                    Spacer().frame(height: 36)
 
+                    // Form
+                    formSection
+                    Spacer().frame(height: 28)
+
+                    // Create button
+                    createButton
+
+                    // Error
                     if let error = appState.errorMessage {
                         Text(error)
                             .font(.caption)
-                            .foregroundStyle(MilliPalette.negative)
+                            .foregroundColor(MilliPalette.negative)
+                            .padding(.top, 12)
                             .multilineTextAlignment(.center)
                     }
 
-                    Button(action: {
-                        Task { await appState.register(fullName: name, email: email, password: password) }
-                    }) {
-                        HStack {
-                            if appState.isLoading {
-                                ProgressView().tint(.white).scaleEffect(0.8)
-                            } else {
-                                Text("Create Account")
-                                    .font(.headline)
-                            }
+                    Spacer().frame(height: 24)
+
+                    // Back to login
+                    Button { dismiss() } label: {
+                        HStack(spacing: 4) {
+                            Text("Already have an account?")
+                                .foregroundColor(MilliPalette.textSecondary)
+                            Text("Sign In")
+                                .foregroundColor(MilliPalette.accent)
+                                .fontWeight(.semibold)
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(RoundedRectangle(cornerRadius: MilliPalette.radius).fill(MilliPalette.accent))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14))
                     }
-                    .disabled(!formValid || appState.isLoading)
-                    .opacity(formValid ? 1.0 : 0.6)
                 }
-                .padding(.horizontal, 24)
-
-                // Sign In link
-                Button(action: { showRegister = false }) {
-                    HStack(spacing: 4) {
-                        Text("Already have an account?")
-                            .foregroundStyle(MilliPalette.textSecondary)
-                        Text("Sign In")
-                            .foregroundStyle(MilliPalette.accent)
-                            .fontWeight(.semibold)
-                    }
-                    .font(.subheadline)
-                }
-                .padding(.top, 24)
-
-                Spacer()
+                .padding(.horizontal, 28)
             }
         }
     }
 
-    private var formValid: Bool {
-        !name.isEmpty && !email.isEmpty && password.count >= 12 && password == confirmPassword
+    private var headerSection: some View {
+        VStack(spacing: 8) {
+            Text("Create Account")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundColor(.white)
+            Text("Start your tax-smart journey")
+                .font(.system(size: 14))
+                .foregroundColor(MilliPalette.textSecondary)
+        }
     }
 
-    private func milliField(label: String, text: Binding<String>, isSecure: Bool) -> some View {
+    private var formSection: some View {
+        VStack(spacing: 14) {
+            inputField(label: "FULL NAME", text: $name, type: .name, keyboard: .default)
+            inputField(label: "EMAIL", text: $email, type: .emailAddress, keyboard: .emailAddress)
+
+            // Password
+            VStack(alignment: .leading, spacing: 6) {
+                Text("PASSWORD")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundColor(MilliPalette.textSecondary)
+
+                HStack {
+                    if showPassword {
+                        TextField("", text: $password)
+                    } else {
+                        SecureField("", text: $password)
+                    }
+                    Button { showPassword.toggle() } label: {
+                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                            .foregroundColor(MilliPalette.textSecondary)
+                            .font(.system(size: 14))
+                    }
+                }
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MilliPalette.card))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MilliPalette.cardBorder, lineWidth: 1))
+            }
+
+            // Confirm
+            VStack(alignment: .leading, spacing: 6) {
+                Text("CONFIRM PASSWORD")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundColor(MilliPalette.textSecondary)
+
+                SecureField("", text: $confirmPassword)
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MilliPalette.card))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(
+                                !confirmPassword.isEmpty && !passwordsMatch
+                                    ? MilliPalette.negative.opacity(0.5)
+                                    : MilliPalette.cardBorder,
+                                lineWidth: 1
+                            )
+                    )
+            }
+        }
+    }
+
+    private func inputField(label: String, text: Binding<String>, type: UITextContentType, keyboard: UIKeyboardType) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .tracking(0.5)
-                .foregroundStyle(MilliPalette.textSecondary)
+                .font(.system(size: 10, weight: .bold))
+                .tracking(1)
+                .foregroundColor(MilliPalette.textSecondary)
 
-            Group {
-                if isSecure {
-                    SecureField("", text: text)
+            TextField("", text: text)
+                .textContentType(type)
+                .keyboardType(keyboard)
+                .autocapitalization(keyboard == .emailAddress ? .none : .words)
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MilliPalette.card))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MilliPalette.cardBorder, lineWidth: 1))
+        }
+    }
+
+    private var createButton: some View {
+        Button {
+            Task { await appState.register(fullName: name, email: email, password: password) }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(MilliPalette.accent)
+                    .frame(height: 52)
+                    .shadow(color: MilliPalette.accent.opacity(0.35), radius: 12, y: 4)
+
+                if appState.isWorking {
+                    ProgressView().tint(.black)
                 } else {
-                    TextField("", text: text)
-                        .autocapitalization(.none)
+                    Text("Create Account")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
                 }
             }
-            .textFieldStyle(.plain)
-            .font(.system(size: 16))
-            .foregroundColor(.white)
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(MilliPalette.card)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(MilliPalette.cardBorder, lineWidth: 1)
-            )
         }
+        .disabled(appState.isWorking || !formValid)
+        .opacity(!formValid ? 0.5 : 1)
     }
 }

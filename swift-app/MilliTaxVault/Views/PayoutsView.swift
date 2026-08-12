@@ -1,107 +1,128 @@
 import SwiftUI
-import Combine
 
 struct PayoutsView: View {
-    @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = PayoutsViewModel()
-    @State private var selectedSegment: PayoutSegment = .all
-
-    enum PayoutSegment: String, CaseIterable {
-        case all = "All"
-        case deposits = "Deposits"
-        case receipts = "Receipts"
-    }
-
-    private let mockPayouts: [(source: String, amount: Double, date: String, status: String)] = [
-        ("Spark Driver\u{2122}", 312.64, "Aug 10, 2026", "Processed"),
-        ("DoorDash", 186.40, "Aug 8, 2026", "Processed"),
-        ("Uber Eats", 94.20, "Aug 6, 2026", "Processed"),
-        ("Spark Driver\u{2122}", 278.90, "Aug 4, 2026", "Processed"),
-        ("Instacart", 142.15, "Aug 2, 2026", "Processed"),
-        ("Spark Driver\u{2122}", 345.22, "Jul 30, 2026", "Processed"),
+    @State private var payouts: [Payout] = [
+        Payout(source: "Spark Driver\u{2122}", date: "Aug 10, 2026", amount: 312.64, savingsSetAside: 78.16, platform: "walmart", status: "processed"),
+        Payout(source: "DoorDash", date: "Aug 8, 2026", amount: 186.40, savingsSetAside: 46.60, platform: "doordash", status: "processed"),
+        Payout(source: "Instacart", date: "Aug 6, 2026", amount: 94.20, savingsSetAside: 23.55, platform: "instacart", status: "processed"),
+        Payout(source: "Spark Driver\u{2122}", date: "Aug 3, 2026", amount: 287.96, savingsSetAside: 72.00, platform: "walmart", status: "processed"),
     ]
+    @State private var selectedPeriod: TimePeriod = .week
 
-    private var weekTotal: Double { mockPayouts.prefix(3).reduce(0) { $0 + $1.amount } }
+    enum TimePeriod: String, CaseIterable { case week = "Week", month = "Month", quarter = "Quarter" }
+
+    var totalEarnings: Double { payouts.reduce(0) { $0 + $1.amount } }
+    var totalSetAside: Double { payouts.reduce(0) { $0 + $1.savingsSetAside } }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 16) {
-                MilliSegmentedPicker(
-                    options: PayoutSegment.allCases,
-                    label: { $0.rawValue },
-                    selection: $selectedSegment
-                )
-                summaryCard
-                payoutsList
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 88)
-        }
-        .background(MilliPalette.background.ignoresSafeArea())
-        .navigationTitle("Payouts")
-        .task { await viewModel.loadPayouts() }
-    }
+        ZStack {
+            MilliPalette.background.ignoresSafeArea()
 
-    // MARK: - Summary
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    MilliPageHeader(title: "Activity")
 
-    private var summaryCard: some View {
-        DKCard {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("This Week's Deposits")
-                    .font(.caption)
-                    .foregroundStyle(MilliPalette.textSecondary)
-                Text(milliCurrency(weekTotal))
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(MilliPalette.textPrimary)
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.up.right")
-                    Text("+8.2% vs last week")
+                    // Period picker
+                    MilliSegmentedPicker(
+                        options: TimePeriod.allCases,
+                        label: { $0.rawValue },
+                        selection: $selectedPeriod
+                    )
+
+                    // Earnings hero
+                    earningsHero
+
+                    // Payout list
+                    payoutList
+
+                    Spacer().frame(height: 20)
                 }
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(MilliPalette.positive)
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
             }
         }
     }
 
-    // MARK: - Payouts List
+    private var earningsHero: some View {
+        DKCard {
+            VStack(spacing: 12) {
+                HStack(spacing: 20) {
+                    VStack(spacing: 4) {
+                        Text("EARNED")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                            .foregroundColor(MilliPalette.textSecondary)
+                        Text(milliCurrency(totalEarnings))
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    VStack(spacing: 4) {
+                        Text("SET ASIDE")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                            .foregroundColor(MilliPalette.textSecondary)
+                        Text(milliCurrency(totalSetAside))
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundColor(MilliPalette.accent)
+                    }
+                }
+                .frame(maxWidth: .infinity)
 
-    private var payoutsList: some View {
-        VStack(spacing: 10) {
-            ForEach(Array(mockPayouts.enumerated()), id: \.offset) { _, payout in
-                DKCard {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(MilliPalette.accent.opacity(0.12))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: "sparkle")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(MilliPalette.accent)
-                        }
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(payout.source)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            Text(payout.date)
-                                .font(.caption2)
-                                .foregroundStyle(MilliPalette.textSecondary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 3) {
-                            Text(milliCurrency(payout.amount))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MilliPalette.textPrimary)
-                            Text(payout.status)
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(MilliPalette.positive)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(MilliPalette.positive.opacity(0.12)))
-                        }
+                // Mini sparkline
+                WaveShape()
+                    .stroke(MilliPalette.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .frame(height: 30)
+                    .opacity(0.6)
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
+    private var payoutList: some View {
+        DKCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Recent Payouts")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+
+                ForEach(payouts) { payout in
+                    payoutRow(payout)
+                    if payout.id != payouts.last?.id {
+                        Divider().background(MilliPalette.cardBorder)
                     }
                 }
             }
         }
+    }
+
+    private func payoutRow(_ payout: Payout) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MilliPalette.positive.opacity(0.1))
+                    .frame(width: 36, height: 36)
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(MilliPalette.positive)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(payout.source)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                Text(payout.date)
+                    .font(.system(size: 11))
+                    .foregroundColor(MilliPalette.textSecondary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(milliCurrency(payout.amount, fraction: 2))
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text("-\(milliCurrency(payout.savingsSetAside, fraction: 2)) tax")
+                    .font(.system(size: 10))
+                    .foregroundColor(MilliPalette.accent)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }

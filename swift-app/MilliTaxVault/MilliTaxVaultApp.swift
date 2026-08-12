@@ -9,9 +9,7 @@ struct MilliTaxVaultApp: App {
             Group {
                 switch appState.phase {
                 case .splash:
-                    SplashView(onComplete: {
-                        appState.bootstrap()
-                    })
+                    SplashView()
                 case .unauthenticated:
                     LoginView()
                 case .authenticated:
