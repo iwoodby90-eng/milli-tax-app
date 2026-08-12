@@ -1,60 +1,77 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab: MilliTab = .vault
+    @State private var selectedTab: MilliTab = .home
     
     var body: some View {
-        ZStack {
-            // Background gradient
-            MilliGradients.backgroundRadial
-                .ignoresSafeArea()
-            
-            // Tab content
-            VStack(spacing: 0) {
-                // Active view
-                Group {
-                    switch selectedTab {
-                    case .vault:
-                        MilliTaxVaultView()
-                    case .wealth:
-                        WealthView()
-                    case .activity:
-                        ActivityView()
-                    case .cockpit:
-                        CockpitView()
-                    }
+        ZStack(alignment: .bottom) {
+            // Screen content
+            Group {
+                switch selectedTab {
+                case .home:
+                    HomeView()
+                case .payouts:
+                    PayoutsPlaceholderView()
+                case .vault:
+                    TaxVaultView()
+                case .mileage:
+                    MilagePlaceholderView()
+                case .more:
+                    MorePlaceholderView()
                 }
-                .frame(maxHeight: .infinity)
-                
-                // Custom nav bar
-                NavBar(selectedTab: $selectedTab)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Floating AI button
-            floatingAIButton
+            // Nav bar
+            MilliNavBar(selectedTab: $selectedTab)
+        }
+        .background(MilliColor.obsidian)
+        .preferredColorScheme(.dark)
+        .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+// Placeholder screens for Phase 1
+struct PayoutsPlaceholderView: View {
+    var body: some View {
+        ZStack {
+            MilliColor.obsidian.ignoresSafeArea()
+            VStack(spacing: 16) {
+                Text("Payouts")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Coming in Phase 2")
+                    .foregroundStyle(MilliColor.textMuted)
+            }
         }
     }
-    
-    // MARK: - Floating AI Button
-    
-    private var floatingAIButton: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                Button(action: {}) {
-                    ZStack {
-                        Circle()
-                            .fill(MilliGradients.aiButton)
-                            .frame(width: 54, height: 54)
-                        
-                        Image(systemName: "sparkles")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    }
-                    .shadow(color: MilliColors.cyan.opacity(0.5), radius: 16, x: 0, y: 4)
-                }
-                .offset(x: -20, y: -110)
+}
+
+struct MilagePlaceholderView: View {
+    var body: some View {
+        ZStack {
+            MilliColor.obsidian.ignoresSafeArea()
+            VStack(spacing: 16) {
+                Text("Mileage")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Coming in Phase 3")
+                    .foregroundStyle(MilliColor.textMuted)
+            }
+        }
+    }
+}
+
+struct MorePlaceholderView: View {
+    var body: some View {
+        ZStack {
+            MilliColor.obsidian.ignoresSafeArea()
+            VStack(spacing: 16) {
+                Text("More")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Coming soon")
+                    .foregroundStyle(MilliColor.textMuted)
             }
         }
     }
