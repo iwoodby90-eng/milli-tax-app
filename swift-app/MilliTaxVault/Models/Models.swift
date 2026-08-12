@@ -260,3 +260,14 @@ struct DashboardSummary: Codable {
         self.quarterMiles = quarterMiles
     }
 }
+
+// MARK: - Vault Transaction
+struct VaultTransaction: Identifiable, Codable {
+    let id: UUID
+    let title: String
+    let type: String   // "auto", "manual", "interest"
+    let amount: Double
+    let date: String
+
+    var formattedAmount: String { milliCurrency(amount, fraction: 2) }
+}
