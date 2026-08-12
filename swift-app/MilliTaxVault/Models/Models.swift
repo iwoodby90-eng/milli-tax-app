@@ -75,53 +75,6 @@ struct VaultBalance: Codable {
     }
 }
 
-// MARK: - Transactions
-
-struct VaultTransaction: Codable, Identifiable {
-    let id: String
-    let title: String
-    let date: String
-    let amount: Double
-    let type: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case title = "note"
-        case date = "created_at"
-        case amount
-        case type = "direction"
-    }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
-        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
-        date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
-        amount = try c.decodeIfPresent(Double.self, forKey: .amount) ?? 0
-        type = try c.decodeIfPresent(String.self, forKey: .type) ?? "in"
-    }
-
-    init(id: String = UUID().uuidString, title: String, date: String, amount: Double, type: String = "in") {
-        self.id = id
-        self.title = title
-        self.date = date
-        self.amount = amount
-        self.type = type
-    }
-
-    var formattedAmount: String {
-        let sign = amount >= 0 ? "+" : ""
-        return "\(sign)\(Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "$0.00")"
-    }
-
-    private static let currencyFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        return f
-    }()
-}
-
 // MARK: - Payouts
 
 struct Payout: Codable, Identifiable {

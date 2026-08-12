@@ -1,5 +1,4 @@
 import SwiftUI
-import Combine
 
 @MainActor
 final class AppState: ObservableObject {
@@ -10,22 +9,17 @@ final class AppState: ObservableObject {
     @Published var isWorking = false
     @Published var errorMessage: String?
 
-    // Compatibility computed properties
-    var isLoading: Bool { isWorking }
-    var isAuthenticated: Bool { phase == .authenticated }
-    var currentUser: MilliUser? { user }
-
     private let api = APIService.shared
 
     func bootstrap() {
-        phase = api.authToken != nil ? .authenticated : .unauthenticated
+        phase = api.token != nil ? .authenticated : .unauthenticated
     }
 
-    func login(email: String, password: String) async {
+    func authenticate(email: String, password: String) async {
         await run {
-            let body: [String: Any] = ["email": email, "password": password]
-            let res: AuthResponse = try await self.api.request(method: "POST", path: "/auth/login", body: body)
-            self.api.authToken = res.token
+            let body: [String: String] = ["email": email, "password": password]
+            let res: AuthResponse = try await self.api.request("auth/login", method: "POST", body: body, authorized: false)
+            self.api.token = res.token
             self.user = res.user
             self.phase = .authenticated
         }
@@ -33,21 +27,19 @@ final class AppState: ObservableObject {
 
     func register(fullName: String, email: String, password: String) async {
         await run {
-            let body: [String: Any] = ["full_name": fullName, "email": email, "password": password]
-            let res: AuthResponse = try await self.api.request(method: "POST", path: "/auth/register", body: body)
-            self.api.authToken = res.token
+            let body: [String: String] = ["full_name": fullName, "email": email, "password": password]
+            let res: AuthResponse = try await self.api.request("auth/register", method: "POST", body: body, authorized: false)
+            self.api.token = res.token
             self.user = res.user
             self.phase = .authenticated
         }
     }
 
-    func logout() {
-        api.clearAuth()
+    func signOut() {
+        api.token = nil
         user = nil
         phase = .unauthenticated
     }
-
-    func signOut() { logout() }
 
     private func run(_ work: @escaping () async throws -> Void) async {
         isWorking = true

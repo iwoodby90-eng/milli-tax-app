@@ -1,8 +1,19 @@
 import SwiftUI
 import Combine
 
+// MARK: - Vault Transaction
+
+struct VaultTransaction: Identifiable, Codable {
+    let id: UUID
+    let title: String
+    let type: String  // "auto", "manual", "interest"
+    let amount: Double
+    let date: String
+
+    var formattedAmount: String { milliCurrency(amount, fraction: 2) }
+}
+
 // MARK: - Tax Vault View Model
-// VaultTransaction is defined in Models.swift — no duplicate here.
 
 @MainActor
 final class TaxVaultViewModel: ObservableObject {
@@ -19,10 +30,10 @@ final class TaxVaultViewModel: ObservableObject {
     var displayTransactions: [VaultTransaction] {
         if transactions.isEmpty {
             return [
-                VaultTransaction(id: UUID().uuidString, title: "Auto-transfer — Spark payout", date: "Aug 10, 2026", amount: 78.16, type: "auto"),
-                VaultTransaction(id: UUID().uuidString, title: "Auto-transfer — DoorDash", date: "Aug 8, 2026", amount: 46.60, type: "auto"),
-                VaultTransaction(id: UUID().uuidString, title: "Manual transfer", date: "Aug 5, 2026", amount: 200.00, type: "manual"),
-                VaultTransaction(id: UUID().uuidString, title: "Interest earned", date: "Aug 1, 2026", amount: 2.14, type: "interest"),
+                VaultTransaction(id: UUID(), title: "Auto-transfer — Spark payout", type: "auto", amount: 78.16, date: "Aug 10, 2026"),
+                VaultTransaction(id: UUID(), title: "Auto-transfer — DoorDash", type: "auto", amount: 46.60, date: "Aug 8, 2026"),
+                VaultTransaction(id: UUID(), title: "Manual transfer", type: "manual", amount: 200.00, date: "Aug 5, 2026"),
+                VaultTransaction(id: UUID(), title: "Interest earned", type: "interest", amount: 2.14, date: "Aug 1, 2026"),
             ]
         }
         return transactions
