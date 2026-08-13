@@ -1,24 +1,24 @@
 import SwiftUI
 
 enum MilliTab: Int, CaseIterable {
-    case home, payouts, vault, mileage, more
+    case dashboard, activity, home, transfers, more
     
     var icon: String {
         switch self {
-        case .home: return "house.fill"
-        case .payouts: return "creditcard.fill"
-        case .vault: return "lock.shield.fill"
-        case .mileage: return "location.fill"
+        case .dashboard: return "square.grid.2x2.fill"
+        case .activity: return "list.bullet"
+        case .home: return ""
+        case .transfers: return "arrow.2.squarepath"
         case .more: return "ellipsis"
         }
     }
     
     var label: String {
         switch self {
-        case .home: return "Home"
-        case .payouts: return "Payouts"
-        case .vault: return "Tax Vault"
-        case .mileage: return "Mileage"
+        case .dashboard: return "Dashboard"
+        case .activity: return "Activity"
+        case .home: return ""
+        case .transfers: return "Transfers"
         case .more: return "More"
         }
     }
@@ -42,27 +42,47 @@ struct MilliNavBar: View {
                 .ignoresSafeArea(edges: .bottom)
             
             HStack(spacing: 0) {
-                // Home
-                navItem(.home)
-                // Payouts
-                navItem(.payouts)
+                // Dashboard
+                navItem(.dashboard)
+                // Activity
+                navItem(.activity)
                 
-                // Center M - raised
+                // Center M sphere - raised
                 ZStack {
                     Button(action: { selectedTab = .home }) {
-                        ChromeEmblemView(size: 60)
+                        mSphereView
                     }
                     .offset(y: -16)
                 }
                 .frame(maxWidth: .infinity)
                 
-                // Mileage
-                navItem(.mileage)
+                // Transfers
+                navItem(.transfers)
                 // More
                 navItem(.more)
             }
             .padding(.horizontal, 8)
             .padding(.bottom, 16)
+        }
+    }
+    
+    private var mSphereView: some View {
+        ZStack {
+            // Outer ring
+            Circle()
+                .stroke(Color(hex: "00E5FF"), lineWidth: 1.5)
+                .frame(width: 56, height: 56)
+                .shadow(color: Color(hex: "00E5FF").opacity(0.3), radius: 4)
+            
+            // Dark background
+            Circle()
+                .fill(Color(hex: "1A1F2E"))
+                .frame(width: 52, height: 52)
+            
+            // M letter
+            Text("M")
+                .font(.system(size: 22, weight: .bold, design: .default))
+                .foregroundStyle(.white)
         }
     }
     
@@ -72,12 +92,22 @@ struct MilliNavBar: View {
             VStack(spacing: 4) {
                 Image(systemName: tab.icon)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(selectedTab == tab ? MilliColor.cyan : MilliColor.textMuted)
+                    .foregroundStyle(selectedTab == tab ? Color(hex: "00E5FF") : Color(hex: "8E92A0"))
                 Text(tab.label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(selectedTab == tab ? MilliColor.cyan : MilliColor.textMuted)
+                    .foregroundStyle(selectedTab == tab ? Color(hex: "00E5FF") : Color(hex: "8E92A0"))
             }
             .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+#Preview {
+    ZStack {
+        Color(hex: "07090B").ignoresSafeArea()
+        VStack {
+            Spacer()
+            MilliNavBar(selectedTab: .constant(.dashboard))
         }
     }
 }
