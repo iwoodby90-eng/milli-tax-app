@@ -1,31 +1,8 @@
 import SwiftUI
 
 // MARK: - Tab Model
-
-enum MilliTab: Int, CaseIterable {
-    case vault = 0
-    case wealth = 1
-    case activity = 2
-    case cockpit = 3
-    
-    var icon: String {
-        switch self {
-        case .vault: return "shield.fill"
-        case .wealth: return "chart.line.uptrend.xyaxis"
-        case .activity: return "bolt.fill"
-        case .cockpit: return "dial.high.fill"
-        }
-    }
-    
-    var title: String {
-        switch self {
-        case .vault: return "Vault"
-        case .wealth: return "Wealth"
-        case .activity: return "Activity"
-        case .cockpit: return "Cockpit"
-        }
-    }
-}
+// Single canonical MilliTab definition is in Components/MilliNavBar.swift
+// Do NOT redefine here to avoid duplicate symbol errors.
 
 // MARK: - Transaction Model
 
