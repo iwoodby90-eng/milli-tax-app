@@ -18,6 +18,8 @@ enum MilliColors {
     // Metal
     static let silver = Color(hex: "C0C0C0")
     static let silverBright = Color(hex: "EEF2F4")
+    static let titanium = Color(hex: "2A2E33")
+    static let gunmetal = Color(hex: "1C1F24")
     
     // Text hierarchy
     static let textPrimary = Color.white
@@ -51,7 +53,7 @@ enum MilliColors {
 // MARK: - Milli Gradients
 
 enum MilliGradients {
-    // Center M Button — angular chrome multi-stop
+    // Center M Button — angular chrome multi-stop (Bel Air bezel)
     static let chromeRing = AngularGradient(
         colors: [
             Color(hex: "767C80"),
@@ -63,6 +65,31 @@ enum MilliGradients {
             Color(hex: "767C80")
         ],
         center: .center
+    )
+    
+    // Nav bar body — brushed titanium
+    static let brushedTitanium = LinearGradient(
+        colors: [
+            Color(hex: "2A2E33"),
+            Color(hex: "1C1F24"),
+            Color(hex: "111417"),
+            Color(hex: "0A0C0F")
+        ],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    
+    // Nav bar specular edge
+    static let specularEdge = LinearGradient(
+        colors: [
+            Color.white.opacity(0.05),
+            Color.white.opacity(0.35),
+            Color(hex: "EEF2F4").opacity(0.5),
+            Color.white.opacity(0.35),
+            Color.white.opacity(0.05)
+        ],
+        startPoint: .leading,
+        endPoint: .trailing
     )
     
     // M button legacy compat

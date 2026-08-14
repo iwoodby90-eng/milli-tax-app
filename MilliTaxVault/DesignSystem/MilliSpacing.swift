@@ -23,10 +23,14 @@ enum MilliLayout {
     static let metadataGap: CGFloat = 3
     
     // Bottom nav height for safe area offsets
-    static let bottomNavHeight: CGFloat = 82
+    // Accounts for sculpted BelAir shape + safe area
+    static let bottomNavHeight: CGFloat = 90
     
-    // Center M button diameter
-    static let mButtonSize: CGFloat = 64
+    // Center M button diameter (spec: 74–82pt)
+    static let mButtonSize: CGFloat = 78
+    
+    // Segmented tick ring outer diameter
+    static let mButtonRingSize: CGFloat = 92
     
     // Card corner radius
     static let cardRadius: CGFloat = 15

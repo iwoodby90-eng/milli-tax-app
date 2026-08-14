@@ -5,7 +5,7 @@ struct ContentView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Screen content
+            // Screen content — each screen fills the available space
             Group {
                 switch selectedTab {
                 case .dashboard:
@@ -21,8 +21,12 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .bottom) {
+                // Reserve space for the sculpted nav bar so content doesn't hide behind it
+                Color.clear.frame(height: MilliLayout.bottomNavHeight)
+            }
             
-            // Custom bottom navigation bar
+            // Sculpted Bel Air dashboard navigation bar — hardware-feel, always on top
             MilliBottomBar(selectedTab: $selectedTab)
         }
         .background(MilliColors.obsidian)
@@ -31,7 +35,7 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Transfers View
+// MARK: - Transfers View (Mileage)
 struct TransfersView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -56,22 +60,19 @@ struct TransfersView: View {
                     .padding(.horizontal, MilliLayout.screenMargin)
                     .padding(.top, MilliLayout.lg)
                     
-                    // Placeholder content
+                    // Stat cards
                     VStack(spacing: MilliLayout.sectionGap) {
                         mileageStatCard(icon: "car.fill", title: "This Quarter", value: "2,345 mi", subtitle: "$1,548 deduction")
                         mileageStatCard(icon: "calendar", title: "This Month", value: "847 mi", subtitle: "$559 deduction")
                     }
                     .padding(.horizontal, MilliLayout.screenMargin)
-                    
-                    Spacer().frame(height: MilliLayout.bottomNavHeight + 20)
                 }
             }
             
             MilliAIOrb()
                 .padding(.trailing, 14)
-                .padding(.bottom, MilliLayout.bottomNavHeight + 8)
+                .padding(.bottom, 8)
         }
-        .background(MilliColors.obsidian.ignoresSafeArea())
     }
     
     private func mileageStatCard(icon: String, title: String, value: String, subtitle: String) -> some View {
@@ -137,16 +138,13 @@ struct MoreMenuView: View {
                         menuRow(icon: "rectangle.portrait.and.arrow.right", title: "Sign Out")
                     }
                     .padding(.horizontal, MilliLayout.screenMargin)
-                    
-                    Spacer().frame(height: MilliLayout.bottomNavHeight + 20)
                 }
             }
             
             MilliAIOrb()
                 .padding(.trailing, 14)
-                .padding(.bottom, MilliLayout.bottomNavHeight + 8)
+                .padding(.bottom, 8)
         }
-        .background(MilliColors.obsidian.ignoresSafeArea())
     }
     
     private func menuRow(icon: String, title: String) -> some View {

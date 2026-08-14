@@ -38,6 +38,7 @@
 		A10072 /* MilliProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10072; };
 		A10073 /* MilliCenterMButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10073; };
 		A10074 /* MilliBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10074; };
+		A10090 /* BelAirNavBarShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10090; };
 		A10075 /* MilliMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10075; };
 		A10076 /* MilliInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10076; };
 		A10080 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10080; };
@@ -82,6 +83,7 @@
 		B10080 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		B10081 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
+		B10090 /* BelAirNavBarShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BelAirNavBarShape.swift; sourceTree = "<group>"; };
 		B10099 /* MilliTaxVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MilliTaxVault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -146,6 +148,7 @@
 				B10072 /* MilliProgressRing.swift */,
 				B10073 /* MilliCenterMButton.swift */,
 				B10074 /* MilliBottomBar.swift */,
+				B10090 /* BelAirNavBarShape.swift */,
 				B10075 /* MilliMetricCard.swift */,
 				B10076 /* MilliInsightCard.swift */,
 			);
@@ -299,6 +302,7 @@
 				A10072,
 				A10073,
 				A10074,
+				A10090,
 				A10075,
 				A10076,
 				A10080,
