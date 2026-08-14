@@ -1,74 +1,62 @@
 import SwiftUI
 
-// MARK: - TreeOfLifeView — Life Events + Future Planner
-// Cinematic timeline visualization connecting past milestones to future goals.
-// Uses the Tree of Life visual metaphor — roots (past), trunk (now), branches (future).
-
-struct LifeEvent: Identifiable {
-    let id = UUID()
-    let icon: String
-    let title: String
-    let subtitle: String
-    let date: String
-    let amount: String?
-    let isPast: Bool
-    let isMilestone: Bool
-}
-
+// MARK: - TreeOfLifeView — Life Events + Financial Journey Timeline
 struct TreeOfLifeView: View {
-    @State private var selectedFilter: TreeFilter = .all
-    @State private var treeGrowth: CGFloat = 0
     @Environment(\.dismiss) private var dismiss
+    @State private var showAddSheet = false
+    @State private var visibleNodes: Set<Int> = []
     
-    enum TreeFilter: String, CaseIterable {
-        case all = "All"
-        case past = "Past"
-        case future = "Future"
-    }
-    
-    private let lifeEvents: [LifeEvent] = [
-        // Past events (roots)
-        LifeEvent(icon: "car.fill", title: "First Vehicle", subtitle: "2019 Honda Accord registered", date: "Mar 2019", amount: nil, isPast: true, isMilestone: true),
-        LifeEvent(icon: "briefcase.fill", title: "Started Business", subtitle: "LLC formed, first deduction year", date: "Jan 2021", amount: "$4,200 saved", isPast: true, isMilestone: true),
-        LifeEvent(icon: "road.lanes", title: "10,000 Miles Tracked", subtitle: "Lifetime mileage milestone", date: "Sep 2022", amount: "$6,550 deducted", isPast: true, isMilestone: false),
-        LifeEvent(icon: "chart.line.uptrend.xyaxis", title: "First Investment", subtitle: "Opened brokerage account", date: "Feb 2023", amount: nil, isPast: true, isMilestone: true),
-        LifeEvent(icon: "dollarsign.circle.fill", title: "Tax Savings Goal Met", subtitle: "Annual target exceeded", date: "Dec 2024", amount: "$12,400 saved", isPast: true, isMilestone: false),
-        // Future events (branches)
-        LifeEvent(icon: "house.fill", title: "Home Purchase", subtitle: "Target down payment funded", date: "Q2 2026", amount: "$80,000 goal", isPast: false, isMilestone: true),
-        LifeEvent(icon: "building.2.fill", title: "Second Business", subtitle: "Expand into new market", date: "2027", amount: nil, isPast: false, isMilestone: true),
-        LifeEvent(icon: "airplane", title: "Financial Freedom", subtitle: "Passive income covers expenses", date: "2030", amount: "$8,400/mo", isPast: false, isMilestone: true),
-        LifeEvent(icon: "leaf.fill", title: "Early Retirement", subtitle: "Fully funded at age 55", date: "2035", amount: "$2.4M target", isPast: false, isMilestone: true),
+    private let events: [LifeEvent] = [
+        .init(category: .emergencyFund, title: "Emergency Fund", date: "Jan 2024", description: "6-month cushion fully funded.", isCompleted: true),
+        .init(category: .education, title: "MBA Program", date: "May 2024", description: "Tuition paid. Zero student debt.", isCompleted: true),
+        .init(category: .businessLaunch, title: "LLC Formation", date: "Sep 2024", description: "Milli Tax Services launched.", isCompleted: true),
+        .init(category: .homePurchase, title: "First Home", date: "Mar 2025", description: "Down payment target: $60,000.", isCompleted: false),
+        .init(category: .marriage, title: "Wedding", date: "Oct 2025", description: "Budget: $35,000. Savings on track.", isCompleted: false),
+        .init(category: .child, title: "First Child", date: "2027", description: "529 plan opened. Monthly auto-deposit.", isCompleted: false),
+        .init(category: .retirement, title: "Early Retirement", date: "2050", description: "Target: $2.5M portfolio at age 55.", isCompleted: false),
     ]
     
-    private var filteredEvents: [LifeEvent] {
-        switch selectedFilter {
-        case .all: return lifeEvents
-        case .past: return lifeEvents.filter { $0.isPast }
-        case .future: return lifeEvents.filter { !$0.isPast }
-        }
-    }
-    
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: MilliSpacing.xxl) {
-                    headerSection
-                    treeVisualization
-                    filterRow
-                    timelineSection
-                    Spacer().frame(height: 120)
+        ZStack {
+            // Background
+            Color(hex: "0A0A0C").ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                headerSection
+                
+                // Timeline content
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(events.enumerated()), id: \.offset) { index, event in
+                            timelineNode(event: event, index: index, isLast: index == events.count - 1)
+                                .opacity(visibleNodes.contains(index) ? 1 : 0)
+                                .offset(x: visibleNodes.contains(index) ? 0 : -20)
+                                .animation(
+                                    .easeOut(duration: 0.4).delay(Double(index) * 0.15),
+                                    value: visibleNodes.contains(index)
+                                )
+                        }
+                        
+                        // Add Event Button
+                        addEventButton
+                            .padding(.top, 24)
+                            .padding(.bottom, 100)
+                    }
+                    .padding(.top, 20)
                 }
             }
-            .background(MilliColors.obsidian.ignoresSafeArea())
-            
-            MilliAIOrb()
-                .padding(.trailing, 14)
-                .padding(.bottom, 8)
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 1.8)) {
-                treeGrowth = 1.0
+            // Animate nodes in sequentially
+            for index in events.indices {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.15) {
+                    visibleNodes.insert(index)
+                }
             }
+        }
+        .sheet(isPresented: $showAddSheet) {
+            AddLifeEventSheet()
         }
     }
     
@@ -76,254 +64,164 @@ struct TreeOfLifeView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
+                Image("MilliWordmark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 18)
+                Spacer()
                 Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                Spacer()
-                Text("M I L L I")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .tracking(2)
-                Spacer()
-                Button(action: {}) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(MilliColors.cyan)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(MilliColors.textSecondary)
                 }
             }
-            .padding(.horizontal, MilliLayout.screenMargin)
-            .padding(.top, MilliLayout.lg)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Tree of Life")
-                    .font(MilliFont.heroNumber)
-                    .foregroundStyle(.white)
-                Text("Your financial journey, past and future.")
-                    .font(MilliFont.body)
-                    .foregroundStyle(MilliColors.textSecondary)
-            }
-            .padding(.horizontal, MilliLayout.screenMargin)
-            .padding(.top, MilliSpacing.sm)
-        }
-    }
-    
-    // MARK: - Tree Visualization
-    private var treeVisualization: some View {
-        ZStack {
-            // Background glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [MilliColors.cyan.opacity(0.06), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 120
-                    )
-                )
-                .frame(width: 240, height: 240)
+            Text("Tree of Life")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
             
-            Canvas { context, size in
-                let midX = size.width / 2
-                let baseY = size.height - 16
-                let growthFactor = treeGrowth
-                
-                // Roots (past — below ground)
-                let rootColor = Color(hex: "00E5FF").opacity(0.3 * Double(growthFactor))
-                let roots: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
-                    (midX, baseY, midX - 30, baseY + 10),
-                    (midX, baseY, midX + 30, baseY + 10),
-                    (midX - 15, baseY + 5, midX - 40, baseY + 15),
-                    (midX + 15, baseY + 5, midX + 40, baseY + 15),
-                ]
-                for r in roots {
-                    var path = Path()
-                    path.move(to: CGPoint(x: r.0, y: r.1))
-                    path.addLine(to: CGPoint(x: r.2, y: r.3))
-                    context.stroke(path, with: .color(rootColor), lineWidth: 1.5)
-                }
-                
-                // Trunk (present)
-                let trunkTop = baseY - (100 * growthFactor)
-                var trunk = Path()
-                trunk.move(to: CGPoint(x: midX, y: baseY))
-                trunk.addLine(to: CGPoint(x: midX, y: trunkTop))
-                context.stroke(trunk, with: .color(Color(hex: "00E5FF").opacity(0.8)), lineWidth: 3)
-                
-                // Branches (future)
-                if growthFactor > 0.3 {
-                    let branchOpacity = min(1.0, (Double(growthFactor) - 0.3) * 1.5)
-                    let branchColor = Color(hex: "00E5FF").opacity(0.6 * branchOpacity)
-                    
-                    let branches: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
-                        (midX, trunkTop + 30, midX - 35, trunkTop + 10),
-                        (midX, trunkTop + 30, midX + 35, trunkTop + 10),
-                        (midX, trunkTop + 15, midX - 25, trunkTop - 10),
-                        (midX, trunkTop + 15, midX + 25, trunkTop - 10),
-                        (midX, trunkTop, midX - 15, trunkTop - 20),
-                        (midX, trunkTop, midX + 15, trunkTop - 20),
-                        (midX - 35, trunkTop + 10, midX - 50, trunkTop - 5),
-                        (midX + 35, trunkTop + 10, midX + 50, trunkTop - 5),
-                    ]
-                    
-                    for b in branches {
-                        var path = Path()
-                        path.move(to: CGPoint(x: b.0, y: b.1))
-                        path.addLine(to: CGPoint(x: b.2, y: b.3))
-                        context.stroke(path, with: .color(branchColor), lineWidth: 1.5)
-                    }
-                    
-                    // Leaf nodes (future goals)
-                    let leaves: [(CGFloat, CGFloat)] = [
-                        (midX - 50, trunkTop - 5),
-                        (midX + 50, trunkTop - 5),
-                        (midX - 15, trunkTop - 20),
-                        (midX + 15, trunkTop - 20),
-                        (midX - 25, trunkTop - 10),
-                        (midX + 25, trunkTop - 10),
-                    ]
-                    for leaf in leaves {
-                        let rect = CGRect(x: leaf.0 - 4, y: leaf.1 - 4, width: 8, height: 8)
-                        context.fill(Path(ellipseIn: rect), with: .color(Color(hex: "00E5FF").opacity(0.7 * branchOpacity)))
-                    }
-                }
-                
-                // Center "now" indicator
-                let nowY = trunkTop + 50
-                let nowRect = CGRect(x: midX - 5, y: nowY - 5, width: 10, height: 10)
-                context.fill(Path(ellipseIn: nowRect), with: .color(Color(hex: "00E5FF")))
-            }
-            .frame(width: 200, height: 180)
-            
-            // "NOW" label
-            VStack {
-                Spacer()
-                Text("NOW")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(MilliColors.cyan)
-                    .tracking(1.5)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(MilliColors.cyan.opacity(0.12))
-                            .overlay(Capsule().stroke(MilliColors.cyan.opacity(0.3), lineWidth: 0.5))
-                    )
-                    .offset(y: -50)
-            }
-            .frame(width: 200, height: 180)
-        }
-        .frame(height: 200)
-        .padding(.horizontal, MilliLayout.screenMargin)
-    }
-    
-    // MARK: - Filter Row
-    private var filterRow: some View {
-        HStack(spacing: MilliSpacing.sm) {
-            ForEach(TreeFilter.allCases, id: \.self) { filter in
-                Button(action: { withAnimation(.easeOut(duration: 0.2)) { selectedFilter = filter } }) {
-                    Text(filter.rawValue)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(selectedFilter == filter ? .white : MilliColors.textSecondary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(selectedFilter == filter ? MilliColors.cyan.opacity(0.15) : Color.clear)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(selectedFilter == filter ? MilliColors.cyan.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1)
-                                )
-                        )
-                }
-            }
-            Spacer()
+            Text("Your financial journey, visualized.")
+                .font(.system(size: 14))
+                .foregroundStyle(MilliColors.textSecondary)
         }
         .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.top, 60)
+        .padding(.bottom, 12)
     }
     
-    // MARK: - Timeline Section
-    private var timelineSection: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(filteredEvents.enumerated()), id: \.element.id) { index, event in
-                timelineRow(event: event, isLast: index == filteredEvents.count - 1)
-            }
-        }
-        .padding(.horizontal, MilliLayout.screenMargin)
-    }
-    
-    private func timelineRow(event: LifeEvent, isLast: Bool) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Timeline connector
+    // MARK: - Timeline Node
+    private func timelineNode(event: LifeEvent, index: Int, isLast: Bool) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Left: vertical line + node circle
             VStack(spacing: 0) {
-                // Node dot
+                // Node circle
                 ZStack {
-                    Circle()
-                        .fill(event.isMilestone ? MilliColors.cyan : MilliColors.cyan.opacity(0.3))
-                        .frame(width: event.isMilestone ? 12 : 8, height: event.isMilestone ? 12 : 8)
-                    if event.isMilestone {
+                    if event.isCompleted {
                         Circle()
-                            .fill(MilliColors.cyan.opacity(0.2))
-                            .frame(width: 20, height: 20)
+                            .fill(MilliColors.cyan)
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color(hex: "0A0A0C"))
+                    } else {
+                        Circle()
+                            .stroke(MilliColors.cyan.opacity(0.6), lineWidth: 2)
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "clock")
+                            .font(.system(size: 11))
+                            .foregroundStyle(MilliColors.cyan.opacity(0.7))
                     }
                 }
-                .frame(width: 20, height: 20)
                 
-                // Connector line
+                // Connecting line (except last)
                 if !isLast {
                     Rectangle()
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cyan.opacity(0.3), MilliColors.cyan.opacity(0.1)],
-                                startPoint: .top, endPoint: .bottom
+                                colors: [MilliColors.cyan.opacity(0.6), MilliColors.cyan.opacity(0.2)],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
                         )
-                        .frame(width: 1.5)
+                        .frame(width: 2)
                         .frame(maxHeight: .infinity)
                 }
             }
-            .frame(width: 20)
+            .frame(width: 28)
             
-            // Event card
-            VStack(alignment: .leading, spacing: MilliSpacing.xs) {
+            // Right: event card
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(event.isPast ? MilliColors.cyan.opacity(0.08) : MilliColors.cyan.opacity(0.12))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: event.icon)
-                            .font(.system(size: 14))
-                            .foregroundStyle(event.isPast ? MilliColors.cyan.opacity(0.7) : MilliColors.cyan)
-                    }
+                    Image(systemName: event.category.icon)
+                        .font(.system(size: 13))
+                        .foregroundStyle(MilliColors.cyan)
                     
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(event.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
-                        Text(event.subtitle)
-                            .font(.system(size: 12))
-                            .foregroundStyle(MilliColors.textSecondary)
-                    }
+                    Text(event.title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
                     
                     Spacer()
                     
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(event.date)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(MilliColors.textMuted)
-                        if let amount = event.amount {
-                            Text(amount)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(MilliColors.cyan.opacity(0.8))
-                        }
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11))
+                        .foregroundStyle(MilliColors.textMuted)
                 }
+                
+                Text(event.date)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(MilliColors.cyan.opacity(0.8))
+                
+                Text(event.description)
+                    .font(.system(size: 12))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .lineLimit(2)
             }
-            .padding(.horizontal, MilliLayout.cardPaddingH)
-            .padding(.vertical, MilliLayout.cardPaddingV)
-            .milliSurface()
-            .padding(.bottom, MilliSpacing.md)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: "12141A"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    )
+            )
+        }
+        .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.bottom, 16)
+    }
+    
+    // MARK: - Add Event Button
+    private var addEventButton: some View {
+        Button(action: { showAddSheet = true }) {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                Text("Add Life Event")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundStyle(MilliColors.obsidian)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 12)
+            .background(
+                Capsule()
+                    .fill(MilliColors.cyan)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, MilliLayout.screenMargin)
+    }
+}
+
+// MARK: - Life Event Model
+struct LifeEvent: Identifiable {
+    let id = UUID()
+    let category: LifeEventCategory
+    let title: String
+    let date: String
+    let description: String
+    let isCompleted: Bool
+}
+
+enum LifeEventCategory {
+    case homePurchase
+    case marriage
+    case businessLaunch
+    case education
+    case child
+    case retirement
+    case emergencyFund
+    
+    var icon: String {
+        switch self {
+        case .homePurchase: return "house.fill"
+        case .marriage: return "heart.fill"
+        case .businessLaunch: return "briefcase.fill"
+        case .education: return "book.fill"
+        case .child: return "figure.2.and.child"
+        case .retirement: return "car.fill"
+        case .emergencyFund: return "shield.fill"
         }
     }
 }

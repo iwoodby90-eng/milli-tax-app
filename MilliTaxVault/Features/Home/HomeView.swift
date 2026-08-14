@@ -302,7 +302,7 @@ struct HomeView: View {
         MilliColors.obsidian.ignoresSafeArea()
         VStack(spacing: 0) {
             HomeView()
-            MilliBottomBar(selectedTab: .constant(.home))
+            MilliNavBar(selectedTab: .constant(.dashboard))
         }
     }
     .preferredColorScheme(.dark)

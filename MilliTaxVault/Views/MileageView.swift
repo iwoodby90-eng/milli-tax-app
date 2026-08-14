@@ -1,0 +1,201 @@
+import SwiftUI
+import MapKit
+
+// MARK: - MileageView — Live Map + Trip Tracking
+struct MileageView: View {
+    @StateObject private var locationManager = LocationManager()
+    @State private var isTracking = false
+    @State private var cameraPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 42.3314, longitude: -83.0458),
+            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+        )
+    )
+    
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: 0) {
+                // Top stats section (~45%)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: MilliLayout.sectionGap) {
+                        headerSection
+                        statsSection
+                    }
+                    .padding(.top, 56)
+                }
+                .frame(maxHeight: UIScreen.main.bounds.height * 0.40)
+                
+                // Live Map (~55%)
+                mapSection
+            }
+            
+            MilliAIOrb()
+                .padding(.trailing, 14)
+                .padding(.bottom, 140)
+        }
+        .background(MilliColors.obsidian.ignoresSafeArea())
+        .onAppear {
+            locationManager.requestPermission()
+            updateCameraToUser()
+        }
+        .onChange(of: locationManager.lastLocation) { _, newLocation in
+            if let loc = newLocation, !isTracking {
+                withAnimation {
+                    cameraPosition = .region(
+                        MKCoordinateRegion(
+                            center: loc.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+                        )
+                    )
+                }
+            }
+        }
+    }
+    
+    // MARK: - Header
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Image("MilliWordmark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 18)
+                Spacer()
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(MilliColors.textSecondary)
+                    Circle()
+                        .fill(MilliColors.cyan)
+                        .frame(width: 6, height: 6)
+                        .offset(x: 2, y: -1)
+                }
+            }
+            
+            Text("Mileage")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
+            Text("Track your drives automatically.")
+                .font(.system(size: 14))
+                .foregroundStyle(MilliColors.textSecondary)
+        }
+        .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.top, MilliLayout.lg)
+    }
+    
+    // MARK: - Stats
+    private var statsSection: some View {
+        VStack(spacing: MilliLayout.sectionGap) {
+            mileageStatCard(icon: "car.fill", title: "This Quarter", value: "2,345 mi", subtitle: "$1,548 deduction")
+            mileageStatCard(icon: "calendar", title: "This Month", value: "847 mi", subtitle: "$559 deduction")
+        }
+        .padding(.horizontal, MilliLayout.screenMargin)
+    }
+    
+    private func mileageStatCard(icon: String, title: String, value: String, subtitle: String) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MilliColors.cyan.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(MilliColors.cyan)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                Text(value)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(MilliColors.textMuted)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12))
+                .foregroundStyle(MilliColors.textMuted)
+        }
+        .padding(.horizontal, MilliLayout.cardPaddingH)
+        .padding(.vertical, MilliLayout.cardPaddingV)
+        .milliSurface()
+    }
+    
+    // MARK: - Map Section
+    private var mapSection: some View {
+        ZStack(alignment: .bottom) {
+            Map(position: $cameraPosition) {
+                UserAnnotation()
+                
+                if locationManager.routeCoordinates.count > 1 {
+                    MapPolyline(coordinates: locationManager.routeCoordinates)
+                        .stroke(Color(hex: "00E5FF"), lineWidth: 4)
+                }
+            }
+            .mapStyle(.standard(elevation: .realistic))
+            .mapControls {
+                MapCompass()
+                MapPitchToggle()
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(MilliColors.cyan.opacity(0.4), lineWidth: 1)
+            )
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
+            
+            // Start/Stop Trip Button
+            tripButton
+                .padding(.bottom, 20)
+        }
+    }
+    
+    // MARK: - Trip Button
+    private var tripButton: some View {
+        Button(action: toggleTracking) {
+            HStack(spacing: 8) {
+                Image(systemName: isTracking ? "stop.fill" : "location.fill")
+                    .font(.system(size: 14, weight: .bold))
+                Text(isTracking ? "Stop Trip" : "Start Trip")
+                    .font(.system(size: 14, weight: .bold))
+            }
+            .foregroundStyle(isTracking ? .white : MilliColors.obsidian)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(
+                Capsule()
+                    .fill(isTracking ? Color(hex: "FF5252") : MilliColors.cyan)
+            )
+            .shadow(color: (isTracking ? Color(hex: "FF5252") : MilliColors.cyan).opacity(0.4), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Helpers
+    private func toggleTracking() {
+        isTracking.toggle()
+        if isTracking {
+            locationManager.startTracking()
+        } else {
+            locationManager.stopTracking()
+        }
+    }
+    
+    private func updateCameraToUser() {
+        if let location = locationManager.lastLocation {
+            cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: location.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+                )
+            )
+        }
+    }
+}
+
+#Preview {
+    MileageView()
+}

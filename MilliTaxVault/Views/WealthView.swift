@@ -1,160 +1,112 @@
 import SwiftUI
-import Charts
 
+// MARK: - WealthView — Investing & Retirement Hub
 struct WealthView: View {
-    @State private var selectedTimeFilter: String = "1M"
-    private let timeFilters = ["1W", "1M", "3M", "1Y", "ALL"]
+    @State private var selectedSegment: WealthSegment = .investing
+    
+    enum WealthSegment: String, CaseIterable {
+        case investing = "Investing"
+        case retirement = "Retirement"
+    }
     
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                // MARK: - MILLI Wordmark
-                VStack(spacing: 6) {
-                    Text("MILLI")
-                        .font(.system(size: 28, weight: .black))
-                        .tracking(6)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.white, Color(white: 0.65)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+        ZStack(alignment: .bottomTrailing) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: MilliLayout.sectionGap) {
+                    // Header
+                    headerSection
                     
-                    Text("Money, Made Intelligent.")
-                        .font(MilliFont.caption)
-                        .foregroundColor(MilliColors.cyan)
-                }
-                .padding(.top, 20)
-                
-                // MARK: - Available to Spend
-                VStack(spacing: 8) {
-                    Text("AVAILABLE TO SPEND")
-                        .sectionHeaderStyle()
+                    // Segment picker
+                    segmentPicker
                     
-                    Text("$1,365.42")
-                        .font(MilliFont.heroNumber)
-                        .foregroundColor(.white)
-                    
-                    Text("+$312.64 today")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(MilliColors.green)
-                }
-                
-                // MARK: - Sparkline
-                MilliSparkline(data: SampleData.sparklineData, height: 60)
-                    .padding(.horizontal, 8)
-                
-                // MARK: - Stat Tiles
-                HStack(spacing: 12) {
-                    StatTile(label: "Tax Vault", value: "$1,648", color: MilliColors.cyan)
-                    StatTile(label: "Quarterly Taxes", value: "$1,247", color: MilliColors.amber)
-                }
-                
-                // MARK: - Time Filter Row
-                HStack(spacing: 8) {
-                    ForEach(timeFilters, id: \.self) { filter in
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedTimeFilter = filter
-                            }
-                        } label: {
-                            Text(filter)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(selectedTimeFilter == filter ? .white : MilliColors.secondaryText)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule()
-                                        .fill(selectedTimeFilter == filter ? MilliColors.cyan.opacity(0.2) : Color.clear)
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(selectedTimeFilter == filter ? MilliColors.cyan.opacity(0.4) : Color.clear, lineWidth: 1)
-                                )
-                        }
+                    // Content based on segment
+                    switch selectedSegment {
+                    case .investing:
+                        InvestingView()
+                    case .retirement:
+                        RetirementView()
                     }
-                }
-                
-                // MARK: - Net Worth Growth
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("NET WORTH GROWTH")
-                        .sectionHeaderStyle()
-                        .padding(.leading, 4)
                     
-                    MilliAreaChart(data: SampleData.chartData, height: 200)
-                        .milliCard()
+                    Spacer().frame(height: 140)
                 }
-                
-                // MARK: - Breakdown
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("BREAKDOWN")
-                        .sectionHeaderStyle()
-                        .padding(.leading, 4)
-                    
-                    MilliCard {
-                        VStack(spacing: 0) {
-                            ForEach(Array(SampleData.breakdownItems.enumerated()), id: \.element.id) { index, item in
-                                BreakdownRow(item: item)
-                                
-                                if index < SampleData.breakdownItems.count - 1 {
-                                    Divider()
-                                        .background(Color(white: 0.15))
-                                        .padding(.vertical, 12)
-                                }
-                            }
-                        }
-                    }
+                .padding(.top, 56)
+            }
+            
+            MilliAIOrb()
+                .padding(.trailing, 14)
+                .padding(.bottom, 130)
+        }
+        .background(MilliColors.obsidian.ignoresSafeArea())
+    }
+    
+    // MARK: - Header
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Image("MilliWordmark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 18)
+                Spacer()
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(MilliColors.textSecondary)
+                    Circle()
+                        .fill(MilliColors.cyan)
+                        .frame(width: 6, height: 6)
+                        .offset(x: 2, y: -1)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 120)
+            
+            Text("Wealth")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
+            Text("Grow. Protect. Retire.")
+                .font(.system(size: 14))
+                .foregroundStyle(MilliColors.textSecondary)
         }
+        .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.top, MilliLayout.lg)
+    }
+    
+    // MARK: - Segment Picker
+    private var segmentPicker: some View {
+        HStack(spacing: 0) {
+            ForEach(WealthSegment.allCases, id: \.self) { segment in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedSegment = segment
+                    }
+                }) {
+                    Text(segment.rawValue)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(selectedSegment == segment ? .white : MilliColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            selectedSegment == segment
+                            ? RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(MilliColors.cyan.opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .stroke(MilliColors.cyan.opacity(0.3), lineWidth: 1)
+                                )
+                            : nil
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(hex: "12141A"))
+        )
+        .padding(.horizontal, MilliLayout.screenMargin)
     }
 }
 
-// MARK: - Stat Tile
-
-struct StatTile: View {
-    let label: String
-    let value: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label)
-                .font(MilliFont.caption)
-                .foregroundColor(MilliColors.secondaryText)
-            
-            Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .milliCard()
-    }
-}
-
-// MARK: - Breakdown Row
-
-struct BreakdownRow: View {
-    let item: BreakdownItem
-    
-    var body: some View {
-        HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(item.color)
-                .frame(width: 4, height: 32)
-            
-            Text(item.label)
-                .font(MilliFont.body)
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            Text("$\(item.amount, specifier: "%.0f")")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
-        }
-    }
+#Preview {
+    WealthView()
 }
