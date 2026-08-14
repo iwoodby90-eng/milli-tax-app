@@ -45,11 +45,11 @@ struct HomeView: View {
     // MARK: - Header
     private var headerSection: some View {
         HStack {
-            // MILLI wordmark — spaced uppercase
-            Text("M I L L I")
-                .font(.system(size: 14, weight: .bold, design: .default))
-                .foregroundStyle(.white)
-                .tracking(2)
+            // MILLI wordmark — brand asset
+            Image("MilliWordmark")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 18)
             
             Spacer()
             

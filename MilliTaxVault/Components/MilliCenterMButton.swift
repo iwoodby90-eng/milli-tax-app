@@ -80,16 +80,12 @@ struct MilliCenterMButton: View {
                             )
                     )
                 
-                // Layer 5: Chrome "M" — SF Pro Display Bold, gradient fill
-                Text("M")
-                    .font(.system(size: 26, weight: .bold, design: .default))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white, Color(hex: "D4D8DC"), Color(hex: "A0A8B0")],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                // Layer 5: Milli M brand logo asset
+                Image("MilliMLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 34, height: 34)
+                    .clipShape(Circle())
                     .shadow(color: .black.opacity(0.4), radius: 1, x: 0, y: 1)
                 
                 // Layer 6: Top specular highlight crescent
