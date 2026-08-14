@@ -14,6 +14,12 @@ struct MilliApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     
+    // TEMPORARY DEV RESET — remove before App Store submission
+    init() {
+        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+        UserDefaults.standard.removeObject(forKey: "hasCompletedSetup")
+    }
+    
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -65,11 +71,6 @@ struct MilliApp: App {
             }
             .animation(.easeInOut(duration: 0.4), value: appState)
             .preferredColorScheme(.dark)
-            .onAppear {
-                if hasCompletedOnboarding && hasCompletedSetup {
-                    appState = .login
-                }
-            }
         }
     }
 }

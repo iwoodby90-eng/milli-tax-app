@@ -37,7 +37,7 @@ struct HomeView: View {
                     Spacer()
                         .frame(height: MilliLayout.bottomNavHeight + 20)
                 }
-                .padding(.top, 8)
+                .padding(.top, 56) // Clear Dynamic Island + status bar fully
             }
             
             // MARK: Milli AI Orb — floating bottom-right
@@ -73,7 +73,6 @@ struct HomeView: View {
             }
         }
         .padding(.horizontal, MilliLayout.screenMargin)
-        .padding(.top, 4)
     }
     
     // MARK: - Hero Card (Available to Spend)
@@ -259,8 +258,7 @@ struct HomeView: View {
             .padding(.trailing, 14)
             .padding(.bottom, MilliLayout.bottomNavHeight + 8)
     }
-}
-
+    
     // MARK: - Tree of Life Card
     private var treeOfLifeCard: some View {
         Button(action: { showTreeOfLife = true }) {
@@ -296,7 +294,8 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, MilliLayout.screenMargin)
     }
-    
+}
+
 // MARK: - Preview
 #Preview {
     ZStack {

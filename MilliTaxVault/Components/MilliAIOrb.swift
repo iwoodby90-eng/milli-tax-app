@@ -2,7 +2,8 @@ import SwiftUI
 
 // MARK: - MilliAIOrb — Floating AI Companion
 // Uses the official Milli AI robot brand asset.
-// Floating animation + breathing cyan glow. Bottom-right on every screen.
+// Floating animation + ambient cyan glow. No border, no ring, no label.
+// Bottom-right on every screen.
 
 struct MilliAIOrb: View {
     @State private var floating = false
@@ -12,48 +13,27 @@ struct MilliAIOrb: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // Breathing glow ring
-                Circle()
-                    .fill(MilliColors.cyan.opacity(glowing ? 0.18 : 0.06))
-                    .frame(width: 68, height: 68)
-                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: glowing)
-                
-                // Outer chrome ring
-                Circle()
-                    .stroke(
-                        AngularGradient(
-                            colors: [
-                                Color(hex: "8D9397"),
-                                Color(hex: "D4D8DC"),
-                                Color(hex: "8D9397"),
-                                Color(hex: "4A4F55"),
-                                Color(hex: "8D9397")
-                            ],
-                            center: .center
-                        ),
-                        lineWidth: 2
-                    )
-                    .frame(width: 56, height: 56)
-                    .shadow(color: MilliColors.cyan.opacity(0.4), radius: 6)
-                
-                // Dark face background
+                // Ambient glow — soft radial, no hard edge
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "0D1117"), Color(hex: "07090B")],
+                            colors: [
+                                MilliColors.cyan.opacity(glowing ? 0.22 : 0.08),
+                                MilliColors.cyan.opacity(0.0)
+                            ],
                             center: .center,
-                            startRadius: 0,
-                            endRadius: 26
+                            startRadius: 10,
+                            endRadius: 38
                         )
                     )
-                    .frame(width: 52, height: 52)
+                    .frame(width: 72, height: 72)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: glowing)
                 
-                // Brand AI robot asset
+                // Brand AI robot asset — no border, no background shape
                 Image("MilliAIOrb")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 38, height: 38)
-                    .clipShape(Circle())
+                    .frame(width: 44, height: 44)
             }
         }
         .buttonStyle(.plain)

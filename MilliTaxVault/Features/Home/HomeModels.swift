@@ -2,13 +2,26 @@ import SwiftUI
 
 // MARK: - Home Screen Data Models
 
+// MARK: Currency Formatter Extension
+extension Double {
+    var currencyFormatted: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: self)) ?? "$0.00"
+    }
+}
+
 struct SpendableBalance {
     let amount: Double
     let lastUpdated: String
     let cashflowData: [Double]
     
     var formattedAmount: String {
-        String(format: "$%,.2f", amount)
+        amount.currencyFormatted
     }
     
     static let demo = SpendableBalance(
@@ -25,7 +38,7 @@ struct LatestPayout {
     let sourceIcon: String
     
     var formattedAmount: String {
-        String(format: "$%,.2f", amount)
+        amount.currencyFormatted
     }
     
     static let demo = LatestPayout(
@@ -41,7 +54,7 @@ struct TaxVaultStatus {
     let annualRate: String
     
     var formattedBalance: String {
-        String(format: "$%,.2f", balance)
+        balance.currencyFormatted
     }
     
     static let demo = TaxVaultStatus(
@@ -67,7 +80,7 @@ struct QuarterlyTaxEstimate {
     let dueDate: String
     
     var formattedAmount: String {
-        String(format: "$%,.2f", amount)
+        amount.currencyFormatted
     }
     
     static let demo = QuarterlyTaxEstimate(
@@ -83,6 +96,7 @@ struct MileageStatus {
     var formattedMiles: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
+        formatter.locale = Locale(identifier: "en_US")
         return (formatter.string(from: NSNumber(value: miles)) ?? "\(miles)") + " mi"
     }
     
