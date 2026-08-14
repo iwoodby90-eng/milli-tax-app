@@ -1,5 +1,9 @@
 import SwiftUI
 
+// MARK: - MilliCard Container View
+// Use as a container wrapper: MilliCard { content }
+// For the modifier version, use .milliCard() from MilliTheme.swift
+
 struct MilliCard<Content: View>: View {
     let content: Content
     
@@ -9,39 +13,19 @@ struct MilliCard<Content: View>: View {
     
     var body: some View {
         content
-            .padding(20)
+            .padding(MilliSpacing.xl)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(MilliColors.cardBackground)
+                RoundedRectangle(cornerRadius: MilliRadius.card)
+                    .fill(LinearGradient(
+                        colors: [Color(hex: "10171D"), Color(hex: "0C1217")],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: MilliRadius.card)
+                            .stroke(MilliColor.border, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MilliColors.cardStroke, lineWidth: 1)
-            )
-            .shadow(color: MilliColors.cardShadow, radius: 12, x: 0, y: 4)
-    }
-}
-
-// MARK: - Card Modifier (alternative usage)
-
-struct MilliCardModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(MilliColors.cardBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MilliColors.cardStroke, lineWidth: 1)
-            )
-            .shadow(color: MilliColors.cardShadow, radius: 12, x: 0, y: 4)
-    }
-}
-
-extension View {
-    func milliCard() -> some View {
-        modifier(MilliCardModifier())
     }
 }

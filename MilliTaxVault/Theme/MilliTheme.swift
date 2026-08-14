@@ -109,6 +109,18 @@ struct MilliCardStrongBorder: ViewModifier {
     }
 }
 
+// MARK: - Section Header Style
+struct SectionHeaderStyleModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(MilliColor.textSecondary)
+            .tracking(1.2)
+            .textCase(.uppercase)
+    }
+}
+
+// MARK: - View Extensions
 extension View {
     func milliCard(padding: CGFloat = MilliSpacing.xl) -> some View {
         self.modifier(MilliCardStyle(padding: padding))
@@ -116,29 +128,66 @@ extension View {
     func milliCardCyan(padding: CGFloat = MilliSpacing.xl) -> some View {
         self.modifier(MilliCardStrongBorder(padding: padding))
     }
+    func sectionHeaderStyle() -> some View {
+        self.modifier(SectionHeaderStyleModifier())
+    }
 }
 
-// MARK: - Section Header Style
-struct MilliSectionHeader: View {
-    let title: String
-    var trailing: String? = nil
-    var trailingAction: (() -> Void)? = nil
+// MARK: - Currency Formatting Utility
+enum MilliFormat {
+    private static let currencyFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.locale = Locale(identifier: "en_US")
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 0
+        return f
+    }()
     
-    var body: some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(MilliColor.textMuted)
-                .tracking(1.5)
-                .textCase(.uppercase)
-            Spacer()
-            if let trailing = trailing {
-                Button(action: { trailingAction?() }) {
-                    Text(trailing)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MilliColor.cyan)
-                }
-            }
+    private static let currencyFormatterFixed: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.locale = Locale(identifier: "en_US")
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f
+    }()
+    
+    /// Formats dollar values: $1,234 (no cents) or $1,234.56 (with cents)
+    static func currency(_ value: Double, showCents: Bool = false) -> String {
+        let formatter = showCents ? currencyFormatterFixed : currencyFormatter
+        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+    }
+    
+    /// Formats with +/- prefix: +$1,234.56
+    static func signedCurrency(_ value: Double) -> String {
+        let prefix = value >= 0 ? "+" : ""
+        return prefix + currencyFormatterFixed.string(from: NSNumber(value: abs(value)))!
+    }
+    
+    /// Formats large numbers with abbreviations: $12.4K, $1.2M
+    static func abbreviated(_ value: Double) -> String {
+        if value >= 1_000_000 {
+            return String(format: "$%.1fM", value / 1_000_000)
+        } else if value >= 1_000 {
+            let k = value / 1_000
+            return k.truncatingRemainder(dividingBy: 1) == 0
+                ? String(format: "$%.0fK", k)
+                : String(format: "$%.1fK", k)
+        } else {
+            return currency(value)
         }
+    }
+    
+    /// Formats mileage: 1,234.5 mi
+    static func miles(_ value: Double) -> String {
+        String(format: "%,.1f mi", value)
+    }
+    
+    /// Formats percentage: 67%
+    static func percent(_ value: Double) -> String {
+        String(format: "%.0f%%", value)
     }
 }

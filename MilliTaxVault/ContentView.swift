@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab: MilliTab = .home
+    @State private var showTreeOfLife: Bool = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -32,6 +33,9 @@ struct ContentView: View {
         .background(MilliColors.obsidian)
         .preferredColorScheme(.dark)
         .ignoresSafeArea(edges: .bottom)
+        .fullScreenCover(isPresented: $showTreeOfLife) {
+            TreeOfLifeView()
+        }
     }
 }
 
@@ -109,6 +113,8 @@ struct TransfersView: View {
 
 // MARK: - More Menu View
 struct MoreMenuView: View {
+    @State private var showTreeOfLife = false
+    
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView(showsIndicators: false) {
@@ -131,6 +137,9 @@ struct MoreMenuView: View {
                     
                     // Menu items
                     VStack(spacing: 1) {
+                        Button(action: { showTreeOfLife = true }) {
+                            menuRowContent(icon: "leaf.fill", title: "Tree of Life", accent: true)
+                        }
                         menuRow(icon: "gearshape.fill", title: "Settings")
                         menuRow(icon: "person.fill", title: "Profile")
                         menuRow(icon: "doc.text.fill", title: "Tax Documents")
@@ -145,6 +154,28 @@ struct MoreMenuView: View {
                 .padding(.trailing, 14)
                 .padding(.bottom, 8)
         }
+        .fullScreenCover(isPresented: $showTreeOfLife) {
+            TreeOfLifeView()
+        }
+    }
+    
+    private func menuRowContent(icon: String, title: String, accent: Bool = false) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(accent ? MilliColors.cyan : MilliColors.textSecondary)
+                .frame(width: 24)
+            Text(title)
+                .font(MilliFont.bodyMedium)
+                .foregroundStyle(accent ? MilliColors.cyan : .white)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12))
+                .foregroundStyle(MilliColors.textMuted)
+        }
+        .padding(.horizontal, MilliLayout.cardPaddingH)
+        .padding(.vertical, 14)
+        .milliSurface()
     }
     
     private func menuRow(icon: String, title: String) -> some View {

@@ -8,6 +8,7 @@ import Charts
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @State private var showSparkline = false
+    @State private var showTreeOfLife = false
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -28,6 +29,9 @@ struct HomeView: View {
                     
                     // MARK: Milli AI Insight
                     insightCard
+
+                    // MARK: Tree of Life
+                    treeOfLifeCard
                     
                     // Bottom spacer for nav clearance
                     Spacer()
@@ -40,6 +44,9 @@ struct HomeView: View {
             milliAIOrbOverlay
         }
         .background(MilliColors.obsidian.ignoresSafeArea())
+        .fullScreenCover(isPresented: $showTreeOfLife) {
+            TreeOfLifeView()
+        }
     }
     
     // MARK: - Header
@@ -254,6 +261,42 @@ struct HomeView: View {
     }
 }
 
+    // MARK: - Tree of Life Card
+    private var treeOfLifeCard: some View {
+        Button(action: { showTreeOfLife = true }) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(MilliColors.cyan.opacity(0.08))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(MilliColors.cyan)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tree of Life")
+                        .font(MilliFont.bodyMedium)
+                        .foregroundStyle(.white)
+                    Text("Your financial journey & future goals")
+                        .font(MilliFont.metadata)
+                        .foregroundStyle(MilliColors.textSecondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MilliColors.textMuted)
+            }
+            .padding(.horizontal, MilliLayout.cardPaddingH)
+            .padding(.vertical, MilliLayout.cardPaddingV)
+            .milliSurface()
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, MilliLayout.screenMargin)
+    }
+    
 // MARK: - Preview
 #Preview {
     ZStack {

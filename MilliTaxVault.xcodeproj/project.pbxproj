@@ -44,6 +44,14 @@
 		A10080 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10080; };
 		A10081 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10081; };
 		A10082 /* HomeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10082; };
+		A10107 /* MilliTaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10107; };
+		A10100 /* TreeOfLifeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100; };
+		A10101 /* VehicleProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10101; };
+		A10102 /* TaxProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10102; };
+		A10103 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10103; };
+		A10104 /* VehicleSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10104; };
+		A10105 /* TaxProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10105; };
+		A10106 /* PlanSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10106; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +93,14 @@
 		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
 		B10090 /* BelAirNavBarShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BelAirNavBarShape.swift; sourceTree = "<group>"; };
 		B10099 /* MilliTaxVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MilliTaxVault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10107 /* MilliTaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultView.swift; sourceTree = "<group>"; };
+		B10100 /* TreeOfLifeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeOfLifeView.swift; sourceTree = "<group>"; };
+		B10101 /* VehicleProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleProfile.swift; sourceTree = "<group>"; };
+		B10102 /* TaxProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfile.swift; sourceTree = "<group>"; };
+		B10103 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		B10104 /* VehicleSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSetupView.swift; sourceTree = "<group>"; };
+		B10105 /* TaxProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfileSetupView.swift; sourceTree = "<group>"; };
+		B10106 /* PlanSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSelectionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -123,6 +139,8 @@
 				B10043 /* VaultView.swift */,
 				B10044 /* WealthView.swift */,
 				B10045 /* CockpitView.swift */,
+				B10107 /* MilliTaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultView.swift; sourceTree = "<group>"; };
+		B10100 /* TreeOfLifeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -161,6 +179,10 @@
 				B10030 /* SplashView.swift */,
 				B10031 /* OnboardingView.swift */,
 				B10032 /* LoginView.swift */,
+				B10103 /* OnboardingFlowView.swift */,
+				B10104 /* VehicleSetupView.swift */,
+				B10105 /* TaxProfileSetupView.swift */,
+				B10106 /* PlanSelectionView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -169,6 +191,8 @@
 			isa = PBXGroup;
 			children = (
 				B10040 /* AppModels.swift */,
+				B10101 /* VehicleProfile.swift */,
+				B10102 /* TaxProfile.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -308,6 +332,14 @@
 				A10080,
 				A10081,
 				A10082,
+				A10100,
+				A10101,
+				A10102,
+				A10103,
+				A10104,
+				A10105,
+				A10106,
+				A10107,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

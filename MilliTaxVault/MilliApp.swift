@@ -3,6 +3,7 @@ import SwiftUI
 enum AppState {
     case splash
     case onboarding
+    case setup
     case login
     case main
 }
@@ -10,6 +11,8 @@ enum AppState {
 @main
 struct MilliApp: App {
     @State private var appState: AppState = .splash
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     
     var body: some Scene {
         WindowGroup {
@@ -18,14 +21,29 @@ struct MilliApp: App {
                 case .splash:
                     SplashView(onComplete: {
                         withAnimation(.easeInOut(duration: 0.4)) {
-                            appState = .onboarding
+                            if hasCompletedOnboarding && hasCompletedSetup {
+                                appState = .login
+                            } else if hasCompletedOnboarding {
+                                appState = .setup
+                            } else {
+                                appState = .onboarding
+                            }
                         }
                     })
                     .transition(.opacity)
                     
                 case .onboarding:
                     OnboardingView(onComplete: {
-                        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+                        hasCompletedOnboarding = true
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            appState = .setup
+                        }
+                    })
+                    .transition(.opacity)
+                    
+                case .setup:
+                    OnboardingFlowView(onComplete: {
+                        hasCompletedSetup = true
                         withAnimation(.easeInOut(duration: 0.4)) {
                             appState = .login
                         }
@@ -48,7 +66,7 @@ struct MilliApp: App {
             .animation(.easeInOut(duration: 0.4), value: appState)
             .preferredColorScheme(.dark)
             .onAppear {
-                if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                if hasCompletedOnboarding && hasCompletedSetup {
                     appState = .login
                 }
             }
