@@ -41,42 +41,50 @@ struct MilliAIChatView: View {
                 .padding(.top, 60)
                 .padding(.bottom, 16)
 
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(messages) { msg in
-                            HStack(alignment: .top, spacing: 10) {
-                                if msg.isAI {
-                                    Image(systemName: "brain.head.profile")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(Color(hex: "00E5FF"))
-                                        .frame(width: 32)
-                                }
-                                VStack(alignment: msg.isAI ? .leading : .trailing, spacing: 8) {
-                                    Text(msg.text)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white)
-                                        .padding(14)
-                                        .background(
-                                            msg.isAI ? Color(hex: "1A1C20") : Color(hex: "00E5FF").opacity(0.15),
-                                            in: RoundedRectangle(cornerRadius: 16)
-                                        )
-                                    if let btn = msg.buttonLabel {
-                                        Button(action: {}) {
-                                            Text(btn)
-                                                .font(.system(size: 13, weight: .semibold))
-                                                .foregroundColor(Color(hex: "00E5FF"))
-                                                .padding(.horizontal, 16)
-                                                .padding(.vertical, 8)
-                                                .overlay(Capsule().stroke(Color(hex: "00E5FF"), lineWidth: 1))
+                // Messages — bottom-aligned with ScrollViewReader
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            Spacer(minLength: 200)
+                            ForEach(messages) { msg in
+                                HStack(alignment: .top, spacing: 10) {
+                                    if msg.isAI {
+                                        Image(systemName: "brain.head.profile")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(Color(hex: "00E5FF"))
+                                            .frame(width: 32)
+                                    }
+                                    VStack(alignment: msg.isAI ? .leading : .trailing, spacing: 8) {
+                                        Text(msg.text)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.white)
+                                            .padding(14)
+                                            .background(
+                                                msg.isAI ? Color(hex: "1A1C20") : Color(hex: "00E5FF").opacity(0.15),
+                                                in: RoundedRectangle(cornerRadius: 16)
+                                            )
+                                        if let btn = msg.buttonLabel {
+                                            Button(action: {}) {
+                                                Text(btn)
+                                                    .font(.system(size: 13, weight: .semibold))
+                                                    .foregroundColor(Color(hex: "00E5FF"))
+                                                    .padding(.horizontal, 16)
+                                                    .padding(.vertical, 8)
+                                                    .overlay(Capsule().stroke(Color(hex: "00E5FF"), lineWidth: 1))
+                                            }
                                         }
                                     }
+                                    if !msg.isAI { Spacer().frame(width: 32) }
                                 }
-                                if !msg.isAI { Spacer().frame(width: 32) }
+                                .frame(maxWidth: .infinity, alignment: msg.isAI ? .leading : .trailing)
                             }
-                            .frame(maxWidth: .infinity, alignment: msg.isAI ? .leading : .trailing)
+                            Color.clear.frame(height: 1).id("bottom")
                         }
+                        .padding(20)
                     }
-                    .padding(20)
+                    .onAppear {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
                 }
 
                 // Input bar

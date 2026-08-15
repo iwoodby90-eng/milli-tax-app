@@ -159,7 +159,8 @@ struct ActivityView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 120)
+            .padding(.top, 60)
+            .padding(.bottom, 100)
         }
     }
 }

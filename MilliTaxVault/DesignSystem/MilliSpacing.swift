@@ -6,7 +6,7 @@ import SwiftUI
 
 enum MilliLayout {
     // Screen margins
-    static let screenMargin: CGFloat = 15
+    static let screenMargin: CGFloat = 20
     
     // Major section gaps (between cards/sections)
     static let sectionGap: CGFloat = 12

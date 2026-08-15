@@ -15,25 +15,19 @@ struct MileageView: View {
     )
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(spacing: 0) {
-                // Top stats section (~45%)
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: MilliLayout.sectionGap) {
-                        headerSection
-                        statsSection
-                    }
-                    .padding(.top, 60)
+        VStack(spacing: 0) {
+            // Top stats section (~45%)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: MilliLayout.sectionGap) {
+                    headerSection
+                    statsSection
                 }
-                .frame(maxHeight: UIScreen.main.bounds.height * 0.40)
-                
-                // Live Map (~55%)
-                mapSection
+                .padding(.top, 60)
             }
+            .frame(maxHeight: UIScreen.main.bounds.height * 0.40)
             
-            MilliAIOrb()
-                .padding(.trailing, 14)
-                .padding(.bottom, 140)
+            // Live Map (~55%)
+            mapSection
         }
         .background(MilliColors.obsidian.ignoresSafeArea())
         .onAppear {

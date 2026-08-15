@@ -4,8 +4,7 @@ struct DashboardView: View {
     @State private var balanceVisible = true
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(showsIndicators: false) {
+        ScrollView(showsIndicators: false) {
                 VStack(spacing: MilliSpacing.xl) {
                     // MARK: Header
                     headerSection
@@ -29,9 +28,6 @@ struct DashboardView: View {
                 }
             }
             
-            // Milli AI Companion
-            MilliAICompanion()
-        }
         .background(Color(hex: "07090B").ignoresSafeArea())
     }
     

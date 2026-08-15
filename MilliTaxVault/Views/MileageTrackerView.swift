@@ -4,8 +4,7 @@ struct MileageTrackerView: View {
     @State private var isTracking = true
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(showsIndicators: false) {
+        ScrollView(showsIndicators: false) {
                 VStack(spacing: MilliSpacing.xl) {
                     // MARK: Header
                     headerSection
@@ -25,9 +24,6 @@ struct MileageTrackerView: View {
                     Spacer().frame(height: 100)
                 }
             }
-            
-            MilliAICompanion()
-        }
         .background(Color(hex: "07090B").ignoresSafeArea())
     }
     

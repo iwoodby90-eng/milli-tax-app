@@ -11,33 +11,26 @@ struct WealthView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: MilliLayout.sectionGap) {
-                    // Header
-                    headerSection
-                    
-                    // Segment picker
-                    segmentPicker
-                    
-                    // Content based on segment
-                    switch selectedSegment {
-                    case .investing:
-                        InvestingView()
-                    case .retirement:
-                        RetirementView()
-                    case .overview:
-                        WealthOverviewView()
-                    }
-                    
-                    Spacer().frame(height: 140)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: MilliLayout.sectionGap) {
+                // Header
+                headerSection
+                
+                // Segment picker
+                segmentPicker
+                
+                // Content based on segment
+                switch selectedSegment {
+                case .investing:
+                    InvestingView()
+                case .retirement:
+                    RetirementView()
+                case .overview:
+                    WealthOverviewView()
                 }
-                .padding(.top, 60)
             }
-            
-            MilliAIOrb()
-                .padding(.trailing, 14)
-                .padding(.bottom, 130)
+            .padding(.top, 60)
+            .padding(.bottom, 100)
         }
         .background(MilliColors.obsidian.ignoresSafeArea())
     }

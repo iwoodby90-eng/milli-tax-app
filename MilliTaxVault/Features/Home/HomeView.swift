@@ -11,37 +11,28 @@ struct HomeView: View {
     @State private var showTreeOfLife = false
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            // Main scrollable content
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: MilliLayout.sectionGap) {
-                    // MARK: Header — MILLI wordmark + bell
-                    headerSection
-                    
-                    // MARK: Hero — Available to Spend
-                    heroCard
-                    
-                    // MARK: Latest Payout — compact horizontal
-                    latestPayoutCard
-                    
-                    // MARK: 2x2 Metric Grid
-                    metricGrid
-                    
-                    // MARK: Milli AI Insight
-                    insightCard
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: MilliLayout.sectionGap) {
+                // MARK: Header — MILLI wordmark + bell
+                headerSection
+                
+                // MARK: Hero — Available to Spend
+                heroCard
+                
+                // MARK: Latest Payout — compact horizontal
+                latestPayoutCard
+                
+                // MARK: 2x2 Metric Grid
+                metricGrid
+                
+                // MARK: Milli AI Insight
+                insightCard
 
-                    // MARK: Tree of Life
-                    treeOfLifeCard
-                    
-                    // Bottom spacer for nav clearance
-                    Spacer()
-                        .frame(height: 120)
-                }
-                .padding(.top, 60) // Clear Dynamic Island + status bar fully
+                // MARK: Tree of Life
+                treeOfLifeCard
             }
-            
-            // MARK: Milli AI Orb — floating bottom-right
-            milliAIOrbOverlay
+            .padding(.top, 60)
+            .padding(.bottom, 100)
         }
         .background(MilliColors.obsidian.ignoresSafeArea())
         .fullScreenCover(isPresented: $showTreeOfLife) {
@@ -252,11 +243,7 @@ struct HomeView: View {
             .padding(.horizontal, MilliLayout.screenMargin)
     }
     
-    // MARK: - Milli AI Orb Overlay
-    private var milliAIOrbOverlay: some View {
-        MilliAIOrb()
-    }
-    
+
     // MARK: - Tree of Life Card
     private var treeOfLifeCard: some View {
         Button(action: { showTreeOfLife = true }) {

@@ -13,9 +13,8 @@ struct TaxVaultView: View {
     ]
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: MilliSpacing.xxl) {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: MilliSpacing.xxl) {
                     
                     // Header
                     HStack {
@@ -178,10 +177,7 @@ struct TaxVaultView: View {
                 }
             }
             
-            MilliAIOrb()
-                .padding(.trailing, 20)
-                .padding(.bottom, 110)
-        }
+
         .background(MilliColor.obsidian.ignoresSafeArea())
     }
 }
