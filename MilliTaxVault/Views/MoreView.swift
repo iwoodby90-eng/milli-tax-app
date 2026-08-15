@@ -1,108 +1,63 @@
 import SwiftUI
 
-// MARK: - MoreMenuView — Screen 12: More/Cockpit tab
-// Grid of navigation tiles leading to sub-screens:
-// Investing, Retirement, Tree of Life, Reports, Settings (Cockpit)
+// MARK: - MoreMenuView
+// Secondary product hub. Primary navigation stays Home / Payouts / M / Mileage / More.
 
 struct MoreMenuView: View {
     var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: MilliSpacing.lg) {
-                // MARK: - Header
-                headerSection
+            VStack(spacing: 10) {
+                header
 
-                // MARK: - Wealth Section
-                sectionTitle("WEALTH")
-                VStack(spacing: MilliSpacing.md) {
-                    menuTile(
-                        icon: "chart.line.uptrend.xyaxis",
-                        title: "Investing",
-                        subtitle: "Portfolio & market insights",
-                        color: MilliColors.cyan
-                    ) { navigate?(.investing) }
+                sectionTitle("GIG & TAX TOOLS")
+                menuTile(icon: "gauge.with.dots.needle.67percent", title: "Milli Cents™", subtitle: "Analyze a gig offer before you accept it", color: MilliColors.cyanGlow) { navigate?(.milliCents) }
+                menuTile(icon: "lock.shield.fill", title: "Milli Tax Vault™", subtitle: "Protected tax reserve and ledger", color: MilliColors.deepCyan) { navigate?(.taxVault) }
+                menuTile(icon: "checkmark.seal.fill", title: "Tax Ready Score™", subtitle: "See how prepared you are for tax season", color: MilliColors.positive) { navigate?(.taxReadyScore) }
+                menuTile(icon: "calendar.badge.clock", title: "Quarterly Taxes", subtitle: "Estimate, prepare, and track payments", color: MilliColors.warning) { navigate?(.quarterlyTaxes) }
 
-                    menuTile(
-                        icon: "building.columns.fill",
-                        title: "Retirement",
-                        subtitle: "IRA & 401(k) planning",
-                        color: MilliColors.green
-                    ) { navigate?(.retirement) }
+                sectionTitle("BUILD WEALTH")
+                menuTile(icon: "chart.xyaxis.line", title: "Investing", subtitle: "Markets, holdings, and portfolio performance", color: MilliColors.cyanGlow) { navigate?(.investing) }
+                menuTile(icon: "building.columns.fill", title: "Retirement", subtitle: "Contribution-based retirement projections", color: MilliColors.positive) { navigate?(.retirement) }
+                menuTile(icon: "tree.fill", title: "Tree of Life", subtitle: "Plan life events against your financial future", color: MilliColors.cyanGlow) { navigate?(.treeOfLife) }
 
-                    menuTile(
-                        icon: "tree.fill",
-                        title: "Tree of Life",
-                        subtitle: "Financial milestones",
-                        color: MilliColors.amber
-                    ) { navigate?(.treeOfLife) }
-                }
-
-                // MARK: - Insights Section
                 sectionTitle("INSIGHTS")
-                VStack(spacing: MilliSpacing.md) {
-                    menuTile(
-                        icon: "doc.text.fill",
-                        title: "Reports",
-                        subtitle: "Deductions & tax summaries",
-                        color: Color(hex: "9C27B0")
-                    ) { navigate?(.reports) }
-                }
+                menuTile(icon: "doc.text.fill", title: "Reports", subtitle: "Deductions, trips, exports, and summaries", color: Color(hex: "7C8CFF")) { navigate?(.reports) }
+                menuTile(icon: "sparkles", title: "Milli AI", subtitle: "Personalized intelligence across your money", color: MilliColors.cyanGlow) { navigate?(.milliAI) }
 
-                // MARK: - Account Section
                 sectionTitle("ACCOUNT")
-                VStack(spacing: MilliSpacing.md) {
-                    menuTile(
-                        icon: "gearshape.fill",
-                        title: "Settings",
-                        subtitle: "Profile, plan & preferences",
-                        color: MilliColors.silver
-                    ) {
-                        // Future: navigate to cockpit/settings
-                    }
-
-                    menuTile(
-                        icon: "questionmark.circle.fill",
-                        title: "Help Center",
-                        subtitle: "Support & FAQs",
-                        color: MilliColors.secondaryText
-                    ) {
-                        // Future: navigate to help
-                    }
-                }
-
-                Spacer(minLength: 40)
+                menuTile(icon: "gearshape.fill", title: "Settings", subtitle: "Profile, security, plan, and preferences", color: MilliColors.silver) {}
+                menuTile(icon: "questionmark.circle.fill", title: "Help Center", subtitle: "Support and product guidance", color: MilliColors.textSecondary) {}
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, MilliSpacing.md)
-            .padding(.bottom, 100)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
+    private var header: some View {
         HStack {
             Text("More")
                 .font(MilliFont.screenTitle)
-                .foregroundColor(.white)
+                .foregroundStyle(MilliColors.textPrimary)
             Spacer()
+            Image("MilliMLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 30, height: 30)
+                .opacity(0.78)
         }
-        .padding(.vertical, MilliSpacing.sm)
+        .padding(.bottom, 2)
     }
-
-    // MARK: - Section Title
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
             .sectionHeaderStyle()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 4)
-            .padding(.top, MilliSpacing.sm)
+            .padding(.top, 6)
     }
-
-    // MARK: - Menu Tile
 
     private func menuTile(
         icon: String,
@@ -112,45 +67,30 @@ struct MoreMenuView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                // Icon container
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(color.opacity(0.12))
-                        .frame(width: 44, height: 44)
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(color.opacity(0.09)))
 
-                    Image(systemName: icon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(color)
-                }
-
-                // Text
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(MilliFont.headline)
-                        .foregroundColor(.white)
-
+                        .font(MilliFont.headlineSmall)
+                        .foregroundStyle(MilliColors.textPrimary)
                     Text(subtitle)
-                        .font(MilliFont.caption)
-                        .foregroundColor(MilliColors.secondaryText)
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .lineLimit(2)
                 }
 
-                Spacer()
+                Spacer(minLength: 8)
 
-                // Chevron
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(white: 0.3))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MilliColors.textTertiary)
             }
-            .padding(MilliSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                    .fill(MilliColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                            .stroke(MilliColors.cardBorderGlow, lineWidth: 1)
-                    )
-            )
+            .milliCard(padding: 11)
         }
         .buttonStyle(.plain)
     }
