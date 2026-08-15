@@ -1,145 +1,163 @@
 import SwiftUI
 
-struct MilliCentsView: View {
-    @State private var offerAmount: Double = 32.64
+// MARK: - MilliCentsView — Screen 4: Offer Analyzer
+// Header | Offer amount | Stats grid | Add to Vault | Net Profit | GO button
 
-    var netProfit: Double { offerAmount - 4.87 - 6.21 }
-    var isProfitable: Bool { netProfit > 0 }
+struct MilliCentsView: View {
+    var onBack: () -> Void = {}
 
     var body: some View {
-        ZStack {
-            Color(hex: "0A0A0C").ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 16) {
-                    Text("M I L L I")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.white)
-                        .tracking(6)
-                        .opacity(0.5)
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Milli Cents™")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Offer Analyzer")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(Color(hex: "00E5FF"))
-                        }
-                        Spacer()
-                        Text("How it works $")
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(hex: "00E5FF"))
-                    }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: MilliSpacing.lg) {
+                headerSection
+                offerAmountSection
+                statsGrid
+                addToVaultButton
+                netProfitCard
+                goButton
+            }
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, MilliSpacing.md)
+            .padding(.bottom, 100)
+        }
+        .background(MilliColors.background.ignoresSafeArea())
+    }
 
-                    // Offer amount card
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("OFFER AMOUNT")
-                                .font(.system(size: 11))
-                                .foregroundColor(Color.white.opacity(0.5))
-                                .tracking(1.5)
-                            Text("$\(offerAmount, specifier: "%.2f")")
-                                .font(.system(size: 36, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(Color.white.opacity(0.4))
-                    }
-                    .padding(20)
-                    .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 12))
+    // MARK: - Header
 
-                    // Breakdown
-                    VStack(spacing: 0) {
-                        ForEach(Array(breakdownRows.enumerated()), id: \.offset) { _, row in
-                            HStack {
-                                Image(systemName: row.icon)
-                                    .font(.system(size: 15))
-                                    .foregroundColor(Color(hex: "00E5FF"))
-                                    .frame(width: 28)
-                                Text(row.label)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Text(row.value)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.7))
-                            }
-                            .padding(.horizontal, 20)
-                            .frame(height: 44)
-                            Divider().background(Color.white.opacity(0.08))
-                        }
-                    }
-                    .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 12))
+    private var headerSection: some View {
+        HStack {
+            Button { onBack() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(MilliColors.textSecondary)
+            }
+            .buttonStyle(.plain)
 
-                    // Net profit
-                    VStack(spacing: 4) {
-                        Text("NET PROFIT")
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.white.opacity(0.5))
-                            .tracking(1.5)
-                        Text("$\(netProfit, specifier: "%.2f")")
-                            .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("PROFIT PER MILE: $0.56")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color.white.opacity(0.5))
-                    }
-                    .padding(20)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 12))
+            Text("Milli Cents\u{2122} Offer Analyzer")
+                .font(MilliFont.screenTitle)
+                .foregroundColor(MilliColors.textPrimary)
 
-                    // Go/Pass
-                    VStack(spacing: 4) {
-                        Text(isProfitable ? "GO" : "PASS")
-                            .font(.system(size: 48, weight: .black))
-                            .foregroundColor(isProfitable ? Color(hex: "00C853") : Color.red)
-                        Text(isProfitable ? "This offer is profitable." : "This offer is not profitable.")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-                    }
-                    .padding(20)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        isProfitable ? Color(hex: "0D2A1A") : Color(hex: "2A0D0D"),
-                        in: RoundedRectangle(cornerRadius: 12)
-                    )
+            Spacer()
+        }
+        .padding(.vertical, MilliSpacing.sm)
+    }
 
-                    Button(action: {}) {
-                        Text("Analyze New Offer")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(Color(hex: "00E5FF"), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                    .padding(.bottom, 100)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
+    // MARK: - Offer Amount
+
+    private var offerAmountSection: some View {
+        VStack(spacing: 6) {
+            Text("OFFER AMOUNT")
+                .font(MilliFont.label)
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(1)
+
+            Text("$32.64")
+                .font(MilliFont.heroNumber)
+                .foregroundColor(MilliColors.cyanGlow)
+        }
+        .frame(maxWidth: .infinity)
+        .milliCard(padding: MilliSpacing.cardPaddingLarge)
+    }
+
+    // MARK: - Stats Grid (3x2)
+
+    private var statsGrid: some View {
+        VStack(spacing: MilliSpacing.sm) {
+            HStack(spacing: MilliSpacing.gridGap) {
+                statCell(label: "Estimated Miles", value: "24.8")
+                statCell(label: "Dead Miles", value: "6.4")
+            }
+            HStack(spacing: MilliSpacing.gridGap) {
+                statCell(label: "Return Miles", value: "7.2")
+                statCell(label: "Total Miles", value: "38.4")
+            }
+            HStack(spacing: MilliSpacing.gridGap) {
+                statCell(label: "Fuel Cost", value: "$4.87", valueColor: MilliColors.warning)
+                statCell(label: "Tax Impact", value: "$6.21", valueColor: MilliColors.cyanGlow)
             }
         }
     }
 
-    // MARK: - Data
-    private struct BreakdownRow {
-        let label: String
-        let value: String
-        let icon: String
+    private func statCell(label: String, value: String, valueColor: Color = MilliColors.textPrimary) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(MilliFont.caption)
+                .foregroundColor(MilliColors.textSecondary)
+            Text(value)
+                .font(MilliFont.numericMedium)
+                .foregroundColor(valueColor)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard()
     }
 
-    private var breakdownRows: [BreakdownRow] {
-        [
-            BreakdownRow(label: "Estimated Miles", value: "24.8 mi", icon: "car"),
-            BreakdownRow(label: "Dead Miles", value: "6.4 mi", icon: "road.lanes"),
-            BreakdownRow(label: "Return Miles", value: "7.2 mi", icon: "arrow.uturn.left"),
-            BreakdownRow(label: "Total Miles", value: "38.4 mi", icon: "point.topleft.down.to.point.bottomright.curvepath"),
-            BreakdownRow(label: "Fuel Cost", value: "$4.87", icon: "fuelpump"),
-            BreakdownRow(label: "Tax Impact", value: "$6.21", icon: "percent"),
-        ]
-    }
-}
+    // MARK: - Add to Vault Button
 
-#Preview {
-    MilliCentsView()
+    private var addToVaultButton: some View {
+        Button {} label: {
+            Text("Add to Vault")
+                .font(MilliFont.headline)
+                .foregroundColor(MilliColors.blackGlass)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .fill(MilliColors.cyanGlow)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Net Profit Card
+
+    private var netProfitCard: some View {
+        VStack(spacing: 6) {
+            Text("NET PROFIT")
+                .font(MilliFont.label)
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(1)
+
+            Text("$21.56")
+                .font(MilliFont.numericLarge)
+                .foregroundColor(MilliColors.positive)
+
+            Text("$0.56 per mile")
+                .font(MilliFont.bodySmall)
+                .foregroundColor(MilliColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .milliCard(padding: MilliSpacing.cardPaddingLarge)
+    }
+
+    // MARK: - GO Button
+
+    private var goButton: some View {
+        Button {} label: {
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                VStack(spacing: 2) {
+                    Text("GO")
+                        .font(MilliFont.headline)
+                    Text("Profitable Offer")
+                        .font(MilliFont.caption)
+                }
+            }
+            .foregroundColor(MilliColors.blackGlass)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [MilliColors.positive, Color(hex: "00D68F")],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
 }

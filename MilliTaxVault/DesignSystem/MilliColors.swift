@@ -1,20 +1,27 @@
 import SwiftUI
 
 // MARK: - MilliColors — Single source of truth for the Milli palette
-// Deep navy foundation, cyan accents, chrome highlights.
+// Brand spec: blackGlass foundation, cyanGlow accents, chrome/silver highlights.
 
 enum MilliColors {
+    // MARK: Core Brand Colors (from Image 18 brand sheet)
+    static let cyanGlow = Color(hex: "00E5FF")
+    static let deepCyan = Color(hex: "009CFF")
+    static let silver = Color(hex: "D5D7DB")
+    static let graphite = Color(hex: "080D10")
+    static let blackGlass = Color(hex: "050808")
+
     // MARK: Backgrounds
-    static let background = Color(hex: "0A0E1A")
-    static let cardBackground = Color(hex: "111827")
-    static let cardBackgroundElevated = Color(hex: "1A2236")
-    static let heroGradientTop = Color(hex: "141E33")
-    static let heroGradientBottom = Color(hex: "0D1220")
+    static let background = blackGlass
+    static let cardBackground = Color(hex: "0C1014")
+    static let cardBackgroundElevated = Color(hex: "121920")
+    static let heroGradientTop = Color(hex: "0E1418")
+    static let heroGradientBottom = Color(hex: "080D10")
 
     // MARK: Accent / Cyan
-    static let cyan = Color(hex: "00D4FF")
-    static let cyanDim = Color(hex: "00A3CC")
-    static let cyanGlow = Color(hex: "00D4FF").opacity(0.3)
+    static let cyan = cyanGlow
+    static let cyanDim = Color(hex: "00B8D4")
+    static let cyanGlowOpacity = cyanGlow.opacity(0.3)
 
     // MARK: Chrome / Metallic
     static let chromeLight = Color(hex: "E8ECF0")
@@ -31,19 +38,25 @@ enum MilliColors {
     static let positive = Color(hex: "34D399")
     static let negative = Color(hex: "EF4444")
     static let warning = Color(hex: "FBBF24")
+    static let orange = Color(hex: "F97316")
 
     // MARK: Nav Bar
-    static let navBarBackground = Color(hex: "080C16")
+    static let navBarBackground = Color(hex: "050808")
     static let navBarBorder = Color(hex: "1F2937")
-    static let navTabActive = Color.white
+    static let navTabActive = cyanGlow
     static let navTabInactive = Color(hex: "6B7280")
 
     // MARK: Surface / Borders
-    static let border = Color(hex: "1F2937")
+    static let border = Color(hex: "1A2530")
     static let borderSubtle = Color(hex: "1A2236").opacity(0.6)
+    static let cardBorderGlow = cyanGlow.opacity(0.15)
 
     // MARK: Legacy Aliases (backward compat)
     static let textMuted = textSecondary
+    static let secondaryText = textSecondary
+    static let green = positive
+    static let amber = warning
+    static let red = negative
     static let obsidian = background
     static let shimmer = Color.white.opacity(0.05)
 }

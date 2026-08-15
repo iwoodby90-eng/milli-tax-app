@@ -5,110 +5,113 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab: MilliTab = .home
     @State private var showAIChat = false
+    @State private var activeScreen: ActiveScreen = .home
 
     var body: some View {
         ZStack(alignment: .bottom) {
             // Main content area
-            tabContent
+            screenContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // Floating AI Orb — bottom right, above nav
-            VStack {
-                Spacer()
-                HStack {
+            if activeScreen != .milliAI {
+                VStack {
                     Spacer()
-                    MilliAIOrb {
-                        showAIChat = true
+                    HStack {
+                        Spacer()
+                        MilliAIOrb {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                activeScreen = .milliAI
+                            }
+                        }
+                        .padding(.trailing, MilliSpacing.screenHorizontal)
+                        .padding(.bottom, 88)
                     }
-                    .padding(.trailing, MilliSpacing.screenHorizontal)
-                    .padding(.bottom, 80) // Above nav bar
                 }
             }
 
             // Bottom nav bar
             MilliNavBar(selectedTab: $selectedTab) {
                 // M Dial tap — navigate home
-                selectedTab = .home
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    selectedTab = .home
+                    activeScreen = .home
+                }
+            }
+            .onChange(of: selectedTab) { _, newTab in
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    switch newTab {
+                    case .home:
+                        activeScreen = .home
+                    case .payouts:
+                        activeScreen = .payouts
+                    case .mDial:
+                        activeScreen = .home
+                    case .more:
+                        activeScreen = .more
+                    }
+                }
             }
         }
         .background(MilliColors.background.ignoresSafeArea())
         .preferredColorScheme(.dark)
     }
 
-    // MARK: - Tab Content Router
+    // MARK: - Screen Content Router
 
     @ViewBuilder
-    private var tabContent: some View {
-        switch selectedTab {
+    private var screenContent: some View {
+        switch activeScreen {
         case .home:
-            HomeView()
+            HomeView(navigate: navigateTo)
         case .payouts:
-            PayoutsPlaceholderView()
-        case .mDial:
-            HomeView() // M always routes home
+            PayoutsView()
         case .mileage:
-            MileagePlaceholderView()
+            MileageView(onBack: { activeScreen = .home })
+        case .milliCents:
+            MilliCentsView(onBack: { activeScreen = .home })
+        case .taxVault:
+            TaxVaultView(onBack: { activeScreen = .home })
+        case .taxReadyScore:
+            TaxReadyScoreView(onBack: { activeScreen = .home })
+        case .quarterlyTaxes:
+            QuarterlyTaxesView(onBack: { activeScreen = .home })
+        case .investing:
+            InvestingView(onBack: { activeScreen = .more })
+        case .retirement:
+            RetirementView(onBack: { activeScreen = .more })
+        case .treeOfLife:
+            TreeOfLifeView(onBack: { activeScreen = .more })
+        case .milliAI:
+            MilliAIView(onBack: { activeScreen = .home })
+        case .reports:
+            ReportsView(onBack: { activeScreen = .more })
         case .more:
-            MorePlaceholderView()
+            MoreMenuView(navigate: navigateTo)
+        }
+    }
+
+    private func navigateTo(_ screen: ActiveScreen) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            activeScreen = screen
         }
     }
 }
 
-// MARK: - Placeholder views for tabs not yet built
+// MARK: - Active Screen Enum
 
-struct PayoutsPlaceholderView: View {
-    var body: some View {
-        ZStack {
-            MilliColors.background.ignoresSafeArea()
-            VStack(spacing: 12) {
-                Image(systemName: "arrow.down.circle")
-                    .font(.system(size: 40, weight: .light))
-                    .foregroundColor(MilliColors.cyan)
-                Text("Payouts")
-                    .font(MilliFont.headline())
-                    .foregroundColor(MilliColors.textPrimary)
-                Text("Coming soon")
-                    .font(MilliFont.bodySmall())
-                    .foregroundColor(MilliColors.textSecondary)
-            }
-        }
-    }
-}
-
-struct MileagePlaceholderView: View {
-    var body: some View {
-        ZStack {
-            MilliColors.background.ignoresSafeArea()
-            VStack(spacing: 12) {
-                Image(systemName: "car.fill")
-                    .font(.system(size: 40, weight: .light))
-                    .foregroundColor(MilliColors.cyan)
-                Text("Mileage")
-                    .font(MilliFont.headline())
-                    .foregroundColor(MilliColors.textPrimary)
-                Text("Coming soon")
-                    .font(MilliFont.bodySmall())
-                    .foregroundColor(MilliColors.textSecondary)
-            }
-        }
-    }
-}
-
-struct MorePlaceholderView: View {
-    var body: some View {
-        ZStack {
-            MilliColors.background.ignoresSafeArea()
-            VStack(spacing: 12) {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 40, weight: .light))
-                    .foregroundColor(MilliColors.cyan)
-                Text("More")
-                    .font(MilliFont.headline())
-                    .foregroundColor(MilliColors.textPrimary)
-                Text("Coming soon")
-                    .font(MilliFont.bodySmall())
-                    .foregroundColor(MilliColors.textSecondary)
-            }
-        }
-    }
+enum ActiveScreen {
+    case home
+    case payouts
+    case mileage
+    case milliCents
+    case taxVault
+    case taxReadyScore
+    case quarterlyTaxes
+    case investing
+    case retirement
+    case treeOfLife
+    case milliAI
+    case reports
+    case more
 }

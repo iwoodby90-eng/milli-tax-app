@@ -1,88 +1,162 @@
 import SwiftUI
 
-struct MoreView: View {
-    @State private var showTaxVault = false
-    @State private var showMilliCents = false
-    @State private var showExpenses = false
-    @State private var showReports = false
+// MARK: - MoreMenuView — Screen 12: More/Cockpit tab
+// Grid of navigation tiles leading to sub-screens:
+// Investing, Retirement, Tree of Life, Reports, Settings (Cockpit)
 
-    struct MenuItem: Identifiable {
-        let id = UUID()
-        let icon: String
-        let title: String
-        let color: Color
-    }
-
-    let items: [MenuItem] = [
-        MenuItem(icon: "lock.shield.fill", title: "Milli Tax Vault™", color: Color(hex: "00E5FF")),
-        MenuItem(icon: "bolt.fill", title: "Milli Cents™", color: Color(hex: "FFD700")),
-        MenuItem(icon: "doc.text.fill", title: "Expenses", color: Color(hex: "4CAF50")),
-        MenuItem(icon: "chart.bar.fill", title: "Reports", color: Color(hex: "2196F3")),
-        MenuItem(icon: "gearshape.fill", title: "Settings", color: Color.gray),
-    ]
+struct MoreMenuView: View {
+    var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
-        ZStack {
-            Color(hex: "0A0A0C").ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 0) {
-                    Text("M I L L I")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.white)
-                        .tracking(6)
-                        .opacity(0.5)
-                        .padding(.bottom, 8)
-                    Text("More")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 20)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: MilliSpacing.lg) {
+                // MARK: - Header
+                headerSection
 
-                    VStack(spacing: 0) {
-                        ForEach(items) { item in
-                            Button(action: {
-                                if item.title == "Milli Tax Vault™" { showTaxVault = true }
-                                else if item.title == "Milli Cents™" { showMilliCents = true }
-                                else if item.title == "Expenses" { showExpenses = true }
-                                else if item.title == "Reports" { showReports = true }
-                            }) {
-                                HStack(spacing: 16) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(item.color.opacity(0.15))
-                                            .frame(width: 44, height: 44)
-                                        Image(systemName: item.icon)
-                                            .font(.system(size: 20))
-                                            .foregroundColor(item.color)
-                                    }
-                                    Text(item.title)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(Color.white.opacity(0.3))
-                                }
-                                .padding(.horizontal, 16)
-                                .frame(height: 64)
-                            }
-                            Divider().background(Color.white.opacity(0.08))
-                        }
-                    }
-                    .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 12))
-                    .padding(.bottom, 100)
+                // MARK: - Wealth Section
+                sectionTitle("WEALTH")
+                VStack(spacing: MilliSpacing.md) {
+                    menuTile(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "Investing",
+                        subtitle: "Portfolio & market insights",
+                        color: MilliColors.cyan
+                    ) { navigate?(.investing) }
+
+                    menuTile(
+                        icon: "building.columns.fill",
+                        title: "Retirement",
+                        subtitle: "IRA & 401(k) planning",
+                        color: MilliColors.green
+                    ) { navigate?(.retirement) }
+
+                    menuTile(
+                        icon: "tree.fill",
+                        title: "Tree of Life",
+                        subtitle: "Financial milestones",
+                        color: MilliColors.amber
+                    ) { navigate?(.treeOfLife) }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
+
+                // MARK: - Insights Section
+                sectionTitle("INSIGHTS")
+                VStack(spacing: MilliSpacing.md) {
+                    menuTile(
+                        icon: "doc.text.fill",
+                        title: "Reports",
+                        subtitle: "Deductions & tax summaries",
+                        color: Color(hex: "9C27B0")
+                    ) { navigate?(.reports) }
+                }
+
+                // MARK: - Account Section
+                sectionTitle("ACCOUNT")
+                VStack(spacing: MilliSpacing.md) {
+                    menuTile(
+                        icon: "gearshape.fill",
+                        title: "Settings",
+                        subtitle: "Profile, plan & preferences",
+                        color: MilliColors.silver
+                    ) {
+                        // Future: navigate to cockpit/settings
+                    }
+
+                    menuTile(
+                        icon: "questionmark.circle.fill",
+                        title: "Help Center",
+                        subtitle: "Support & FAQs",
+                        color: MilliColors.secondaryText
+                    ) {
+                        // Future: navigate to help
+                    }
+                }
+
+                Spacer(minLength: 40)
             }
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, MilliSpacing.md)
+            .padding(.bottom, 100)
         }
-        .sheet(isPresented: $showTaxVault) { MilliTaxVaultScreen() }
-        .sheet(isPresented: $showMilliCents) { MilliCentsView() }
-        .sheet(isPresented: $showExpenses) { ExpensesView() }
-        .sheet(isPresented: $showReports) { ReportsView() }
+        .background(MilliColors.background.ignoresSafeArea())
+    }
+
+    // MARK: - Header
+
+    private var headerSection: some View {
+        HStack {
+            Text("More")
+                .font(MilliFont.screenTitle)
+                .foregroundColor(.white)
+            Spacer()
+        }
+        .padding(.vertical, MilliSpacing.sm)
+    }
+
+    // MARK: - Section Title
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .sectionHeaderStyle()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 4)
+            .padding(.top, MilliSpacing.sm)
+    }
+
+    // MARK: - Menu Tile
+
+    private func menuTile(
+        icon: String,
+        title: String,
+        subtitle: String,
+        color: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                // Icon container
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(color.opacity(0.12))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(color)
+                }
+
+                // Text
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(MilliFont.headline)
+                        .foregroundColor(.white)
+
+                    Text(subtitle)
+                        .font(MilliFont.caption)
+                        .foregroundColor(MilliColors.secondaryText)
+                }
+
+                Spacer()
+
+                // Chevron
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(white: 0.3))
+            }
+            .padding(MilliSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .fill(MilliColors.cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                            .stroke(MilliColors.cardBorderGlow, lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
-    MoreView()
+    MoreMenuView()
+        .preferredColorScheme(.dark)
 }

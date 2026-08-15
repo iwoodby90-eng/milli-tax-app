@@ -1,11 +1,12 @@
 import SwiftUI
 
-// MARK: - HomeView — Primary dashboard screen
-// Matches the 12-screen master reference: hero card with sparkline,
-// latest payout row, 2x2 metric grid, AI insight card.
+// MARK: - HomeView — Primary dashboard screen (Screen 1)
+// Header: MILLI wordmark + bell | Available to Spend hero | Latest Payout
+// 2x2 metric grid | AI Insight card
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -23,47 +24,31 @@ struct HomeView: View {
         .background(MilliColors.background.ignoresSafeArea())
     }
 
-    // MARK: - Header (MILLI wordmark + icons)
+    // MARK: - Header (MILLI wordmark + bell icon)
 
     private var headerSection: some View {
         HStack {
-            Spacer()
-
-            // MILLI wordmark — chrome gradient
-            Text("MILLI")
-                .font(MilliFont.wordmark())
+            // MILLI wordmark — spaced letters, chrome gradient
+            Text("M I L L I")
+                .font(MilliFont.wordmark)
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.white, Color(hex: "00D4FF").opacity(0.8)],
+                        colors: [.white, MilliColors.cyanGlow.opacity(0.8)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .tracking(2)
+                .tracking(1)
 
             Spacer()
 
             // Notification bell
             Button {} label: {
-                Image(systemName: "bell")
+                Image(systemName: "bell.fill")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(MilliColors.textSecondary)
+                    .foregroundColor(MilliColors.silver)
             }
             .buttonStyle(.plain)
-
-            // Profile avatar
-            Button {} label: {
-                Circle()
-                    .fill(MilliColors.cardBackgroundElevated)
-                    .frame(width: 32, height: 32)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(MilliColors.textSecondary)
-                    )
-            }
-            .buttonStyle(.plain)
-            .padding(.leading, 8)
         }
         .padding(.vertical, MilliSpacing.sm)
     }
@@ -72,20 +57,19 @@ struct HomeView: View {
 
     private var heroCard: some View {
         VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-            Text("AVAILABLE TO SPEND")
-                .font(MilliFont.label())
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(1.2)
+            Text("Available to Spend")
+                .font(MilliFont.labelLarge)
+                .foregroundColor(MilliColors.textSecondary)
 
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(viewModel.availableToSpend)
-                        .font(MilliFont.numericLarge())
-                        .foregroundColor(MilliColors.textPrimary)
+                        .font(MilliFont.heroNumber)
+                        .foregroundColor(MilliColors.cyanGlow)
                         .contentTransition(.numericText())
 
                     Text("Updated just now")
-                        .font(MilliFont.bodySmall())
+                        .font(MilliFont.caption)
                         .foregroundColor(MilliColors.textTertiary)
                 }
 
@@ -95,20 +79,20 @@ struct HomeView: View {
                 HStack(spacing: 12) {
                     MilliSparkline(
                         data: viewModel.sparklineData,
-                        color: MilliColors.cyan,
+                        color: MilliColors.cyanGlow,
                         height: 40
                     )
-                    .frame(width: 60)
+                    .frame(width: 64)
 
                     // Cyan-filled circle arrow button
                     Button {} label: {
                         Circle()
-                            .fill(MilliColors.cyan)
-                            .frame(width: 32, height: 32)
+                            .fill(MilliColors.cyanGlow)
+                            .frame(width: 36, height: 36)
                             .overlay(
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(MilliColors.background)
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(MilliColors.blackGlass)
                             )
                     }
                     .buttonStyle(.plain)
@@ -127,7 +111,7 @@ struct HomeView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
-                        .stroke(MilliColors.border, lineWidth: 0.5)
+                        .stroke(MilliColors.cardBorderGlow, lineWidth: 1)
                 )
         )
     }
@@ -137,38 +121,32 @@ struct HomeView: View {
     private var latestPayoutRow: some View {
         VStack(alignment: .leading, spacing: MilliSpacing.sm) {
             Text("LATEST PAYOUT")
-                .font(MilliFont.label())
+                .font(MilliFont.label)
                 .foregroundColor(MilliColors.textLabel)
                 .tracking(1.0)
 
             HStack(spacing: MilliSpacing.md) {
-                // Platform logo circle
+                // Walmart/Spark icon circle
                 Circle()
-                    .fill(Color(hex: "1E40AF"))
-                    .frame(width: 40, height: 40)
+                    .fill(Color(hex: "0071CE"))
+                    .frame(width: 42, height: 42)
                     .overlay(
-                        Text(viewModel.latestPayout.platformInitial)
+                        Image(systemName: "star.fill")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     )
 
-                // Platform name + date
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.latestPayout.platformName)
-                        .font(MilliFont.headlineSmall())
+                    Text("$312.64")
+                        .font(MilliFont.numericMedium)
                         .foregroundColor(MilliColors.textPrimary)
 
-                    Text(viewModel.latestPayout.dateTime)
-                        .font(MilliFont.bodySmall())
+                    Text("Today, 9:41 AM \u{2022} Spark Driver")
+                        .font(MilliFont.bodySmall)
                         .foregroundColor(MilliColors.textSecondary)
                 }
 
                 Spacer()
-
-                // Amount
-                Text(viewModel.latestPayout.amount)
-                    .font(MilliFont.numericMedium())
-                    .foregroundColor(MilliColors.positive)
             }
             .milliCard()
         }
@@ -177,149 +155,199 @@ struct HomeView: View {
     // MARK: - 2x2 Metric Grid
 
     private var metricGrid: some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: MilliSpacing.gridGap),
-                GridItem(.flexible(), spacing: MilliSpacing.gridGap)
-            ],
-            spacing: MilliSpacing.gridGap
-        ) {
-            taxVaultCard
-            taxReadyScoreCard
-            quarterlyTaxesCard
-            mileageCard
+        VStack(spacing: MilliSpacing.gridGap) {
+            HStack(spacing: MilliSpacing.gridGap) {
+                taxVaultCard
+                taxReadyScoreCard
+            }
+            HStack(spacing: MilliSpacing.gridGap) {
+                quarterlyTaxesCard
+                mileageCard
+            }
         }
     }
 
     // Tax Vault card
     private var taxVaultCard: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-            Text("MILLI TAX VAULT\u{2122}")
-                .font(MilliFont.label())
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(0.8)
+        Button {
+            navigate?(.taxVault)
+        } label: {
+            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+                Text("MILLI TAX VAULT")
+                    .font(MilliFont.label)
+                    .foregroundColor(MilliColors.textLabel)
+                    .tracking(0.8)
 
-            Text(viewModel.taxVaultBalance)
-                .font(MilliFont.numericMedium())
-                .foregroundColor(MilliColors.textPrimary)
+                Text(viewModel.taxVaultBalance)
+                    .font(MilliFont.numericMedium)
+                    .foregroundColor(MilliColors.cyanGlow)
 
-            Text("22% of annual target")
-                .font(MilliFont.bodySmall())
-                .foregroundColor(MilliColors.textSecondary)
+                Text("23% of annual target")
+                    .font(MilliFont.caption)
+                    .foregroundColor(MilliColors.textSecondary)
+
+                // Mini donut indicator
+                ZStack {
+                    Circle()
+                        .stroke(MilliColors.border, lineWidth: 3)
+                        .frame(width: 28, height: 28)
+                    Circle()
+                        .trim(from: 0, to: 0.23)
+                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 28, height: 28)
+                        .rotationEffect(.degrees(-90))
+                }
+                .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .milliCard()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .milliCard()
+        .buttonStyle(.plain)
     }
 
-    // Tax Ready Score card — with progress ring
+    // Tax Ready Score card
     private var taxReadyScoreCard: some View {
-        VStack(spacing: MilliSpacing.sm) {
-            Text("TAX READY SCORE\u{2122}")
-                .font(MilliFont.label())
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        Button {
+            navigate?(.taxReadyScore)
+        } label: {
+            VStack(spacing: MilliSpacing.sm) {
+                Text("TAX READY SCORE")
+                    .font(MilliFont.label)
+                    .foregroundColor(MilliColors.textLabel)
+                    .tracking(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            ZStack {
-                // Background ring
-                Circle()
-                    .stroke(MilliColors.border, lineWidth: 4)
-                    .frame(width: 52, height: 52)
+                ZStack {
+                    Circle()
+                        .stroke(MilliColors.border, lineWidth: 4)
+                        .frame(width: 54, height: 54)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(viewModel.taxReadyScore) / 100.0)
+                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 54, height: 54)
+                        .rotationEffect(.degrees(-90))
+                    Text("\(viewModel.taxReadyScore)")
+                        .font(MilliFont.numericMedium)
+                        .foregroundColor(MilliColors.textPrimary)
+                }
 
-                // Progress arc
-                Circle()
-                    .trim(from: 0, to: CGFloat(viewModel.taxReadyScore) / 100.0)
-                    .stroke(MilliColors.cyan, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 52, height: 52)
-                    .rotationEffect(.degrees(-90))
-
-                // Score number
-                Text("\(viewModel.taxReadyScore)")
-                    .font(MilliFont.numericMedium())
-                    .foregroundColor(MilliColors.textPrimary)
+                Text("Great - You're on track\nfor tax season")
+                    .font(MilliFont.caption)
+                    .foregroundColor(MilliColors.positive)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
             }
-
-            Text("Great")
-                .font(MilliFont.labelLarge())
-                .foregroundColor(MilliColors.positive)
+            .frame(maxWidth: .infinity)
+            .milliCard()
         }
-        .frame(maxWidth: .infinity)
-        .milliCard()
+        .buttonStyle(.plain)
     }
 
     // Quarterly Taxes card
     private var quarterlyTaxesCard: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-            Text("QUARTERLY TAXES")
-                .font(MilliFont.label())
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(0.8)
+        Button {
+            navigate?(.quarterlyTaxes)
+        } label: {
+            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+                Text("QUARTERLY TAXES")
+                    .font(MilliFont.label)
+                    .foregroundColor(MilliColors.textLabel)
+                    .tracking(0.8)
 
-            Text(viewModel.quarterlyTaxes)
-                .font(MilliFont.numericMedium())
-                .foregroundColor(MilliColors.textPrimary)
+                Text(viewModel.quarterlyTaxes)
+                    .font(MilliFont.numericMedium)
+                    .foregroundColor(MilliColors.cyanGlow)
 
-            Text("Est. due Jun 15, 2025")
-                .font(MilliFont.bodySmall())
-                .foregroundColor(MilliColors.textSecondary)
+                Text("Est. due Jun 15, 2024")
+                    .font(MilliFont.caption)
+                    .foregroundColor(MilliColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .milliCard()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .milliCard()
+        .buttonStyle(.plain)
     }
 
     // Mileage card
     private var mileageCard: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-            Text("MILEAGE")
-                .font(MilliFont.label())
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(0.8)
+        Button {
+            navigate?(.mileage)
+        } label: {
+            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+                Text("MILEAGE")
+                    .font(MilliFont.label)
+                    .foregroundColor(MilliColors.textLabel)
+                    .tracking(0.8)
 
-            Text(viewModel.mileage)
-                .font(MilliFont.numericMedium())
-                .foregroundColor(MilliColors.textPrimary)
+                HStack(spacing: 6) {
+                    Text(viewModel.mileage)
+                        .font(MilliFont.numericMedium)
+                        .foregroundColor(MilliColors.cyanGlow)
+                }
 
-            Text("This quarter")
-                .font(MilliFont.bodySmall())
-                .foregroundColor(MilliColors.textSecondary)
+                Image(systemName: "car.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(MilliColors.cyanGlow.opacity(0.7))
+                    .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .milliCard()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .milliCard()
+        .buttonStyle(.plain)
     }
 
     // MARK: - AI Insight Card
 
     private var aiInsightCard: some View {
-        HStack(spacing: MilliSpacing.md) {
-            // Robot icon
-            ZStack {
-                Circle()
-                    .fill(MilliColors.cyan.opacity(0.15))
-                    .frame(width: 40, height: 40)
+        Button {
+            navigate?(.milliAI)
+        } label: {
+            HStack(spacing: MilliSpacing.md) {
+                // Robot avatar
+                ZStack {
+                    Circle()
+                        .fill(MilliColors.cyanGlow.opacity(0.12))
+                        .frame(width: 44, height: 44)
 
-                Image(systemName: "cpu")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(MilliColors.cyan)
+                    // Robot face
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "1A2E4A"), Color(hex: "0D1B2E")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 30, height: 26)
+                        .overlay(
+                            HStack(spacing: 6) {
+                                Circle().fill(MilliColors.cyanGlow).frame(width: 6, height: 6)
+                                Circle().fill(MilliColors.cyanGlow).frame(width: 6, height: 6)
+                            }
+                        )
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MILLI AI INSIGHT")
+                        .font(MilliFont.label)
+                        .foregroundColor(MilliColors.textLabel)
+                        .tracking(0.8)
+
+                    Text(viewModel.aiInsight)
+                        .font(MilliFont.bodyMedium)
+                        .foregroundColor(MilliColors.textPrimary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(MilliColors.textTertiary)
             }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("MILLI AI INSIGHT")
-                    .font(MilliFont.label())
-                    .foregroundColor(MilliColors.textLabel)
-                    .tracking(0.8)
-
-                Text(viewModel.aiInsight)
-                    .font(MilliFont.bodyMedium())
-                    .foregroundColor(MilliColors.textPrimary)
-                    .lineLimit(2)
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(MilliColors.textTertiary)
+            .milliCard(padding: MilliSpacing.cardPaddingLarge)
         }
-        .milliCard(padding: MilliSpacing.cardPaddingLarge)
+        .buttonStyle(.plain)
     }
 }

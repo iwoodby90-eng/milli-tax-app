@@ -118,3 +118,14 @@ enum SampleData {
         ChartDataPoint(day: 7, value: 1365)
     ]
 }
+
+// MARK: - RetirementAccount
+
+struct RetirementAccount: Identifiable {
+    let id = UUID()
+    let name: String
+    let type: String
+    let currentBalance: Double
+    let monthlyContribution: Double
+    let annualReturn: Double
+}

@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 struct ReportsView: View {
+    var onBack: () -> Void = {}
     @State private var selectedTab = 1
     let tabs = ["Overview", "Deductions", "Trips"]
 

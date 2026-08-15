@@ -69,6 +69,10 @@
 		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204; };
 		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205; };
 		A10206 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10206; };
+		A10207 /* MilliAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10207; };
+		A10208 /* PayoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10208; };
+		A10209 /* QuarterlyTaxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10209; };
+		A10210 /* TaxReadyScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10210; };
 		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
 		AF0002 /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0002; };
 		AF0003 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0003; };
@@ -143,6 +147,10 @@
 		B10204 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		B10205 /* WealthOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WealthOverviewView.swift; sourceTree = "<group>"; };
 		B10206 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
+		B10207 /* MilliAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIView.swift; sourceTree = "<group>"; };
+		B10208 /* PayoutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutsView.swift; sourceTree = "<group>"; };
+		B10209 /* QuarterlyTaxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxesView.swift; sourceTree = "<group>"; };
+		B10210 /* TaxReadyScoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxReadyScoreView.swift; sourceTree = "<group>"; };
 		BF0001 /* Sora-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Regular.ttf"; sourceTree = "<group>"; };
 		BF0002 /* Sora-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Medium.ttf"; sourceTree = "<group>"; };
 		BF0003 /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-SemiBold.ttf"; sourceTree = "<group>"; };
@@ -209,6 +217,10 @@
 				B10204 /* ReportsView.swift */,
 				B10205 /* WealthOverviewView.swift */,
 				B10206 /* MoreView.swift */,
+				B10207 /* MilliAIView.swift */,
+				B10208 /* PayoutsView.swift */,
+				B10209 /* QuarterlyTaxesView.swift */,
+				B10210 /* TaxReadyScoreView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -449,6 +461,10 @@
 				A10204,
 				A10205,
 				A10206,
+				A10207,
+				A10208,
+				A10209,
+				A10210,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
