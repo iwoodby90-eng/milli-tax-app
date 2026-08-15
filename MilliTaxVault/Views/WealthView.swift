@@ -13,8 +13,19 @@ struct WealthView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: MilliLayout.sectionGap) {
-                // Header
+                // Centered MILLI Header
                 headerSection
+                
+                // Wealth subtitle
+                VStack(spacing: 4) {
+                    Text("Wealth")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Grow. Protect. Retire.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(MilliColors.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
                 
                 // Segment picker
                 segmentPicker
@@ -29,41 +40,37 @@ struct WealthView: View {
                     WealthOverviewView()
                 }
             }
-            .padding(.top, 72)
             .padding(.bottom, 100)
         }
         .background(MilliColors.obsidian.ignoresSafeArea())
     }
     
-    // MARK: - Header
+    // MARK: - Header (Centered MILLI + bell overlay)
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        ZStack {
+            // Centered wordmark
+            Text("M I L L I")
+                .font(.system(size: 18, weight: .semibold))
+                .tracking(8)
+                .foregroundColor(.white)
+            
+            // Bell icon right-aligned
             HStack {
-                Image("MilliWordmark")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 18)
                 Spacer()
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(MilliColors.textSecondary)
+                    Image(systemName: "bell")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
                     Circle()
                         .fill(MilliColors.cyan)
                         .frame(width: 6, height: 6)
                         .offset(x: 2, y: -1)
                 }
             }
-            
-            Text("Wealth")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
-            Text("Grow. Protect. Retire.")
-                .font(.system(size: 14))
-                .foregroundStyle(MilliColors.textSecondary)
+            .padding(.horizontal, 20)
         }
-        .padding(.horizontal, MilliLayout.screenMargin)
-        .padding(.top, MilliLayout.lg)
+        .padding(.top, 72)
+        .padding(.bottom, 8)
     }
     
     // MARK: - Segment Picker

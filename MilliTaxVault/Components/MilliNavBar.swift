@@ -66,7 +66,7 @@ struct MilliNavBar: View {
             .frame(maxHeight: .infinity, alignment: .bottom)
     }
     
-    // MARK: - Layer 2: Chrome Bridge
+    // MARK: - Layer 2: Chrome Bridge (high-contrast metallic)
     private var chromeBridgeCanvas: some View {
         Canvas { context, size in
             let w = size.width
@@ -86,17 +86,22 @@ struct MilliNavBar: View {
             )
             bridgePath.closeSubpath()
             
-            // Fill chrome bridge
+            // Fill chrome bridge — HIGH CONTRAST chrome gradient
             context.fill(
                 bridgePath,
                 with: .linearGradient(
-                    Gradient(colors: [Color(hex: "4A4E54"), Color(hex: "2A2E34"), Color(hex: "3E4248")]),
-                    startPoint: CGPoint(x: 0, y: 0),
-                    endPoint: CGPoint(x: w, y: 0)
+                    Gradient(colors: [
+                        Color(white: 0.85),
+                        Color(white: 0.55),
+                        Color(white: 0.25),
+                        Color(white: 0.1)
+                    ]),
+                    startPoint: CGPoint(x: 0, y: h * 0.2),
+                    endPoint: CGPoint(x: 0, y: h * 0.2 + 8)
                 )
             )
             
-            // Top edge highlight line
+            // Top edge specular highlight line (white at 60% opacity)
             var highlightPath = Path()
             highlightPath.move(to: CGPoint(x: 0, y: h * 0.2))
             highlightPath.addQuadCurve(
@@ -105,11 +110,11 @@ struct MilliNavBar: View {
             )
             
             var highlightCtx = context
-            highlightCtx.opacity = 0.9
+            highlightCtx.opacity = 0.6
             highlightCtx.stroke(
                 highlightPath,
-                with: .color(Color(hex: "C8CACE")),
-                style: StrokeStyle(lineWidth: 1.5)
+                with: .color(.white),
+                style: StrokeStyle(lineWidth: 1.0)
             )
         }
         .frame(height: barHeight)
@@ -157,11 +162,24 @@ struct MilliNavBar: View {
         .buttonStyle(.plain)
     }
     
-    // MARK: - Center M Dial
+    // MARK: - Center M Dial (Upgraded — deeper depth, segmented cyan dot ring)
     private var mDialButton: some View {
         Button(action: { selectedTab = .home }) {
             ZStack {
-                // Outer chrome bezel ring
+                // Outer chrome ring with radial gradient for depth
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(white: 0.7), Color(white: 0.3), Color(white: 0.15)],
+                            center: .center,
+                            startRadius: 26,
+                            endRadius: 34
+                        )
+                    )
+                    .frame(width: 68, height: 68)
+                    .shadow(color: .black.opacity(0.8), radius: 6, x: 0, y: 4)
+                
+                // Angular chrome bezel stroke overlay
                 Circle()
                     .stroke(
                         AngularGradient(
@@ -176,37 +194,40 @@ struct MilliNavBar: View {
                         ),
                         lineWidth: 3
                     )
-                    .frame(width: dialSize, height: dialSize)
+                    .frame(width: 68, height: 68)
                 
-                // Inner face
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(hex: "28292C"), Color(hex: "0F1012")],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 34
-                        )
-                    )
-                    .frame(width: dialSize - 6, height: dialSize - 6)
-                
-                // Segmented tick ring — 24 ticks
+                // Segmented cyan dot ring (LED dots)
                 ForEach(0..<24, id: \.self) { i in
                     let angle = Double(i) * (360.0 / 24.0)
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(Color(hex: "00E5FF").opacity(0.7))
-                        .frame(width: 3, height: 6)
-                        .offset(y: -31)
+                    Circle()
+                        .fill(Color.cyan.opacity(i % 3 == 0 ? 0.9 : 0.3))
+                        .frame(width: i % 3 == 0 ? 3 : 2, height: i % 3 == 0 ? 3 : 2)
+                        .offset(y: -27)
                         .rotationEffect(.degrees(angle))
                 }
                 
-                // Glowing cyan M
+                // Black glass face
+                Circle()
+                    .fill(Color(white: 0.05))
+                    .frame(width: 52, height: 52)
+                    .overlay(
+                        Circle()
+                            .stroke(Color(white: 0.2), lineWidth: 0.5)
+                    )
+                
+                // Angular M with cyan gradient glow
                 Text("M")
-                    .font(.system(size: 26, weight: .black, design: .rounded))
-                    .foregroundColor(Color(hex: "00E5FF"))
-                    .shadow(color: Color(hex: "00E5FF").opacity(0.9), radius: 6)
+                    .font(.system(size: 22, weight: .black, design: .default))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.cyan, Color.white.opacity(0.9), Color.cyan.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: .cyan.opacity(0.8), radius: 4)
             }
-            .frame(width: dialSize + 6, height: dialSize + 6)
+            .frame(width: 68, height: 68)
         }
         .buttonStyle(.plain)
     }

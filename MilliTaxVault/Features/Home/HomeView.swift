@@ -13,7 +13,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: MilliLayout.sectionGap) {
-                // MARK: Header — MILLI wordmark + bell
+                // MARK: Header — Centered MILLI wordmark + bell
                 headerSection
                 
                 // MARK: Hero — Available to Spend
@@ -31,7 +31,6 @@ struct HomeView: View {
                 // MARK: Tree of Life
                 treeOfLifeCard
             }
-            .padding(.top, 72)
             .padding(.bottom, 100)
         }
         .background(MilliColors.obsidian.ignoresSafeArea())
@@ -40,30 +39,32 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - Header
+    // MARK: - Header (Centered MILLI + bell overlay)
     private var headerSection: some View {
-        HStack {
-            // MILLI wordmark — brand asset
-            Image("MilliWordmark")
-                .resizable()
-                .scaledToFit()
-                .frame(height: 18)
+        ZStack {
+            // Centered wordmark
+            Text("M I L L I")
+                .font(.system(size: 18, weight: .semibold))
+                .tracking(8)
+                .foregroundColor(.white)
             
-            Spacer()
-            
-            // Bell icon
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: "bell.fill")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(MilliColors.textSecondary)
-                
-                Circle()
-                    .fill(MilliColors.cyan)
-                    .frame(width: 6, height: 6)
-                    .offset(x: 2, y: -1)
+            // Bell icon right-aligned
+            HStack {
+                Spacer()
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                    Circle()
+                        .fill(MilliColors.cyan)
+                        .frame(width: 6, height: 6)
+                        .offset(x: 2, y: -1)
+                }
             }
+            .padding(.horizontal, 20)
         }
-        .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.top, 72)
+        .padding(.bottom, 8)
     }
     
     // MARK: - Hero Card (Available to Spend)

@@ -8,6 +8,19 @@ struct ActivityView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
+                // MARK: - Payouts Header (centered title + total)
+                VStack(spacing: 4) {
+                    Text("Payouts")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Total $1,398.73")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 72)
+                .padding(.bottom, 8)
+                
                 // MARK: - Period Picker
                 HStack(spacing: 4) {
                     ForEach(periods, id: \.self) { period in
@@ -37,7 +50,6 @@ struct ActivityView: View {
                                 .stroke(Color(white: 0.15), lineWidth: 1)
                         )
                 )
-                .padding(.top, 60)
                 
                 // MARK: - Hero Stats Card
                 MilliCard {
@@ -159,9 +171,9 @@ struct ActivityView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 60)
             .padding(.bottom, 100)
         }
+        .background(MilliColors.obsidian.ignoresSafeArea())
     }
 }
 
