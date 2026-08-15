@@ -1,6 +1,7 @@
 import SwiftUI
 
-// MARK: - MilliSpacing — Consistent spatial rhythm (4pt grid)
+// MARK: - MilliSpacing
+// Tight 4pt rhythm derived from the approved high-density iPhone references.
 
 enum MilliSpacing {
     static let xs: CGFloat = 4
@@ -12,32 +13,35 @@ enum MilliSpacing {
     static let xxxl: CGFloat = 32
 
     // Screen edge insets
-    static let screenHorizontal: CGFloat = 20
-    static let screenVertical: CGFloat = 16
+    static let screenHorizontal: CGFloat = 16
+    static let screenVertical: CGFloat = 12
 
     // Card internal padding
-    static let cardPadding: CGFloat = 16
-    static let cardPaddingLarge: CGFloat = 20
+    static let cardPadding: CGFloat = 14
+    static let cardPaddingLarge: CGFloat = 16
 
     // Grid gap
-    static let gridGap: CGFloat = 12
+    static let gridGap: CGFloat = 10
 
     // Corner radii
     static let radiusSm: CGFloat = 8
-    static let radiusMd: CGFloat = 12
-    static let radiusLg: CGFloat = 16
-    static let radiusXl: CGFloat = 20
+    static let radiusMd: CGFloat = 11
+    static let radiusLg: CGFloat = 14
+    static let radiusXl: CGFloat = 16
     static let radiusFull: CGFloat = 100
+
+    // Fixed shell geometry
+    static let bottomNavHeight: CGFloat = 92
+    static let bottomContentClearance: CGFloat = 116
 }
 
-// MARK: - MilliLayout — Legacy layout constants (backward compat)
-// New code should use MilliSpacing directly.
+// MARK: - MilliLayout — Legacy compatibility
 
 enum MilliLayout {
     static let screenMargin: CGFloat = MilliSpacing.screenHorizontal
     static let cardPaddingH: CGFloat = MilliSpacing.cardPadding
     static let cardPaddingV: CGFloat = MilliSpacing.cardPadding
-    static let sectionGap: CGFloat = MilliSpacing.xxl
+    static let sectionGap: CGFloat = MilliSpacing.xl
     static let cardRadius: CGFloat = MilliSpacing.radiusLg
     static let metadataGap: CGFloat = MilliSpacing.sm
 }
