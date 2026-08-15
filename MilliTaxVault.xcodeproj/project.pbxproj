@@ -157,17 +157,17 @@
 				B10043 /* VaultView.swift */,
 				B10044 /* WealthView.swift */,
 				B10045 /* CockpitView.swift */,
-				B10107 /* MilliTaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultView.swift; sourceTree = "<group>"; };
-		B10110 /* LiveMarketChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMarketChartView.swift; sourceTree = "<group>"; };
-		B10111 /* MarketDataViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataViewModel.swift; sourceTree = "<group>"; };
-		B10112 /* RetirementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetirementView.swift; sourceTree = "<group>"; };
-		B10113 /* MileageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MileageView.swift; sourceTree = "<group>"; };
-		B10114 /* InvestingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestingView.swift; sourceTree = "<group>"; };
-		B10115 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
-		B10116 /* AddRetirementAccountSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRetirementAccountSheet.swift; sourceTree = "<group>"; };
-		B10117 /* AddLifeEventSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLifeEventSheet.swift; sourceTree = "<group>"; };
-		B10118 /* MileageTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MileageTrackerView.swift; sourceTree = "<group>"; };
-		B10100 /* TreeOfLifeView.swift */,
+				B10107 /* MilliTaxVaultView.swift */,
+				B10110 /* LiveMarketChartView.swift */,
+				B10111 /* MarketDataViewModel.swift */,
+				B10112 /* RetirementView.swift */,
+				B10113 /* MileageView.swift */,
+				B10114 /* InvestingView.swift */,
+				B10115 /* LocationManager.swift */,
+				B10116 /* AddRetirementAccountSheet.swift */,
+				B10117 /* AddLifeEventSheet.swift */,
+				B10118 /* MileageTrackerView.swift */,
+				B10100 /* TreeOfLifeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
