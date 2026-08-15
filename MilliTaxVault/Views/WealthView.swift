@@ -29,7 +29,7 @@ struct WealthView: View {
                     WealthOverviewView()
                 }
             }
-            .padding(.top, 60)
+            .padding(.top, 72)
             .padding(.bottom, 100)
         }
         .background(MilliColors.obsidian.ignoresSafeArea())

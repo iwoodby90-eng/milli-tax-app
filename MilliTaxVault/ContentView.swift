@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @State private var selectedTab: MilliTab = .home
     
     var body: some View {
@@ -31,17 +33,21 @@ struct ContentView: View {
                 MilliNavBar(selectedTab: $selectedTab)
             }
             
-            // GLOBAL AI ORB — always on top, bottom-right, above nav bar
-            VStack {
-                Spacer()
-                HStack {
+            // GLOBAL AI ORB — only visible after onboarding complete
+            if hasCompletedOnboarding && hasCompletedSetup {
+                VStack {
                     Spacer()
-                    MilliAIOrb()
-                        .padding(.trailing, 20)
-                        .padding(.bottom, 104)
+                    HStack {
+                        Spacer()
+                        MilliAIOrb()
+                            .padding(.trailing, 20)
+                            .padding(.bottom, 104)
+                    }
                 }
+                .ignoresSafeArea()
+                .allowsHitTesting(true)
+                .zIndex(999)
             }
-            .ignoresSafeArea()
         }
         .background(MilliColors.obsidian)
         .preferredColorScheme(.dark)

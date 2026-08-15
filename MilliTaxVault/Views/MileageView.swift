@@ -22,7 +22,7 @@ struct MileageView: View {
                     headerSection
                     statsSection
                 }
-                .padding(.top, 60)
+                .padding(.top, 72)
             }
             .frame(maxHeight: UIScreen.main.bounds.height * 0.40)
             

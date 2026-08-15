@@ -94,23 +94,9 @@ struct OnboardingSlideView: View {
         VStack(spacing: 24) {
             Spacer()
             
-            ZStack {
-                // Subtle cyan glow behind icon
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(hex: "00E5FF").opacity(0.12), .clear],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 60
-                        )
-                    )
-                    .frame(width: 140, height: 140)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 72, weight: .regular))
-                    .foregroundStyle(Color(hex: "00E5FF"))
-            }
+            Image(systemName: icon)
+                .font(.system(size: 72, weight: .regular))
+                .foregroundStyle(Color(hex: "00E5FF"))
             
             Text(headline)
                 .font(.system(size: 34, weight: .bold))
