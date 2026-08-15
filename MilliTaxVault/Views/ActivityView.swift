@@ -37,7 +37,7 @@ struct ActivityView: View {
                                 .stroke(Color(white: 0.15), lineWidth: 1)
                         )
                 )
-                .padding(.top, 20)
+                .padding(.top, 60)
                 
                 // MARK: - Hero Stats Card
                 MilliCard {

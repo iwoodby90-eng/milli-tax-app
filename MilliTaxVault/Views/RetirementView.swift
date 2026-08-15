@@ -67,6 +67,7 @@ struct RetirementView: View {
             taxSavingsCard
         }
         .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.top, 60)
         .onAppear { rebuildProjection() }
         .onChange(of: targetRetirementAge) { _, _ in
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {

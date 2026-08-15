@@ -17,8 +17,8 @@ struct ContentView: View {
                     HomeView()
                 case .wealth:
                     WealthView()
-                case .transfers:
-                    MileageView()
+                case .more:
+                    MoreView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

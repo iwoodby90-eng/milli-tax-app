@@ -1,54 +1,77 @@
 import SwiftUI
 
-// MARK: - MilliAIOrb — Floating AI Companion
-// Uses the official Milli AI robot brand asset.
-// Floating animation + ambient cyan glow. No border, no ring, no label.
-// Bottom-right on every screen.
-
+// MARK: - MilliAIOrb — Transparent Floating AI Companion
+// NO background square, NO border. Pure glowing icon.
 struct MilliAIOrb: View {
-    @State private var floating = false
-    @State private var glowing = false
-    var onTap: () -> Void = {}
+    @State private var showAIChat = false
     
     var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                // Ambient glow — soft radial, no hard edge
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                MilliColors.cyan.opacity(glowing ? 0.22 : 0.08),
-                                MilliColors.cyan.opacity(0.0)
-                            ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 38
-                        )
-                    )
-                    .frame(width: 72, height: 72)
-                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: glowing)
-                
-                // Brand AI robot asset — no border, no background shape
-                Image("MilliAIOrb")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
+        Image(systemName: "brain.head.profile")
+            .font(.system(size: 28, weight: .medium))
+            .frame(width: 52, height: 52)
+            .foregroundColor(Color(hex: "00E5FF"))
+            .shadow(color: Color(hex: "00E5FF").opacity(0.6), radius: 16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(.bottom, 108)
+            .padding(.trailing, 20)
+            .onTapGesture {
+                showAIChat = true
             }
+            .sheet(isPresented: $showAIChat) {
+                MilliAIChatView()
+            }
+    }
+}
+
+// MARK: - MilliAIChatView — AI Chat Sheet
+struct MilliAIChatView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Drag handle
+            Capsule()
+                .fill(Color.white.opacity(0.2))
+                .frame(width: 40, height: 4)
+                .padding(.top, 12)
+            
+            // Header
+            HStack {
+                Text("Milli AI")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(Color.white.opacity(0.4))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            
+            // Placeholder content
+            VStack(spacing: 12) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 48))
+                    .foregroundColor(Color(hex: "00E5FF"))
+                    .shadow(color: Color(hex: "00E5FF").opacity(0.5), radius: 12)
+                
+                Text("How can I help you today?")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(Color.white.opacity(0.7))
+            }
+            .frame(maxHeight: .infinity)
+            
+            Spacer()
         }
-        .buttonStyle(.plain)
-        .offset(y: floating ? -3 : 0)
-        .animation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: floating)
-        .onAppear {
-            floating = true
-            glowing = true
-        }
+        .background(Color(hex: "0A0A0C").ignoresSafeArea())
     }
 }
 
 #Preview {
     ZStack {
-        MilliColors.obsidian.ignoresSafeArea()
+        Color(hex: "07090B").ignoresSafeArea()
         MilliAIOrb()
     }
 }
