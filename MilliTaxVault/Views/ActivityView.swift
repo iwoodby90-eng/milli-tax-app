@@ -84,7 +84,10 @@ struct ActivityView: View {
                             }
                         }
                         
-                        MilliSparkline(data: SampleData.sparklineData, height: 50)
+                        MilliSparkline(
+                            data: SampleData.sparklineData.map { CGFloat($0.value) },
+                            height: 50
+                        )
                     }
                 }
                 
