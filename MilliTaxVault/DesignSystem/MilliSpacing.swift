@@ -35,6 +35,17 @@ enum MilliSpacing {
     static let bottomContentClearance: CGFloat = 116
 }
 
+// MARK: - MilliRadius
+// Compatibility facade for earlier screens while the app converges on MilliSpacing.
+
+enum MilliRadius {
+    static let small: CGFloat = MilliSpacing.radiusSm
+    static let medium: CGFloat = MilliSpacing.radiusMd
+    static let card: CGFloat = MilliSpacing.radiusLg
+    static let large: CGFloat = MilliSpacing.radiusXl
+    static let pill: CGFloat = MilliSpacing.radiusFull
+}
+
 // MARK: - MilliLayout — Legacy compatibility
 
 enum MilliLayout {
