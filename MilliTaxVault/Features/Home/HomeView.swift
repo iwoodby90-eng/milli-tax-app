@@ -1,8 +1,7 @@
 import SwiftUI
 
-// MARK: - HomeView — Primary dashboard screen (Screen 1)
-// Header: MILLI wordmark + bell | Available to Spend hero | Latest Payout
-// 2x2 metric grid | AI Insight card
+// MARK: - HomeView
+// Primary financial cockpit. Layout and density follow the approved production reference.
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
@@ -10,343 +9,330 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: MilliSpacing.lg) {
+            VStack(spacing: 10) {
                 headerSection
-                heroCard
-                latestPayoutRow
+                availableHero
+                latestPayout
                 metricGrid
-                aiInsightCard
+                aiInsight
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, MilliSpacing.md)
-            .padding(.bottom, 100) // Clear bottom nav
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
     }
 
-    // MARK: - Header (MILLI wordmark + bell icon)
+    // MARK: Header
 
     private var headerSection: some View {
-        HStack {
-            // MILLI wordmark — spaced letters, chrome gradient
-            Text("M I L L I")
+        ZStack {
+            HStack {
+                Spacer()
+                Button {} label: {
+                    Image(systemName: "bell")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(MilliColors.silverBright)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(Color.white.opacity(0.035)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Notifications")
+            }
+
+            Text("MILLI")
                 .font(MilliFont.wordmark)
+                .tracking(2.4)
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.white, MilliColors.cyanGlow.opacity(0.8)],
-                        startPoint: .leading,
-                        endPoint: .trailing
+                        colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 )
-                .tracking(1)
-
-            Spacer()
-
-            // Notification bell
-            Button {} label: {
-                Image(systemName: "bell.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(MilliColors.silver)
-            }
-            .buttonStyle(.plain)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.14), radius: 4)
+                .accessibilityAddTraits(.isHeader)
         }
-        .padding(.vertical, MilliSpacing.sm)
+        .frame(height: 42)
     }
 
-    // MARK: - Hero Card (Available to Spend)
+    // MARK: Available to Spend
 
-    private var heroCard: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-            Text("Available to Spend")
-                .font(MilliFont.labelLarge)
-                .foregroundColor(MilliColors.textSecondary)
+    private var availableHero: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("AVAILABLE TO SPEND")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.9)
+                .foregroundStyle(MilliColors.textSecondary)
 
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(viewModel.availableToSpend)
-                        .font(MilliFont.heroNumber)
-                        .foregroundColor(MilliColors.cyanGlow)
-                        .contentTransition(.numericText())
+            Text(viewModel.availableToSpend)
+                .font(MilliFont.heroBalance)
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+                .contentTransition(.numericText())
 
-                    Text("Updated just now")
-                        .font(MilliFont.caption)
-                        .foregroundColor(MilliColors.textTertiary)
+            Text("Updated just now")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+
+            ZStack(alignment: .trailing) {
+                MilliSparkline(
+                    data: viewModel.sparklineData,
+                    color: MilliColors.cyanGlow,
+                    height: 50,
+                    lineWidth: 1.8
+                )
+
+                Button {} label: {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(MilliColors.blackGlass)
+                        .frame(width: 32, height: 32)
+                        .background(Circle().fill(MilliColors.cyanGlow))
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.34), radius: 7)
                 }
-
-                Spacer()
-
-                // Sparkline + arrow button
-                HStack(spacing: 12) {
-                    MilliSparkline(
-                        data: viewModel.sparklineData,
-                        color: MilliColors.cyanGlow,
-                        height: 40
-                    )
-                    .frame(width: 64)
-
-                    // Cyan-filled circle arrow button
-                    Button {} label: {
-                        Circle()
-                            .fill(MilliColors.cyanGlow)
-                            .frame(width: 36, height: 36)
-                            .overlay(
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(MilliColors.blackGlass)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 2)
             }
         }
-        .padding(MilliSpacing.cardPaddingLarge)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [MilliColors.heroGradientTop, MilliColors.heroGradientBottom],
+                        colors: [Color(hex: "101923"), Color(hex: "091116")],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
-                        .stroke(MilliColors.cardBorderGlow, lineWidth: 1)
-                )
+                        .stroke(MilliColors.focusedBorder, lineWidth: 0.8)
+                }
+                .shadow(color: .black.opacity(0.38), radius: 12, y: 5)
         )
     }
 
-    // MARK: - Latest Payout Row
+    // MARK: Latest payout
 
-    private var latestPayoutRow: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-            Text("LATEST PAYOUT")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(1.0)
+    private var latestPayout: some View {
+        Button {
+            navigate?(.payouts)
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("LATEST PAYOUT")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(0.8)
+                        .foregroundStyle(MilliColors.textSecondary)
 
-            HStack(spacing: MilliSpacing.md) {
-                // Walmart/Spark icon circle
-                Circle()
-                    .fill(Color(hex: "0071CE"))
-                    .frame(width: 42, height: 42)
-                    .overlay(
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                    )
-
-                VStack(alignment: .leading, spacing: 2) {
                     Text("$312.64")
                         .font(MilliFont.numericMedium)
-                        .foregroundColor(MilliColors.textPrimary)
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
 
-                    Text("Today, 9:41 AM \u{2022} Spark Driver")
-                        .font(MilliFont.bodySmall)
-                        .foregroundColor(MilliColors.textSecondary)
+                    Text("Today, 9:41 AM  •  Spark Driver™")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
                 }
 
-                Spacer()
+                Spacer(minLength: 8)
+
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(hex: "0879FF"))
+                    .frame(width: 42, height: 42)
+                    .overlay {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 19, weight: .semibold))
+                            .foregroundStyle(Color.yellow)
+                    }
             }
             .milliCard()
         }
+        .buttonStyle(.plain)
     }
 
-    // MARK: - 2x2 Metric Grid
+    // MARK: Metric grid
 
     private var metricGrid: some View {
         VStack(spacing: MilliSpacing.gridGap) {
             HStack(spacing: MilliSpacing.gridGap) {
-                taxVaultCard
-                taxReadyScoreCard
+                taxVaultTile
+                taxReadyTile
             }
             HStack(spacing: MilliSpacing.gridGap) {
-                quarterlyTaxesCard
-                mileageCard
+                quarterlyTile
+                mileageTile
             }
         }
     }
 
-    // Tax Vault card
-    private var taxVaultCard: some View {
-        Button {
-            navigate?(.taxVault)
-        } label: {
-            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-                Text("MILLI TAX VAULT")
-                    .font(MilliFont.label)
-                    .foregroundColor(MilliColors.textLabel)
-                    .tracking(0.8)
+    private var taxVaultTile: some View {
+        Button { navigate?(.taxVault) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MILLI TAX VAULT™")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.55)
+                    .foregroundStyle(MilliColors.textSecondary)
 
-                Text(viewModel.taxVaultBalance)
-                    .font(MilliFont.numericMedium)
-                    .foregroundColor(MilliColors.cyanGlow)
-
-                Text("23% of annual target")
-                    .font(MilliFont.caption)
-                    .foregroundColor(MilliColors.textSecondary)
-
-                // Mini donut indicator
-                ZStack {
-                    Circle()
-                        .stroke(MilliColors.border, lineWidth: 3)
-                        .frame(width: 28, height: 28)
-                    Circle()
-                        .trim(from: 0, to: 0.23)
-                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .frame(width: 28, height: 28)
-                        .rotationEffect(.degrees(-90))
+                HStack(alignment: .center, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(viewModel.taxVaultBalance)
+                            .font(MilliFont.numericMedium)
+                            .monospacedDigit()
+                            .foregroundStyle(MilliColors.textPrimary)
+                        Text("23% of annual target")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                    }
+                    Spacer(minLength: 2)
+                    progressRing(progress: 0.23, value: nil, size: 36)
                 }
-                .padding(.top, 2)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
             .milliCard()
         }
         .buttonStyle(.plain)
     }
 
-    // Tax Ready Score card
-    private var taxReadyScoreCard: some View {
-        Button {
-            navigate?(.taxReadyScore)
-        } label: {
-            VStack(spacing: MilliSpacing.sm) {
-                Text("TAX READY SCORE")
-                    .font(MilliFont.label)
-                    .foregroundColor(MilliColors.textLabel)
-                    .tracking(0.8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    private var taxReadyTile: some View {
+        Button { navigate?(.taxReadyScore) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("TAX READY SCORE™")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.55)
+                    .foregroundStyle(MilliColors.textSecondary)
 
-                ZStack {
-                    Circle()
-                        .stroke(MilliColors.border, lineWidth: 4)
-                        .frame(width: 54, height: 54)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(viewModel.taxReadyScore) / 100.0)
-                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .frame(width: 54, height: 54)
-                        .rotationEffect(.degrees(-90))
-                    Text("\(viewModel.taxReadyScore)")
-                        .font(MilliFont.numericMedium)
-                        .foregroundColor(MilliColors.textPrimary)
+                HStack(spacing: 8) {
+                    progressRing(
+                        progress: CGFloat(viewModel.taxReadyScore) / 100,
+                        value: "\(viewModel.taxReadyScore)",
+                        size: 44
+                    )
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Great")
+                            .font(MilliFont.labelLarge)
+                            .foregroundStyle(MilliColors.positive)
+                        Text("You're on track\nfor tax season")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textSecondary)
+                            .lineLimit(2)
+                    }
                 }
-
-                Text("Great - You're on track\nfor tax season")
-                    .font(MilliFont.caption)
-                    .foregroundColor(MilliColors.positive)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
             .milliCard()
         }
         .buttonStyle(.plain)
     }
 
-    // Quarterly Taxes card
-    private var quarterlyTaxesCard: some View {
-        Button {
-            navigate?(.quarterlyTaxes)
-        } label: {
-            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+    private var quarterlyTile: some View {
+        Button { navigate?(.quarterlyTaxes) } label: {
+            VStack(alignment: .leading, spacing: 5) {
                 Text("QUARTERLY TAXES")
-                    .font(MilliFont.label)
-                    .foregroundColor(MilliColors.textLabel)
-                    .tracking(0.8)
-
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.55)
+                    .foregroundStyle(MilliColors.textSecondary)
                 Text(viewModel.quarterlyTaxes)
                     .font(MilliFont.numericMedium)
-                    .foregroundColor(MilliColors.cyanGlow)
-
-                Text("Est. due Jun 15, 2024")
-                    .font(MilliFont.caption)
-                    .foregroundColor(MilliColors.textSecondary)
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textPrimary)
+                HStack(spacing: 5) {
+                    Text("Est. due Jun 15, 2024")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                    Spacer()
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 78, alignment: .topLeading)
             .milliCard()
         }
         .buttonStyle(.plain)
     }
 
-    // Mileage card
-    private var mileageCard: some View {
-        Button {
-            navigate?(.mileage)
-        } label: {
-            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+    private var mileageTile: some View {
+        Button { navigate?(.mileage) } label: {
+            VStack(alignment: .leading, spacing: 5) {
                 Text("MILEAGE")
-                    .font(MilliFont.label)
-                    .foregroundColor(MilliColors.textLabel)
-                    .tracking(0.8)
-
-                HStack(spacing: 6) {
-                    Text(viewModel.mileage)
-                        .font(MilliFont.numericMedium)
-                        .foregroundColor(MilliColors.cyanGlow)
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.55)
+                    .foregroundStyle(MilliColors.textSecondary)
+                Text(viewModel.mileage)
+                    .font(MilliFont.numericMedium)
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textPrimary)
+                HStack {
+                    Text("This quarter")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                    Spacer()
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(MilliColors.cyanGlow)
                 }
-
-                Image(systemName: "car.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(MilliColors.cyanGlow.opacity(0.7))
-                    .padding(.top, 2)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 78, alignment: .topLeading)
             .milliCard()
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - AI Insight Card
+    private func progressRing(progress: CGFloat, value: String?, size: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.09), lineWidth: 4)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(
+                    LinearGradient(
+                        colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+            if let value {
+                Text(value)
+                    .font(.custom("Sora-SemiBold", size: 12))
+                    .foregroundStyle(MilliColors.textPrimary)
+            }
+        }
+        .frame(width: size, height: size)
+    }
 
-    private var aiInsightCard: some View {
-        Button {
-            navigate?(.milliAI)
-        } label: {
-            HStack(spacing: MilliSpacing.md) {
-                // Robot avatar
-                ZStack {
-                    Circle()
-                        .fill(MilliColors.cyanGlow.opacity(0.12))
-                        .frame(width: 44, height: 44)
+    // MARK: AI Insight
 
-                    // Robot face
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "1A2E4A"), Color(hex: "0D1B2E")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 30, height: 26)
-                        .overlay(
-                            HStack(spacing: 6) {
-                                Circle().fill(MilliColors.cyanGlow).frame(width: 6, height: 6)
-                                Circle().fill(MilliColors.cyanGlow).frame(width: 6, height: 6)
-                            }
-                        )
-                }
+    private var aiInsight: some View {
+        Button { navigate?(.milliAI) } label: {
+            HStack(spacing: 10) {
+                Image("MilliAIOrb")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 38, height: 38)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("MILLI AI INSIGHT")
-                        .font(MilliFont.label)
-                        .foregroundColor(MilliColors.textLabel)
-                        .tracking(0.8)
-
+                        .font(MilliFont.sectionLabel)
+                        .tracking(0.7)
+                        .foregroundStyle(MilliColors.cyanGlow)
                     Text(viewModel.aiInsight)
-                        .font(MilliFont.bodyMedium)
-                        .foregroundColor(MilliColors.textPrimary)
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
 
-                Spacer()
+                Spacer(minLength: 4)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(MilliColors.textTertiary)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MilliColors.cyanGlow)
             }
-            .milliCard(padding: MilliSpacing.cardPaddingLarge)
+            .milliCard(padding: 12)
         }
         .buttonStyle(.plain)
     }
