@@ -1,236 +1,221 @@
 import SwiftUI
 
 // MARK: - MilliTab — Canonical tab definition
-enum MilliTab: Int, CaseIterable {
-    case dashboard = 0  // Home tab
-    case activity = 1   // Payouts tab
-    case home = 2       // Center M button (Home)
-    case wealth = 3     // Wealth tab
-    case more = 4      // More tab
-
+enum MilliTab: String, CaseIterable {
+    case dashboard
+    case activity
+    case home
+    case wealth
+    case transfers
+    
     var icon: String {
         switch self {
         case .dashboard: return "house.fill"
-        case .activity: return "banknote.fill"
-        case .home: return ""
+        case .activity: return "dollarsign.arrow.circlepath"
+        case .home: return "m.circle.fill"
         case .wealth: return "chart.line.uptrend.xyaxis"
-        case .more: return "ellipsis.circle.fill"
+        case .transfers: return "car.fill"
         }
     }
-
+    
     var label: String {
         switch self {
         case .dashboard: return "Home"
         case .activity: return "Payouts"
         case .home: return ""
         case .wealth: return "Wealth"
-        case .more: return "More"
+        case .transfers: return "Mileage"
         }
     }
 }
 
-// MARK: - MilliNavBar — Brushed Polished Nickel Automotive Dashboard
-// Thick metallic panel with recessed pill-well buttons and raised chrome M dial
+// MARK: - MilliNavBar — Dark Graphite + Chrome Bridge Automotive Dashboard
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
-
-    // Brushed nickel gradient stops
-    private let nickelGradient = LinearGradient(
-        stops: [
-            .init(color: Color(hex: "C8CAC8"), location: 0.0),
-            .init(color: Color(hex: "8E9296"), location: 0.25),
-            .init(color: Color(hex: "6E7478"), location: 0.5),
-            .init(color: Color(hex: "8E9296"), location: 0.75),
-            .init(color: Color(hex: "B4B6B4"), location: 1.0),
-        ],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-
-    private let leftTabs: [MilliTab] = [.dashboard, .activity]
-    private let rightTabs: [MilliTab] = [.wealth, .more]
-
+    
+    private let barHeight: CGFloat = 88
+    private let dialSize: CGFloat = 68
+    private let dialRise: CGFloat = 22
+    
     var body: some View {
-        ZStack(alignment: .top) {
-            // Base metallic panel
-            VStack(spacing: 0) {
-                // Specular top edge
-                Rectangle()
-                    .fill(Color.white.opacity(0.4))
-                    .frame(height: 1)
-
-                // Main brushed nickel surface
-                ZStack {
-                    // Metal gradient fill
-                    nickelGradient
-
-                    // Horizontal brush-line texture
-                    BrushLineCanvas()
-                        .opacity(0.06)
-                }
-                .frame(height: 90)
-
-                // Bottom edge shadow
-                Rectangle()
-                    .fill(Color.black.opacity(0.6))
-                    .frame(height: 2)
-
-                // Home indicator safe area (match metal)
-                nickelGradient
-                    .frame(height: 34)
-            }
-
-            // Tab buttons overlay
-            HStack(spacing: 0) {
-                // Left tabs
-                ForEach(leftTabs, id: \.rawValue) { tab in
-                    TabPillButton(tab: tab, isActive: selectedTab == tab) {
-                        selectedTab = tab
-                    }
-                }
-
-                // Center M Dial — raised above surface
-                MDialButton {
-                    selectedTab = .home
-                }
-                .offset(y: -28)
-
-                // Right tabs
-                ForEach(rightTabs, id: \.rawValue) { tab in
-                    TabPillButton(tab: tab, isActive: selectedTab == tab) {
-                        selectedTab = tab
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 18)
+        ZStack(alignment: .bottom) {
+            // LAYER 1 — Recessed Graphite Tray
+            graphiteTray
+            
+            // LAYER 2 — Sculpted Chrome Bridge (Canvas)
+            chromeBridgeCanvas
+            
+            // LAYER 3 — Tab buttons + Center M Dial
+            tabButtonsLayer
         }
-        .ignoresSafeArea(edges: .bottom)
+        .frame(height: barHeight + dialRise)
+        .ignoresSafeArea(.all, edges: .bottom)
     }
-}
-
-// MARK: - Brush Line Canvas Texture
-struct BrushLineCanvas: View {
-    var body: some View {
+    
+    // MARK: - Layer 1: Graphite Tray
+    private var graphiteTray: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: "18191C"), Color(hex: "0F1012"), Color(hex: "18191C")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(height: barHeight)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+    }
+    
+    // MARK: - Layer 2: Chrome Bridge
+    private var chromeBridgeCanvas: some View {
         Canvas { context, size in
-            let lineCount = 40
-            let spacing = size.height / CGFloat(lineCount)
-            for i in 0..<lineCount {
-                let y = CGFloat(i) * spacing + spacing * 0.5
-                var path = Path()
-                path.move(to: CGPoint(x: 0, y: y))
-                path.addLine(to: CGPoint(x: size.width, y: y))
-                context.stroke(path, with: .color(.white), lineWidth: 0.5)
-            }
+            let w = size.width
+            let h = barHeight
+            
+            // Quadratic bezier arch path
+            var bridgePath = Path()
+            bridgePath.move(to: CGPoint(x: 0, y: h * 0.2))
+            bridgePath.addQuadCurve(
+                to: CGPoint(x: w, y: h * 0.2),
+                control: CGPoint(x: w * 0.5, y: h * 0.55)
+            )
+            bridgePath.addLine(to: CGPoint(x: w, y: h * 0.2 + 8))
+            bridgePath.addQuadCurve(
+                to: CGPoint(x: 0, y: h * 0.2 + 8),
+                control: CGPoint(x: w * 0.5, y: h * 0.55 + 8)
+            )
+            bridgePath.closeSubpath()
+            
+            // Fill chrome bridge
+            context.fill(
+                bridgePath,
+                with: .linearGradient(
+                    Gradient(colors: [Color(hex: "4A4E54"), Color(hex: "2A2E34"), Color(hex: "3E4248")]),
+                    startPoint: CGPoint(x: 0, y: 0),
+                    endPoint: CGPoint(x: w, y: 0)
+                )
+            )
+            
+            // Top edge highlight line
+            var highlightPath = Path()
+            highlightPath.move(to: CGPoint(x: 0, y: h * 0.2))
+            highlightPath.addQuadCurve(
+                to: CGPoint(x: w, y: h * 0.2),
+                control: CGPoint(x: w * 0.5, y: h * 0.55)
+            )
+            
+            var highlightCtx = context
+            highlightCtx.opacity = 0.9
+            highlightCtx.stroke(
+                highlightPath,
+                with: .color(Color(hex: "C8CACE")),
+                style: StrokeStyle(lineWidth: 1.5)
+            )
         }
+        .frame(height: barHeight)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .allowsHitTesting(false)
     }
-}
-
-// MARK: - TabPillButton — Recessed oval well
-struct TabPillButton: View {
-    let tab: MilliTab
-    let isActive: Bool
-    let action: () -> Void
-
-    private let cyanColor = Color(hex: "00E5FF")
-
-    var body: some View {
-        Button(action: action) {
+    
+    // MARK: - Layer 3: Tab Buttons + M Dial
+    private var tabButtonsLayer: some View {
+        HStack(spacing: 0) {
+            // Left tabs: Home, Payouts
+            tabButton(tab: .dashboard)
+            tabButton(tab: .activity)
+            
+            // Center M Dial (raised)
+            mDialButton
+                .offset(y: -dialRise)
+            
+            // Right tabs: Wealth, Mileage
+            tabButton(tab: .wealth)
+            tabButton(tab: .transfers)
+        }
+        .frame(height: barHeight)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+    }
+    
+    // MARK: - Tab Button
+    private func tabButton(tab: MilliTab) -> some View {
+        Button(action: { selectedTab = tab }) {
             VStack(spacing: 4) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(isActive ? cyanColor : .white)
-                    .shadow(color: isActive ? cyanColor.opacity(0.7) : .clear, radius: 6, x: 0, y: 0)
-
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(selectedTab == tab ? Color(hex: "00E5FF") : Color.white.opacity(0.55))
+                    .shadow(
+                        color: selectedTab == tab ? Color(hex: "00E5FF").opacity(0.7) : Color.clear,
+                        radius: selectedTab == tab ? 6 : 0
+                    )
+                
                 Text(tab.label)
                     .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundStyle(isActive ? cyanColor : .white)
+                    .foregroundColor(selectedTab == tab ? Color(hex: "00E5FF") : Color.white.opacity(0.4))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.15))
-                    .overlay(
-                        Capsule()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.black.opacity(0.4),
-                                        Color.white.opacity(0.2)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-                    .shadow(color: .black.opacity(0.25), radius: 2, x: 1, y: 1)
-                    .shadow(color: .white.opacity(0.12), radius: 1, x: -1, y: -1)
-            )
-            .padding(.horizontal, 4)
         }
+        .frame(maxWidth: .infinity)
         .buttonStyle(.plain)
     }
-}
-
-// MARK: - MDialButton — Raised Chrome Circle (Center Home)
-struct MDialButton: View {
-    let action: () -> Void
-
-    private let cyanColor = Color(hex: "00E5FF")
-
-    var body: some View {
-        Button(action: action) {
+    
+    // MARK: - Center M Dial
+    private var mDialButton: some View {
+        Button(action: { selectedTab = .home }) {
             ZStack {
-                // Cyan tick-mark ring (gauge bezel)
-                Circle()
-                    .strokeBorder(
-                        cyanColor.opacity(0.5),
-                        style: StrokeStyle(lineWidth: 1, dash: [4, 3])
-                    )
-                    .frame(width: 76, height: 76)
-
-                // Outer chrome ring
+                // Outer chrome bezel ring
                 Circle()
                     .stroke(
-                        RadialGradient(
-                            colors: [Color(hex: "E8EAEA"), Color(hex: "5A5E62")],
-                            center: .top,
-                            startRadius: 0,
-                            endRadius: 36
+                        AngularGradient(
+                            stops: [
+                                .init(color: Color(hex: "E0E4E8"), location: 0.0),
+                                .init(color: Color(hex: "7A7E84"), location: 0.25),
+                                .init(color: Color(hex: "3A3C40"), location: 0.5),
+                                .init(color: Color(hex: "7A7E84"), location: 0.75),
+                                .init(color: Color(hex: "E0E4E8"), location: 1.0)
+                            ],
+                            center: .center
                         ),
-                        lineWidth: 2
+                        lineWidth: 3
                     )
-                    .frame(width: 72, height: 72)
-
-                // Inner face — subtle dome
+                    .frame(width: dialSize, height: dialSize)
+                
+                // Inner face
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "2A2A2C"), Color(hex: "1A1A1C")],
+                            colors: [Color(hex: "28292C"), Color(hex: "0F1012")],
                             center: .center,
                             startRadius: 0,
                             endRadius: 34
                         )
                     )
-                    .frame(width: 68, height: 68)
-
-                // Angular M logo
+                    .frame(width: dialSize - 6, height: dialSize - 6)
+                
+                // Segmented tick ring — 24 ticks
+                ForEach(0..<24, id: \.self) { i in
+                    let angle = Double(i) * (360.0 / 24.0)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color(hex: "00E5FF").opacity(0.7))
+                        .frame(width: 3, height: 6)
+                        .offset(y: -31)
+                        .rotationEffect(.degrees(angle))
+                }
+                
+                // Glowing cyan M
                 Text("M")
-                    .font(.system(size: 28, weight: .heavy, design: .default))
-                    .foregroundStyle(cyanColor)
-                    .shadow(color: Color.black.opacity(0.6), radius: 2, x: 1, y: 2)
+                    .font(.system(size: 26, weight: .black, design: .rounded))
+                    .foregroundColor(Color(hex: "00E5FF"))
+                    .shadow(color: Color(hex: "00E5FF").opacity(0.9), radius: 6)
             }
+            .frame(width: dialSize + 6, height: dialSize + 6)
         }
         .buttonStyle(.plain)
-        .frame(width: 80)
     }
 }
 
+// MARK: - Preview
 #Preview {
     ZStack {
-        Color(hex: "0A0A0C").ignoresSafeArea()
+        Color(hex: "07090B").ignoresSafeArea()
         VStack {
             Spacer()
             MilliNavBar(selectedTab: .constant(.dashboard))

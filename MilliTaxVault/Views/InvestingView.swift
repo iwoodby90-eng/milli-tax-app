@@ -38,6 +38,7 @@ struct InvestingView: View {
             aiInsightCard
         }
         .padding(.horizontal, MilliLayout.screenMargin)
+        .padding(.top, 60)
         .onAppear { marketVM.startAutoRefresh() }
         .onDisappear { marketVM.stopAutoRefresh() }
     }

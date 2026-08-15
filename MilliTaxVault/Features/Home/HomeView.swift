@@ -35,9 +35,9 @@ struct HomeView: View {
                     
                     // Bottom spacer for nav clearance
                     Spacer()
-                        .frame(height: MilliLayout.bottomNavHeight + 20)
+                        .frame(height: 120)
                 }
-                .padding(.top, 56) // Clear Dynamic Island + status bar fully
+                .padding(.top, 60) // Clear Dynamic Island + status bar fully
             }
             
             // MARK: Milli AI Orb — floating bottom-right
@@ -255,8 +255,6 @@ struct HomeView: View {
     // MARK: - Milli AI Orb Overlay
     private var milliAIOrbOverlay: some View {
         MilliAIOrb()
-            .padding(.trailing, 14)
-            .padding(.bottom, MilliLayout.bottomNavHeight + 8)
     }
     
     // MARK: - Tree of Life Card

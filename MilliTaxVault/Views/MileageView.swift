@@ -5,6 +5,8 @@ import MapKit
 struct MileageView: View {
     @StateObject private var locationManager = LocationManager()
     @State private var isTracking = false
+    @State private var showQuarterDetail = false
+    @State private var showMonthDetail = false
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 42.3314, longitude: -83.0458),
@@ -21,7 +23,7 @@ struct MileageView: View {
                         headerSection
                         statsSection
                     }
-                    .padding(.top, 56)
+                    .padding(.top, 60)
                 }
                 .frame(maxHeight: UIScreen.main.bounds.height * 0.40)
                 
@@ -86,8 +88,17 @@ struct MileageView: View {
     // MARK: - Stats
     private var statsSection: some View {
         VStack(spacing: MilliLayout.sectionGap) {
-            mileageStatCard(icon: "car.fill", title: "This Quarter", value: "2,345 mi", subtitle: "$1,548 deduction")
-            mileageStatCard(icon: "calendar", title: "This Month", value: "847 mi", subtitle: "$559 deduction")
+            Button { showQuarterDetail = true } label: {
+                mileageStatCard(icon: "car.fill", title: "This Quarter", value: "2,345 mi", subtitle: "$1,548 deduction")
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showQuarterDetail) { MilliDetailSheet(title: "This Quarter") }
+            
+            Button { showMonthDetail = true } label: {
+                mileageStatCard(icon: "calendar", title: "This Month", value: "847 mi", subtitle: "$559 deduction")
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showMonthDetail) { MilliDetailSheet(title: "This Month") }
         }
         .padding(.horizontal, MilliLayout.screenMargin)
     }

@@ -32,7 +32,7 @@ struct WealthView: View {
                     
                     Spacer().frame(height: 140)
                 }
-                .padding(.top, 56)
+                .padding(.top, 60)
             }
             
             MilliAIOrb()
