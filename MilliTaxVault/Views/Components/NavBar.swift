@@ -6,7 +6,7 @@ struct NavBar: View {
     var body: some View {
         HStack(spacing: 0) {
             // Left tabs: Vault, Wealth
-            tabButton(for: .vault)
+            tabButton(for: .dashboard)
             tabButton(for: .wealth)
             
             // Center M button
@@ -14,7 +14,7 @@ struct NavBar: View {
             
             // Right tabs: Activity, Cockpit
             tabButton(for: .activity)
-            tabButton(for: .cockpit)
+            tabButton(for: .transfers)
         }
         .padding(.horizontal, 8)
         .padding(.top, 12)
@@ -40,7 +40,7 @@ struct NavBar: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(selectedTab == tab ? MilliColors.cyan : MilliColors.inactiveTab)
                 
-                Text(tab.title)
+                Text(tab.label)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(selectedTab == tab ? MilliColors.cyan : MilliColors.inactiveTab)
             }
@@ -52,9 +52,9 @@ struct NavBar: View {
     
     private var centerMButton: some View {
         Button {
-            // M button returns to Vault (home)
+            // M button returns to Home
             withAnimation(.easeInOut(duration: 0.2)) {
-                selectedTab = .vault
+                selectedTab = .home
             }
         } label: {
             ZStack {

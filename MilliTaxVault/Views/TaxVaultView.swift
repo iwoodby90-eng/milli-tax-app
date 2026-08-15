@@ -185,3 +185,24 @@ struct TaxVaultView: View {
         .background(MilliColor.obsidian.ignoresSafeArea())
     }
 }
+
+struct MilliSectionHeader: View {
+    let title: String
+    var trailing: String? = nil
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(MilliColor.textPrimary)
+            Spacer()
+            if let trailing {
+                Text(trailing)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(MilliColor.cyan)
+            }
+        }
+        .padding(.horizontal, MilliSpacing.xl)
+    }
+}
+

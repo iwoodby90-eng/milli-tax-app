@@ -9,7 +9,7 @@ struct OnboardingView: View {
         (
             "arrow.down.circle.fill",
             "Every Payout,\non Autopilot.",
-            "Milli automatically sets aside your taxes, tracks your mileage, and surfaces insights \u2014 so you can focus on what drives you."
+            "Milli automatically sets aside your taxes, tracks your mileage, and surfaces insights — so you can focus on what drives you."
         ),
         (
             "lock.shield.fill",
@@ -19,7 +19,7 @@ struct OnboardingView: View {
         (
             "location.fill",
             "Track Every\nMile.",
-            "Milli captures every deductible mile automatically. At tax time, that\u2019s real money back in your pocket."
+            "Milli captures every deductible mile automatically. At tax time, that’s real money back in your pocket."
         )
     ]
     
@@ -49,7 +49,7 @@ struct OnboardingView: View {
                         OnboardingSlideView(
                             icon: slides[index].icon,
                             headline: slides[index].headline,
-                            body: slides[index].body
+                            message: slides[index].body
                         )
                         .tag(index)
                     }
@@ -88,7 +88,7 @@ struct OnboardingView: View {
 struct OnboardingSlideView: View {
     let icon: String
     let headline: String
-    let body: String
+    let message: String
     
     var body: some View {
         VStack(spacing: 24) {
@@ -118,7 +118,7 @@ struct OnboardingSlideView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
             
-            Text(body)
+            Text(message)
                 .font(.system(size: 16, weight: .regular))
                 .foregroundStyle(Color(hex: "8E92A0"))
                 .multilineTextAlignment(.center)
@@ -133,3 +133,4 @@ struct OnboardingSlideView: View {
 #Preview {
     OnboardingView(onComplete: {})
 }
+

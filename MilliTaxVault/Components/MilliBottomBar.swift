@@ -92,7 +92,7 @@ struct MilliBottomBar: View {
                 .frame(maxWidth: .infinity)
                 
                 tabButton(.transfers, icon: "car.fill", label: "Mileage")
-                tabButton(.more, icon: "ellipsis", label: "More")
+                tabButton(.wealth, icon: "chart.line.uptrend.xyaxis", label: "Wealth")
             }
             .padding(.horizontal, 6)
             .padding(.top, 14)
