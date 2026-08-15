@@ -1,200 +1,211 @@
 import SwiftUI
 
-// MARK: - TaxVaultView — Screen 5: Reserve Tax Vault
-// Hero amount + ring | Annual target | Add to Vault | Recent Activity list
+// MARK: - TaxVaultView
+// Compact premium reserve-account presentation with auditable ledger.
 
 struct TaxVaultView: View {
     var onBack: () -> Void = {}
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: MilliSpacing.lg) {
-                headerSection
-                heroSection
-                annualTargetSection
-                addToVaultButton
-                recentActivitySection
+            VStack(spacing: 10) {
+                header
+                reserveHero
+                targetRow
+                addButton
+                transactions
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, MilliSpacing.md)
-            .padding(.bottom, 100)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
-        HStack {
-            Button { onBack() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(MilliColors.textSecondary)
+    private var header: some View {
+        ZStack {
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(Color.white.opacity(0.035)))
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Button {} label: {
+                    Image(systemName: "bell")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
-            Text("RESERVE TAX VAULT")
-                .font(MilliFont.screenTitle)
-                .foregroundColor(MilliColors.textPrimary)
-                .tracking(0.5)
-
-            Spacer()
+            Text("MILLI TAX VAULT™")
+                .font(MilliFont.headlineSmall)
+                .tracking(1.0)
+                .foregroundStyle(MilliColors.textPrimary)
         }
-        .padding(.vertical, MilliSpacing.sm)
+        .frame(height: 40)
     }
 
-    // MARK: - Hero Amount + Ring
+    private var reserveHero: some View {
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("RESERVE BALANCE")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.8)
+                    .foregroundStyle(MilliColors.textSecondary)
+                Text("$5,284.17")
+                    .font(MilliFont.heroNumber)
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textPrimary)
+                Text("23.4% of annual target")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
 
-    private var heroSection: some View {
-        VStack(spacing: MilliSpacing.md) {
+            Spacer(minLength: 4)
+
             ZStack {
-                // Background ring
                 Circle()
-                    .stroke(MilliColors.border, lineWidth: 8)
-                    .frame(width: 160, height: 160)
-
-                // Progress ring
+                    .stroke(Color.white.opacity(0.08), lineWidth: 7)
                 Circle()
-                    .trim(from: 0, to: 0.23)
+                    .trim(from: 0, to: 0.234)
                     .stroke(
                         LinearGradient(
                             colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
-                    .frame(width: 160, height: 160)
                     .rotationEffect(.degrees(-90))
-
-                // Center content
-                VStack(spacing: 4) {
-                    Text("$5,284.17")
-                        .font(MilliFont.displayMedium)
-                        .foregroundColor(MilliColors.cyanGlow)
-
-                    Text("23% of annual target")
-                        .font(MilliFont.caption)
-                        .foregroundColor(MilliColors.textSecondary)
-                }
+                Text("23%")
+                    .font(.custom("Sora-SemiBold", size: 17))
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textPrimary)
             }
+            .frame(width: 78, height: 78)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, MilliSpacing.md)
+        .milliCard(padding: 14)
     }
 
-    // MARK: - Annual Target
-
-    private var annualTargetSection: some View {
-        VStack(spacing: 4) {
-            Text("ANNUAL TARGET")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(0.8)
-
-            Text("$22,500.00")
-                .font(MilliFont.numericMedium)
-                .foregroundColor(MilliColors.textPrimary)
-
-            Text("Due Dec 31, 2024")
-                .font(MilliFont.caption)
-                .foregroundColor(MilliColors.textSecondary)
+    private var targetRow: some View {
+        HStack(spacing: 0) {
+            metric("ANNUAL TARGET", "$22,500.00")
+            Rectangle()
+                .fill(Color.white.opacity(0.06))
+                .frame(width: 1, height: 42)
+            metric("TARGET DATE", "Dec 31, 2024")
         }
-        .frame(maxWidth: .infinity)
-        .milliCard()
+        .milliCard(padding: 12)
     }
 
-    // MARK: - Add to Vault
+    private func metric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(MilliFont.sectionLabel)
+                .foregroundStyle(MilliColors.textSecondary)
+            Text(value)
+                .font(MilliFont.numericSmall)
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
-    private var addToVaultButton: some View {
+    private var addButton: some View {
         Button {} label: {
             Text("Add to Vault")
-                .font(MilliFont.headline)
-                .foregroundColor(MilliColors.blackGlass)
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.blackGlass)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .frame(height: 46)
                 .background(
-                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                        .fill(MilliColors.cyanGlow)
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [MilliColors.cyanGlow, Color(hex: "03B8DC")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 8)
                 )
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Recent Activity
-
-    private var recentActivitySection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.md) {
-            Text("RECENT ACTIVITY")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(0.8)
-
-            ForEach(activityData) { item in
-                activityRow(item)
+    private var transactions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("TRANSACTIONS")
+                    .sectionHeaderStyle()
+                Spacer()
+                Button {} label: {
+                    Text("View All")
+                        .font(MilliFont.labelLarge)
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+                .buttonStyle(.plain)
             }
 
-            // View All link
-            Button {} label: {
-                Text("View All")
-                    .font(MilliFont.labelLarge)
-                    .foregroundColor(MilliColors.cyanGlow)
+            VStack(spacing: 0) {
+                ForEach(Array(activityData.enumerated()), id: \.element.id) { index, item in
+                    transactionRow(item)
+                    if index < activityData.count - 1 {
+                        Divider()
+                            .overlay(Color.white.opacity(0.055))
+                            .padding(.leading, 46)
+                    }
+                }
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
+            .background(MilliCardBackground(showGlow: true))
         }
+        .padding(.top, 2)
     }
 
-    private func activityRow(_ item: VaultActivity) -> some View {
-        HStack(spacing: MilliSpacing.md) {
-            Circle()
-                .fill(item.iconColor.opacity(0.15))
-                .frame(width: 38, height: 38)
-                .overlay(
-                    Image(systemName: item.icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(item.iconColor)
-                )
+    private func transactionRow(_ item: VaultActivity) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: item.icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(item.iconColor)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(item.iconColor.opacity(0.10)))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .font(MilliFont.headlineSmall)
-                    .foregroundColor(MilliColors.textPrimary)
+                    .foregroundStyle(MilliColors.textPrimary)
                 Text(item.date)
                     .font(MilliFont.caption)
-                    .foregroundColor(MilliColors.textSecondary)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
 
             Spacer()
 
             Text(item.amount)
                 .font(MilliFont.numericSmall)
-                .foregroundColor(item.isNegative ? MilliColors.negative : MilliColors.positive)
+                .monospacedDigit()
+                .foregroundStyle(item.isNegative ? MilliColors.negative : MilliColors.positive)
         }
-        .padding(MilliSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: MilliSpacing.radiusMd, style: .continuous)
-                .fill(MilliColors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: MilliSpacing.radiusMd, style: .continuous)
-                        .stroke(MilliColors.cardBorderGlow, lineWidth: 0.5)
-                )
-        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
-
-    // MARK: - Data
 
     private var activityData: [VaultActivity] {
         [
-            VaultActivity(title: "Payout Allocation", date: "Jan 16, 2024", amount: "+$72.34", icon: "briefcase.fill", iconColor: MilliColors.orange, isNegative: false),
-            VaultActivity(title: "Manual Transfer", date: "Jan 16, 2024", amount: "+$125.00", icon: "arrow.up.circle.fill", iconColor: MilliColors.deepCyan, isNegative: false),
-            VaultActivity(title: "Interest Earned", date: "Jan 13, 2024", amount: "+$3.21", icon: "leaf.fill", iconColor: MilliColors.positive, isNegative: false),
-            VaultActivity(title: "Quarterly Payment", date: "Jan 14, 2024", amount: "-$1,247.00", icon: "arrow.down.circle.fill", iconColor: MilliColors.negative, isNegative: true),
+            VaultActivity(title: "Payout Allocation", date: "May 10, 2024", amount: "+$72.91", icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow, isNegative: false),
+            VaultActivity(title: "Payout Allocation", date: "May 9, 2024", amount: "+$69.21", icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow, isNegative: false),
+            VaultActivity(title: "Manual Transfer", date: "May 8, 2024", amount: "+$250.00", icon: "arrow.left.arrow.right", iconColor: MilliColors.deepCyan, isNegative: false),
+            VaultActivity(title: "Interest Earned", date: "May 7, 2024", amount: "+$1.27", icon: "plus.circle.fill", iconColor: MilliColors.positive, isNegative: false),
+            VaultActivity(title: "Quarterly Payment", date: "Apr 15, 2024", amount: "-$1,247.00", icon: "building.columns.fill", iconColor: MilliColors.negative, isNegative: true)
         ]
     }
 }
-
-// MARK: - VaultActivity Model
 
 struct VaultActivity: Identifiable {
     let id = UUID()
