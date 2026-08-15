@@ -61,6 +61,13 @@
 		A10116 /* AddRetirementAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10116; };
 		A10117 /* AddLifeEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10117; };
 		A10118 /* MileageTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118; };
+		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200; };
+		A10201 /* MilliAIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10201; };
+		A10202 /* MilliCentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10202; };
+		A10203 /* ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10203; };
+		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204; };
+		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205; };
+		A10206 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10206; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -119,6 +126,13 @@
 		B10104 /* VehicleSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSetupView.swift; sourceTree = "<group>"; };
 		B10105 /* TaxProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfileSetupView.swift; sourceTree = "<group>"; };
 		B10106 /* PlanSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSelectionView.swift; sourceTree = "<group>"; };
+		B10200 /* MilliTaxVaultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultScreen.swift; sourceTree = "<group>"; };
+		B10201 /* MilliAIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIChatView.swift; sourceTree = "<group>"; };
+		B10202 /* MilliCentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsView.swift; sourceTree = "<group>"; };
+		B10203 /* ExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpensesView.swift; sourceTree = "<group>"; };
+		B10204 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
+		B10205 /* WealthOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WealthOverviewView.swift; sourceTree = "<group>"; };
+		B10206 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -168,6 +182,13 @@
 				B10117 /* AddLifeEventSheet.swift */,
 				B10118 /* MileageTrackerView.swift */,
 				B10100 /* TreeOfLifeView.swift */,
+				B10200 /* MilliTaxVaultScreen.swift */,
+				B10201 /* MilliAIChatView.swift */,
+				B10202 /* MilliCentsView.swift */,
+				B10203 /* ExpensesView.swift */,
+				B10204 /* ReportsView.swift */,
+				B10205 /* WealthOverviewView.swift */,
+				B10206 /* MoreView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -376,6 +397,13 @@
 				A10117,
 				A10118,
 				A10107,
+				A10200,
+				A10201,
+				A10202,
+				A10203,
+				A10204,
+				A10205,
+				A10206,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

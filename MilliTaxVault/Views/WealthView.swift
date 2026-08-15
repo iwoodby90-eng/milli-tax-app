@@ -1,12 +1,13 @@
 import SwiftUI
 
-// MARK: - WealthView — Investing & Retirement Hub
+// MARK: - WealthView — Investing, Retirement & Overview Hub
 struct WealthView: View {
     @State private var selectedSegment: WealthSegment = .investing
     
     enum WealthSegment: String, CaseIterable {
         case investing = "Investing"
         case retirement = "Retirement"
+        case overview = "Overview"
     }
     
     var body: some View {
@@ -25,6 +26,8 @@ struct WealthView: View {
                         InvestingView()
                     case .retirement:
                         RetirementView()
+                    case .overview:
+                        WealthOverviewView()
                     }
                     
                     Spacer().frame(height: 140)

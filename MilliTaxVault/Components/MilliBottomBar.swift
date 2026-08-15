@@ -91,7 +91,7 @@ struct MilliBottomBar: View {
                 .offset(y: -14)
                 .frame(maxWidth: .infinity)
                 
-                tabButton(.transfers, icon: "car.fill", label: "Mileage")
+                tabButton(.more, icon: "ellipsis.circle.fill", label: "More")
                 tabButton(.more, icon: "ellipsis", label: "More")
             }
             .padding(.horizontal, 6)

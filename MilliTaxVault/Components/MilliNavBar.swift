@@ -6,7 +6,7 @@ enum MilliTab: Int, CaseIterable {
     case activity = 1   // Payouts tab
     case home = 2       // Center M button (Home)
     case wealth = 3     // Wealth tab
-    case transfers = 4  // Mileage tab
+    case more = 4      // More tab
 
     var icon: String {
         switch self {
@@ -14,7 +14,7 @@ enum MilliTab: Int, CaseIterable {
         case .activity: return "banknote.fill"
         case .home: return ""
         case .wealth: return "chart.line.uptrend.xyaxis"
-        case .transfers: return "car.fill"
+        case .more: return "ellipsis.circle.fill"
         }
     }
 
@@ -24,7 +24,7 @@ enum MilliTab: Int, CaseIterable {
         case .activity: return "Payouts"
         case .home: return ""
         case .wealth: return "Wealth"
-        case .transfers: return "Mileage"
+        case .more: return "More"
         }
     }
 }
@@ -48,7 +48,7 @@ struct MilliNavBar: View {
     )
 
     private let leftTabs: [MilliTab] = [.dashboard, .activity]
-    private let rightTabs: [MilliTab] = [.wealth, .transfers]
+    private let rightTabs: [MilliTab] = [.wealth, .more]
 
     var body: some View {
         ZStack(alignment: .top) {
