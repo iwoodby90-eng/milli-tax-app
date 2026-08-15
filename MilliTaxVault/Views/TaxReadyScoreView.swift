@@ -1,210 +1,199 @@
 import SwiftUI
 import Charts
 
-// MARK: - TaxReadyScoreView — Screen 6: Tax readiness gauge
-// Large circular score | Factors list | Score history chart
+// MARK: - TaxReadyScoreView
+// Readiness instrument: score, contributing factors, and trend history.
 
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: MilliSpacing.xl) {
-                headerSection
+            VStack(spacing: 10) {
+                header
                 scoreGauge
-                factorsSection
-                historyChartSection
+                factorList
+                history
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, MilliSpacing.md)
-            .padding(.bottom, 100)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
+    private var header: some View {
         HStack {
-            Button { onBack() } label: {
+            Button(action: onBack) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(MilliColors.textSecondary)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.035)))
             }
             .buttonStyle(.plain)
 
-            Text("Tax Ready Score")
-                .font(MilliFont.screenTitle)
-                .foregroundColor(MilliColors.textPrimary)
+            Spacer()
+
+            Text("Tax Ready Score™")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
 
             Spacer()
+
+            Image(systemName: "info.circle")
+                .font(.system(size: 16))
+                .foregroundStyle(MilliColors.textSecondary)
+                .frame(width: 34, height: 34)
         }
-        .padding(.vertical, MilliSpacing.sm)
     }
 
-    // MARK: - Score Gauge
-
     private var scoreGauge: some View {
-        VStack(spacing: MilliSpacing.md) {
+        VStack(spacing: 8) {
             ZStack {
-                // Background arc
                 Circle()
-                    .stroke(MilliColors.border, lineWidth: 12)
-                    .frame(width: 180, height: 180)
+                    .stroke(Color.white.opacity(0.07), lineWidth: 11)
 
-                // Score arc
                 Circle()
                     .trim(from: 0, to: 0.85)
                     .stroke(
                         AngularGradient(
                             colors: [MilliColors.deepCyan, MilliColors.cyanGlow, MilliColors.positive],
-                            center: .center,
-                            startAngle: .degrees(-90),
-                            endAngle: .degrees(216)
+                            center: .center
                         ),
-                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 11, lineCap: .round)
                     )
-                    .frame(width: 180, height: 180)
                     .rotationEffect(.degrees(-90))
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 8)
 
-                // Center text
-                VStack(spacing: 4) {
+                VStack(spacing: 1) {
                     Text("85")
-                        .font(MilliFont.heroNumber)
-                        .foregroundColor(MilliColors.textPrimary)
+                        .font(.custom("Sora-ExtraBold", size: 42, relativeTo: .largeTitle))
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
                     Text("Great")
-                        .font(MilliFont.headline)
-                        .foregroundColor(MilliColors.positive)
+                        .font(MilliFont.headlineSmall)
+                        .foregroundStyle(MilliColors.positive)
                 }
             }
+            .frame(width: 176, height: 176)
 
             Text("You're on track for tax season")
-                .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textSecondary)
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, MilliSpacing.md)
+        .padding(.vertical, 8)
     }
 
-    // MARK: - Score Factors
-
-    private var factorsSection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.md) {
+    private var factorList: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text("SCORE FACTORS")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(1)
+                .sectionHeaderStyle()
 
-            ForEach(scoreFactors) { factor in
-                factorRow(factor)
-            }
-        }
-        .milliCard(padding: MilliSpacing.cardPaddingLarge)
-    }
+            VStack(spacing: 0) {
+                ForEach(Array(factors.enumerated()), id: \.element.id) { index, factor in
+                    HStack(spacing: 9) {
+                        Image(systemName: factor.icon)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(factor.color)
+                            .frame(width: 26, height: 26)
+                            .background(Circle().fill(factor.color.opacity(0.09)))
 
-    private func factorRow(_ factor: ScoreFactor) -> some View {
-        HStack(spacing: MilliSpacing.md) {
-            Circle()
-                .fill(factor.statusColor)
-                .frame(width: 10, height: 10)
+                        Text(factor.name)
+                            .font(MilliFont.bodySmall)
+                            .foregroundStyle(MilliColors.textPrimary)
 
-            Text(factor.name)
-                .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textPrimary)
+                        Spacer()
 
-            Spacer()
+                        Text(factor.status)
+                            .font(MilliFont.caption)
+                            .foregroundStyle(factor.color)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
 
-            Text(factor.status)
-                .font(MilliFont.labelLarge)
-                .foregroundColor(factor.statusColor)
-        }
-    }
-
-    // MARK: - Score History Chart
-
-    private var historyChartSection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.md) {
-            Text("SCORE HISTORY")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(1)
-
-            Chart {
-                ForEach(historyData) { point in
-                    LineMark(
-                        x: .value("Month", point.month),
-                        y: .value("Score", point.score)
-                    )
-                    .foregroundStyle(MilliColors.cyanGlow)
-                    .interpolationMethod(.catmullRom)
-
-                    AreaMark(
-                        x: .value("Month", point.month),
-                        y: .value("Score", point.score)
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [MilliColors.cyanGlow.opacity(0.3), MilliColors.cyanGlow.opacity(0)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.catmullRom)
+                    if index < factors.count - 1 {
+                        Divider().overlay(Color.white.opacity(0.05)).padding(.leading, 46)
+                    }
                 }
             }
+            .background(MilliCardBackground(showGlow: true))
+        }
+    }
+
+    private var history: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("SCORE HISTORY")
+                    .sectionHeaderStyle()
+                Spacer()
+                Text("Last 6 months")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
+
+            Chart(historyData) { point in
+                LineMark(
+                    x: .value("Month", point.month),
+                    y: .value("Score", point.score)
+                )
+                .foregroundStyle(MilliColors.cyanGlow)
+                .interpolationMethod(.catmullRom)
+                .lineStyle(StrokeStyle(lineWidth: 1.8))
+
+                PointMark(
+                    x: .value("Month", point.month),
+                    y: .value("Score", point.score)
+                )
+                .foregroundStyle(MilliColors.cyanGlow)
+                .symbolSize(18)
+            }
+            .chartYScale(domain: 60...100)
             .chartYAxis {
-                AxisMarks(values: [60, 70, 80, 90, 100]) { value in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
-                        .foregroundStyle(MilliColors.border)
-                    AxisValueLabel()
-                        .foregroundStyle(MilliColors.textTertiary)
+                AxisMarks(values: [60, 70, 80, 90, 100]) { _ in
+                    AxisGridLine().foregroundStyle(Color.white.opacity(0.04))
+                    AxisValueLabel().foregroundStyle(MilliColors.textTertiary)
                 }
             }
             .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel()
-                        .foregroundStyle(MilliColors.textTertiary)
+                AxisMarks { _ in
+                    AxisValueLabel().foregroundStyle(MilliColors.textTertiary)
                 }
             }
-            .frame(height: 160)
+            .frame(height: 145)
         }
-        .milliCard(padding: MilliSpacing.cardPaddingLarge)
+        .milliCard(padding: 14)
     }
 
-    // MARK: - Data
-
-    private var scoreFactors: [ScoreFactor] {
+    private var factors: [ScoreFactor] {
         [
-            ScoreFactor(name: "Income Tracking", status: "Excellent", statusColor: MilliColors.positive),
-            ScoreFactor(name: "Expense Tracking", status: "Good", statusColor: MilliColors.cyanGlow),
-            ScoreFactor(name: "Mileage Tracking", status: "Excellent", statusColor: MilliColors.positive),
-            ScoreFactor(name: "Tax Payments", status: "Good", statusColor: MilliColors.cyanGlow),
-            ScoreFactor(name: "Document Capture", status: "Needs Attention", statusColor: MilliColors.warning),
+            .init(name: "Income Tracking", status: "Excellent", color: MilliColors.positive, icon: "dollarsign.circle.fill"),
+            .init(name: "Expense Tracking", status: "Good", color: MilliColors.positive, icon: "receipt.fill"),
+            .init(name: "Mileage Tracking", status: "Excellent", color: MilliColors.positive, icon: "car.fill"),
+            .init(name: "Tax Payments", status: "Good", color: MilliColors.positive, icon: "building.columns.fill"),
+            .init(name: "Document Capture", status: "Needs Attention", color: MilliColors.warning, icon: "doc.text.fill")
         ]
     }
 
     private var historyData: [ScoreHistoryPoint] {
         [
-            ScoreHistoryPoint(month: "Jan", score: 72),
-            ScoreHistoryPoint(month: "Feb", score: 75),
-            ScoreHistoryPoint(month: "Mar", score: 78),
-            ScoreHistoryPoint(month: "Apr", score: 80),
-            ScoreHistoryPoint(month: "May", score: 83),
-            ScoreHistoryPoint(month: "Jun", score: 85),
+            .init(month: "Jan", score: 68), .init(month: "Feb", score: 72),
+            .init(month: "Mar", score: 78), .init(month: "Apr", score: 82),
+            .init(month: "May", score: 85), .init(month: "Jun", score: 85)
         ]
     }
 }
 
-// MARK: - Models
-
-struct ScoreFactor: Identifiable {
+private struct ScoreFactor: Identifiable {
     let id = UUID()
     let name: String
     let status: String
-    let statusColor: Color
+    let color: Color
+    let icon: String
 }
 
-struct ScoreHistoryPoint: Identifiable {
+private struct ScoreHistoryPoint: Identifiable {
     let id = UUID()
     let month: String
     let score: Int
