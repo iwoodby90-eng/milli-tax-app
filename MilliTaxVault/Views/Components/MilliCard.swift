@@ -1,6 +1,7 @@
 import SwiftUI
 
-// MARK: - MilliCard — Standard card container with dark glass surface + cyan border glow
+// MARK: - MilliCard
+// Premium graphite/black-glass surface shared by the whole app.
 
 struct MilliCard<Content: View>: View {
     let content: Content
@@ -12,18 +13,35 @@ struct MilliCard<Content: View>: View {
     var body: some View {
         content
             .padding(MilliSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                    .fill(MilliColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                            .stroke(MilliColors.cardBorderGlow, lineWidth: 1)
-                    )
-            )
+            .background(MilliCardBackground(showGlow: true))
     }
 }
 
-// MARK: - View Modifier variant
+struct MilliCardBackground: View {
+    var showGlow: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+            .fill(MilliColors.graphiteSurface)
+            .overlay {
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .stroke(
+                        showGlow ? MilliColors.cardBorderGlow : MilliColors.borderSubtle,
+                        lineWidth: 0.75
+                    )
+            }
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [Color.white.opacity(0.06), Color.clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 1)
+                .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
+            }
+            .shadow(color: Color.black.opacity(0.32), radius: 10, x: 0, y: 5)
+    }
+}
 
 struct MilliCardModifier: ViewModifier {
     var padding: CGFloat = MilliSpacing.cardPadding
@@ -32,17 +50,7 @@ struct MilliCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                    .fill(MilliColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                            .stroke(
-                                showGlow ? MilliColors.cardBorderGlow : MilliColors.border,
-                                lineWidth: showGlow ? 1 : 0.5
-                            )
-                    )
-            )
+            .background(MilliCardBackground(showGlow: showGlow))
     }
 }
 
