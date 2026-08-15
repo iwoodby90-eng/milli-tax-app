@@ -1,45 +1,38 @@
 import SwiftUI
 
-// MARK: - ContentView — Root container with tab routing and nav bar
+// MARK: - ContentView
+// Native SwiftUI shell: screen router + persistent sculpted Milli navigation + contextual Milli AI companion.
 
 struct ContentView: View {
     @State private var selectedTab: MilliTab = .home
-    @State private var showAIChat = false
     @State private var activeScreen: ActiveScreen = .home
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Main content area
+            MilliColors.background.ignoresSafeArea()
+
             screenContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.opacity)
 
-            // Floating AI Orb — bottom right, above nav
             if activeScreen != .milliAI {
-                VStack {
+                HStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        MilliAIOrb {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                activeScreen = .milliAI
-                            }
-                        }
-                        .padding(.trailing, MilliSpacing.screenHorizontal)
-                        .padding(.bottom, 88)
+                    MilliAIOrb {
+                        navigateTo(.milliAI)
                     }
+                    .padding(.trailing, 10)
+                    .padding(.bottom, MilliSpacing.bottomNavHeight - 4)
                 }
+                .allowsHitTesting(true)
             }
 
-            // Bottom nav bar
             MilliNavBar(selectedTab: $selectedTab) {
-                // M Dial tap — navigate home
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    selectedTab = .home
-                    activeScreen = .home
-                }
+                selectedTab = .home
+                navigateTo(.home)
             }
             .onChange(of: selectedTab) { _, newTab in
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     switch newTab {
                     case .home:
                         activeScreen = .home
@@ -47,17 +40,16 @@ struct ContentView: View {
                         activeScreen = .payouts
                     case .mDial:
                         activeScreen = .home
+                    case .mileage:
+                        activeScreen = .mileage
                     case .more:
                         activeScreen = .more
                     }
                 }
             }
         }
-        .background(MilliColors.background.ignoresSafeArea())
         .preferredColorScheme(.dark)
     }
-
-    // MARK: - Screen Content Router
 
     @ViewBuilder
     private var screenContent: some View {
@@ -67,38 +59,48 @@ struct ContentView: View {
         case .payouts:
             PayoutsView()
         case .mileage:
-            MileageView(onBack: { activeScreen = .home })
+            MileageView(onBack: { navigateTo(.home) })
         case .milliCents:
-            MilliCentsView(onBack: { activeScreen = .home })
+            MilliCentsView(onBack: { navigateTo(.home) })
         case .taxVault:
-            TaxVaultView(onBack: { activeScreen = .home })
+            TaxVaultView(onBack: { navigateTo(.home) })
         case .taxReadyScore:
-            TaxReadyScoreView(onBack: { activeScreen = .home })
+            TaxReadyScoreView(onBack: { navigateTo(.home) })
         case .quarterlyTaxes:
-            QuarterlyTaxesView(onBack: { activeScreen = .home })
+            QuarterlyTaxesView(onBack: { navigateTo(.home) })
         case .investing:
-            InvestingView(onBack: { activeScreen = .more })
+            InvestingView(onBack: { navigateTo(.more) })
         case .retirement:
-            RetirementView(onBack: { activeScreen = .more })
+            RetirementView(onBack: { navigateTo(.more) })
         case .treeOfLife:
-            TreeOfLifeView(onBack: { activeScreen = .more })
+            TreeOfLifeView(onBack: { navigateTo(.more) })
         case .milliAI:
-            MilliAIView(onBack: { activeScreen = .home })
+            MilliAIView(onBack: { navigateTo(.home) })
         case .reports:
-            ReportsView(onBack: { activeScreen = .more })
+            ReportsView(onBack: { navigateTo(.more) })
         case .more:
             MoreMenuView(navigate: navigateTo)
         }
     }
 
     private func navigateTo(_ screen: ActiveScreen) {
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(.easeInOut(duration: 0.2)) {
             activeScreen = screen
+            switch screen {
+            case .home:
+                selectedTab = .home
+            case .payouts:
+                selectedTab = .payouts
+            case .mileage:
+                selectedTab = .mileage
+            case .more:
+                selectedTab = .more
+            default:
+                break
+            }
         }
     }
 }
-
-// MARK: - Active Screen Enum
 
 enum ActiveScreen {
     case home
