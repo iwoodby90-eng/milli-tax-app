@@ -35,6 +35,11 @@ enum MilliFont {
     static var numericSmall: Font { .custom("Sora-Medium", size: 13, relativeTo: .caption) }
     static var subHeroNumber: Font { .custom("Sora-ExtraBold", size: 20, relativeTo: .title3) }
 
+    // Shared compatibility tokens used by legacy/native components while the UI is consolidated.
+    static var cardValue: Font { .custom("Sora-SemiBold", size: 20, relativeTo: .title3) }
+    static var insightBody: Font { .custom("Inter-Medium", size: 13, relativeTo: .footnote) }
+    static func soraBold(_ size: CGFloat) -> Font { .custom("Sora-Bold", size: size, relativeTo: .body) }
+
     // Brand wordmark. Intentionally large and bold: MILLI should never read as tiny micro-copy.
     static var wordmark: Font { .custom("Sora-ExtraBold", size: 28, relativeTo: .title) }
     static var navLabel: Font { .custom("Inter-Medium", size: 9, relativeTo: .caption2) }
