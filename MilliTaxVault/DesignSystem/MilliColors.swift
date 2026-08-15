@@ -82,6 +82,26 @@ enum MilliColors {
     }
 }
 
+// MARK: - MilliGradients
+// Shared material gradients for signature hardware-like controls.
+
+enum MilliGradients {
+    static var chromeRing: AngularGradient {
+        AngularGradient(
+            colors: [
+                MilliColors.chromeDark,
+                MilliColors.chromeWhite,
+                MilliColors.chromeMid,
+                MilliColors.chromeLight,
+                MilliColors.chromeDeep,
+                MilliColors.chromeWhite,
+                MilliColors.chromeDark
+            ],
+            center: .center
+        )
+    }
+}
+
 // MARK: - Hex Color Extension
 
 extension Color {
