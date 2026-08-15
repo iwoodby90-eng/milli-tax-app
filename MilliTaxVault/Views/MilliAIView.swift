@@ -1,221 +1,180 @@
 import SwiftUI
 
-// MARK: - MilliAIView — Screen 11: AI chat assistant
-// Robot avatar | Greeting | Chat bubbles | Input field
+// MARK: - MilliAIView
+// Dedicated assistant surface using the approved Milli AI character and contextual financial actions.
 
 struct MilliAIView: View {
     var onBack: () -> Void = {}
-    @State private var messageText: String = ""
+    @State private var messageText = ""
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            headerSection
+            header
 
-            // Chat content
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: MilliSpacing.lg) {
-                    robotAvatar
-                    greetingSection
-                    chatBubbles
+                VStack(spacing: 12) {
+                    intro
+                    userBubble("How much will I owe in taxes this year?")
+                    aiCard(
+                        "Based on your income so far, I estimate you'll owe $1,247 for Q2 taxes.",
+                        action: "View Tax Estimate"
+                    )
+                    userBubble("How can I reduce my taxes?")
+                    aiCard(
+                        "You could save an estimated $420 by tracking more deductions and keeping mileage complete.",
+                        action: "Show Deductions"
+                    )
                 }
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
-                .padding(.top, MilliSpacing.md)
-                .padding(.bottom, MilliSpacing.lg)
+                .padding(.top, 6)
+                .padding(.bottom, 18)
             }
 
-            Spacer()
-
-            // Input field
-            inputSection
+            composer
+                .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
         }
         .background(MilliColors.background.ignoresSafeArea())
-        .padding(.bottom, 78) // Nav bar clearance
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
-        HStack {
-            Button { onBack() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(MilliColors.textSecondary)
+    private var header: some View {
+        ZStack {
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(Color.white.opacity(0.035)))
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Button {} label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
-            Text("Milli AI")
-                .font(MilliFont.screenTitle)
-                .foregroundColor(MilliColors.textPrimary)
-
-            Spacer()
+            Text("MILLI AI")
+                .font(MilliFont.headlineSmall)
+                .tracking(3.0)
+                .foregroundStyle(MilliColors.silverBright)
         }
         .padding(.horizontal, MilliSpacing.screenHorizontal)
-        .padding(.vertical, MilliSpacing.md)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
-    // MARK: - Robot Avatar
+    private var intro: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image("MilliAIOrb")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.25), radius: 7)
 
-    private var robotAvatar: some View {
-        ZStack {
-            // Outer glow
-            Circle()
-                .fill(MilliColors.cyanGlow.opacity(0.08))
-                .frame(width: 100, height: 100)
-
-            // Robot body
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "1A2E4A"), Color(hex: "0D1B2E")],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 64, height: 56)
-                .overlay(
-                    VStack(spacing: 8) {
-                        // Eyes
-                        HStack(spacing: 14) {
-                            Circle()
-                                .fill(MilliColors.cyanGlow)
-                                .frame(width: 10, height: 10)
-                                .shadow(color: MilliColors.cyanGlow.opacity(0.8), radius: 4)
-                            Circle()
-                                .fill(MilliColors.cyanGlow)
-                                .frame(width: 10, height: 10)
-                                .shadow(color: MilliColors.cyanGlow.opacity(0.8), radius: 4)
-                        }
-                        // Mouth
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(MilliColors.cyanGlow.opacity(0.5))
-                            .frame(width: 20, height: 4)
-                    }
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(MilliColors.cyanGlow.opacity(0.3), lineWidth: 1)
-                )
-
-            // Antenna
-            VStack(spacing: 0) {
-                Circle()
-                    .fill(MilliColors.cyanGlow)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.6), radius: 4)
-                Rectangle()
-                    .fill(MilliColors.cyanGlow.opacity(0.5))
-                    .frame(width: 2, height: 12)
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Hi Alex 👋")
+                    .font(MilliFont.headlineSmall)
+                    .foregroundStyle(MilliColors.textPrimary)
+                Text("I'm Milli AI. I'm here to help you save on taxes, understand your money, and build wealth.")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .offset(y: -38)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .milliCard(padding: 12)
         }
-        .padding(.top, MilliSpacing.lg)
     }
 
-    // MARK: - Greeting
-
-    private var greetingSection: some View {
-        VStack(spacing: 6) {
-            Text("Hi Ian! \u{1F44B}")
-                .font(MilliFont.displaySmall)
-                .foregroundColor(MilliColors.textPrimary)
-
-            Text("How can I help guide your finances today?")
+    private func userBubble(_ text: String) -> some View {
+        HStack {
+            Spacer(minLength: 60)
+            Text(text)
                 .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textSecondary)
-                .multilineTextAlignment(.center)
+                .foregroundStyle(MilliColors.blackGlass)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [MilliColors.cyanGlow, Color(hex: "19B7D7")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
         }
     }
 
-    // MARK: - Chat Bubbles
+    private func aiCard(_ text: String, action: String) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image("MilliAIOrb")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
 
-    private var chatBubbles: some View {
-        VStack(spacing: MilliSpacing.md) {
-            // User message
-            HStack {
-                Spacer()
-                Text("Am I on track for tax season?")
+            VStack(alignment: .leading, spacing: 10) {
+                Text(text)
                     .font(MilliFont.bodyMedium)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(MilliColors.cyanGlow.opacity(0.2))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .stroke(MilliColors.cyanGlow.opacity(0.4), lineWidth: 0.5)
-                            )
-                    )
-            }
+                    .foregroundStyle(MilliColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            // AI response
-            HStack(alignment: .top, spacing: 10) {
-                // Mini robot icon
-                ZStack {
-                    Circle()
-                        .fill(MilliColors.cardBackground)
-                        .frame(width: 30, height: 30)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(hex: "1A2E4A"))
-                        .frame(width: 18, height: 14)
-                        .overlay(
-                            HStack(spacing: 4) {
-                                Circle().fill(MilliColors.cyanGlow).frame(width: 4, height: 4)
-                                Circle().fill(MilliColors.cyanGlow).frame(width: 4, height: 4)
-                            }
+                Button {} label: {
+                    Text(action)
+                        .font(MilliFont.labelLarge)
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(MilliColors.cyanGlow.opacity(0.42), lineWidth: 0.8)
                         )
                 }
-
-                Text("Yes! You're on pace to save $3,421 in taxes this year. Your Tax Ready Score is 85 which is great.")
-                    .font(MilliFont.bodyMedium)
-                    .foregroundColor(MilliColors.textPrimary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(MilliColors.cardBackground)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .stroke(MilliColors.cardBorderGlow, lineWidth: 0.5)
-                            )
-                    )
-
-                Spacer()
+                .buttonStyle(.plain)
             }
+            .milliCard(padding: 12)
+
+            Spacer(minLength: 22)
         }
     }
 
-    // MARK: - Input Field
-
-    private var inputSection: some View {
-        HStack(spacing: 12) {
+    private var composer: some View {
+        HStack(spacing: 10) {
             TextField("Ask Milli AI anything...", text: $messageText)
                 .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textPrimary)
+                .foregroundStyle(MilliColors.textPrimary)
                 .focused($isInputFocused)
                 .tint(MilliColors.cyanGlow)
 
             Button {} label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 30))
-                    .foregroundColor(messageText.isEmpty ? MilliColors.textTertiary : MilliColors.cyanGlow)
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(messageText.isEmpty ? MilliColors.textTertiary : MilliColors.blackGlass)
+                    .frame(width: 30, height: 30)
+                    .background(
+                        Circle()
+                            .fill(messageText.isEmpty ? Color.white.opacity(0.04) : MilliColors.cyanGlow)
+                    )
             }
             .buttonStyle(.plain)
             .disabled(messageText.isEmpty)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .frame(height: 48)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .fill(MilliColors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(MilliColors.border, lineWidth: 0.5)
-                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .stroke(MilliColors.border, lineWidth: 0.7)
+                }
         )
         .padding(.horizontal, MilliSpacing.screenHorizontal)
-        .padding(.bottom, MilliSpacing.sm)
+        .padding(.top, 6)
     }
 }
