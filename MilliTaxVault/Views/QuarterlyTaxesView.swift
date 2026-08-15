@@ -1,138 +1,159 @@
 import SwiftUI
 
-// MARK: - QuarterlyTaxesView — Screen 7: Estimated taxes breakdown
-// Hero amount + due date | Breakdown | Projection | Make a Payment button
+// MARK: - QuarterlyTaxesView
+// Native quarterly estimate breakdown and payment-readiness surface.
 
 struct QuarterlyTaxesView: View {
     var onBack: () -> Void = {}
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: MilliSpacing.lg) {
-                headerSection
-                heroSection
-                breakdownSection
-                projectionSection
-                makePaymentButton
+            VStack(spacing: 10) {
+                header
+                estimateHero
+                breakdown
+                projection
+                paymentButton
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, MilliSpacing.md)
-            .padding(.bottom, 100)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
+    private var header: some View {
         HStack {
-            Button { onBack() } label: {
+            Button(action: onBack) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(MilliColors.textSecondary)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.035)))
             }
             .buttonStyle(.plain)
 
-            Text("ESTIMATED TAXES Q2 2024")
+            Spacer()
+
+            Text("Quarterly Taxes")
                 .font(MilliFont.screenTitle)
-                .foregroundColor(MilliColors.textPrimary)
-                .tracking(0.5)
+                .foregroundStyle(MilliColors.textPrimary)
 
             Spacer()
+
+            Text("Q2 2024")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textSecondary)
+                .frame(width: 52, alignment: .trailing)
         }
-        .padding(.vertical, MilliSpacing.sm)
     }
 
-    // MARK: - Hero
-
-    private var heroSection: some View {
-        VStack(spacing: MilliSpacing.sm) {
+    private var estimateHero: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("ESTIMATED TAXES")
+                .sectionHeaderStyle()
             Text("$1,247.00")
                 .font(MilliFont.heroNumber)
-                .foregroundColor(MilliColors.cyanGlow)
-
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
             Text("Due Jun 15, 2024")
-                .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textSecondary)
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, MilliSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard(padding: 14)
     }
 
-    // MARK: - Breakdown
-
-    private var breakdownSection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.md) {
+    private var breakdown: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text("BREAKDOWN")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(1)
+                .sectionHeaderStyle()
 
-            breakdownRow(label: "Federal", amount: "$682.00")
-            breakdownRow(label: "Self-Employment", amount: "$352.00")
-            breakdownRow(label: "State (MI)", amount: "$213.00")
+            taxRow(icon: "building.columns", label: "Federal", amount: "$682.00")
+            taxRow(icon: "person.crop.circle.badge.checkmark", label: "Self-Employment", amount: "$352.00")
+            taxRow(icon: "mappin.and.ellipse", label: "State (MI)", amount: "$213.00")
         }
-        .milliCard(padding: MilliSpacing.cardPaddingLarge)
+        .milliCard(padding: 14)
     }
 
-    private func breakdownRow(label: String, amount: String) -> some View {
-        HStack {
+    private func taxRow(icon: String, label: String, amount: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
             Text(label)
                 .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textPrimary)
+                .foregroundStyle(MilliColors.textPrimary)
 
             Spacer()
 
             Text(amount)
                 .font(MilliFont.numericSmall)
-                .foregroundColor(MilliColors.textPrimary)
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
         }
-        .padding(.vertical, 4)
     }
 
-    // MARK: - Tax Projection
-
-    private var projectionSection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.md) {
+    private var projection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             Text("TAX PROJECTION")
-                .font(MilliFont.label)
-                .foregroundColor(MilliColors.textLabel)
-                .tracking(1)
+                .sectionHeaderStyle()
 
-            projectionRow(label: "Projected Annual", amount: "$4,988.00", color: MilliColors.textPrimary)
-            projectionRow(label: "Paid to Date", amount: "$1,665.00", color: MilliColors.positive)
-            projectionRow(label: "Remaining", amount: "$3,123.00", color: MilliColors.cyanGlow)
+            projectionRow("Projected Annual", "$4,988.00", MilliColors.textPrimary)
+            projectionRow("Paid to Date", "$1,865.00", MilliColors.positive)
+            projectionRow("Remaining", "$3,123.00", MilliColors.cyanGlow)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.06))
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geo.size.width * 0.37)
+                }
+            }
+            .frame(height: 5)
         }
-        .milliCard(padding: MilliSpacing.cardPaddingLarge)
+        .milliCard(padding: 14)
     }
 
-    private func projectionRow(label: String, amount: String, color: Color) -> some View {
+    private func projectionRow(_ label: String, _ amount: String, _ color: Color) -> some View {
         HStack {
             Text(label)
-                .font(MilliFont.bodyMedium)
-                .foregroundColor(MilliColors.textSecondary)
-
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
             Spacer()
-
             Text(amount)
                 .font(MilliFont.numericSmall)
-                .foregroundColor(color)
+                .monospacedDigit()
+                .foregroundStyle(color)
         }
-        .padding(.vertical, 4)
     }
 
-    // MARK: - Make a Payment Button
-
-    private var makePaymentButton: some View {
+    private var paymentButton: some View {
         Button {} label: {
             Text("Make a Payment")
-                .font(MilliFont.headline)
-                .foregroundColor(MilliColors.blackGlass)
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.blackGlass)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .frame(height: 46)
                 .background(
-                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                        .fill(MilliColors.cyanGlow)
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [MilliColors.cyanGlow, Color(hex: "03B8DC")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                 )
         }
         .buttonStyle(.plain)
