@@ -1,295 +1,325 @@
 import SwiftUI
-import Charts
 
-// MARK: - HomeView — Pixel-Fidelity Reference Implementation
-// Matches the approved production reference exactly.
-// Dense, cinematic, precision-accented fintech dashboard.
+// MARK: - HomeView — Primary dashboard screen
+// Matches the 12-screen master reference: hero card with sparkline,
+// latest payout row, 2x2 metric grid, AI insight card.
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
-    @State private var showSparkline = false
-    @State private var showTreeOfLife = false
-    
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: MilliLayout.sectionGap) {
-                // MARK: Header — Centered MILLI wordmark + bell
+            VStack(spacing: MilliSpacing.lg) {
                 headerSection
-                
-                // MARK: Hero — Available to Spend
                 heroCard
-                
-                // MARK: Latest Payout — compact horizontal
-                latestPayoutCard
-                
-                // MARK: 2x2 Metric Grid
+                latestPayoutRow
                 metricGrid
-                
-                // MARK: Milli AI Insight
-                insightCard
-
-                // MARK: Tree of Life
-                treeOfLifeCard
+                aiInsightCard
             }
-            .padding(.bottom, 100)
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, MilliSpacing.md)
+            .padding(.bottom, 100) // Clear bottom nav
         }
-        .background(MilliColors.obsidian.ignoresSafeArea())
-        .fullScreenCover(isPresented: $showTreeOfLife) {
-            TreeOfLifeView()
-        }
+        .background(MilliColors.background.ignoresSafeArea())
     }
-    
-    // MARK: - Header (Centered MILLI + bell overlay)
+
+    // MARK: - Header (MILLI wordmark + icons)
+
     private var headerSection: some View {
-        ZStack {
-            // Centered wordmark
-            Text("M I L L I")
-                .font(.system(size: 18, weight: .semibold))
-                .tracking(8)
-                .foregroundColor(.white)
-            
-            // Bell icon right-aligned
-            HStack {
+        HStack {
+            Spacer()
+
+            // MILLI wordmark — chrome gradient
+            Text("MILLI")
+                .font(MilliFont.wordmark())
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.white, Color(hex: "00D4FF").opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .tracking(2)
+
+            Spacer()
+
+            // Notification bell
+            Button {} label: {
+                Image(systemName: "bell")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(MilliColors.textSecondary)
+            }
+            .buttonStyle(.plain)
+
+            // Profile avatar
+            Button {} label: {
+                Circle()
+                    .fill(MilliColors.cardBackgroundElevated)
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(MilliColors.textSecondary)
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 8)
+        }
+        .padding(.vertical, MilliSpacing.sm)
+    }
+
+    // MARK: - Hero Card (Available to Spend)
+
+    private var heroCard: some View {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+            Text("AVAILABLE TO SPEND")
+                .font(MilliFont.label())
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(1.2)
+
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.availableToSpend)
+                        .font(MilliFont.numericLarge())
+                        .foregroundColor(MilliColors.textPrimary)
+                        .contentTransition(.numericText())
+
+                    Text("Updated just now")
+                        .font(MilliFont.bodySmall())
+                        .foregroundColor(MilliColors.textTertiary)
+                }
+
                 Spacer()
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white)
-                    Circle()
-                        .fill(MilliColors.cyan)
-                        .frame(width: 6, height: 6)
-                        .offset(x: 2, y: -1)
+
+                // Sparkline + arrow button
+                HStack(spacing: 12) {
+                    MilliSparkline(
+                        data: viewModel.sparklineData,
+                        color: MilliColors.cyan,
+                        height: 40
+                    )
+                    .frame(width: 60)
+
+                    // Cyan-filled circle arrow button
+                    Button {} label: {
+                        Circle()
+                            .fill(MilliColors.cyan)
+                            .frame(width: 32, height: 32)
+                            .overlay(
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(MilliColors.background)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 20)
         }
-        .padding(.top, 72)
-        .padding(.bottom, 8)
+        .padding(MilliSpacing.cardPaddingLarge)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [MilliColors.heroGradientTop, MilliColors.heroGradientBottom],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
+                        .stroke(MilliColors.border, lineWidth: 0.5)
+                )
+        )
     }
-    
-    // MARK: - Hero Card (Available to Spend)
-    private var heroCard: some View {
-        HStack(spacing: 0) {
-            // Left content
-            VStack(alignment: .leading, spacing: MilliLayout.metadataGap) {
-                Text("AVAILABLE TO SPEND")
-                    .font(MilliFont.sectionLabel)
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .tracking(0.5)
-                
-                Text(viewModel.spendableBalance.formattedAmount)
-                    .font(MilliFont.heroBalance)
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText())
-                
-                Text(viewModel.spendableBalance.lastUpdated)
-                    .font(MilliFont.metadata)
-                    .foregroundStyle(MilliColors.textMuted)
-                
-                // Sparkline
-                MilliSparkline(data: viewModel.spendableBalance.cashflowData)
-                    .frame(height: 36)
-                    .padding(.top, 4)
+
+    // MARK: - Latest Payout Row
+
+    private var latestPayoutRow: some View {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+            Text("LATEST PAYOUT")
+                .font(MilliFont.label())
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(1.0)
+
+            HStack(spacing: MilliSpacing.md) {
+                // Platform logo circle
+                Circle()
+                    .fill(Color(hex: "1E40AF"))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(viewModel.latestPayout.platformInitial)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    )
+
+                // Platform name + date
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.latestPayout.platformName)
+                        .font(MilliFont.headlineSmall())
+                        .foregroundColor(MilliColors.textPrimary)
+
+                    Text(viewModel.latestPayout.dateTime)
+                        .font(MilliFont.bodySmall())
+                        .foregroundColor(MilliColors.textSecondary)
+                }
+
+                Spacer()
+
+                // Amount
+                Text(viewModel.latestPayout.amount)
+                    .font(MilliFont.numericMedium())
+                    .foregroundColor(MilliColors.positive)
             }
-            
-            Spacer()
-            
-            // Right — cyan action circle
+            .milliCard()
+        }
+    }
+
+    // MARK: - 2x2 Metric Grid
+
+    private var metricGrid: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: MilliSpacing.gridGap),
+                GridItem(.flexible(), spacing: MilliSpacing.gridGap)
+            ],
+            spacing: MilliSpacing.gridGap
+        ) {
+            taxVaultCard
+            taxReadyScoreCard
+            quarterlyTaxesCard
+            mileageCard
+        }
+    }
+
+    // Tax Vault card
+    private var taxVaultCard: some View {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+            Text("MILLI TAX VAULT\u{2122}")
+                .font(MilliFont.label())
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(0.8)
+
+            Text(viewModel.taxVaultBalance)
+                .font(MilliFont.numericMedium())
+                .foregroundColor(MilliColors.textPrimary)
+
+            Text("22% of annual target")
+                .font(MilliFont.bodySmall())
+                .foregroundColor(MilliColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard()
+    }
+
+    // Tax Ready Score card — with progress ring
+    private var taxReadyScoreCard: some View {
+        VStack(spacing: MilliSpacing.sm) {
+            Text("TAX READY SCORE\u{2122}")
+                .font(MilliFont.label())
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            ZStack {
+                // Background ring
+                Circle()
+                    .stroke(MilliColors.border, lineWidth: 4)
+                    .frame(width: 52, height: 52)
+
+                // Progress arc
+                Circle()
+                    .trim(from: 0, to: CGFloat(viewModel.taxReadyScore) / 100.0)
+                    .stroke(MilliColors.cyan, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .frame(width: 52, height: 52)
+                    .rotationEffect(.degrees(-90))
+
+                // Score number
+                Text("\(viewModel.taxReadyScore)")
+                    .font(MilliFont.numericMedium())
+                    .foregroundColor(MilliColors.textPrimary)
+            }
+
+            Text("Great")
+                .font(MilliFont.labelLarge())
+                .foregroundColor(MilliColors.positive)
+        }
+        .frame(maxWidth: .infinity)
+        .milliCard()
+    }
+
+    // Quarterly Taxes card
+    private var quarterlyTaxesCard: some View {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+            Text("QUARTERLY TAXES")
+                .font(MilliFont.label())
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(0.8)
+
+            Text(viewModel.quarterlyTaxes)
+                .font(MilliFont.numericMedium())
+                .foregroundColor(MilliColors.textPrimary)
+
+            Text("Est. due Jun 15, 2025")
+                .font(MilliFont.bodySmall())
+                .foregroundColor(MilliColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard()
+    }
+
+    // Mileage card
+    private var mileageCard: some View {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+            Text("MILEAGE")
+                .font(MilliFont.label())
+                .foregroundColor(MilliColors.textLabel)
+                .tracking(0.8)
+
+            Text(viewModel.mileage)
+                .font(MilliFont.numericMedium())
+                .foregroundColor(MilliColors.textPrimary)
+
+            Text("This quarter")
+                .font(MilliFont.bodySmall())
+                .foregroundColor(MilliColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard()
+    }
+
+    // MARK: - AI Insight Card
+
+    private var aiInsightCard: some View {
+        HStack(spacing: MilliSpacing.md) {
+            // Robot icon
             ZStack {
                 Circle()
-                    .fill(MilliColors.cyan)
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(MilliColors.obsidian)
+                    .fill(MilliColors.cyan.opacity(0.15))
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: "cpu")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(MilliColors.cyan)
             }
-            .padding(.trailing, 2)
-        }
-        .padding(.horizontal, MilliLayout.cardPaddingH)
-        .padding(.vertical, MilliLayout.cardPaddingV + 2)
-        .milliSurface(hasCyanBorder: true)
-        .padding(.horizontal, MilliLayout.screenMargin)
-    }
-    
-    // MARK: - Latest Payout Card (compact horizontal)
-    private var latestPayoutCard: some View {
-        HStack(spacing: 10) {
-            // Left content
-            VStack(alignment: .leading, spacing: MilliLayout.metadataGap) {
-                Text("LATEST PAYOUT")
-                    .font(MilliFont.sectionLabel)
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .tracking(0.5)
-                
-                Text(viewModel.latestPayout.formattedAmount)
-                    .font(MilliFont.subHeroNumber)
-                    .foregroundStyle(.white)
-                
-                HStack(spacing: 4) {
-                    Text(viewModel.latestPayout.timestamp)
-                        .font(MilliFont.metadata)
-                        .foregroundStyle(MilliColors.textMuted)
-                    
-                    Text("•")
-                        .font(MilliFont.metadata)
-                        .foregroundStyle(MilliColors.textMuted)
-                    
-                    Text(viewModel.latestPayout.source)
-                        .font(MilliFont.metadata)
-                        .foregroundStyle(MilliColors.textMuted)
-                }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("MILLI AI INSIGHT")
+                    .font(MilliFont.label())
+                    .foregroundColor(MilliColors.textLabel)
+                    .tracking(0.8)
+
+                Text(viewModel.aiInsight)
+                    .font(MilliFont.bodyMedium())
+                    .foregroundColor(MilliColors.textPrimary)
+                    .lineLimit(2)
             }
-            
+
             Spacer()
-            
-            // Source icon (Walmart/Spark)
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(hex: "1A2030"))
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: viewModel.latestPayout.sourceIcon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(MilliColors.cyan)
-            }
-        }
-        .padding(.horizontal, MilliLayout.cardPaddingH)
-        .padding(.vertical, MilliLayout.cardPaddingV)
-        .milliSurface()
-        .padding(.horizontal, MilliLayout.screenMargin)
-    }
-    
-    // MARK: - 2x2 Metric Grid
-    private var metricGrid: some View {
-        VStack(spacing: MilliLayout.gridGap) {
-            // Top row
-            HStack(spacing: MilliLayout.gridGap) {
-                // Milli Tax Vault
-                MilliMetricCard(
-                    title: "Milli Tax Vault",
-                    value: viewModel.taxVault.formattedBalance,
-                    subtitle: viewModel.taxVault.annualRate,
-                    icon: "building.columns.fill"
-                )
-                
-                // Tax Ready Score — with progress ring
-                taxReadyScoreCard
-            }
-            
-            // Bottom row
-            HStack(spacing: MilliLayout.gridGap) {
-                // Quarterly Taxes
-                MilliMetricCard(
-                    title: "Quarterly Taxes",
-                    value: viewModel.quarterlyTax.formattedAmount,
-                    subtitle: viewModel.quarterlyTax.dueDate,
-                    icon: "doc.text.fill"
-                )
-                
-                // Mileage
-                MilliMetricCard(
-                    title: "Mileage",
-                    value: viewModel.mileage.formattedMiles,
-                    subtitle: viewModel.mileage.period,
-                    icon: "car.fill"
-                )
-            }
-        }
-        .padding(.horizontal, MilliLayout.screenMargin)
-    }
-    
-    // MARK: - Tax Ready Score (special layout with ring)
-    private var taxReadyScoreCard: some View {
-        VStack(alignment: .leading, spacing: MilliLayout.metadataGap + 2) {
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(MilliColors.cyan)
-                Text("TAX READY SCORE")
-                    .font(MilliFont.sectionLabel)
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .tracking(0.6)
-            }
-            
-            HStack(spacing: 8) {
-                MilliProgressRing(
-                    score: viewModel.taxReadyScore.score,
-                    maxScore: viewModel.taxReadyScore.maxScore,
-                    label: viewModel.taxReadyScore.label,
-                    size: 44,
-                    lineWidth: 4
-                )
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(viewModel.taxReadyScore.score)")
-                        .font(MilliFont.cardValue)
-                        .foregroundStyle(.white)
-                    
-                    Text(viewModel.taxReadyScore.label)
-                        .font(MilliFont.metadata)
-                        .foregroundStyle(MilliColors.positive)
-                }
-            }
-        }
-        .padding(.horizontal, MilliLayout.cardPaddingH)
-        .padding(.vertical, MilliLayout.cardPaddingV)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .milliSurface()
-    }
-    
-    // MARK: - AI Insight
-    private var insightCard: some View {
-        MilliInsightCard(text: viewModel.aiInsight.text)
-            .padding(.horizontal, MilliLayout.screenMargin)
-    }
-    
 
-    // MARK: - Tree of Life Card
-    private var treeOfLifeCard: some View {
-        Button(action: { showTreeOfLife = true }) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(MilliColors.cyan.opacity(0.08))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "leaf.fill")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(MilliColors.cyan)
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Tree of Life")
-                        .font(MilliFont.bodyMedium)
-                        .foregroundStyle(.white)
-                    Text("Your financial journey & future goals")
-                        .font(MilliFont.metadata)
-                        .foregroundStyle(MilliColors.textSecondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(MilliColors.textMuted)
-            }
-            .padding(.horizontal, MilliLayout.cardPaddingH)
-            .padding(.vertical, MilliLayout.cardPaddingV)
-            .milliSurface()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(MilliColors.textTertiary)
         }
-        .buttonStyle(.plain)
-        .padding(.horizontal, MilliLayout.screenMargin)
+        .milliCard(padding: MilliSpacing.cardPaddingLarge)
     }
-}
-
-// MARK: - Preview
-#Preview {
-    ZStack {
-        MilliColors.obsidian.ignoresSafeArea()
-        VStack(spacing: 0) {
-            HomeView()
-            MilliNavBar(selectedTab: .constant(.dashboard))
-        }
-    }
-    .preferredColorScheme(.dark)
 }

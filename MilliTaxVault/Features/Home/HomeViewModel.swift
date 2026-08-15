@@ -1,36 +1,43 @@
 import SwiftUI
 import Combine
 
-// MARK: - HomeViewModel — Drives the Home screen data
-// Connects to existing data sources. Uses demo data for seeding.
+// MARK: - HomeViewModel — Drives the Home dashboard
 
-@MainActor
 final class HomeViewModel: ObservableObject {
-    @Published var spendableBalance: SpendableBalance = .demo
-    @Published var latestPayout: LatestPayout = .demo
-    @Published var taxVault: TaxVaultStatus = .demo
-    @Published var taxReadyScore: TaxReadyScore = .demo
-    @Published var quarterlyTax: QuarterlyTaxEstimate = .demo
-    @Published var mileage: MileageStatus = .demo
-    @Published var aiInsight: AIInsight = .demo
+    @Published var availableToSpend: String = "$1,365.42"
+    @Published var sparklineData: [CGFloat] = [0.3, 0.5, 0.4, 0.6, 0.55, 0.7, 0.65, 0.8, 0.75, 0.85]
+    @Published var latestPayout: PayoutEntry = .placeholder
+    @Published var taxVaultBalance: String = "$5,284.17"
+    @Published var taxReadyScore: Int = 85
+    @Published var quarterlyTaxes: String = "$1,247.00"
+    @Published var mileage: String = "2,345 mi"
+    @Published var aiInsight: String = "You're on pace to save $3,421 in taxes this year."
     @Published var isLoading: Bool = false
-    
+
     init() {
-        // In production, wire to real data sources / API calls here
         loadData()
     }
-    
+
     func loadData() {
-        // Placeholder for async data fetch
-        // When real APIs are connected, this will populate from network
+        // In production, fetch from API / local store.
+        // Placeholder data matching the master reference.
         isLoading = false
     }
-    
-    func refreshData() {
-        isLoading = true
-        // Simulate refresh
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            self?.isLoading = false
-        }
-    }
+}
+
+// MARK: - PayoutEntry
+
+struct PayoutEntry: Identifiable {
+    let id = UUID()
+    let platformName: String
+    let platformInitial: String
+    let dateTime: String
+    let amount: String
+
+    static let placeholder = PayoutEntry(
+        platformName: "Spark Drive",
+        platformInitial: "S",
+        dateTime: "Today, 9:41 AM",
+        amount: "+$312.64"
+    )
 }

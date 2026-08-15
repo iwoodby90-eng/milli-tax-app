@@ -1,245 +1,151 @@
 import SwiftUI
 
-// MARK: - MilliTab — Canonical tab definition
+// MARK: - MilliTab — Navigation destinations
+
 enum MilliTab: String, CaseIterable {
-    case dashboard
-    case activity
-    case home
-    case wealth
-    case transfers
-    
+    case home = "Home"
+    case payouts = "Payouts"
+    case mDial = "M"
+    case mileage = "Mileage"
+    case more = "More"
+
     var icon: String {
         switch self {
-        case .dashboard: return "house.fill"
-        case .activity: return "dollarsign.arrow.circlepath"
-        case .home: return "m.circle.fill"
-        case .wealth: return "chart.line.uptrend.xyaxis"
-        case .transfers: return "car.fill"
+        case .home: return "house.fill"
+        case .payouts: return "arrow.down.circle.fill"
+        case .mDial: return "" // Custom center button
+        case .mileage: return "car.fill"
+        case .more: return "ellipsis"
         }
     }
-    
-    var label: String {
-        switch self {
-        case .dashboard: return "Home"
-        case .activity: return "Payouts"
-        case .home: return ""
-        case .wealth: return "Wealth"
-        case .transfers: return "Mileage"
-        }
-    }
+
+    var label: String { rawValue }
 }
 
-// MARK: - MilliNavBar — Dark Graphite + Chrome Bridge Automotive Dashboard
+// MARK: - MilliNavBar — Bel Air cockpit-style bottom navigation
+
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
-    
-    private let barHeight: CGFloat = 88
-    private let dialSize: CGFloat = 68
-    private let dialRise: CGFloat = 22
-    
+    var onMDialTap: () -> Void = {}
+
+    private let barHeight: CGFloat = 72
+    private let mDialSize: CGFloat = 56
+
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // LAYER 1 — Recessed Graphite Tray
-            graphiteTray
-            
-            // LAYER 2 — Sculpted Chrome Bridge (Canvas)
-            chromeBridgeCanvas
-            
-            // LAYER 3 — Tab buttons + Center M Dial
-            tabButtonsLayer
+        ZStack(alignment: .top) {
+            // Bar background — brushed titanium feel
+            navBarBackground
+
+            // Tab items
+            HStack(spacing: 0) {
+                tabButton(.home)
+                tabButton(.payouts)
+                Spacer().frame(width: mDialSize + 16) // Space for center dial
+                tabButton(.mileage)
+                tabButton(.more)
+            }
+            .padding(.horizontal, MilliSpacing.lg)
+            .padding(.top, 10)
+
+            // Center M Dial — elevated chrome circle
+            mDialButton
+                .offset(y: -14)
         }
-        .frame(height: barHeight + dialRise)
-        .ignoresSafeArea(.all, edges: .bottom)
+        .frame(height: barHeight)
     }
-    
-    // MARK: - Layer 1: Graphite Tray
-    private var graphiteTray: some View {
+
+    // MARK: - Tab Button
+
+    private func tabButton(_ tab: MilliTab) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedTab = tab
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(selectedTab == tab ? MilliColors.navTabActive : MilliColors.navTabInactive)
+                    .shadow(color: selectedTab == tab ? .white.opacity(0.4) : .clear, radius: 4)
+
+                Text(tab.label)
+                    .font(MilliFont.label())
+                    .foregroundColor(selectedTab == tab ? MilliColors.navTabActive : MilliColors.navTabInactive)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Center M Dial
+
+    private var mDialButton: some View {
+        Button {
+            onMDialTap()
+        } label: {
+            ZStack {
+                // Outer chrome ring
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "2A3A5C"),
+                                Color(hex: "0F1829")
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: mDialSize, height: mDialSize)
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.4),
+                                        Color(hex: "00D4FF").opacity(0.6),
+                                        Color.white.opacity(0.2)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+                    .shadow(color: MilliColors.cyan.opacity(0.4), radius: 8, y: 2)
+
+                // Inner M letterform — angular chrome
+                Text("M")
+                    .font(.system(size: 24, weight: .black, design: .default))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white, Color(hex: "00D4FF")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Background
+
+    private var navBarBackground: some View {
         Rectangle()
-            .fill(
+            .fill(MilliColors.navBarBackground)
+            .overlay(alignment: .top) {
+                // Top specular edge — brushed titanium highlight
                 LinearGradient(
-                    colors: [Color(hex: "18191C"), Color(hex: "0F1012"), Color(hex: "18191C")],
+                    colors: [
+                        Color.white.opacity(0.08),
+                        Color.clear
+                    ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-            )
-            .frame(height: barHeight)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-    }
-    
-    // MARK: - Layer 2: Chrome Bridge (high-contrast metallic)
-    private var chromeBridgeCanvas: some View {
-        Canvas { context, size in
-            let w = size.width
-            let h = barHeight
-            
-            // Quadratic bezier arch path
-            var bridgePath = Path()
-            bridgePath.move(to: CGPoint(x: 0, y: h * 0.2))
-            bridgePath.addQuadCurve(
-                to: CGPoint(x: w, y: h * 0.2),
-                control: CGPoint(x: w * 0.5, y: h * 0.55)
-            )
-            bridgePath.addLine(to: CGPoint(x: w, y: h * 0.2 + 8))
-            bridgePath.addQuadCurve(
-                to: CGPoint(x: 0, y: h * 0.2 + 8),
-                control: CGPoint(x: w * 0.5, y: h * 0.55 + 8)
-            )
-            bridgePath.closeSubpath()
-            
-            // Fill chrome bridge — HIGH CONTRAST chrome gradient
-            context.fill(
-                bridgePath,
-                with: .linearGradient(
-                    Gradient(colors: [
-                        Color(white: 0.85),
-                        Color(white: 0.55),
-                        Color(white: 0.25),
-                        Color(white: 0.1)
-                    ]),
-                    startPoint: CGPoint(x: 0, y: h * 0.2),
-                    endPoint: CGPoint(x: 0, y: h * 0.2 + 8)
-                )
-            )
-            
-            // Top edge specular highlight line (white at 60% opacity)
-            var highlightPath = Path()
-            highlightPath.move(to: CGPoint(x: 0, y: h * 0.2))
-            highlightPath.addQuadCurve(
-                to: CGPoint(x: w, y: h * 0.2),
-                control: CGPoint(x: w * 0.5, y: h * 0.55)
-            )
-            
-            var highlightCtx = context
-            highlightCtx.opacity = 0.6
-            highlightCtx.stroke(
-                highlightPath,
-                with: .color(.white),
-                style: StrokeStyle(lineWidth: 1.0)
-            )
-        }
-        .frame(height: barHeight)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-        .allowsHitTesting(false)
-    }
-    
-    // MARK: - Layer 3: Tab Buttons + M Dial
-    private var tabButtonsLayer: some View {
-        HStack(spacing: 0) {
-            // Left tabs: Home, Payouts
-            tabButton(tab: .dashboard)
-            tabButton(tab: .activity)
-            
-            // Center M Dial (raised)
-            mDialButton
-                .offset(y: -dialRise)
-            
-            // Right tabs: Wealth, Mileage
-            tabButton(tab: .wealth)
-            tabButton(tab: .transfers)
-        }
-        .frame(height: barHeight)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-    }
-    
-    // MARK: - Tab Button
-    private func tabButton(tab: MilliTab) -> some View {
-        Button(action: { selectedTab = tab }) {
-            VStack(spacing: 4) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(selectedTab == tab ? Color(hex: "00E5FF") : Color.white.opacity(0.55))
-                    .shadow(
-                        color: selectedTab == tab ? Color(hex: "00E5FF").opacity(0.7) : Color.clear,
-                        radius: selectedTab == tab ? 6 : 0
-                    )
-                
-                Text(tab.label)
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundColor(selectedTab == tab ? Color(hex: "00E5FF") : Color.white.opacity(0.4))
+                .frame(height: 1)
             }
-        }
-        .frame(maxWidth: .infinity)
-        .buttonStyle(.plain)
-    }
-    
-    // MARK: - Center M Dial (Upgraded — deeper depth, segmented cyan dot ring)
-    private var mDialButton: some View {
-        Button(action: { selectedTab = .home }) {
-            ZStack {
-                // Outer chrome ring with radial gradient for depth
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(white: 0.7), Color(white: 0.3), Color(white: 0.15)],
-                            center: .center,
-                            startRadius: 26,
-                            endRadius: 34
-                        )
-                    )
-                    .frame(width: 68, height: 68)
-                    .shadow(color: .black.opacity(0.8), radius: 6, x: 0, y: 4)
-                
-                // Angular chrome bezel stroke overlay
-                Circle()
-                    .stroke(
-                        AngularGradient(
-                            stops: [
-                                .init(color: Color(hex: "E0E4E8"), location: 0.0),
-                                .init(color: Color(hex: "7A7E84"), location: 0.25),
-                                .init(color: Color(hex: "3A3C40"), location: 0.5),
-                                .init(color: Color(hex: "7A7E84"), location: 0.75),
-                                .init(color: Color(hex: "E0E4E8"), location: 1.0)
-                            ],
-                            center: .center
-                        ),
-                        lineWidth: 3
-                    )
-                    .frame(width: 68, height: 68)
-                
-                // Segmented cyan dot ring (LED dots)
-                ForEach(0..<24, id: \.self) { i in
-                    let angle = Double(i) * (360.0 / 24.0)
-                    Circle()
-                        .fill(Color.cyan.opacity(i % 3 == 0 ? 0.9 : 0.3))
-                        .frame(width: i % 3 == 0 ? 3 : 2, height: i % 3 == 0 ? 3 : 2)
-                        .offset(y: -27)
-                        .rotationEffect(.degrees(angle))
-                }
-                
-                // Black glass face
-                Circle()
-                    .fill(Color(white: 0.05))
-                    .frame(width: 52, height: 52)
-                    .overlay(
-                        Circle()
-                            .stroke(Color(white: 0.2), lineWidth: 0.5)
-                    )
-                
-                // Angular M with cyan gradient glow
-                Text("M")
-                    .font(.system(size: 22, weight: .black, design: .default))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.cyan, Color.white.opacity(0.9), Color.cyan.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .shadow(color: .cyan.opacity(0.8), radius: 4)
-            }
-            .frame(width: 68, height: 68)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Preview
-#Preview {
-    ZStack {
-        Color(hex: "07090B").ignoresSafeArea()
-        VStack {
-            Spacer()
-            MilliNavBar(selectedTab: .constant(.dashboard))
-        }
+            .shadow(color: .black.opacity(0.5), radius: 12, y: -4)
     }
 }

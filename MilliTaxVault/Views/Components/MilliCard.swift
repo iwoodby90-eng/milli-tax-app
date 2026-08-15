@@ -1,31 +1,49 @@
 import SwiftUI
 
-// MARK: - MilliCard Container View
-// Use as a container wrapper: MilliCard { content }
-// For the modifier version, use .milliCard() from MilliTheme.swift
+// MARK: - MilliCard — Standard card container with dark glass surface
 
 struct MilliCard<Content: View>: View {
     let content: Content
-    
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
-    
+
     var body: some View {
         content
-            .padding(MilliSpacing.xl)
+            .padding(MilliSpacing.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: MilliRadius.card)
-                    .fill(LinearGradient(
-                        colors: [Color(hex: "10171D"), Color(hex: "0C1217")],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ))
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .fill(MilliColors.cardBackground)
                     .overlay(
-                        RoundedRectangle(cornerRadius: MilliRadius.card)
-                            .stroke(MilliColor.border, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                            .stroke(MilliColors.border, lineWidth: 0.5)
                     )
-                    .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
             )
+    }
+}
+
+// MARK: - View Modifier variant
+
+struct MilliCardModifier: ViewModifier {
+    var padding: CGFloat = MilliSpacing.cardPadding
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .fill(MilliColors.cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                            .stroke(MilliColors.border, lineWidth: 0.5)
+                    )
+            )
+    }
+}
+
+extension View {
+    func milliCard(padding: CGFloat = MilliSpacing.cardPadding) -> some View {
+        modifier(MilliCardModifier(padding: padding))
     }
 }

@@ -1,60 +1,114 @@
 import SwiftUI
 
+// MARK: - ContentView — Root container with tab routing and nav bar
+
 struct ContentView: View {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @State private var selectedTab: MilliTab = .home
-    
+    @State private var showAIChat = false
+
     var body: some View {
-        ZStack {
-            // Tab content + nav bar
-            ZStack(alignment: .bottom) {
-                // Screen content — each screen fills the available space
-                Group {
-                    switch selectedTab {
-                    case .dashboard:
-                        HomeView()
-                    case .activity:
-                        ActivityView()
-                    case .home:
-                        HomeView()
-                    case .wealth:
-                        WealthView()
-                    case .transfers:
-                        MileageView()
-                    }
-                }
+        ZStack(alignment: .bottom) {
+            // Main content area
+            tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .safeAreaInset(edge: .bottom) {
-                    Color.clear.frame(height: 120)
-                }
-                
-                // Brushed nickel automotive dashboard navigation bar
-                MilliNavBar(selectedTab: $selectedTab)
-            }
-            
-            // GLOBAL AI ORB — only visible after onboarding complete
-            if hasCompletedOnboarding && hasCompletedSetup {
-                VStack {
+
+            // Floating AI Orb — bottom right, above nav
+            VStack {
+                Spacer()
+                HStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        MilliAIOrb()
-                            .padding(.trailing, 20)
-                            .padding(.bottom, 104)
+                    MilliAIOrb {
+                        showAIChat = true
                     }
+                    .padding(.trailing, MilliSpacing.screenHorizontal)
+                    .padding(.bottom, 80) // Above nav bar
                 }
-                .ignoresSafeArea()
-                .allowsHitTesting(true)
-                .zIndex(999)
+            }
+
+            // Bottom nav bar
+            MilliNavBar(selectedTab: $selectedTab) {
+                // M Dial tap — navigate home
+                selectedTab = .home
             }
         }
-        .background(MilliColors.obsidian)
+        .background(MilliColors.background.ignoresSafeArea())
         .preferredColorScheme(.dark)
-        .ignoresSafeArea(edges: .bottom)
+    }
+
+    // MARK: - Tab Content Router
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .home:
+            HomeView()
+        case .payouts:
+            PayoutsPlaceholderView()
+        case .mDial:
+            HomeView() // M always routes home
+        case .mileage:
+            MileagePlaceholderView()
+        case .more:
+            MorePlaceholderView()
+        }
     }
 }
 
-#Preview {
-    ContentView()
+// MARK: - Placeholder views for tabs not yet built
+
+struct PayoutsPlaceholderView: View {
+    var body: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+            VStack(spacing: 12) {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundColor(MilliColors.cyan)
+                Text("Payouts")
+                    .font(MilliFont.headline())
+                    .foregroundColor(MilliColors.textPrimary)
+                Text("Coming soon")
+                    .font(MilliFont.bodySmall())
+                    .foregroundColor(MilliColors.textSecondary)
+            }
+        }
+    }
+}
+
+struct MileagePlaceholderView: View {
+    var body: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+            VStack(spacing: 12) {
+                Image(systemName: "car.fill")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundColor(MilliColors.cyan)
+                Text("Mileage")
+                    .font(MilliFont.headline())
+                    .foregroundColor(MilliColors.textPrimary)
+                Text("Coming soon")
+                    .font(MilliFont.bodySmall())
+                    .foregroundColor(MilliColors.textSecondary)
+            }
+        }
+    }
+}
+
+struct MorePlaceholderView: View {
+    var body: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+            VStack(spacing: 12) {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundColor(MilliColors.cyan)
+                Text("More")
+                    .font(MilliFont.headline())
+                    .foregroundColor(MilliColors.textPrimary)
+                Text("Coming soon")
+                    .font(MilliFont.bodySmall())
+                    .foregroundColor(MilliColors.textSecondary)
+            }
+        }
+    }
 }

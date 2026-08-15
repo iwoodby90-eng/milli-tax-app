@@ -69,6 +69,14 @@
 		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204; };
 		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205; };
 		A10206 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10206; };
+		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
+		AF0002 /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0002; };
+		AF0003 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0003; };
+		AF0004 /* Sora-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0004; };
+		AF0005 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0005; };
+		AF0006 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0006; };
+		AF0007 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0007; };
+		AF0008 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0008; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -135,6 +143,15 @@
 		B10204 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		B10205 /* WealthOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WealthOverviewView.swift; sourceTree = "<group>"; };
 		B10206 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
+		BF0001 /* Sora-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Regular.ttf"; sourceTree = "<group>"; };
+		BF0002 /* Sora-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Medium.ttf"; sourceTree = "<group>"; };
+		BF0003 /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-SemiBold.ttf"; sourceTree = "<group>"; };
+		BF0004 /* Sora-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Bold.ttf"; sourceTree = "<group>"; };
+		BF0005 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
+		BF0006 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
+		BF0007 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
+		BF0008 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
+		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -158,6 +175,7 @@
 				C10003 /* Views */,
 				C10011 /* Features */,
 				B10013 /* Assets.xcassets */,
+				CF0001 /* Resources */,
 			);
 			path = MilliTaxVault;
 			sourceTree = "<group>";
@@ -295,6 +313,30 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		CF0001 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				CF0002 /* Fonts */,
+				BF0099 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		CF0002 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				BF0001 /* Sora-Regular.ttf */,
+				BF0002 /* Sora-Medium.ttf */,
+				BF0003 /* Sora-SemiBold.ttf */,
+				BF0004 /* Sora-Bold.ttf */,
+				BF0005 /* Inter-Regular.ttf */,
+				BF0006 /* Inter-Medium.ttf */,
+				BF0007 /* Inter-SemiBold.ttf */,
+				BF0008 /* Inter-Bold.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -418,6 +460,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10013,
+				AF0001,
+				AF0002,
+				AF0003,
+				AF0004,
+				AF0005,
+				AF0006,
+				AF0007,
+				AF0008,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,6 +478,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_FILE = MilliTaxVault/Info.plist;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -460,6 +511,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_FILE = MilliTaxVault/Info.plist;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
