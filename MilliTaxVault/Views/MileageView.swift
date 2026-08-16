@@ -7,7 +7,7 @@ import MapKit
 struct MileageView: View {
     var onBack: () -> Void = {}
 
-    @State private var region = MKCoordinateRegion(
+    private let region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 42.3314, longitude: -83.0458),
         span: MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
     )
@@ -74,7 +74,7 @@ struct MileageView: View {
 
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
                         Text("18.64")
-                            .font(.custom("Sora-ExtraBold", size: 34, relativeTo: .largeTitle))
+                            .font(.custom("Sora-Bold", size: 34, relativeTo: .largeTitle))
                             .monospacedDigit()
                             .foregroundStyle(MilliColors.textPrimary)
                         Text("mi")
@@ -127,12 +127,14 @@ struct MileageView: View {
 
     private var map: some View {
         ZStack {
-            Map(coordinateRegion: .constant(region))
-                .frame(height: 260)
-                .colorScheme(.dark)
-                .allowsHitTesting(false)
+            Map(initialPosition: .region(region)) {
+                EmptyMapContent()
+            }
+            .frame(height: 260)
+            .colorScheme(.dark)
+            .allowsHitTesting(false)
 
-            // Visual route overlay used only as presentation on top of the live MapKit surface.
+            // Presentation route overlay. Replace with recorded GPS polyline points when live trip state is wired.
             GeometryReader { geo in
                 Path { path in
                     let w = geo.size.width
