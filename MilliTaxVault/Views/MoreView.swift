@@ -30,6 +30,7 @@ struct MoreMenuView: View {
 
                 sectionTitle("INSIGHTS")
                 menuTile(icon: "doc.text.fill", title: "Reports", subtitle: "Deductions, trips, exports, and summaries", color: Color(hex: "7C8CFF")) { navigate?(.reports) }
+                menuTile(icon: "folder.fill", title: "Documents", subtitle: "Tax documents, receipts, reports, and native file import", color: MilliColors.silverBright) { navigate?(.documents) }
                 menuTile(icon: "sparkles", title: "Milli AI", subtitle: "Personalized intelligence across your money", color: MilliColors.cyanGlow) { navigate?(.milliAI) }
 
                 sectionTitle("ACCOUNT")
