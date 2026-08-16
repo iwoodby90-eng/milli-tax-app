@@ -2,52 +2,66 @@ import SwiftUI
 
 struct SplashView: View {
     var onComplete: () -> Void
-    
-    @State private var emblemScale: CGFloat = 0.3
-    @State private var contentOpacity: Double = 0.0
-    
+
+    @State private var emblemScale: CGFloat = 0.82
+    @State private var contentOpacity: Double = 0
+
     var body: some View {
         ZStack {
-            Color(hex: "07090B")
-                .ignoresSafeArea()
-            
-            VStack(spacing: 20) {
+            LinearGradient(
+                colors: [Color(hex: "05080B"), Color(hex: "07090B"), Color(hex: "020405")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 24) {
                 Spacer()
-                
-                ChromeEmblemView(size: 120)
+
+                ChromeEmblemView(size: 136)
                     .scaleEffect(emblemScale)
-                
-                VStack(spacing: 12) {
-                    Text("MILLI")
-                        .font(.system(size: 42, weight: .bold, design: .default))
-                        .tracking(8)
-                        .foregroundStyle(.white)
-                    
+
+                VStack(spacing: 14) {
+                    Image("MilliWordmark")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 290)
+                        .accessibilityHidden(true)
+
                     Text("Money, Made Intelligent.")
-                        .font(.system(size: 16, weight: .regular, design: .default))
-                        .italic()
-                        .foregroundStyle(Color(hex: "8E92A0"))
-                    
-                    Rectangle()
-                        .fill(Color(hex: "00E5FF"))
-                        .frame(width: 60, height: 2)
-                        .padding(.top, 8)
+                        .font(.custom("Inter-Medium", size: 15, relativeTo: .subheadline))
+                        .tracking(0.5)
+                        .foregroundStyle(MilliColors.silver)
+
+                    Capsule(style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.clear, MilliColors.cyanGlow, Color.clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: 96, height: 1.5)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.45), radius: 4)
                 }
                 .opacity(contentOpacity)
-                
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("MILLI. Money, Made Intelligent.")
+
                 Spacer()
             }
+            .padding(.horizontal, 28)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
-                emblemScale = 1.0
+            withAnimation(.easeOut(duration: 0.55)) {
+                emblemScale = 1
             }
-            
-            withAnimation(.easeInOut(duration: 0.5).delay(0.4)) {
-                contentOpacity = 1.0
+
+            withAnimation(.easeInOut(duration: 0.5).delay(0.28)) {
+                contentOpacity = 1
             }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.35) {
                 onComplete()
             }
         }
