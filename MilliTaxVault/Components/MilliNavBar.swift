@@ -23,38 +23,63 @@ enum MilliTab: String, CaseIterable {
 
 // MARK: - MilliNavBar
 // Signature sculpted chrome bridge with a mechanically docked center-M command control.
+// The side destinations are intentionally icon-forward to preserve the approved cockpit silhouette.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
     var onMDialTap: () -> Void = {}
 
-    private let commandSize: CGFloat = 78
+    private let commandSize: CGFloat = 82
     private let shellHeight: CGFloat = MilliSpacing.bottomNavHeight
 
     var body: some View {
         ZStack(alignment: .top) {
-            MilliNavigationTrayShape()
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "171D22"), MilliColors.navBarBackground, Color(hex: "040607")],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay {
-                    MilliNavigationTrayShape()
-                        .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
-                }
-                .shadow(color: .black.opacity(0.75), radius: 14, x: 0, y: -4)
+            navigationTray
+            chromeBridge
+            sideDestinations
+            commandDock
+        }
+        .frame(height: shellHeight)
+        .ignoresSafeArea(edges: .bottom)
+        .accessibilityElement(children: .contain)
+    }
 
+    private var navigationTray: some View {
+        MilliNavigationTrayShape()
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: "171D22"), MilliColors.navBarBackground, Color(hex: "040607")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay {
+                MilliNavigationTrayShape()
+                    .stroke(Color.white.opacity(0.065), lineWidth: 0.65)
+            }
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [Color.white.opacity(0.035), Color.clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 32)
+                .mask(MilliNavigationTrayShape())
+            }
+            .shadow(color: .black.opacity(0.78), radius: 15, x: 0, y: -4)
+    }
+
+    private var chromeBridge: some View {
+        ZStack {
             MilliNavigationBridgeShape()
                 .fill(
                     LinearGradient(
-                        colors: [
-                            MilliColors.chromeDark,
-                            MilliColors.chromeWhite,
-                            MilliColors.chromeMid,
-                            MilliColors.chromeDeep
+                        stops: [
+                            .init(color: MilliColors.chromeDeep, location: 0.00),
+                            .init(color: MilliColors.chromeWhite, location: 0.22),
+                            .init(color: MilliColors.chromeMid, location: 0.52),
+                            .init(color: MilliColors.chromeDark, location: 0.78),
+                            .init(color: MilliColors.chromeDeep, location: 1.00)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -62,25 +87,34 @@ struct MilliNavBar: View {
                 )
                 .overlay {
                     MilliNavigationBridgeShape()
-                        .stroke(Color.white.opacity(0.5), lineWidth: 0.55)
+                        .stroke(Color.white.opacity(0.50), lineWidth: 0.55)
                 }
-                .shadow(color: MilliColors.cyanGlow.opacity(0.10), radius: 4, y: -1)
 
-            HStack(spacing: 0) {
-                tabButton(.home)
-                tabButton(.payouts)
-                Spacer().frame(width: commandSize + 24)
-                tabButton(.mileage)
-                tabButton(.more)
-            }
-            .padding(.horizontal, 10)
-            .padding(.top, 31)
-
-            commandButton
-                .offset(y: -16)
+            MilliNavigationBridgeHighlightShape()
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.clear, Color.white.opacity(0.85), MilliColors.cyanGlow.opacity(0.34), Color.white.opacity(0.75), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    style: StrokeStyle(lineWidth: 0.9, lineCap: .round)
+                )
+                .blur(radius: 0.15)
         }
-        .frame(height: shellHeight)
-        .ignoresSafeArea(edges: .bottom)
+        .shadow(color: .black.opacity(0.72), radius: 4, y: 3)
+        .shadow(color: MilliColors.cyanGlow.opacity(0.10), radius: 5, y: -1)
+    }
+
+    private var sideDestinations: some View {
+        HStack(spacing: 0) {
+            tabButton(.home)
+            tabButton(.payouts)
+            Spacer().frame(width: commandSize + 30)
+            tabButton(.mileage)
+            tabButton(.more)
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 31)
     }
 
     private func tabButton(_ tab: MilliTab) -> some View {
@@ -88,39 +122,54 @@ struct MilliNavBar: View {
             selectedTab = tab
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
-            VStack(spacing: 3) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 17, weight: .semibold))
-                    .symbolRenderingMode(.monochrome)
-                    .foregroundStyle(selectedTab == tab ? MilliColors.navTabActive : MilliColors.navTabInactive)
-                    .shadow(
-                        color: selectedTab == tab ? MilliColors.cyanGlow.opacity(0.42) : .clear,
-                        radius: 5
-                    )
+            ZStack {
+                Color.clear
 
-                Text(tab.rawValue)
-                    .font(MilliFont.navLabel)
-                    .foregroundStyle(selectedTab == tab ? MilliColors.navTabActive : MilliColors.navTabInactive)
-                    .lineLimit(1)
+                VStack(spacing: 5) {
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(selectedTab == tab ? MilliColors.navTabActive : MilliColors.navTabInactive)
+                        .shadow(
+                            color: selectedTab == tab ? MilliColors.cyanGlow.opacity(0.48) : .clear,
+                            radius: 5
+                        )
+
+                    Capsule(style: .continuous)
+                        .fill(selectedTab == tab ? MilliColors.cyanGlow : Color.clear)
+                        .frame(width: 13, height: 2)
+                        .shadow(
+                            color: selectedTab == tab ? MilliColors.cyanGlow.opacity(0.55) : .clear,
+                            radius: 4
+                        )
+                }
             }
             .frame(maxWidth: .infinity)
+            .frame(height: 46)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tab.rawValue)
+        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
 
-    private var commandButton: some View {
+    private var commandDock: some View {
         Button {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             onMDialTap()
         } label: {
             ZStack {
+                // Mechanical recess under the command dial.
                 Circle()
-                    .fill(Color.black.opacity(0.55))
-                    .frame(width: commandSize + 12, height: commandSize + 12)
-                    .shadow(color: .black.opacity(0.85), radius: 10, y: 5)
+                    .fill(Color.black.opacity(0.82))
+                    .frame(width: commandSize + 18, height: commandSize + 18)
+                    .overlay {
+                        Circle()
+                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.92), radius: 12, y: 6)
 
+                // Brushed/chrome outer collar.
                 Circle()
                     .fill(
                         AngularGradient(
@@ -137,57 +186,66 @@ struct MilliNavBar: View {
                         )
                     )
                     .frame(width: commandSize, height: commandSize)
-
-                Circle()
-                    .fill(Color(hex: "060B0F"))
-                    .frame(width: commandSize - 10, height: commandSize - 10)
                     .overlay {
                         Circle()
-                            .stroke(Color.black.opacity(0.9), lineWidth: 2)
+                            .stroke(Color.white.opacity(0.42), lineWidth: 0.65)
+                    }
+
+                // Black separator gives the bezel real physical depth.
+                Circle()
+                    .fill(Color(hex: "05080A"))
+                    .frame(width: commandSize - 9, height: commandSize - 9)
+                    .overlay {
+                        Circle().stroke(Color.black.opacity(0.95), lineWidth: 2)
                     }
 
                 segmentedLightRing
 
+                // Recessed black-glass face.
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "123244"), Color(hex: "071015"), Color.black],
+                            colors: [Color(hex: "153A4A"), Color(hex: "081218"), Color.black],
                             center: .center,
                             startRadius: 1,
-                            endRadius: 30
+                            endRadius: 33
                         )
                     )
-                    .frame(width: commandSize - 28, height: commandSize - 28)
+                    .frame(width: commandSize - 29, height: commandSize - 29)
                     .overlay {
-                        Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7)
+                        Circle().stroke(Color.white.opacity(0.16), lineWidth: 0.7)
                     }
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.16), radius: 8)
 
+                // Canonical approved M geometry only.
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 42, height: 42)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.45), radius: 5)
+                    .frame(width: 45, height: 45)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.44), radius: 5)
             }
-            .frame(width: commandSize + 14, height: commandSize + 14)
+            .frame(width: commandSize + 20, height: commandSize + 20)
         }
         .buttonStyle(MilliCommandButtonStyle())
+        .offset(y: -19)
         .accessibilityLabel("Milli home command")
+        .accessibilityHint("Returns to the Milli home dashboard")
     }
 
     private var segmentedLightRing: some View {
         ZStack {
             Circle()
-                .stroke(MilliColors.cyanGlow.opacity(0.42), lineWidth: 2)
+                .stroke(MilliColors.cyanGlow.opacity(0.44), lineWidth: 2)
                 .frame(width: commandSize - 18, height: commandSize - 18)
-                .shadow(color: MilliColors.cyanGlow.opacity(0.52), radius: 5)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.56), radius: 5)
 
-            ForEach(0..<36, id: \.self) { index in
+            ForEach(0..<40, id: \.self) { index in
                 Capsule(style: .continuous)
-                    .fill(index % 3 == 0 ? MilliColors.chromeLight : MilliColors.cyanGlow)
-                    .frame(width: 1.2, height: index % 3 == 0 ? 5.5 : 4)
+                    .fill(index % 4 == 0 ? MilliColors.chromeLight : MilliColors.cyanGlow)
+                    .frame(width: 1.1, height: index % 4 == 0 ? 5.8 : 4.1)
                     .offset(y: -(commandSize - 22) / 2)
-                    .rotationEffect(.degrees(Double(index) * 10))
-                    .opacity(index % 3 == 0 ? 0.9 : 0.7)
+                    .rotationEffect(.degrees(Double(index) * 9))
+                    .opacity(index % 4 == 0 ? 0.90 : 0.68)
             }
         }
     }
@@ -197,7 +255,7 @@ private struct MilliCommandButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .brightness(configuration.isPressed ? 0.06 : 0)
+            .brightness(configuration.isPressed ? 0.055 : 0)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
@@ -212,28 +270,28 @@ private struct MilliNavigationTrayShape: Shape {
 
         path.move(to: CGPoint(x: 0, y: top))
         path.addCurve(
-            to: CGPoint(x: mid - 56, y: top),
+            to: CGPoint(x: mid - 60, y: top),
             control1: CGPoint(x: rect.width * 0.18, y: top - 2),
-            control2: CGPoint(x: mid - 92, y: top - 2)
+            control2: CGPoint(x: mid - 96, y: top - 2)
         )
         path.addCurve(
-            to: CGPoint(x: mid - 34, y: 31),
-            control1: CGPoint(x: mid - 47, y: top),
-            control2: CGPoint(x: mid - 42, y: 26)
+            to: CGPoint(x: mid - 36, y: 34),
+            control1: CGPoint(x: mid - 50, y: top),
+            control2: CGPoint(x: mid - 45, y: 29)
         )
         path.addCurve(
-            to: CGPoint(x: mid + 34, y: 31),
-            control1: CGPoint(x: mid - 16, y: 42),
-            control2: CGPoint(x: mid + 16, y: 42)
+            to: CGPoint(x: mid + 36, y: 34),
+            control1: CGPoint(x: mid - 18, y: 46),
+            control2: CGPoint(x: mid + 18, y: 46)
         )
         path.addCurve(
-            to: CGPoint(x: mid + 56, y: top),
-            control1: CGPoint(x: mid + 42, y: 26),
-            control2: CGPoint(x: mid + 47, y: top)
+            to: CGPoint(x: mid + 60, y: top),
+            control1: CGPoint(x: mid + 45, y: 29),
+            control2: CGPoint(x: mid + 50, y: top)
         )
         path.addCurve(
             to: CGPoint(x: rect.maxX, y: top),
-            control1: CGPoint(x: mid + 92, y: top - 2),
+            control1: CGPoint(x: mid + 96, y: top - 2),
             control2: CGPoint(x: rect.width * 0.82, y: top - 2)
         )
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
@@ -247,63 +305,99 @@ private struct MilliNavigationBridgeShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let mid = rect.midX
-        let upper: CGFloat = 10
-        let lower: CGFloat = 18
+        let upper: CGFloat = 9
+        let lower: CGFloat = 19
 
         path.move(to: CGPoint(x: 0, y: upper))
         path.addCurve(
-            to: CGPoint(x: mid - 58, y: upper),
+            to: CGPoint(x: mid - 61, y: upper),
             control1: CGPoint(x: rect.width * 0.22, y: upper - 1),
-            control2: CGPoint(x: mid - 90, y: upper - 1)
+            control2: CGPoint(x: mid - 96, y: upper - 1)
         )
         path.addCurve(
-            to: CGPoint(x: mid - 35, y: 26),
-            control1: CGPoint(x: mid - 48, y: upper),
-            control2: CGPoint(x: mid - 43, y: 23)
+            to: CGPoint(x: mid - 37, y: 29),
+            control1: CGPoint(x: mid - 51, y: upper),
+            control2: CGPoint(x: mid - 45, y: 25)
         )
         path.addCurve(
-            to: CGPoint(x: mid + 35, y: 26),
-            control1: CGPoint(x: mid - 17, y: 36),
-            control2: CGPoint(x: mid + 17, y: 36)
+            to: CGPoint(x: mid + 37, y: 29),
+            control1: CGPoint(x: mid - 18, y: 40),
+            control2: CGPoint(x: mid + 18, y: 40)
         )
         path.addCurve(
-            to: CGPoint(x: mid + 58, y: upper),
-            control1: CGPoint(x: mid + 43, y: 23),
-            control2: CGPoint(x: mid + 48, y: upper)
+            to: CGPoint(x: mid + 61, y: upper),
+            control1: CGPoint(x: mid + 45, y: 25),
+            control2: CGPoint(x: mid + 51, y: upper)
         )
         path.addCurve(
             to: CGPoint(x: rect.maxX, y: upper),
-            control1: CGPoint(x: mid + 90, y: upper - 1),
+            control1: CGPoint(x: mid + 96, y: upper - 1),
             control2: CGPoint(x: rect.width * 0.78, y: upper - 1)
         )
 
         path.addLine(to: CGPoint(x: rect.maxX, y: lower))
         path.addCurve(
-            to: CGPoint(x: mid + 58, y: lower),
+            to: CGPoint(x: mid + 61, y: lower),
             control1: CGPoint(x: rect.width * 0.78, y: lower + 1),
-            control2: CGPoint(x: mid + 90, y: lower + 1)
+            control2: CGPoint(x: mid + 96, y: lower + 1)
         )
         path.addCurve(
-            to: CGPoint(x: mid + 38, y: 34),
-            control1: CGPoint(x: mid + 49, y: lower),
-            control2: CGPoint(x: mid + 46, y: 31)
+            to: CGPoint(x: mid + 40, y: 37),
+            control1: CGPoint(x: mid + 52, y: lower),
+            control2: CGPoint(x: mid + 47, y: 33)
         )
         path.addCurve(
-            to: CGPoint(x: mid - 38, y: 34),
-            control1: CGPoint(x: mid + 17, y: 45),
-            control2: CGPoint(x: mid - 17, y: 45)
+            to: CGPoint(x: mid - 40, y: 37),
+            control1: CGPoint(x: mid + 19, y: 49),
+            control2: CGPoint(x: mid - 19, y: 49)
         )
         path.addCurve(
-            to: CGPoint(x: mid - 58, y: lower),
-            control1: CGPoint(x: mid - 46, y: 31),
-            control2: CGPoint(x: mid - 49, y: lower)
+            to: CGPoint(x: mid - 61, y: lower),
+            control1: CGPoint(x: mid - 47, y: 33),
+            control2: CGPoint(x: mid - 52, y: lower)
         )
         path.addCurve(
             to: CGPoint(x: 0, y: lower),
-            control1: CGPoint(x: mid - 90, y: lower + 1),
+            control1: CGPoint(x: mid - 96, y: lower + 1),
             control2: CGPoint(x: rect.width * 0.22, y: lower + 1)
         )
         path.closeSubpath()
+        return path
+    }
+}
+
+private struct MilliNavigationBridgeHighlightShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let mid = rect.midX
+        let y: CGFloat = 10
+
+        path.move(to: CGPoint(x: 5, y: y))
+        path.addCurve(
+            to: CGPoint(x: mid - 61, y: y),
+            control1: CGPoint(x: rect.width * 0.22, y: y - 1),
+            control2: CGPoint(x: mid - 96, y: y - 1)
+        )
+        path.addCurve(
+            to: CGPoint(x: mid - 38, y: 29),
+            control1: CGPoint(x: mid - 51, y: y),
+            control2: CGPoint(x: mid - 45, y: 25)
+        )
+        path.addCurve(
+            to: CGPoint(x: mid + 38, y: 29),
+            control1: CGPoint(x: mid - 18, y: 40),
+            control2: CGPoint(x: mid + 18, y: 40)
+        )
+        path.addCurve(
+            to: CGPoint(x: mid + 61, y: y),
+            control1: CGPoint(x: mid + 45, y: 25),
+            control2: CGPoint(x: mid + 51, y: y)
+        )
+        path.addCurve(
+            to: CGPoint(x: rect.maxX - 5, y: y),
+            control1: CGPoint(x: mid + 96, y: y - 1),
+            control2: CGPoint(x: rect.width * 0.78, y: y - 1)
+        )
         return path
     }
 }
