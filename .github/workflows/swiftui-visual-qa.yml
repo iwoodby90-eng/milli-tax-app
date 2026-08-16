@@ -2,6 +2,14 @@ name: SwiftUI Visual QA
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - agent/milli-swiftui-master-build
+    paths:
+      - 'MilliTaxVault/**'
+      - 'MilliTaxVault.xcodeproj/**'
+      - 'scripts/capture-milli-screens.sh'
+      - '.github/workflows/swiftui-visual-qa.yml'
 
 permissions:
   contents: read
