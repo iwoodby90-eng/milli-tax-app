@@ -2,12 +2,25 @@ import SwiftUI
 import Charts
 
 // MARK: - RetirementView
-// Contribution-based retirement projection with a clear target year and stacked growth visualization.
+// Contribution-based retirement projection with a dynamic target year and
+// deterministic compound-growth model. The seeded profile is isolated so it can
+// be replaced by the authenticated retirement profile without changing the view.
 
 struct RetirementView: View {
     var onBack: () -> Void = {}
+
     @State private var contribution: Double = 15
     @State private var retirementAge: Double = 62
+
+    private let profile = RetirementProfile.reference
+
+    private var projection: RetirementProjection {
+        RetirementProjectionCalculator.calculate(
+            profile: profile,
+            contributionPercent: contribution,
+            retirementAge: retirementAge
+        )
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -57,10 +70,11 @@ struct RetirementView: View {
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
 
-            Text("2047")
-                .font(.custom("Sora-ExtraBold", size: 48, relativeTo: .largeTitle))
+            Text("\(projection.retirementYear)")
+                .font(.custom("Sora-Bold", size: 48, relativeTo: .largeTitle))
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
+                .contentTransition(.numericText())
 
             Text("at age \(Int(retirementAge))")
                 .font(MilliFont.bodySmall)
@@ -69,7 +83,7 @@ struct RetirementView: View {
             HStack(spacing: 0) {
                 heroMetric("Contribution", "\(Int(contribution))%", "of income")
                 Rectangle().fill(Color.white.opacity(0.06)).frame(width: 1, height: 46)
-                heroMetric("Estimated Value", projectedValue, "in today's dollars")
+                heroMetric("Estimated Value", compactCurrency(projection.endingBalance), "projected")
             }
         }
         .milliCard(padding: 14)
@@ -97,24 +111,24 @@ struct RetirementView: View {
                 Text("PROJECTED GROWTH")
                     .sectionHeaderStyle()
                 Spacer()
-                Text("\(Int(contribution))% contribution • age \(Int(retirementAge))")
+                Text("\(Int(contribution))% • age \(Int(retirementAge))")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
 
-            Chart(projectionData) { point in
+            Chart(projection.points) { point in
                 BarMark(
                     x: .value("Year", point.year),
                     yStart: .value("Start", 0),
-                    yEnd: .value("Contributions", point.contributions),
+                    yEnd: .value("Contributions", point.totalContributions),
                     width: 8
                 )
                 .foregroundStyle(Color(hex: "3276D9"))
 
                 BarMark(
                     x: .value("Year", point.year),
-                    yStart: .value("Contributions", point.contributions),
-                    yEnd: .value("Portfolio", point.portfolio),
+                    yStart: .value("Contributions", point.totalContributions),
+                    yEnd: .value("Portfolio", point.balance),
                     width: 8
                 )
                 .foregroundStyle(
@@ -126,11 +140,11 @@ struct RetirementView: View {
                 )
             }
             .chartYAxis {
-                AxisMarks(position: .leading, values: [0, 500_000, 1_000_000, 1_500_000, 2_000_000]) { value in
+                AxisMarks(position: .leading) { value in
                     AxisGridLine().foregroundStyle(Color.white.opacity(0.04))
                     AxisValueLabel {
                         if let amount = value.as(Double.self) {
-                            Text(formatCompact(amount))
+                            Text(compactCurrency(amount))
                                 .font(MilliFont.caption)
                                 .foregroundStyle(MilliColors.textTertiary)
                         }
@@ -138,14 +152,20 @@ struct RetirementView: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: [2025, 2030, 2035, 2040, 2045, 2047]) { _ in
-                    AxisValueLabel().foregroundStyle(MilliColors.textTertiary)
+                AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                    AxisValueLabel {
+                        if let year = value.as(Int.self) {
+                            Text(String(year))
+                                .font(MilliFont.caption)
+                                .foregroundStyle(MilliColors.textTertiary)
+                        }
+                    }
                 }
             }
             .frame(height: 210)
 
             HStack(spacing: 16) {
-                legend(Color(hex: "3276D9"), "Total Contributions")
+                legend(Color(hex: "3276D9"), "Contributions")
                 legend(MilliColors.positive, "Investment Growth")
             }
         }
@@ -169,15 +189,15 @@ struct RetirementView: View {
             sliderRow(
                 title: "Contribution Percentage",
                 value: $contribution,
-                range: 0...50,
+                range: 1...30,
                 suffix: "%"
             )
 
             sliderRow(
                 title: "Retirement Age",
                 value: $retirementAge,
-                range: 55...70,
-                suffix: " years"
+                range: Double(profile.currentAge + 5)...75,
+                suffix: ""
             )
         }
         .milliCard(padding: 14)
@@ -206,12 +226,12 @@ struct RetirementView: View {
                 .sectionHeaderStyle()
 
             HStack(spacing: 8) {
-                summary("Retirement Year", "2047")
-                summary("Estimated Value", projectedValue)
+                summary("Retirement Year", "\(projection.retirementYear)")
+                summary("Estimated Value", compactCurrency(projection.endingBalance))
             }
             HStack(spacing: 8) {
-                summary("Total Contributions", "$455,100")
-                summary("Total Growth", "$1,168,487")
+                summary("Total Contributions", compactCurrency(projection.totalContributions))
+                summary("Total Growth", compactCurrency(projection.totalGrowth))
             }
         }
     }
@@ -225,40 +245,102 @@ struct RetirementView: View {
                 .font(MilliFont.numericSmall)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
         }
         .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
         .milliCard(padding: 10)
     }
 
-    private var projectedValue: String {
-        let base = 1_623_587.0
-        let contributionFactor = max(contribution, 1) / 15.0
-        let ageFactor = max(retirementAge - 54, 1) / 8.0
-        let projected = base * contributionFactor * ageFactor
-        return projected.formatted(.currency(code: "USD").precision(.fractionLength(0)))
-    }
-
-    private var projectionData: [RetirementProjectionPoint] {
-        let years = [2025, 2028, 2031, 2034, 2037, 2040, 2043, 2045, 2047]
-        return years.enumerated().map { index, year in
-            let progress = Double(index + 1) / Double(years.count)
-            let contributionScale = max(contribution, 1) / 15.0
-            let total = 60_000 + pow(progress, 1.65) * 1_820_000 * contributionScale
-            let contributions = 40_000 + progress * 430_000 * contributionScale
-            return RetirementProjectionPoint(year: year, contributions: min(contributions, total), portfolio: total)
-        }
-    }
-
-    private func formatCompact(_ value: Double) -> String {
-        if value >= 1_000_000 { return String(format: "$%.1fM", value / 1_000_000) }
+    private func compactCurrency(_ value: Double) -> String {
+        if value >= 1_000_000 { return String(format: "$%.2fM", value / 1_000_000) }
         if value >= 1_000 { return String(format: "$%.0fK", value / 1_000) }
-        return "$0"
+        return value.formatted(.currency(code: "USD").precision(.fractionLength(0)))
     }
+}
+
+private struct RetirementProfile {
+    let currentAge: Int
+    let currentBalance: Double
+    let annualIncome: Double
+    let annualReturn: Double
+
+    static let reference = RetirementProfile(
+        currentAge: 41,
+        currentBalance: 86_420,
+        annualIncome: 74_000,
+        annualReturn: 0.07
+    )
+}
+
+private struct RetirementProjection {
+    let retirementYear: Int
+    let endingBalance: Double
+    let totalContributions: Double
+    let totalGrowth: Double
+    let points: [RetirementProjectionPoint]
 }
 
 private struct RetirementProjectionPoint: Identifiable {
     let id = UUID()
     let year: Int
-    let contributions: Double
-    let portfolio: Double
+    let totalContributions: Double
+    let balance: Double
+}
+
+private enum RetirementProjectionCalculator {
+    static func calculate(
+        profile: RetirementProfile,
+        contributionPercent: Double,
+        retirementAge: Double
+    ) -> RetirementProjection {
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: Date())
+        let targetAge = max(Int(retirementAge.rounded()), profile.currentAge + 1)
+        let yearsToRetirement = targetAge - profile.currentAge
+        let retirementYear = currentYear + yearsToRetirement
+
+        let monthlyContribution = profile.annualIncome * (contributionPercent / 100) / 12
+        let monthlyRate = pow(1 + profile.annualReturn, 1.0 / 12.0) - 1
+        let totalMonths = max(yearsToRetirement * 12, 1)
+
+        var balance = profile.currentBalance
+        var contributed = profile.currentBalance
+        var annualPoints: [RetirementProjectionPoint] = []
+
+        for month in 1...totalMonths {
+            balance = balance * (1 + monthlyRate) + monthlyContribution
+            contributed += monthlyContribution
+
+            if month % 12 == 0 || month == totalMonths {
+                let yearOffset = Int(ceil(Double(month) / 12.0))
+                annualPoints.append(
+                    RetirementProjectionPoint(
+                        year: currentYear + yearOffset,
+                        totalContributions: contributed,
+                        balance: balance
+                    )
+                )
+            }
+        }
+
+        // Keep the chart dense but legible on iPhone by sampling at most ~9 annual points.
+        let strideSize = max(annualPoints.count / 8, 1)
+        var sampled = Array(annualPoints.enumerated().compactMap { index, point in
+            index % strideSize == 0 ? point : nil
+        })
+        if let final = annualPoints.last, sampled.last?.year != final.year {
+            sampled.append(final)
+        }
+
+        let totalGrowth = max(balance - contributed, 0)
+
+        return RetirementProjection(
+            retirementYear: retirementYear,
+            endingBalance: balance,
+            totalContributions: contributed,
+            totalGrowth: totalGrowth,
+            points: sampled
+        )
+    }
 }
