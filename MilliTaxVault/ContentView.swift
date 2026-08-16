@@ -74,6 +74,8 @@ struct ContentView: View {
             InvestingView(onBack: { navigateTo(.more) })
         case .retirement:
             RetirementView(onBack: { navigateTo(.more) })
+        case .wealthOverview:
+            WealthOverviewView(onBack: { navigateTo(.more) })
         case .treeOfLife:
             TreeOfLifeView(onBack: { navigateTo(.more) })
         case .milliAI:
@@ -118,6 +120,7 @@ enum ActiveScreen {
     case quarterlyTaxes
     case investing
     case retirement
+    case wealthOverview
     case treeOfLife
     case milliAI
     case reports
