@@ -13,14 +13,11 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: validate-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   native-swiftui:
     name: Native SwiftUI build + Home screenshot
     runs-on: macos-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -52,9 +49,6 @@ jobs:
           echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
           echo "Using simulator: $SIMULATOR_UDID"
           xcrun simctl boot "$SIMULATOR_UDID" || true
-          # Hosted runners can hang indefinitely in `simctl bootstatus -b`.
-          # Give CoreSimulator a short warm-up; the targeted xcodebuild below
-          # will verify that the selected simulator is actually usable.
           sleep 12
           xcrun simctl list devices | grep "$SIMULATOR_UDID" || true
 
