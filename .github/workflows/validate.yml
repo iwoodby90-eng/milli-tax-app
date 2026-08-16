@@ -48,9 +48,10 @@ jobs:
           ')"
           echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
           echo "Using simulator: $SIMULATOR_UDID"
-          xcrun simctl boot "$SIMULATOR_UDID" || true
-          sleep 12
-          xcrun simctl list devices | grep "$SIMULATOR_UDID" || true
+          # Do not block this step on CoreSimulator boot. The Xcode compile runs
+          # while the device comes online; the launch step performs a bounded readiness check.
+          (xcrun simctl boot "$SIMULATOR_UDID" >"$RUNNER_TEMP/simctl-boot.log" 2>&1 || true) &
+          sleep 3
 
       - name: Compile Milli native iOS simulator target
         shell: bash
@@ -72,6 +73,21 @@ jobs:
           set -euo pipefail
           APP_PATH="$RUNNER_TEMP/MilliDerivedData/Build/Products/Debug-iphonesimulator/MilliTaxVault.app"
           test -d "$APP_PATH"
+
+          READY=0
+          for attempt in {1..30}; do
+            if xcrun simctl list devices | grep "$SIMULATOR_UDID" | grep -q "Booted"; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "Simulator failed to reach Booted state"
+            cat "$RUNNER_TEMP/simctl-boot.log" || true
+            exit 1
+          fi
+
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
           xcrun simctl launch "$SIMULATOR_UDID" com.milli.taxvault -milliScreenshotMode
           sleep 4
