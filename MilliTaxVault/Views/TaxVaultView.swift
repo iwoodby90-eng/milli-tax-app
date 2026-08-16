@@ -1,10 +1,16 @@
 import SwiftUI
 
 // MARK: - TaxVaultView
-// Compact premium reserve-account presentation with auditable ledger.
+// Compact premium reserve-account presentation with an auditable ledger.
+// Production money movement remains explicit: the transfer control opens setup
+// until a verified funding rail is connected rather than pretending a transfer occurred.
 
 struct TaxVaultView: View {
     var onBack: () -> Void = {}
+
+    @State private var showTransferSetup = false
+
+    private let vault = TaxVaultDisplayModel.reference
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -20,6 +26,11 @@ struct TaxVaultView: View {
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showTransferSetup) {
+            transferSetupSheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var header: some View {
@@ -41,6 +52,7 @@ struct TaxVaultView: View {
                         .frame(width: 34, height: 34)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Notifications")
             }
 
             Text("MILLI TAX VAULT™")
@@ -58,11 +70,11 @@ struct TaxVaultView: View {
                     .font(MilliFont.sectionLabel)
                     .tracking(0.8)
                     .foregroundStyle(MilliColors.textSecondary)
-                Text("$5,284.17")
+                Text(currency(vault.balance))
                     .font(MilliFont.heroNumber)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("23.4% of annual target")
+                Text("\(vault.progress.formatted(.percent.precision(.fractionLength(0)))) of annual target")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
@@ -73,7 +85,7 @@ struct TaxVaultView: View {
                 Circle()
                     .stroke(Color.white.opacity(0.08), lineWidth: 7)
                 Circle()
-                    .trim(from: 0, to: 0.234)
+                    .trim(from: 0, to: vault.progress)
                     .stroke(
                         LinearGradient(
                             colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
@@ -83,7 +95,7 @@ struct TaxVaultView: View {
                         style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                Text("23%")
+                Text(vault.progress.formatted(.percent.precision(.fractionLength(0))))
                     .font(.custom("Sora-SemiBold", size: 17))
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
@@ -95,11 +107,11 @@ struct TaxVaultView: View {
 
     private var targetRow: some View {
         HStack(spacing: 0) {
-            metric("ANNUAL TARGET", "$22,500.00")
+            metric("ANNUAL TARGET", currency(vault.annualTarget))
             Rectangle()
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 1, height: 42)
-            metric("TARGET DATE", "Dec 31, 2024")
+            metric("TARGET DATE", vault.targetDate.formatted(date: .abbreviated, time: .omitted))
         }
         .milliCard(padding: 12)
     }
@@ -113,28 +125,36 @@ struct TaxVaultView: View {
                 .font(MilliFont.numericSmall)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var addButton: some View {
-        Button {} label: {
-            Text("Add to Vault")
-                .font(MilliFont.headlineSmall)
-                .foregroundStyle(MilliColors.blackGlass)
-                .frame(maxWidth: .infinity)
-                .frame(height: 46)
-                .background(
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [MilliColors.cyanGlow, Color(hex: "03B8DC")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+        Button {
+            showTransferSetup = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                Text("Add to Vault")
+                    .font(MilliFont.headlineSmall)
+            }
+            .foregroundStyle(MilliColors.blackGlass)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [MilliColors.cyanGlow, Color(hex: "03B8DC")],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 8)
-                )
+                    )
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 8)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -145,18 +165,16 @@ struct TaxVaultView: View {
                 Text("TRANSACTIONS")
                     .sectionHeaderStyle()
                 Spacer()
-                Button {} label: {
-                    Text("View All")
-                        .font(MilliFont.labelLarge)
-                        .foregroundStyle(MilliColors.cyanGlow)
-                }
-                .buttonStyle(.plain)
+                Text("AUDIT LEDGER")
+                    .font(MilliFont.caption)
+                    .tracking(0.5)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
 
             VStack(spacing: 0) {
-                ForEach(Array(activityData.enumerated()), id: \.element.id) { index, item in
+                ForEach(Array(vault.activity.enumerated()), id: \.element.id) { index, item in
                     transactionRow(item)
-                    if index < activityData.count - 1 {
+                    if index < vault.activity.count - 1 {
                         Divider()
                             .overlay(Color.white.opacity(0.055))
                             .padding(.leading, 46)
@@ -180,39 +198,98 @@ struct TaxVaultView: View {
                 Text(item.title)
                     .font(MilliFont.headlineSmall)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text(item.date)
+                Text(item.dateLabel)
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
 
             Spacer()
 
-            Text(item.amount)
+            Text(item.amount.formatted(.currency(code: "USD").sign(strategy: .always())))
                 .font(MilliFont.numericSmall)
                 .monospacedDigit()
-                .foregroundStyle(item.isNegative ? MilliColors.negative : MilliColors.positive)
+                .foregroundStyle(item.amount < 0 ? MilliColors.negative : MilliColors.positive)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+        .accessibilityElement(children: .combine)
     }
 
-    private var activityData: [VaultActivity] {
-        [
-            VaultActivity(title: "Payout Allocation", date: "May 10, 2024", amount: "+$72.91", icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow, isNegative: false),
-            VaultActivity(title: "Payout Allocation", date: "May 9, 2024", amount: "+$69.21", icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow, isNegative: false),
-            VaultActivity(title: "Manual Transfer", date: "May 8, 2024", amount: "+$250.00", icon: "arrow.left.arrow.right", iconColor: MilliColors.deepCyan, isNegative: false),
-            VaultActivity(title: "Interest Earned", date: "May 7, 2024", amount: "+$1.27", icon: "plus.circle.fill", iconColor: MilliColors.positive, isNegative: false),
-            VaultActivity(title: "Quarterly Payment", date: "Apr 15, 2024", amount: "-$1,247.00", icon: "building.columns.fill", iconColor: MilliColors.negative, isNegative: true)
-        ]
+    private var transferSetupSheet: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Image(systemName: "building.columns.circle.fill")
+                    .font(.system(size: 44, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+
+                VStack(spacing: 6) {
+                    Text("Connect a Funding Source")
+                        .font(MilliFont.screenTitle)
+                        .foregroundStyle(MilliColors.textPrimary)
+                    Text("Vault transfers will become available after a production funding account is connected and verified. No money is moved from this setup screen.")
+                        .font(MilliFont.bodyMedium)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button("Done") {
+                    showTransferSetup = false
+                }
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.blackGlass)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(MilliColors.cyanGlow)
+                )
+            }
+            .padding(24)
+        }
+    }
+
+    private func currency(_ value: Double) -> String {
+        value.formatted(.currency(code: "USD"))
+    }
+}
+
+private struct TaxVaultDisplayModel {
+    let balance: Double
+    let annualTarget: Double
+    let targetDate: Date
+    let activity: [VaultActivity]
+
+    var progress: CGFloat {
+        guard annualTarget > 0 else { return 0 }
+        return CGFloat(min(max(balance / annualTarget, 0), 1))
+    }
+
+    static var reference: TaxVaultDisplayModel {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: Date())
+        let target = calendar.date(from: DateComponents(year: year, month: 12, day: 31)) ?? Date()
+
+        return TaxVaultDisplayModel(
+            balance: 5_284.17,
+            annualTarget: 22_500,
+            targetDate: target,
+            activity: [
+                VaultActivity(title: "Payout Allocation", dateLabel: "Today", amount: 72.91, icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow),
+                VaultActivity(title: "Payout Allocation", dateLabel: "Yesterday", amount: 69.21, icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow),
+                VaultActivity(title: "Manual Transfer", dateLabel: "3 days ago", amount: 250.00, icon: "arrow.left.arrow.right", iconColor: MilliColors.deepCyan),
+                VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Previous quarter", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
+            ]
+        )
     }
 }
 
 struct VaultActivity: Identifiable {
     let id = UUID()
     let title: String
-    let date: String
-    let amount: String
+    let dateLabel: String
+    let amount: Double
     let icon: String
     let iconColor: Color
-    let isNegative: Bool
 }
