@@ -62,6 +62,8 @@ struct ContentView: View {
             MileageView(onBack: { navigateTo(.home) })
         case .milliCents:
             MilliCentsView(onBack: { navigateTo(.home) })
+        case .autopilot:
+            AutopilotSettingsView(onBack: { navigateTo(.more) })
         case .expenses:
             ExpensesView(onBack: { navigateTo(.more) })
         case .accounts:
@@ -122,6 +124,7 @@ enum ActiveScreen {
     case payouts
     case mileage
     case milliCents
+    case autopilot
     case expenses
     case accounts
     case savings
