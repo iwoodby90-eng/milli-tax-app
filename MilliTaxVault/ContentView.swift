@@ -68,6 +68,8 @@ struct ContentView: View {
             AccountsView(onBack: { navigateTo(.more) })
         case .savings:
             SavingsView(onBack: { navigateTo(.more) })
+        case .documents:
+            DocumentsView(onBack: { navigateTo(.more) })
         case .plans:
             SubscriptionView(onBack: { navigateTo(.more) })
         case .taxVault:
@@ -123,6 +125,7 @@ enum ActiveScreen {
     case expenses
     case accounts
     case savings
+    case documents
     case plans
     case taxVault
     case taxReadyScore
