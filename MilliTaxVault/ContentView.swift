@@ -62,6 +62,8 @@ struct ContentView: View {
             MileageView(onBack: { navigateTo(.home) })
         case .milliCents:
             MilliCentsView(onBack: { navigateTo(.home) })
+        case .expenses:
+            ExpensesView(onBack: { navigateTo(.more) })
         case .taxVault:
             TaxVaultView(onBack: { navigateTo(.home) })
         case .taxReadyScore:
@@ -110,6 +112,7 @@ enum ActiveScreen {
     case payouts
     case mileage
     case milliCents
+    case expenses
     case taxVault
     case taxReadyScore
     case quarterlyTaxes
