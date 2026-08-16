@@ -91,7 +91,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          xcrun simctl boot "$SIMULATOR_UDID" || true
+          python3 - <<'PY'
+          import os, subprocess
+          udid = os.environ["SIMULATOR_UDID"]
+          try:
+              result = subprocess.run(
+                  ["xcrun", "simctl", "boot", udid],
+                  timeout=15,
+                  check=False,
+                  text=True,
+                  capture_output=True,
+              )
+              print(result.stdout)
+              print(result.stderr)
+          except subprocess.TimeoutExpired:
+              print("simctl boot request exceeded 15 seconds; continuing with bounded readiness checks")
+          PY
+
           READY=0
           for attempt in {1..30}; do
             STATE="$(xcrun simctl list devices | grep "$SIMULATOR_UDID" || true)"
@@ -103,7 +119,7 @@ jobs:
             sleep 2
           done
           if [ "$READY" -ne 1 ]; then
-            echo "Hosted simulator did not reach Booted state within 60 seconds."
+            echo "Hosted simulator did not reach Booted state within the readiness window."
             exit 1
           fi
 
