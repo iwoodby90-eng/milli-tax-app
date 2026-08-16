@@ -10,16 +10,19 @@ enum AppState {
 
 @main
 struct MilliApp: App {
-    @State private var appState: AppState = .splash
+    @State private var appState: AppState
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
-    
-    // TEMPORARY DEV RESET — remove before App Store submission
+
     init() {
-        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
-        UserDefaults.standard.removeObject(forKey: "hasCompletedSetup")
+        #if DEBUG
+        let screenshotMode = ProcessInfo.processInfo.arguments.contains("-milliScreenshotMode")
+        _appState = State(initialValue: screenshotMode ? .main : .splash)
+        #else
+        _appState = State(initialValue: .splash)
+        #endif
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -37,7 +40,7 @@ struct MilliApp: App {
                         }
                     })
                     .transition(.opacity)
-                    
+
                 case .onboarding:
                     OnboardingView(onComplete: {
                         hasCompletedOnboarding = true
@@ -46,7 +49,7 @@ struct MilliApp: App {
                         }
                     })
                     .transition(.opacity)
-                    
+
                 case .setup:
                     OnboardingFlowView(onComplete: {
                         hasCompletedSetup = true
@@ -55,7 +58,7 @@ struct MilliApp: App {
                         }
                     })
                     .transition(.opacity)
-                    
+
                 case .login:
                     LoginView(onSignIn: {
                         withAnimation(.easeInOut(duration: 0.4)) {
@@ -63,7 +66,7 @@ struct MilliApp: App {
                         }
                     })
                     .transition(.opacity)
-                    
+
                 case .main:
                     ContentView()
                         .transition(.opacity)
