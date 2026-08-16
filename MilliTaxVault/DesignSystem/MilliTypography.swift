@@ -2,11 +2,12 @@ import SwiftUI
 
 // MARK: - MilliTypography
 // Sora owns display/financial hierarchy; Inter owns interface copy and metadata.
+// IMPORTANT: only font weights bundled in Resources/Fonts are referenced here.
 
 enum MilliFont {
     // Hero / Display — Sora
-    static var heroNumber: Font { .custom("Sora-ExtraBold", size: 34, relativeTo: .largeTitle) }
-    static var heroBalance: Font { .custom("Sora-ExtraBold", size: 34, relativeTo: .largeTitle) }
+    static var heroNumber: Font { .custom("Sora-Bold", size: 34, relativeTo: .largeTitle) }
+    static var heroBalance: Font { .custom("Sora-Bold", size: 34, relativeTo: .largeTitle) }
     static var displayLarge: Font { .custom("Sora-Bold", size: 32, relativeTo: .largeTitle) }
     static var displayMedium: Font { .custom("Sora-Bold", size: 28, relativeTo: .title) }
     static var displaySmall: Font { .custom("Sora-Bold", size: 24, relativeTo: .title2) }
@@ -34,15 +35,15 @@ enum MilliFont {
     static var numericLarge: Font { .custom("Sora-Bold", size: 27, relativeTo: .title) }
     static var numericMedium: Font { .custom("Sora-SemiBold", size: 19, relativeTo: .title3) }
     static var numericSmall: Font { .custom("Sora-Medium", size: 13, relativeTo: .caption) }
-    static var subHeroNumber: Font { .custom("Sora-ExtraBold", size: 20, relativeTo: .title3) }
+    static var subHeroNumber: Font { .custom("Sora-Bold", size: 20, relativeTo: .title3) }
 
     // Shared compatibility tokens used by legacy/native components while the UI is consolidated.
     static var cardValue: Font { .custom("Sora-SemiBold", size: 20, relativeTo: .title3) }
     static var insightBody: Font { .custom("Inter-Medium", size: 13, relativeTo: .footnote) }
     static func soraBold(_ size: CGFloat) -> Font { .custom("Sora-Bold", size: size, relativeTo: .body) }
 
-    // Brand wordmark. Intentionally large and bold: MILLI should never read as tiny micro-copy.
-    static var wordmark: Font { .custom("Sora-ExtraBold", size: 28, relativeTo: .title) }
+    // Brand wordmark. MILLI is intentionally large, bold, and visually dominant.
+    static var wordmark: Font { .custom("Sora-Bold", size: 30, relativeTo: .title) }
     static var navLabel: Font { .custom("Inter-Medium", size: 9, relativeTo: .caption2) }
 }
 
