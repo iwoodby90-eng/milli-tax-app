@@ -7,7 +7,7 @@ import SwiftUI
 struct QuarterlyTaxesView: View {
     var onBack: () -> Void = {}
 
-    private let estimate = QuarterlyTaxEstimate.reference
+    private let estimate = QuarterlyTaxDisplayModel.reference
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -176,7 +176,7 @@ struct QuarterlyTaxesView: View {
     }
 }
 
-private struct QuarterlyTaxEstimate {
+private struct QuarterlyTaxDisplayModel {
     let periodLabel: String
     let dueLabel: String
     let federal: Double
@@ -193,7 +193,7 @@ private struct QuarterlyTaxEstimate {
         return CGFloat(min(max(paidToDate / projectedAnnual, 0), 1))
     }
 
-    static let reference = QuarterlyTaxEstimate(
+    static let reference = QuarterlyTaxDisplayModel(
         periodLabel: "CURRENT",
         dueLabel: "Next estimated payment",
         federal: 682,
