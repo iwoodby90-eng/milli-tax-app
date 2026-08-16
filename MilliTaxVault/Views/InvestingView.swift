@@ -151,8 +151,8 @@ struct InvestingView: View {
             .cornerRadius(1)
         }
         .chartYScale(domain: 4700...5450)
-        .chartYAxis(position: .trailing) {
-            AxisMarks(values: [4800, 5000, 5200, 5400]) { value in
+        .chartYAxis {
+            AxisMarks(position: .trailing, values: [4800, 5000, 5200, 5400]) { _ in
                 AxisGridLine().foregroundStyle(Color.white.opacity(0.045))
                 AxisValueLabel().foregroundStyle(MilliColors.textTertiary)
             }
