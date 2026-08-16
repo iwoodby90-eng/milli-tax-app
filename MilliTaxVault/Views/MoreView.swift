@@ -23,6 +23,7 @@ struct MoreMenuView: View {
 
                 sectionTitle("BUILD WEALTH")
                 menuTile(icon: "circle.grid.2x2.fill", title: "Wealth Overview", subtitle: "See investments, retirement, savings and cash together", color: MilliColors.silverBright) { navigate?(.wealthOverview) }
+                menuTile(icon: "target", title: "Savings", subtitle: "Build goal-based savings plans without confusing them with Milli Cents™", color: Color(hex: "8C70FF")) { navigate?(.savings) }
                 menuTile(icon: "chart.xyaxis.line", title: "Investing", subtitle: "Markets, holdings, and portfolio performance", color: MilliColors.cyanGlow) { navigate?(.investing) }
                 menuTile(icon: "building.columns.fill", title: "Retirement", subtitle: "Contribution-based retirement projections", color: MilliColors.positive) { navigate?(.retirement) }
                 menuTile(icon: "tree.fill", title: "Tree of Life", subtitle: "Plan life events against your financial future", color: MilliColors.cyanGlow) { navigate?(.treeOfLife) }
@@ -32,6 +33,8 @@ struct MoreMenuView: View {
                 menuTile(icon: "sparkles", title: "Milli AI", subtitle: "Personalized intelligence across your money", color: MilliColors.cyanGlow) { navigate?(.milliAI) }
 
                 sectionTitle("ACCOUNT")
+                menuTile(icon: "building.columns", title: "Accounts", subtitle: "Balances, connection state, and funding-source setup", color: MilliColors.cyanGlow) { navigate?(.accounts) }
+                menuTile(icon: "crown.fill", title: "Plans", subtitle: "Basic, Pro, and Elite subscription options", color: MilliColors.warning) { navigate?(.plans) }
                 menuTile(icon: "gearshape.fill", title: "Settings", subtitle: "Security, notifications, and local preferences", color: MilliColors.silver) { showSettings = true }
                 menuTile(icon: "questionmark.circle.fill", title: "Help Center", subtitle: "Product guidance and common questions", color: MilliColors.textSecondary) { showHelp = true }
             }
