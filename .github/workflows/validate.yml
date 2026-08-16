@@ -30,7 +30,7 @@ jobs:
       - name: List native project
         run: xcodebuild -project MilliTaxVault.xcodeproj -list
 
-      - name: Select and boot iPhone simulator
+      - name: Select and start iPhone simulator
         shell: bash
         run: |
           set -euo pipefail
@@ -52,7 +52,11 @@ jobs:
           echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
           echo "Using simulator: $SIMULATOR_UDID"
           xcrun simctl boot "$SIMULATOR_UDID" || true
-          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+          # Hosted runners can hang indefinitely in `simctl bootstatus -b`.
+          # Give CoreSimulator a short warm-up; the targeted xcodebuild below
+          # will verify that the selected simulator is actually usable.
+          sleep 12
+          xcrun simctl list devices | grep "$SIMULATOR_UDID" || true
 
       - name: Compile Milli native iOS simulator target
         shell: bash
