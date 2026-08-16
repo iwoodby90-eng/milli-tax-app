@@ -13,11 +13,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  native-swiftui:
-    name: Native SwiftUI build + Home screenshot
+  native-build:
+    name: Native SwiftUI Xcode build
     runs-on: macos-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
 
@@ -27,7 +31,27 @@ jobs:
       - name: List native project
         run: xcodebuild -project MilliTaxVault.xcodeproj -list
 
-      - name: Select and start iPhone simulator
+      - name: Compile native iOS simulator target
+        run: >-
+          xcodebuild
+          -project MilliTaxVault.xcodeproj
+          -scheme MilliTaxVault
+          -sdk iphonesimulator
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
+
+  home-visual-qa:
+    name: Home simulator screenshot
+    needs: native-build
+    runs-on: macos-latest
+    timeout-minutes: 8
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select iPhone simulator
         shell: bash
         run: |
           set -euo pipefail
@@ -48,12 +72,8 @@ jobs:
           ')"
           echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
           echo "Using simulator: $SIMULATOR_UDID"
-          # Do not block this step on CoreSimulator boot. The Xcode compile runs
-          # while the device comes online; the launch step performs a bounded readiness check.
-          (xcrun simctl boot "$SIMULATOR_UDID" >"$RUNNER_TEMP/simctl-boot.log" 2>&1 || true) &
-          sleep 3
 
-      - name: Compile Milli native iOS simulator target
+      - name: Build app for selected simulator
         shell: bash
         run: |
           set -euo pipefail
@@ -67,27 +87,32 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Launch Home in visual QA mode
+      - name: Boot simulator with bounded wait
         shell: bash
         run: |
           set -euo pipefail
-          APP_PATH="$RUNNER_TEMP/MilliDerivedData/Build/Products/Debug-iphonesimulator/MilliTaxVault.app"
-          test -d "$APP_PATH"
-
+          xcrun simctl boot "$SIMULATOR_UDID" || true
           READY=0
           for attempt in {1..30}; do
-            if xcrun simctl list devices | grep "$SIMULATOR_UDID" | grep -q "Booted"; then
+            STATE="$(xcrun simctl list devices | grep "$SIMULATOR_UDID" || true)"
+            echo "$STATE"
+            if echo "$STATE" | grep -q "Booted"; then
               READY=1
               break
             fi
             sleep 2
           done
           if [ "$READY" -ne 1 ]; then
-            echo "Simulator failed to reach Booted state"
-            cat "$RUNNER_TEMP/simctl-boot.log" || true
+            echo "Hosted simulator did not reach Booted state within 60 seconds."
             exit 1
           fi
 
+      - name: Launch Home and capture screenshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/MilliDerivedData/Build/Products/Debug-iphonesimulator/MilliTaxVault.app"
+          test -d "$APP_PATH"
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
           xcrun simctl launch "$SIMULATOR_UDID" com.milli.taxvault -milliScreenshotMode
           sleep 4
