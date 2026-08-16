@@ -128,12 +128,38 @@ jobs:
         run: |
           set -euo pipefail
           APP_PATH="$RUNNER_TEMP/MilliDerivedData/Build/Products/Debug-iphonesimulator/MilliTaxVault.app"
+          SCREENSHOT_PATH="$RUNNER_TEMP/milli-home.png"
           test -d "$APP_PATH"
-          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
-          xcrun simctl launch "$SIMULATOR_UDID" com.milli.taxvault -milliScreenshotMode
-          sleep 4
-          xcrun simctl io "$SIMULATOR_UDID" screenshot "$RUNNER_TEMP/milli-home.png"
-          test -s "$RUNNER_TEMP/milli-home.png"
+
+          python3 - <<'PY'
+          import os, subprocess, time
+
+          udid = os.environ["SIMULATOR_UDID"]
+          app_path = os.path.join(os.environ["RUNNER_TEMP"], "MilliDerivedData", "Build", "Products", "Debug-iphonesimulator", "MilliTaxVault.app")
+          screenshot_path = os.path.join(os.environ["RUNNER_TEMP"], "milli-home.png")
+
+          def run_bounded(args, timeout=20, required=True):
+              print("$", " ".join(args))
+              try:
+                  result = subprocess.run(args, timeout=timeout, text=True, capture_output=True)
+              except subprocess.TimeoutExpired as exc:
+                  print(f"Command timed out after {timeout}s: {args}")
+                  if required:
+                      raise SystemExit(1) from exc
+                  return None
+              print(result.stdout)
+              print(result.stderr)
+              if required and result.returncode != 0:
+                  raise SystemExit(result.returncode)
+              return result
+
+          run_bounded(["xcrun", "simctl", "install", udid, app_path], timeout=25)
+          run_bounded(["xcrun", "simctl", "launch", udid, "com.milli.taxvault", "-milliScreenshotMode"], timeout=20)
+          time.sleep(5)
+          run_bounded(["xcrun", "simctl", "io", udid, "screenshot", screenshot_path], timeout=20)
+          PY
+
+          test -s "$SCREENSHOT_PATH"
 
       - name: Upload Home visual QA screenshot
         uses: actions/upload-artifact@v4
