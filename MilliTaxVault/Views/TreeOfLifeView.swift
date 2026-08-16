@@ -2,10 +2,23 @@ import SwiftUI
 
 // MARK: - TreeOfLifeView
 // Signature life-planning visualization. Native SwiftUI Canvas — not a static image.
+// Nodes are real planning models and can be added through AddLifeEventSheet.
 
 struct TreeOfLifeView: View {
     var onBack: () -> Void = {}
+
     @State private var reveal: CGFloat = 0
+    @State private var showAddEvent = false
+    @State private var events: [LifePlanningEvent] = LifePlanningEvent.seededTree
+
+    private let nodePositions: [(x: CGFloat, y: CGFloat)] = [
+        (0.52, 0.18),
+        (0.20, 0.32),
+        (0.80, 0.36),
+        (0.25, 0.60),
+        (0.76, 0.62),
+        (0.64, 0.25)
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,46 +35,10 @@ struct TreeOfLifeView: View {
 
                     treeCanvas(size: geo.size)
 
-                    eventNode(
-                        icon: "house.fill",
-                        title: "Buy a home",
-                        amount: "$500K",
-                        x: 0.52,
-                        y: 0.18,
-                        in: geo.size
-                    )
-                    eventNode(
-                        icon: "car.fill",
-                        title: "New car",
-                        amount: "$40K",
-                        x: 0.20,
-                        y: 0.32,
-                        in: geo.size
-                    )
-                    eventNode(
-                        icon: "person.2.fill",
-                        title: "Wedding",
-                        amount: "$30K",
-                        x: 0.80,
-                        y: 0.36,
-                        in: geo.size
-                    )
-                    eventNode(
-                        icon: "heart.fill",
-                        title: "Baby",
-                        amount: "$25K",
-                        x: 0.25,
-                        y: 0.60,
-                        in: geo.size
-                    )
-                    eventNode(
-                        icon: "sun.horizon.fill",
-                        title: "Retire",
-                        amount: "$1.5M",
-                        x: 0.76,
-                        y: 0.62,
-                        in: geo.size
-                    )
+                    ForEach(Array(events.prefix(nodePositions.count).enumerated()), id: \.element.id) { index, event in
+                        let position = nodePositions[index]
+                        eventNode(event, x: position.x, y: position.y, in: geo.size)
+                    }
                 }
             }
             .frame(minHeight: 520)
@@ -69,6 +46,19 @@ struct TreeOfLifeView: View {
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showAddEvent) {
+            AddLifeEventSheet { event in
+                withAnimation(.easeOut(duration: 0.35)) {
+                    if events.count < nodePositions.count {
+                        events.append(event)
+                    } else {
+                        // Preserve the visual density of the approved tree while retaining
+                        // the newest plan in the currently visible set.
+                        events[events.count - 1] = event
+                    }
+                }
+            }
+        }
         .onAppear {
             withAnimation(.easeOut(duration: 1.25)) {
                 reveal = 1
@@ -90,13 +80,18 @@ struct TreeOfLifeView: View {
 
                 Spacer()
 
-                Button {} label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(MilliColors.textSecondary)
+                Button {
+                    showAddEvent = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(MilliColors.blackGlass)
                         .frame(width: 34, height: 34)
+                        .background(Circle().fill(MilliColors.cyanGlow))
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 6)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Add life event")
             }
 
             Text("Tree of Life")
@@ -117,7 +112,6 @@ struct TreeOfLifeView: View {
         Canvas { context, canvasSize in
             let tree = TreeGeometry(size: canvasSize)
 
-            // Soft cyan halo behind the entire structure.
             for width in stride(from: 18.0, through: 5.0, by: -4.0) {
                 context.stroke(
                     tree.fullTree,
@@ -126,7 +120,6 @@ struct TreeOfLifeView: View {
                 )
             }
 
-            // Silver-warm root understructure echoes the reference's physical tree roots.
             context.stroke(
                 tree.roots,
                 with: .linearGradient(
@@ -137,7 +130,6 @@ struct TreeOfLifeView: View {
                 style: StrokeStyle(lineWidth: 3.0 * reveal, lineCap: .round, lineJoin: .round)
             )
 
-            // Main trunk and branches.
             context.stroke(
                 tree.fullTree,
                 with: .linearGradient(
@@ -148,7 +140,6 @@ struct TreeOfLifeView: View {
                 style: StrokeStyle(lineWidth: 3.1 * reveal, lineCap: .round, lineJoin: .round)
             )
 
-            // Ground line/root sweep.
             context.stroke(
                 tree.ground,
                 with: .linearGradient(
@@ -159,7 +150,6 @@ struct TreeOfLifeView: View {
                 style: StrokeStyle(lineWidth: 1.7 * reveal, lineCap: .round)
             )
 
-            // Small illuminated growth nodes along branches.
             for point in tree.growthNodes {
                 let rect = CGRect(x: point.x - 5, y: point.y - 5, width: 10, height: 10)
                 context.fill(Path(ellipseIn: rect), with: .color(MilliColors.cyanGlow.opacity(reveal)))
@@ -169,9 +159,7 @@ struct TreeOfLifeView: View {
     }
 
     private func eventNode(
-        icon: String,
-        title: String,
-        amount: String,
+        _ event: LifePlanningEvent,
         x: CGFloat,
         y: CGFloat,
         in size: CGSize
@@ -187,17 +175,17 @@ struct TreeOfLifeView: View {
                     }
                     .shadow(color: MilliColors.cyanGlow.opacity(0.36), radius: 8)
 
-                Image(systemName: icon)
+                Image(systemName: event.type.icon)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(MilliColors.cyanGlow)
             }
 
-            Text(title)
+            Text(event.type.rawValue)
                 .font(MilliFont.labelLarge)
                 .foregroundStyle(MilliColors.textPrimary)
                 .lineLimit(1)
 
-            Text(amount)
+            Text(compactCurrency(event.estimatedCost))
                 .font(MilliFont.bodySmall)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textSecondary)
@@ -205,6 +193,32 @@ struct TreeOfLifeView: View {
         .position(x: size.width * x, y: size.height * y)
         .opacity(reveal)
         .scaleEffect(0.92 + 0.08 * reveal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(event.type.rawValue), target \(compactCurrency(event.estimatedCost)), \(event.targetDate.formatted(date: .abbreviated, time: .omitted))")
+    }
+
+    private func compactCurrency(_ value: Double) -> String {
+        if value >= 1_000_000 { return String(format: "$%.1fM", value / 1_000_000) }
+        if value >= 1_000 { return String(format: "$%.0fK", value / 1_000) }
+        return value.formatted(.currency(code: "USD").precision(.fractionLength(0)))
+    }
+}
+
+private extension LifePlanningEvent {
+    static var seededTree: [LifePlanningEvent] {
+        let calendar = Calendar.current
+        let now = Date()
+        func date(years: Int) -> Date {
+            calendar.date(byAdding: .year, value: years, to: now) ?? now
+        }
+
+        return [
+            LifePlanningEvent(type: .homePurchase, targetDate: date(years: 4), estimatedCost: 500_000),
+            LifePlanningEvent(type: .vehicle, targetDate: date(years: 2), estimatedCost: 40_000),
+            LifePlanningEvent(type: .marriage, targetDate: date(years: 3), estimatedCost: 30_000),
+            LifePlanningEvent(type: .child, targetDate: date(years: 5), estimatedCost: 25_000),
+            LifePlanningEvent(type: .retirement, targetDate: date(years: 21), estimatedCost: 1_500_000)
+        ]
     }
 }
 
@@ -213,13 +227,11 @@ private struct TreeGeometry {
 
     private var w: CGFloat { size.width }
     private var h: CGFloat { size.height }
-    private var trunkBase: CGPoint { CGPoint(x: w * 0.5, y: h * 0.82) }
     private var crown: CGPoint { CGPoint(x: w * 0.5, y: h * 0.30) }
 
     var fullTree: Path {
         var p = Path()
 
-        // Trunk — two gently diverging structural lines merge into the crown.
         p.move(to: CGPoint(x: w * 0.46, y: h * 0.82))
         p.addCurve(
             to: crown,
@@ -234,7 +246,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.52, y: h * 0.47)
         )
 
-        // Left primary branch.
         p.move(to: CGPoint(x: w * 0.49, y: h * 0.52))
         p.addCurve(
             to: CGPoint(x: w * 0.18, y: h * 0.32),
@@ -242,7 +253,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.30, y: h * 0.34)
         )
 
-        // Left upper branch.
         p.move(to: CGPoint(x: w * 0.49, y: h * 0.43))
         p.addCurve(
             to: CGPoint(x: w * 0.36, y: h * 0.20),
@@ -250,7 +260,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.39, y: h * 0.27)
         )
 
-        // Left-lower event branch.
         p.move(to: CGPoint(x: w * 0.47, y: h * 0.61))
         p.addCurve(
             to: CGPoint(x: w * 0.24, y: h * 0.59),
@@ -258,7 +267,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.31, y: h * 0.57)
         )
 
-        // Center upper branch / home node.
         p.move(to: CGPoint(x: w * 0.50, y: h * 0.36))
         p.addCurve(
             to: CGPoint(x: w * 0.52, y: h * 0.18),
@@ -266,7 +274,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.51, y: h * 0.23)
         )
 
-        // Right primary branch.
         p.move(to: CGPoint(x: w * 0.51, y: h * 0.50))
         p.addCurve(
             to: CGPoint(x: w * 0.81, y: h * 0.35),
@@ -274,7 +281,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.70, y: h * 0.37)
         )
 
-        // Right upper branch.
         p.move(to: CGPoint(x: w * 0.52, y: h * 0.40))
         p.addCurve(
             to: CGPoint(x: w * 0.67, y: h * 0.22),
@@ -282,7 +288,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.63, y: h * 0.27)
         )
 
-        // Right-lower retirement branch.
         p.move(to: CGPoint(x: w * 0.53, y: h * 0.62))
         p.addCurve(
             to: CGPoint(x: w * 0.76, y: h * 0.61),
@@ -290,7 +295,6 @@ private struct TreeGeometry {
             control2: CGPoint(x: w * 0.69, y: h * 0.58)
         )
 
-        // Fine secondary tips.
         p.move(to: CGPoint(x: w * 0.34, y: h * 0.40))
         p.addCurve(
             to: CGPoint(x: w * 0.23, y: h * 0.25),
