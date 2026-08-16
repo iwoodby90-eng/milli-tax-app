@@ -215,7 +215,7 @@ private struct SubscriptionPlanButton: View {
     var body: some View {
         let titleColor: Color = isSelected ? MilliColors.blackGlass : MilliColors.textPrimary
         let priceColor: Color = isSelected ? MilliColors.blackGlass : plan.accent
-        let fillColor: Color = isSelected ? plan.accent : MilliColors.graphiteSurface
+        let fillStyle = isSelected ? AnyShapeStyle(plan.accent) : AnyShapeStyle(MilliColors.graphiteSurface)
         let strokeColor: Color = isSelected ? plan.accent : Color.white.opacity(0.06)
         let shadowColor: Color = isSelected ? plan.accent.opacity(0.18) : Color.clear
 
@@ -234,7 +234,7 @@ private struct SubscriptionPlanButton: View {
             .frame(height: 62)
             .background(
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(fillColor)
+                    .fill(fillStyle)
                     .overlay(
                         RoundedRectangle(cornerRadius: 11, style: .continuous)
                             .stroke(strokeColor, lineWidth: 0.8)
