@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   native-swiftui:
-    name: Native SwiftUI Xcode build
+    name: Native SwiftUI build + Home screenshot
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,13 +30,60 @@ jobs:
       - name: List native project
         run: xcodebuild -project MilliTaxVault.xcodeproj -list
 
+      - name: Select and boot iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          SIMULATOR_UDID="$({ xcrun simctl list devices available -j; } | python3 -c '
+          import json, sys
+          payload = json.load(sys.stdin)
+          candidates = []
+          for runtime, devices in payload.get("devices", {}).items():
+              if "iOS" not in runtime:
+                  continue
+              for device in devices:
+                  if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+                      candidates.append(device)
+          if not candidates:
+              raise SystemExit("No available iPhone simulator found")
+          preferred = next((d for d in candidates if "Pro" in d["name"] and "Max" not in d["name"]), candidates[0])
+          print(preferred["udid"])
+          ')"
+          echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> "$GITHUB_ENV"
+          echo "Using simulator: $SIMULATOR_UDID"
+          xcrun simctl boot "$SIMULATOR_UDID" || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+
       - name: Compile Milli native iOS simulator target
-        run: >-
-          xcodebuild
-          -project MilliTaxVault.xcodeproj
-          -scheme MilliTaxVault
-          -sdk iphonesimulator
-          -configuration Debug
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
-          build
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project MilliTaxVault.xcodeproj \
+            -scheme MilliTaxVault \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/MilliDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Launch Home in visual QA mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/MilliDerivedData/Build/Products/Debug-iphonesimulator/MilliTaxVault.app"
+          test -d "$APP_PATH"
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
+          xcrun simctl launch "$SIMULATOR_UDID" com.milli.taxvault -milliScreenshotMode
+          sleep 4
+          xcrun simctl io "$SIMULATOR_UDID" screenshot "$RUNNER_TEMP/milli-home.png"
+          test -s "$RUNNER_TEMP/milli-home.png"
+
+      - name: Upload Home visual QA screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: milli-home-visual-qa
+          path: ${{ runner.temp }}/milli-home.png
+          if-no-files-found: error
+          retention-days: 14
