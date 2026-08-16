@@ -10,6 +10,7 @@ final class HomeViewModel: ObservableObject {
     @Published var taxVaultBalance: String = "$5,284.17"
     @Published var taxReadyScore: Int = 85
     @Published var quarterlyTaxes: String = "$1,247.00"
+    @Published var quarterlyDueLabel: String = "Next estimated payment"
     @Published var mileage: String = "2,345 mi"
     @Published var aiInsight: String = "You're on pace to save $3,421 in taxes this year."
     @Published var isLoading: Bool = false
@@ -19,8 +20,8 @@ final class HomeViewModel: ObservableObject {
     }
 
     func loadData() {
-        // In production, fetch from API / local store.
-        // Placeholder data matching the master reference.
+        // Production integration point: replace seeded preview values with the
+        // authenticated dashboard snapshot/local store without changing HomeView.
         isLoading = false
     }
 }
@@ -30,14 +31,14 @@ final class HomeViewModel: ObservableObject {
 struct PayoutEntry: Identifiable {
     let id = UUID()
     let platformName: String
-    let platformInitial: String
+    let platformAssetName: String
     let dateTime: String
     let amount: String
 
     static let placeholder = PayoutEntry(
-        platformName: "Spark Drive",
-        platformInitial: "S",
+        platformName: "Spark Driver",
+        platformAssetName: "spark-driver-icon",
         dateTime: "Today, 9:41 AM",
-        amount: "+$312.64"
+        amount: "$312.64"
     )
 }
