@@ -1,0 +1,33 @@
+name: SwiftUI Visual QA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture native Milli screens
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Capture screen-by-screen references
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/milli-screen-qa" bash scripts/capture-milli-screens.sh
+
+      - name: Upload visual QA screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: milli-swiftui-screen-qa
+          path: ${{ runner.temp }}/milli-screen-qa/*.png
+          if-no-files-found: error
+          retention-days: 14
