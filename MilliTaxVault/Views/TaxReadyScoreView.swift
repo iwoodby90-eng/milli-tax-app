@@ -2,10 +2,21 @@ import SwiftUI
 import Charts
 
 // MARK: - TaxReadyScoreView
-// Readiness instrument: score, contributing factors, and trend history.
+// Readiness instrument: the hero score is derived from factor scores rather than
+// being a decorative hard-coded number. The factor model is ready to be fed by
+// authenticated income, expense, mileage, payment, and document services.
 
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
+
+    private var score: Int {
+        guard !factors.isEmpty else { return 0 }
+        return Int((Double(factors.reduce(0) { $0 + $1.score }) / Double(factors.count)).rounded())
+    }
+
+    private var readiness: ReadinessState {
+        ReadinessState(score: score)
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -55,10 +66,10 @@ struct TaxReadyScoreView: View {
                     .stroke(Color.white.opacity(0.07), lineWidth: 11)
 
                 Circle()
-                    .trim(from: 0, to: 0.85)
+                    .trim(from: 0, to: CGFloat(score) / 100)
                     .stroke(
                         AngularGradient(
-                            colors: [MilliColors.deepCyan, MilliColors.cyanGlow, MilliColors.positive],
+                            colors: [MilliColors.deepCyan, MilliColors.cyanGlow, readiness.color],
                             center: .center
                         ),
                         style: StrokeStyle(lineWidth: 11, lineCap: .round)
@@ -67,23 +78,25 @@ struct TaxReadyScoreView: View {
                     .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 8)
 
                 VStack(spacing: 1) {
-                    Text("85")
-                        .font(.custom("Sora-ExtraBold", size: 42, relativeTo: .largeTitle))
+                    Text("\(score)")
+                        .font(.custom("Sora-Bold", size: 42, relativeTo: .largeTitle))
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
-                    Text("Great")
+                    Text(readiness.title)
                         .font(MilliFont.headlineSmall)
-                        .foregroundStyle(MilliColors.positive)
+                        .foregroundStyle(readiness.color)
                 }
             }
             .frame(width: 176, height: 176)
 
-            Text("You're on track for tax season")
+            Text(readiness.message)
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Tax Ready Score \(score) out of 100. \(readiness.title). \(readiness.message)")
     }
 
     private var factorList: some View {
@@ -100,9 +113,15 @@ struct TaxReadyScoreView: View {
                             .frame(width: 26, height: 26)
                             .background(Circle().fill(factor.color.opacity(0.09)))
 
-                        Text(factor.name)
-                            .font(MilliFont.bodySmall)
-                            .foregroundStyle(MilliColors.textPrimary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(factor.name)
+                                .font(MilliFont.bodySmall)
+                                .foregroundStyle(MilliColors.textPrimary)
+                            Text("\(factor.score)/100")
+                                .font(MilliFont.caption)
+                                .monospacedDigit()
+                                .foregroundStyle(MilliColors.textTertiary)
+                        }
 
                         Spacer()
 
@@ -168,29 +187,80 @@ struct TaxReadyScoreView: View {
 
     private var factors: [ScoreFactor] {
         [
-            .init(name: "Income Tracking", status: "Excellent", color: MilliColors.positive, icon: "dollarsign.circle.fill"),
-            .init(name: "Expense Tracking", status: "Good", color: MilliColors.positive, icon: "receipt.fill"),
-            .init(name: "Mileage Tracking", status: "Excellent", color: MilliColors.positive, icon: "car.fill"),
-            .init(name: "Tax Payments", status: "Good", color: MilliColors.positive, icon: "building.columns.fill"),
-            .init(name: "Document Capture", status: "Needs Attention", color: MilliColors.warning, icon: "doc.text.fill")
+            .init(name: "Income Tracking", score: 96, icon: "dollarsign.circle.fill"),
+            .init(name: "Expense Tracking", score: 84, icon: "receipt.fill"),
+            .init(name: "Mileage Tracking", score: 94, icon: "car.fill"),
+            .init(name: "Tax Payments", score: 82, icon: "building.columns.fill"),
+            .init(name: "Document Capture", score: 69, icon: "doc.text.fill")
         ]
     }
 
     private var historyData: [ScoreHistoryPoint] {
-        [
-            .init(month: "Jan", score: 68), .init(month: "Feb", score: 72),
-            .init(month: "Mar", score: 78), .init(month: "Apr", score: 82),
-            .init(month: "May", score: 85), .init(month: "Jun", score: 85)
-        ]
+        let scores = [68, 72, 78, 82, 84, score]
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+
+        return scores.enumerated().map { index, value in
+            let monthsBack = scores.count - 1 - index
+            let date = calendar.date(byAdding: .month, value: -monthsBack, to: Date()) ?? Date()
+            return ScoreHistoryPoint(month: formatter.string(from: date), score: value)
+        }
     }
 }
 
 private struct ScoreFactor: Identifiable {
     let id = UUID()
     let name: String
-    let status: String
-    let color: Color
+    let score: Int
     let icon: String
+
+    var status: String {
+        switch score {
+        case 90...: return "Excellent"
+        case 80..<90: return "Good"
+        case 70..<80: return "Fair"
+        default: return "Needs Attention"
+        }
+    }
+
+    var color: Color {
+        switch score {
+        case 80...: return MilliColors.positive
+        case 70..<80: return MilliColors.warning
+        default: return MilliColors.warning
+        }
+    }
+}
+
+private struct ReadinessState {
+    let score: Int
+
+    var title: String {
+        switch score {
+        case 90...: return "Excellent"
+        case 80..<90: return "Great"
+        case 70..<80: return "Good"
+        case 60..<70: return "Fair"
+        default: return "Needs Attention"
+        }
+    }
+
+    var message: String {
+        switch score {
+        case 80...: return "You're on track for tax season"
+        case 70..<80: return "A few improvements can strengthen your tax readiness"
+        default: return "Review the factors below to improve your tax readiness"
+        }
+    }
+
+    var color: Color {
+        switch score {
+        case 80...: return MilliColors.positive
+        case 60..<80: return MilliColors.warning
+        default: return MilliColors.negative
+        }
+    }
 }
 
 private struct ScoreHistoryPoint: Identifiable {
