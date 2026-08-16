@@ -22,7 +22,7 @@ struct SplashView: View {
                     .scaleEffect(emblemScale)
 
                 VStack(spacing: 14) {
-                    Image("MilliWordmark")
+                    Image("milli_wordmark")
                         .resizable()
                         .scaledToFit()
                         .frame(maxWidth: 290)
