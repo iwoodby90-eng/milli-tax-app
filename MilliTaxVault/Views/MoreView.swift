@@ -22,6 +22,7 @@ struct MoreMenuView: View {
                 menuTile(icon: "calendar.badge.clock", title: "Quarterly Taxes", subtitle: "Estimate, prepare, and track payments", color: MilliColors.warning) { navigate?(.quarterlyTaxes) }
 
                 sectionTitle("BUILD WEALTH")
+                menuTile(icon: "circle.grid.2x2.fill", title: "Wealth Overview", subtitle: "See investments, retirement, savings and cash together", color: MilliColors.silverBright) { navigate?(.wealthOverview) }
                 menuTile(icon: "chart.xyaxis.line", title: "Investing", subtitle: "Markets, holdings, and portfolio performance", color: MilliColors.cyanGlow) { navigate?(.investing) }
                 menuTile(icon: "building.columns.fill", title: "Retirement", subtitle: "Contribution-based retirement projections", color: MilliColors.positive) { navigate?(.retirement) }
                 menuTile(icon: "tree.fill", title: "Tree of Life", subtitle: "Plan life events against your financial future", color: MilliColors.cyanGlow) { navigate?(.treeOfLife) }
