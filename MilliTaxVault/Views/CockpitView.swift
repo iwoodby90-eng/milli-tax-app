@@ -7,7 +7,7 @@ import SwiftUI
 struct SubscriptionView: View {
     var onBack: () -> Void = {}
 
-    @State private var selectedPlan: MilliPlan = .pro
+    @State private var selectedPlan: SubscriptionPlan = .pro
     @State private var showBillingSetup = false
 
     var body: some View {
@@ -82,7 +82,7 @@ struct SubscriptionView: View {
 
     private var planSelector: some View {
         HStack(spacing: 7) {
-            ForEach(MilliPlan.allCases) { plan in
+            ForEach(SubscriptionPlan.allCases) { plan in
                 Button {
                     withAnimation(.easeInOut(duration: 0.18)) {
                         selectedPlan = plan
@@ -240,7 +240,7 @@ struct SubscriptionView: View {
     }
 }
 
-private enum MilliPlan: String, CaseIterable, Identifiable {
+private enum SubscriptionPlan: String, CaseIterable, Identifiable {
     case basic
     case pro
     case elite
