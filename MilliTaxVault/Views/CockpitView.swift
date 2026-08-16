@@ -1,203 +1,314 @@
 import SwiftUI
 
-struct CockpitView: View {
+// MARK: - SubscriptionView
+// Native plan selection surface for Milli's confirmed Basic / Pro / Elite tiers.
+// The UI does not claim a purchase occurred until production billing is connected.
+
+struct SubscriptionView: View {
+    var onBack: () -> Void = {}
+
+    @State private var selectedPlan: MilliPlan = .pro
+    @State private var showBillingSetup = false
+
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                // MARK: - Profile Card
-                MilliCard {
-                    VStack(spacing: 16) {
-                        // Avatar
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [MilliColors.cyan, Color(hex: "0066FF")],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 80, height: 80)
-                            
-                            Text("IW")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        
-                        // Name
-                        Text("Ian Woodby")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        // Badge
-                        Text("Milli Pro")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(MilliColors.cyan)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(MilliColors.cyan.opacity(0.12))
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(MilliColors.cyan.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                        
-                        Text("Member since January 2026")
-                            .font(MilliFont.caption)
-                            .foregroundColor(MilliColors.secondaryText)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 10) {
+                header
+                planHero
+                planSelector
+                selectedPlanDetails
+                billingAction
+                billingDisclosure
+            }
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
+        }
+        .background(MilliColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showBillingSetup) {
+            billingSetupSheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var header: some View {
+        HStack {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.035)))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Text("Plans")
+                .font(MilliFont.screenTitle)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Spacer()
+
+            Image(systemName: "crown.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(MilliColors.warning)
+                .frame(width: 34, height: 34)
+        }
+    }
+
+    private var planHero: some View {
+        VStack(spacing: 8) {
+            Image("MilliMLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 62, height: 62)
+
+            Text("Choose how much Milli automates")
+                .font(MilliFont.headline)
+                .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text("Every plan keeps taxes and mileage at the center. Higher tiers add more preparation and automation around wealth and filing.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .milliCard(padding: 14)
+    }
+
+    private var planSelector: some View {
+        HStack(spacing: 7) {
+            ForEach(MilliPlan.allCases) { plan in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        selectedPlan = plan
+                    }
+                } label: {
+                    VStack(spacing: 5) {
+                        Text(plan.title)
+                            .font(MilliFont.labelLarge)
+                            .foregroundStyle(selectedPlan == plan ? MilliColors.blackGlass : MilliColors.textPrimary)
+                        Text(plan.price)
+                            .font(MilliFont.numericSmall)
+                            .monospacedDigit()
+                            .foregroundStyle(selectedPlan == plan ? MilliColors.blackGlass : plan.accent)
                     }
                     .frame(maxWidth: .infinity)
+                    .frame(height: 62)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .fill(selectedPlan == plan ? plan.accent : MilliColors.graphiteSurface)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .stroke(selectedPlan == plan ? plan.accent : Color.white.opacity(0.06), lineWidth: 0.8)
+                            }
+                            .shadow(color: selectedPlan == plan ? plan.accent.opacity(0.18) : .clear, radius: 8)
+                    )
                 }
-                .padding(.top, 20)
-                
-                // MARK: - Subscription Card
-                MilliCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(MilliColors.amber)
-                            
-                            Text("MILLI PRO")
-                                .font(.system(size: 14, weight: .bold))
-                                .tracking(1.2)
-                                .foregroundColor(.white)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 10) {
-                            FeatureRow(text: "Unlimited auto-transfers")
-                            FeatureRow(text: "Smart tax optimization")
-                            FeatureRow(text: "Priority support")
-                        }
-                        
-                        Button(action: {}) {
-                            Text("Manage Plan")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(MilliColors.cyan)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(MilliColors.cyan.opacity(0.5), lineWidth: 1)
-                                )
-                        }
-                    }
-                }
-                
-                // MARK: - App Settings
-                SettingsSection(title: "APP", rows: [
-                    SettingsRow(icon: "bell.fill", label: "Notifications", iconColor: MilliColors.cyan),
-                    SettingsRow(icon: "lock.shield.fill", label: "Security", iconColor: MilliColors.green),
-                    SettingsRow(icon: "paintbrush.fill", label: "Appearance", iconColor: MilliColors.amber)
-                ])
-                
-                // MARK: - Tax Settings
-                SettingsSection(title: "TAX", rows: [
-                    SettingsRow(icon: "doc.text.fill", label: "Tax Profile", iconColor: MilliColors.cyan),
-                    SettingsRow(icon: "chart.bar.doc.horizontal.fill", label: "Reports", iconColor: MilliColors.green),
-                    SettingsRow(icon: "calendar.badge.clock", label: "Quarterly Reminders", iconColor: MilliColors.amber)
-                ])
-                
-                // MARK: - Support
-                SettingsSection(title: "SUPPORT", rows: [
-                    SettingsRow(icon: "questionmark.circle.fill", label: "Help Center", iconColor: MilliColors.cyan),
-                    SettingsRow(icon: "envelope.fill", label: "Contact Us", iconColor: MilliColors.green)
-                ])
-                
-                // MARK: - Footer
-                VStack(spacing: 20) {
-                    Text("Milli Tax Vault v1.0.0")
-                        .font(MilliFont.caption)
-                        .foregroundColor(MilliColors.secondaryText)
-                    
-                    Button(action: {}) {
-                        Text("Sign Out")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(MilliColors.red)
-                    }
-                }
-                .padding(.top, 8)
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(plan.title), \(plan.price) per month")
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 120)
         }
     }
-}
 
-// MARK: - Feature Row
+    private var selectedPlanDetails: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(selectedPlan.title.uppercased())
+                        .font(MilliFont.sectionLabel)
+                        .tracking(1.0)
+                        .foregroundStyle(selectedPlan.accent)
+                    Text(selectedPlan.price)
+                        .font(MilliFont.numericLarge)
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
+                }
+                Spacer()
+                Text("/ month")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
 
-struct FeatureRow: View {
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 14))
-                .foregroundColor(MilliColors.green)
-            
+            Divider().overlay(Color.white.opacity(0.06))
+
+            ForEach(Array(selectedPlan.features.enumerated()), id: \.offset) { _, feature in
+                HStack(alignment: .top, spacing: 9) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(selectedPlan.accent)
+                        .padding(.top, 1)
+                    Text(feature)
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+            }
+
+            if selectedPlan == .basic {
+                tierNote("Tax filing remains manual. Milli provides calculations, records and guidance.")
+            } else if selectedPlan == .pro {
+                tierNote("Milli can help prepare tax paperwork, but tax filing is not represented as automatic on Pro.")
+            } else {
+                tierNote("Elite filing and quarterly-payment automation require verified production tax/payment partners before they can be enabled.")
+            }
+        }
+        .milliCard(padding: 14)
+    }
+
+    private func tierNote(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(MilliColors.textTertiary)
+                .padding(.top, 1)
             Text(text)
-                .font(MilliFont.body)
-                .foregroundColor(Color(white: 0.8))
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.top, 2)
     }
-}
 
-// MARK: - Settings Section
+    private var billingAction: some View {
+        Button {
+            showBillingSetup = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "creditcard.fill")
+                Text("Continue with \(selectedPlan.title)")
+            }
+            .font(MilliFont.headlineSmall)
+            .foregroundStyle(MilliColors.blackGlass)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(selectedPlan.accent)
+                    .shadow(color: selectedPlan.accent.opacity(0.20), radius: 8)
+            )
+        }
+        .buttonStyle(.plain)
+    }
 
-struct SettingsSection: View {
-    let title: String
-    let rows: [SettingsRow]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .sectionHeaderStyle()
-                .padding(.leading, 4)
-            
-            MilliCard {
-                VStack(spacing: 0) {
-                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                        SettingsRowView(row: row)
-                        
-                        if index < rows.count - 1 {
-                            Divider()
-                                .background(Color(white: 0.15))
-                                .padding(.vertical, 12)
-                        }
-                    }
+    private var billingDisclosure: some View {
+        Text("Plan selection is functional locally; subscription checkout is intentionally deferred until the production billing integration is connected. No charge is initiated from this build.")
+            .font(MilliFont.caption)
+            .foregroundStyle(MilliColors.textTertiary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 10)
+    }
+
+    private var billingSetupSheet: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Image(systemName: "creditcard.and.123")
+                    .font(.system(size: 44, weight: .medium))
+                    .foregroundStyle(selectedPlan.accent)
+
+                Text("Billing Integration Required")
+                    .font(MilliFont.screenTitle)
+                    .foregroundStyle(MilliColors.textPrimary)
+
+                Text("\(selectedPlan.title) is selected at \(selectedPlan.price) per month. Production checkout will be enabled when the billing provider, entitlement validation and App Store subscription configuration are connected.")
+                    .font(MilliFont.bodyMedium)
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .multilineTextAlignment(.center)
+
+                Button("Done") {
+                    showBillingSetup = false
                 }
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.blackGlass)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(selectedPlan.accent)
+                )
             }
+            .padding(24)
         }
     }
 }
 
-// MARK: - Settings Row View
+private enum MilliPlan: String, CaseIterable, Identifiable {
+    case basic
+    case pro
+    case elite
 
-struct SettingsRowView: View {
-    let row: SettingsRow
-    
-    var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(row.iconColor.opacity(0.12))
-                    .frame(width: 34, height: 34)
-                
-                Image(systemName: row.icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(row.iconColor)
-            }
-            
-            Text(row.label)
-                .font(MilliFont.body)
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(white: 0.3))
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .basic: return "Basic"
+        case .pro: return "Pro"
+        case .elite: return "Elite"
         }
     }
+
+    var price: String {
+        switch self {
+        case .basic: return "$19.99"
+        case .pro: return "$29.99"
+        case .elite: return "$49.99"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .basic: return MilliColors.silver
+        case .pro: return MilliColors.cyanGlow
+        case .elite: return MilliColors.warning
+        }
+    }
+
+    var features: [String] {
+        switch self {
+        case .basic:
+            return [
+                "Automatic tax-reserve guidance for every payout",
+                "GPS mileage tracking and deduction records",
+                "Quarterly tax estimates and deadline tracking",
+                "Income, expense and mileage reports",
+                "Tax numbers and guidance while you file manually"
+            ]
+        case .pro:
+            return [
+                "Everything in Basic",
+                "Retirement planning and contribution projections",
+                "Investing access and portfolio views",
+                "Wealth Overview and long-term planning tools",
+                "Tax-document preparation assistance"
+            ]
+        case .elite:
+            return [
+                "Everything in Pro",
+                "Annual tax-filing automation when the production filing partner is connected",
+                "Quarterly tax-payment automation when the verified payment rail is connected",
+                "Automated retirement and investing allocation options",
+                "Elite filing/document workflow and priority financial automation"
+            ]
+        }
+    }
+}
+
+// Legacy compatibility wrapper while the old profile cockpit is retired.
+struct CockpitView: View {
+    var body: some View {
+        SubscriptionView()
+    }
+}
+
+#Preview {
+    SubscriptionView()
+        .preferredColorScheme(.dark)
 }
