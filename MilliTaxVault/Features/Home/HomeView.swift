@@ -42,7 +42,7 @@ struct HomeView: View {
 
             Text("MILLI")
                 .font(MilliFont.wordmark)
-                .tracking(2.4)
+                .tracking(1.6)
                 .foregroundStyle(
                     LinearGradient(
                         colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
@@ -53,7 +53,7 @@ struct HomeView: View {
                 .shadow(color: MilliColors.cyanGlow.opacity(0.14), radius: 4)
                 .accessibilityAddTraits(.isHeader)
         }
-        .frame(height: 42)
+        .frame(height: 46)
     }
 
     // MARK: Available to Spend
@@ -126,25 +126,27 @@ struct HomeView: View {
                         .tracking(0.8)
                         .foregroundStyle(MilliColors.textSecondary)
 
-                    Text("$312.64")
+                    Text(viewModel.latestPayout.amount)
                         .font(MilliFont.numericMedium)
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
 
-                    Text("Today, 9:41 AM  •  Spark Driver™")
+                    Text("\(viewModel.latestPayout.dateTime)  •  \(viewModel.latestPayout.platformName)")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: 8)
 
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(hex: "0879FF"))
+                Image(viewModel.latestPayout.platformAssetName)
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 42, height: 42)
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .overlay {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 19, weight: .semibold))
-                            .foregroundStyle(Color.yellow)
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
                     }
             }
             .milliCard()
@@ -238,11 +240,12 @@ struct HomeView: View {
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
                 HStack(spacing: 5) {
-                    Text("Est. due Jun 15, 2024")
+                    Text(viewModel.quarterlyDueLabel)
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
-                    Spacer()
-                    Image(systemName: "sparkle")
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Image(systemName: "calendar.badge.clock")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(MilliColors.cyanGlow)
                 }
