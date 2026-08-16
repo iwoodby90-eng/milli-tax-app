@@ -28,6 +28,7 @@ enum MilliFont {
     static var labelLarge: Font { .custom("Inter-SemiBold", size: 12, relativeTo: .caption) }
     static var sectionLabel: Font { .custom("Inter-SemiBold", size: 10, relativeTo: .caption2) }
     static var caption: Font { .custom("Inter-Regular", size: 10, relativeTo: .caption2) }
+    static var metadata: Font { .custom("Inter-Regular", size: 11, relativeTo: .caption2) }
 
     // Numeric — Sora
     static var numericLarge: Font { .custom("Sora-Bold", size: 27, relativeTo: .title) }
