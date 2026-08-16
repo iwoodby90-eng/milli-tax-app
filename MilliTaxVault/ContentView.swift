@@ -75,7 +75,10 @@ struct ContentView: View {
         case .treeOfLife:
             TreeOfLifeView(onBack: { navigateTo(.more) })
         case .milliAI:
-            MilliAIView(onBack: { navigateTo(.home) })
+            MilliAIView(
+                onBack: { navigateTo(.home) },
+                navigate: navigateTo
+            )
         case .reports:
             ReportsView(onBack: { navigateTo(.more) })
         case .more:
