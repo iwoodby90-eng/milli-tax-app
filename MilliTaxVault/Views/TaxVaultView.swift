@@ -74,7 +74,7 @@ struct TaxVaultView: View {
                     .font(MilliFont.heroNumber)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("\(vault.progress.formatted(.percent.precision(.fractionLength(0)))) of annual target")
+                Text("\(progressPercentText) of annual target")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
@@ -95,7 +95,7 @@ struct TaxVaultView: View {
                         style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                Text(vault.progress.formatted(.percent.precision(.fractionLength(0))))
+                Text(progressPercentText)
                     .font(.custom("Sora-SemiBold", size: 17))
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
@@ -248,6 +248,10 @@ struct TaxVaultView: View {
             }
             .padding(24)
         }
+    }
+
+    private var progressPercentText: String {
+        "\(Int((Double(vault.progress) * 100).rounded()))%"
     }
 
     private func currency(_ value: Double) -> String {
