@@ -1,376 +1,360 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
-struct DashboardView: View {
-    @State private var balanceVisible = true
-    
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-                VStack(spacing: MilliSpacing.xl) {
-                    // MARK: Header
-                    headerSection
-                    
-                    // MARK: Hero - Available to Spend
-                    heroCard
-                    
-                    // MARK: Latest Payout
-                    latestPayoutCard
-                    
-                    // MARK: Side-by-side row
-                    taxVaultAndScoreRow
-                    
-                    // MARK: Financial Timeline
-                    financialTimelineSection
-                    
-                    // MARK: Bottom strip
-                    bottomStripRow
-                    
-                    Spacer().frame(height: 100)
-                }
-            }
-            
-        .background(Color(hex: "07090B").ignoresSafeArea())
+// MARK: - DocumentsView
+// Native document center for tax documents, receipts and generated reports.
+// File import is real and local to the current session; secure cloud persistence,
+// OCR and tax-filing partner delivery remain explicit production integrations.
+
+struct DocumentsView: View {
+    var onBack: () -> Void = {}
+
+    @State private var selectedCategory: DocumentCategory = .taxDocuments
+    @State private var documents: [MilliDocument] = MilliDocument.seeded
+    @State private var showImporter = false
+    @State private var importErrorMessage: String?
+
+    private var visibleDocuments: [MilliDocument] {
+        documents.filter { $0.category == selectedCategory }
     }
-    
-    // MARK: - Header
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.xs) {
-            HStack {
-                Text("milli")
-                    .font(.system(size: 22, weight: .bold, design: .default))
-                    .italic()
-                    .foregroundStyle(Color(hex: "00E5FF"))
-                    .tracking(1)
-                Spacer()
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white)
-                    Circle()
-                        .fill(Color(hex: "00E5FF"))
-                        .frame(width: 8, height: 8)
-                        .offset(x: 2, y: -2)
-                }
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 10) {
+                header
+                categoryControl
+                documentSummary
+                documentList
+                importButton
+                securityDisclosure
             }
-            .padding(.horizontal, MilliSpacing.xl)
-            .padding(.top, MilliSpacing.lg)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Good morning, Ian")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(.white)
-                Text("Here's your financial overview")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color(hex: "8E92A0"))
-            }
-            .padding(.horizontal, MilliSpacing.xl)
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
+        }
+        .background(MilliColors.background.ignoresSafeArea())
+        .fileImporter(
+            isPresented: $showImporter,
+            allowedContentTypes: [.pdf, .image, .commaSeparatedText, .plainText],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result)
+        }
+        .alert("Document Import", isPresented: Binding(
+            get: { importErrorMessage != nil },
+            set: { if !$0 { importErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { importErrorMessage = nil }
+        } message: {
+            Text(importErrorMessage ?? "")
         }
     }
-    
-    // MARK: - Hero Card
-    private var heroCard: some View {
-        HStack(spacing: MilliSpacing.lg) {
-            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-                HStack(spacing: 6) {
-                    Text("Available to Spend")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color(hex: "8E92A0"))
-                    Button(action: { balanceVisible.toggle() }) {
-                        Image(systemName: balanceVisible ? "eye.fill" : "eye.slash.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "8E92A0"))
+
+    private var header: some View {
+        HStack {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.035)))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Text("Documents")
+                .font(MilliFont.screenTitle)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Spacer()
+
+            Image(systemName: "folder.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 34, height: 34)
+        }
+    }
+
+    private var categoryControl: some View {
+        HStack(spacing: 3) {
+            ForEach(DocumentCategory.allCases) { category in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        selectedCategory = category
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: category.icon)
+                            .font(.system(size: 12, weight: .semibold))
+                        Text(category.shortTitle)
+                            .font(MilliFont.caption)
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(selectedCategory == category ? MilliColors.blackGlass : MilliColors.cyanGlow.opacity(0.82))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(selectedCategory == category ? MilliColors.cyanGlow : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(hex: "0C252E"))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.white.opacity(0.05), lineWidth: 0.7)
+                }
+        )
+    }
+
+    private var documentSummary: some View {
+        HStack(spacing: 0) {
+            summaryMetric("DOCUMENTS", "\(visibleDocuments.count)")
+            Rectangle().fill(Color.white.opacity(0.06)).frame(width: 1, height: 38)
+            summaryMetric("READY", "\(visibleDocuments.filter(\.isReady).count)")
+            Rectangle().fill(Color.white.opacity(0.06)).frame(width: 1, height: 38)
+            summaryMetric("NEEDS REVIEW", "\(visibleDocuments.filter { !$0.isReady }.count)")
+        }
+        .milliCard(padding: 12)
+    }
+
+    private func summaryMetric(_ title: String, _ value: String) -> some View {
+        VStack(spacing: 3) {
+            Text(title)
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(MilliFont.numericSmall)
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var documentList: some View {
+        if visibleDocuments.isEmpty {
+            VStack(spacing: 8) {
+                Image(systemName: selectedCategory.icon)
+                    .font(.system(size: 26, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+                Text("No \(selectedCategory.shortTitle.lowercased()) yet")
+                    .font(MilliFont.bodyMedium)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 34)
+            .milliCard()
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(selectedCategory.sectionTitle)
+                    .sectionHeaderStyle()
+
+                VStack(spacing: 0) {
+                    ForEach(Array(visibleDocuments.enumerated()), id: \.element.id) { index, document in
+                        documentRow(document)
+                        if index < visibleDocuments.count - 1 {
+                            Divider().overlay(Color.white.opacity(0.05)).padding(.leading, 52)
+                        }
                     }
                 }
-                
-                Text(balanceVisible ? "$24,560.00" : "••••••")
-                    .font(.system(size: 36, weight: .black))
-                    .foregroundStyle(.white)
-                
-                HStack(spacing: 4) {
-                    Text("Milli Checking •••• 4587")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color(hex: "8E92A0"))
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color(hex: "8E92A0"))
-                }
+                .background(MilliCardBackground(showGlow: true))
             }
-            
-            Spacer()
-            
-            MilliMetalCard(size: CGSize(width: 140, height: 90))
         }
-        .padding(MilliSpacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: MilliRadius.card)
-                .fill(Color(hex: "121620"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MilliRadius.card)
-                        .stroke(Color.cyan.opacity(0.25), lineWidth: 1)
-                )
-                .shadow(color: Color(hex: "00E5FF").opacity(0.08), radius: 12)
-        )
-        .padding(.horizontal, MilliSpacing.xl)
     }
-    
-    // MARK: - Latest Payout Card
-    private var latestPayoutCard: some View {
-        VStack(spacing: MilliSpacing.md) {
-            // Header
-            HStack {
-                Text("Latest Payout")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                Spacer()
-                Image(systemName: "chevron.right")
+
+    private func documentRow(_ document: MilliDocument) -> some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(document.category.color.opacity(0.09))
+                    .frame(width: 34, height: 38)
+                Image(systemName: document.icon)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(hex: "8E92A0"))
+                    .foregroundStyle(document.category.color)
             }
-            
-            HStack(alignment: .top, spacing: MilliSpacing.lg) {
-                // Left column
-                VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-                    Text("Gross Payout")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "8E92A0"))
-                    Text("$8,750.00")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("May 23, 2025")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "8E92A0"))
-                }
-                
-                Spacer()
-                
-                // Right column - line items
-                VStack(alignment: .trailing, spacing: 6) {
-                    payoutLineItem("Net Payout", "$6,862.50", .white)
-                    payoutLineItem("Taxes", "-$1,312.50", Color(hex: "FF3B30"))
-                    payoutLineItem("Milli Tax Vault\u{2122}", "-$575.00", Color(hex: "00E5FF"))
-                    Divider().background(Color.white.opacity(0.1))
-                    payoutLineItem("Total", "$8,750.00", .white)
-                }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(document.name)
+                    .font(MilliFont.headlineSmall)
+                    .foregroundStyle(MilliColors.textPrimary)
+                    .lineLimit(1)
+                Text("\(document.detail) • \(document.date.formatted(date: .abbreviated, time: .omitted))")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(document.isReady ? "Ready" : "Review")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(document.isReady ? MilliColors.positive : MilliColors.warning)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(MilliColors.textTertiary)
             }
         }
-        .padding(MilliSpacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: MilliRadius.card)
-                .fill(Color(hex: "121620"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MilliRadius.card)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                )
-        )
-        .padding(.horizontal, MilliSpacing.xl)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .accessibilityElement(children: .combine)
     }
-    
-    private func payoutLineItem(_ label: String, _ amount: String, _ color: Color) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(Color(hex: "8E92A0"))
-            Spacer()
-            Text(amount)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(color)
-        }
-    }
-    
-    // MARK: - Tax Vault & Score Row
-    private var taxVaultAndScoreRow: some View {
-        HStack(spacing: MilliSpacing.md) {
-            // Tax Vault
-            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-                Image(systemName: "building.columns.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color(hex: "00E5FF"))
-                
-                Text("Milli Tax Vault\u{2122}")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color(hex: "8E92A0"))
-                
-                Text("$15,230.40")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
-                
-                Text("+ $575.00 this month")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: "34C759"))
-                
-                ProgressView(value: 0.76)
-                    .tint(Color(hex: "00E5FF"))
-                
-                Text("2025 Tax Goal: $20,000")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: "8E92A0"))
+
+    private var importButton: some View {
+        Button {
+            showImporter = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.arrow.down.fill")
+                Text("Import Document")
             }
-            .padding(MilliSpacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: MilliRadius.card)
-                    .fill(Color(hex: "121620"))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MilliRadius.card)
-                            .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                    )
-            )
+            .font(MilliFont.headlineSmall)
+            .foregroundStyle(MilliColors.blackGlass)
             .frame(maxWidth: .infinity)
-            
-            // Tax Ready Score
-            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
-                Text("Tax Ready Score\u{2122}")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color(hex: "8E92A0"))
-                
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.1), lineWidth: 6)
-                        .frame(width: 70, height: 70)
-                    Circle()
-                        .trim(from: 0, to: 0.85)
-                        .stroke(Color(hex: "00E5FF"), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .frame(width: 70, height: 70)
-                        .rotationEffect(.degrees(-90))
-                    Text("85")
-                        .font(.system(size: 44, weight: .black))
-                        .foregroundStyle(Color(hex: "00E5FF"))
-                }
-                .frame(maxWidth: .infinity)
-                
-                Text("Excellent")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(hex: "34C759"))
-                
-                Text("Updated today")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: "8E92A0"))
-            }
-            .padding(MilliSpacing.lg)
+            .frame(height: 46)
             .background(
-                RoundedRectangle(cornerRadius: MilliRadius.card)
-                    .fill(Color(hex: "121620"))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MilliRadius.card)
-                            .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                    )
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(MilliColors.cyanGlow)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 8)
             )
-            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, MilliSpacing.xl)
+        .buttonStyle(.plain)
     }
-    
-    // MARK: - Financial Timeline
-    private var financialTimelineSection: some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.md) {
-            HStack {
-                Text("Financial Timeline")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                Spacer()
-                Text("View all")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(hex: "00E5FF"))
-            }
-            
-            timelineRow(month: "JUN", day: "15", icon: "building.columns.fill", title: "Estimated Tax Payment", amount: "$1,240.00")
-            timelineRow(month: "SEP", day: "15", icon: "doc.text.fill", title: "Q3 Estimated Tax", amount: "$1,310.00")
+
+    private var securityDisclosure: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(MilliColors.positive)
+                .padding(.top, 1)
+
+            Text("Imports are added to the current local document state. Production encrypted storage, OCR extraction, cloud sync and tax-partner delivery require their respective verified services before Milli will represent them as active.")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(MilliSpacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: MilliRadius.card)
-                .fill(Color(hex: "121620"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MilliRadius.card)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                )
-        )
-        .padding(.horizontal, MilliSpacing.xl)
+        .milliCard(padding: 11)
     }
-    
-    private func timelineRow(month: String, day: String, icon: String, title: String, amount: String) -> some View {
-        HStack(spacing: MilliSpacing.md) {
-            // Date badge
-            VStack(spacing: 2) {
-                Text(month)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "00E5FF"))
-                Text(day)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 44, height: 44)
-            .background(
-                Circle()
-                    .fill(Color(hex: "00E5FF").opacity(0.12))
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            let name = url.deletingPathExtension().lastPathComponent.isEmpty ? "Imported Document" : url.deletingPathExtension().lastPathComponent
+            let detail = url.pathExtension.isEmpty ? "Imported file" : url.pathExtension.uppercased()
+
+            documents.insert(
+                MilliDocument(
+                    name: name,
+                    detail: detail,
+                    date: Date(),
+                    category: selectedCategory,
+                    isReady: false,
+                    icon: iconForImportedURL(url)
+                ),
+                at: 0
             )
-            
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(Color(hex: "8E92A0"))
-            
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
-            
-            Spacer()
-            
-            HStack(spacing: 4) {
-                Text(amount)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color(hex: "8E92A0"))
-            }
+
+        case .failure(let error):
+            importErrorMessage = error.localizedDescription
         }
-        .padding(.vertical, MilliSpacing.sm)
     }
-    
-    // MARK: - Bottom Strip
-    private var bottomStripRow: some View {
-        HStack(spacing: MilliSpacing.sm) {
-            bottomStripItem(icon: "speedometer", value: "1,247 mi", label: "This month", detail: "+$672.38", detailColor: Color(hex: "00E5FF"))
-            bottomStripItem(icon: "leaf.fill", value: "$62,350", label: "Total Balance", detail: "+7.2%", detailColor: Color(hex: "34C759"))
-            bottomStripItem(icon: "chart.line.uptrend.xyaxis", value: "$28,410", label: "Total Balance", detail: "+5.6%", detailColor: Color(hex: "34C759"))
+
+    private func iconForImportedURL(_ url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "pdf": return "doc.richtext.fill"
+        case "png", "jpg", "jpeg", "heic": return "photo.fill"
+        case "csv": return "tablecells.fill"
+        default: return "doc.fill"
         }
-        .padding(.horizontal, MilliSpacing.xl)
     }
-    
-    private func bottomStripItem(icon: String, value: String, label: String, detail: String, detailColor: Color) -> some View {
-        VStack(alignment: .leading, spacing: MilliSpacing.xs) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(Color(hex: "8E92A0"))
-            
-            Text(value)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-            
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(Color(hex: "8E92A0"))
-            
-            HStack(spacing: 2) {
-                Text(detail)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(detailColor)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 8))
-                    .foregroundStyle(detailColor)
-            }
+}
+
+private enum DocumentCategory: String, CaseIterable, Identifiable {
+    case taxDocuments
+    case receipts
+    case reports
+
+    var id: String { rawValue }
+
+    var shortTitle: String {
+        switch self {
+        case .taxDocuments: return "Tax Docs"
+        case .receipts: return "Receipts"
+        case .reports: return "Reports"
         }
-        .padding(MilliSpacing.md)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: MilliRadius.card)
-                .fill(Color(hex: "121620"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MilliRadius.card)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                )
-        )
+    }
+
+    var sectionTitle: String {
+        switch self {
+        case .taxDocuments: return "TAX DOCUMENTS"
+        case .receipts: return "RECEIPTS"
+        case .reports: return "GENERATED REPORTS"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .taxDocuments: return "doc.text.fill"
+        case .receipts: return "receipt.fill"
+        case .reports: return "chart.bar.doc.horizontal.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .taxDocuments: return MilliColors.cyanGlow
+        case .receipts: return MilliColors.warning
+        case .reports: return Color(hex: "7C8CFF")
+        }
+    }
+}
+
+private struct MilliDocument: Identifiable {
+    let id = UUID()
+    let name: String
+    let detail: String
+    let date: Date
+    let category: DocumentCategory
+    let isReady: Bool
+    let icon: String
+
+    static var seeded: [MilliDocument] {
+        let calendar = Calendar.current
+        let now = Date()
+        func date(daysAgo: Int) -> Date {
+            calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        }
+
+        return [
+            MilliDocument(name: "Income Summary", detail: "PDF", date: date(daysAgo: 2), category: .taxDocuments, isReady: true, icon: "doc.richtext.fill"),
+            MilliDocument(name: "Quarterly Estimate", detail: "PDF", date: date(daysAgo: 5), category: .taxDocuments, isReady: true, icon: "doc.text.fill"),
+            MilliDocument(name: "Fuel Stop", detail: "$68.42", date: date(daysAgo: 0), category: .receipts, isReady: true, icon: "receipt.fill"),
+            MilliDocument(name: "Vehicle Service", detail: "$89.75", date: date(daysAgo: 1), category: .receipts, isReady: true, icon: "receipt.fill"),
+            MilliDocument(name: "Parking Receipt", detail: "$24.60", date: date(daysAgo: 3), category: .receipts, isReady: false, icon: "receipt.fill"),
+            MilliDocument(name: "Deduction Report", detail: "PDF", date: date(daysAgo: 1), category: .reports, isReady: true, icon: "chart.bar.doc.horizontal.fill"),
+            MilliDocument(name: "Trip Export", detail: "CSV", date: date(daysAgo: 4), category: .reports, isReady: true, icon: "tablecells.fill")
+        ]
+    }
+}
+
+// Legacy compatibility wrapper while the old duplicate dashboard is retired.
+struct DashboardView: View {
+    var body: some View {
+        DocumentsView()
     }
 }
 
 #Preview {
-    DashboardView()
+    DocumentsView()
+        .preferredColorScheme(.dark)
 }
