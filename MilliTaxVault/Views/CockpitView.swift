@@ -83,35 +83,18 @@ struct SubscriptionView: View {
     private var planSelector: some View {
         HStack(spacing: 7) {
             ForEach(SubscriptionPlan.allCases) { plan in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        selectedPlan = plan
-                    }
-                } label: {
-                    VStack(spacing: 5) {
-                        Text(plan.title)
-                            .font(MilliFont.labelLarge)
-                            .foregroundStyle(selectedPlan == plan ? MilliColors.blackGlass : MilliColors.textPrimary)
-                        Text(plan.price)
-                            .font(MilliFont.numericSmall)
-                            .monospacedDigit()
-                            .foregroundStyle(selectedPlan == plan ? MilliColors.blackGlass : plan.accent)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 62)
-                    .background(
-                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .fill(selectedPlan == plan ? plan.accent : MilliColors.graphiteSurface)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                    .stroke(selectedPlan == plan ? plan.accent : Color.white.opacity(0.06), lineWidth: 0.8)
-                            }
-                            .shadow(color: selectedPlan == plan ? plan.accent.opacity(0.18) : .clear, radius: 8)
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(plan.title), \(plan.price) per month")
+                SubscriptionPlanButton(
+                    plan: plan,
+                    isSelected: selectedPlan == plan,
+                    action: { select(plan) }
+                )
             }
+        }
+    }
+
+    private func select(_ plan: SubscriptionPlan) {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            selectedPlan = plan
         }
     }
 
@@ -137,26 +120,10 @@ struct SubscriptionView: View {
             Divider().overlay(Color.white.opacity(0.06))
 
             ForEach(Array(selectedPlan.features.enumerated()), id: \.offset) { _, feature in
-                HStack(alignment: .top, spacing: 9) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(selectedPlan.accent)
-                        .padding(.top, 1)
-                    Text(feature)
-                        .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
-                }
+                PlanFeatureRow(feature: feature, accent: selectedPlan.accent)
             }
 
-            if selectedPlan == .basic {
-                tierNote("Tax filing remains manual. Milli provides calculations, records and guidance.")
-            } else if selectedPlan == .pro {
-                tierNote("Milli can help prepare tax paperwork, but tax filing is not represented as automatic on Pro.")
-            } else {
-                tierNote("Elite filing and quarterly-payment automation require verified production tax/payment partners before they can be enabled.")
-            }
+            tierNote(selectedPlan.note)
         }
         .milliCard(padding: 14)
     }
@@ -240,6 +207,67 @@ struct SubscriptionView: View {
     }
 }
 
+private struct SubscriptionPlanButton: View {
+    let plan: SubscriptionPlan
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        let titleColor: Color = isSelected ? MilliColors.blackGlass : MilliColors.textPrimary
+        let priceColor: Color = isSelected ? MilliColors.blackGlass : plan.accent
+        let fillColor: Color = isSelected ? plan.accent : MilliColors.graphiteSurface
+        let strokeColor: Color = isSelected ? plan.accent : Color.white.opacity(0.06)
+        let shadowColor: Color = isSelected ? plan.accent.opacity(0.18) : Color.clear
+
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Text(plan.title)
+                    .font(MilliFont.labelLarge)
+                    .foregroundStyle(titleColor)
+
+                Text(plan.price)
+                    .font(MilliFont.numericSmall)
+                    .monospacedDigit()
+                    .foregroundStyle(priceColor)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 62)
+            .background(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(fillColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .stroke(strokeColor, lineWidth: 0.8)
+                    )
+                    .shadow(color: shadowColor, radius: 8)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(plan.title), \(plan.price) per month")
+    }
+}
+
+private struct PlanFeatureRow: View {
+    let feature: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(accent)
+                .padding(.top, 1)
+
+            Text(feature)
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 private enum SubscriptionPlan: String, CaseIterable, Identifiable {
     case basic
     case pro
@@ -268,6 +296,17 @@ private enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .basic: return MilliColors.silver
         case .pro: return MilliColors.cyanGlow
         case .elite: return MilliColors.warning
+        }
+    }
+
+    var note: String {
+        switch self {
+        case .basic:
+            return "Tax filing remains manual. Milli provides calculations, records and guidance."
+        case .pro:
+            return "Milli can help prepare tax paperwork, but tax filing is not represented as automatic on Pro."
+        case .elite:
+            return "Elite filing and quarterly-payment automation require verified production tax/payment partners before they can be enabled."
         }
     }
 
