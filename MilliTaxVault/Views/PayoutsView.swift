@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - PayoutsView
 // Dense banking-grade payout history with compact segmented filtering.
+// Seed data is isolated in one place so the screen can be swapped to the payout repository/API cleanly.
 
 struct PayoutsView: View {
     @State private var selectedFilter: PayoutFilter = .all
@@ -25,7 +26,7 @@ struct PayoutsView: View {
             Text("Payouts")
                 .font(MilliFont.screenTitle)
                 .foregroundStyle(MilliColors.textPrimary)
-            Text("Total $1,398.73")
+            Text("Total \(currency(totalPayouts))")
                 .font(MilliFont.bodyMedium)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textSecondary)
@@ -58,6 +59,7 @@ struct PayoutsView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Show \(filter.title.lowercased()) payouts")
             }
         }
         .padding(3)
@@ -68,12 +70,31 @@ struct PayoutsView: View {
         )
     }
 
+    @ViewBuilder
     private var payoutList: some View {
-        LazyVStack(spacing: 8) {
-            ForEach(filteredPayouts) { payout in
-                payoutRow(payout)
+        if filteredPayouts.isEmpty {
+            VStack(spacing: 8) {
+                Image(systemName: "tray")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(MilliColors.textTertiary)
+                Text("No payouts in this view")
+                    .font(MilliFont.bodyMedium)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 34)
+            .milliCard()
+        } else {
+            LazyVStack(spacing: 8) {
+                ForEach(filteredPayouts) { payout in
+                    payoutRow(payout)
+                }
             }
         }
+    }
+
+    private var totalPayouts: Double {
+        payoutData.reduce(0) { $0 + $1.amount }
     }
 
     private var filteredPayouts: [PayoutItem] {
@@ -81,9 +102,9 @@ struct PayoutsView: View {
         case .all:
             return payoutData
         case .thisWeek:
-            return Array(payoutData.prefix(6))
+            return payoutData.filter(\.isThisWeek)
         case .pending:
-            return Array(payoutData.suffix(2))
+            return payoutData.filter { $0.status == .pending }
         }
     }
 
@@ -92,20 +113,33 @@ struct PayoutsView: View {
             platformMark(payout)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(payout.platform)
-                    .font(MilliFont.headlineSmall)
-                    .foregroundStyle(MilliColors.textPrimary)
-                Text(payout.date)
+                HStack(spacing: 6) {
+                    Text(payout.platform)
+                        .font(MilliFont.headlineSmall)
+                        .foregroundStyle(MilliColors.textPrimary)
+
+                    if payout.status == .pending {
+                        Text("PENDING")
+                            .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
+                            .tracking(0.5)
+                            .foregroundStyle(MilliColors.warning)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(MilliColors.warning.opacity(0.10)))
+                    }
+                }
+
+                Text(payout.dateLabel)
                     .font(MilliFont.bodySmall)
                     .foregroundStyle(MilliColors.textSecondary)
             }
 
             Spacer()
 
-            Text(payout.amount)
+            Text("+\(currency(payout.amount))")
                 .font(MilliFont.numericMedium)
                 .monospacedDigit()
-                .foregroundStyle(payout.isPending ? MilliColors.textPrimary : MilliColors.positive)
+                .foregroundStyle(payout.status == .pending ? MilliColors.textPrimary : MilliColors.positive)
         }
         .padding(.horizontal, 12)
         .frame(height: 72)
@@ -117,10 +151,20 @@ struct PayoutsView: View {
                         .stroke(MilliColors.focusedBorder, lineWidth: 0.7)
                 }
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(payout.platform), \(payout.dateLabel), \(currency(payout.amount)), \(payout.status.accessibilityLabel)")
     }
 
+    @ViewBuilder
     private func platformMark(_ payout: PayoutItem) -> some View {
-        ZStack {
+        if let assetName = payout.assetName {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 42, height: 42)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.white.opacity(0.13), lineWidth: 0.7))
+        } else {
             Circle()
                 .fill(
                     LinearGradient(
@@ -130,39 +174,30 @@ struct PayoutsView: View {
                     )
                 )
                 .frame(width: 42, height: 42)
+                .overlay {
+                    Text(payout.platformInitial)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.white)
+                }
                 .overlay(Circle().stroke(Color.white.opacity(0.13), lineWidth: 0.7))
-
-            if payout.platform == "Uber" {
-                Text("Uber")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.white)
-            } else if payout.platform == "DoorDash" {
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 17, weight: .black))
-                    .foregroundStyle(Color(hex: "FF3008"))
-            } else if payout.platform == "Instacart" {
-                Image(systemName: "carrot.fill")
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(Color.orange)
-            } else {
-                Text(payout.platformInitial)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color.white)
-            }
         }
     }
 
     private var payoutData: [PayoutItem] {
         [
-            PayoutItem(platform: "Uber", platformInitial: "U", platformColor: Color.black, date: "Jan 16, 2024", amount: "+$30.00", isPending: false),
-            PayoutItem(platform: "DoorDash", platformInitial: "D", platformColor: Color(hex: "4B170D"), date: "Jan 16, 2024", amount: "+$16.00", isPending: true),
-            PayoutItem(platform: "DoorDash", platformInitial: "D", platformColor: Color(hex: "4B170D"), date: "Jan 16, 2024", amount: "+$16.00", isPending: false),
-            PayoutItem(platform: "DoorDash", platformInitial: "D", platformColor: Color(hex: "4B170D"), date: "Jan 16, 2024", amount: "+$16.00", isPending: false),
-            PayoutItem(platform: "Uber", platformInitial: "U", platformColor: Color.black, date: "Jan 16, 2024", amount: "+$14.00", isPending: true),
-            PayoutItem(platform: "Instacart", platformInitial: "I", platformColor: Color(hex: "064D2A"), date: "Jan 13, 2024", amount: "+$10.00", isPending: false),
-            PayoutItem(platform: "Instacart", platformInitial: "I", platformColor: Color(hex: "064D2A"), date: "Jan 13, 2024", amount: "+$12.00", isPending: false),
-            PayoutItem(platform: "Uber", platformInitial: "U", platformColor: Color.black, date: "Jan 13, 2024", amount: "+$10.00", isPending: false)
+            .init(platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Today, 9:41 AM", amount: 312.64, status: .settled, isThisWeek: true),
+            .init(platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "Yesterday", amount: 186.42, status: .settled, isThisWeek: true),
+            .init(platform: "DoorDash", platformInitial: "D", assetName: "doordash-icon", platformColor: Color(hex: "4B170D"), dateLabel: "Yesterday", amount: 94.16, status: .pending, isThisWeek: true),
+            .init(platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "064D2A"), dateLabel: "2 days ago", amount: 128.10, status: .settled, isThisWeek: true),
+            .init(platform: "DoorDash", platformInitial: "D", assetName: "doordash-icon", platformColor: Color(hex: "4B170D"), dateLabel: "3 days ago", amount: 116.73, status: .settled, isThisWeek: true),
+            .init(platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "4 days ago", amount: 205.58, status: .pending, isThisWeek: true),
+            .init(platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "064D2A"), dateLabel: "Last week", amount: 173.62, status: .settled, isThisWeek: false),
+            .init(platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Last week", amount: 181.48, status: .settled, isThisWeek: false)
         ]
+    }
+
+    private func currency(_ value: Double) -> String {
+        value.formatted(.currency(code: "USD"))
     }
 }
 
@@ -178,12 +213,26 @@ enum PayoutFilter: CaseIterable {
     }
 }
 
+enum PayoutStatus {
+    case settled
+    case pending
+
+    var accessibilityLabel: String {
+        switch self {
+        case .settled: return "settled"
+        case .pending: return "pending"
+        }
+    }
+}
+
 struct PayoutItem: Identifiable {
     let id = UUID()
     let platform: String
     let platformInitial: String
+    let assetName: String?
     let platformColor: Color
-    let date: String
-    let amount: String
-    let isPending: Bool
+    let dateLabel: String
+    let amount: Double
+    let status: PayoutStatus
+    let isThisWeek: Bool
 }
