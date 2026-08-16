@@ -1,168 +1,249 @@
 import SwiftUI
 
-struct VaultView: View {
+// MARK: - AccountsView
+// Consolidated account connection surface. This view is intentionally honest:
+// balances are seed/demo state until a production account aggregator/banking rail
+// is connected; the Connect Account flow never pretends an external account was linked.
+
+struct AccountsView: View {
+    var onBack: () -> Void = {}
+
+    @State private var showConnectionSetup = false
+
+    private let accounts = ConnectedAccount.seeded
+
+    private var totalBalance: Double {
+        accounts.reduce(0) { $0 + $1.balance }
+    }
+
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                // MARK: - Vault Balance Header
-                VStack(spacing: 8) {
-                    Text("VAULT BALANCE")
-                        .sectionHeaderStyle()
-                    
-                    Text("$1,648")
-                        .font(MilliFont.heroNumber)
-                        .foregroundColor(.white)
-                    
-                    Text("63% of quarterly goal")
-                        .font(MilliFont.caption)
-                        .foregroundColor(MilliColors.cyan)
-                }
-                .padding(.top, 20)
-                
-                // MARK: - Progress Ring Card
-                MilliCard {
-                    VStack(spacing: 16) {
-                        CircularProgressView(
-                            progress: 0.63,
-                            goal: "$2,580",
-                            remaining: "$932"
-                        )
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                
-                // MARK: - Quick Actions
-                HStack(spacing: 16) {
-                    Button(action: {}) {
-                        Text("Add Funds")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(MilliColors.cyan)
-                            )
-                    }
-                    
-                    Button(action: {}) {
-                        Text("Withdraw")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(white: 0.3), lineWidth: 1)
-                            )
-                    }
-                }
-                
-                // MARK: - Reserve Status Card
-                MilliCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Reserve Status")
-                            .font(MilliFont.cardTitle)
-                            .foregroundColor(.white)
-                        
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Tax Ready Score")
-                                    .font(MilliFont.caption)
-                                    .foregroundColor(MilliColors.secondaryText)
-                                
-                                Text("85")
-                                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                                    .foregroundColor(MilliColors.green)
-                            }
-                            
-                            Spacer()
-                            
-                            VStack(alignment: .trailing, spacing: 4) {
-                                Text("Est. Tax Owed")
-                                    .font(MilliFont.caption)
-                                    .foregroundColor(MilliColors.secondaryText)
-                                
-                                Text("$2,580")
-                                    .font(MilliFont.subHeroNumber)
-                                    .foregroundColor(.white)
-                                
-                                Text("This Quarter")
-                                    .font(MilliFont.caption)
-                                    .foregroundColor(MilliColors.secondaryText)
-                            }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 10) {
+                header
+                totalBalanceCard
+                accountsList
+                connectionButton
+                connectionStatus
+            }
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, 8)
+            .padding(.bottom, MilliSpacing.bottomContentClearance)
+        }
+        .background(MilliColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showConnectionSetup) {
+            accountConnectionSheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var header: some View {
+        HStack {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.035)))
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Text("Accounts")
+                .font(MilliFont.screenTitle)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Spacer()
+
+            Image(systemName: "building.columns")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 34, height: 34)
+        }
+    }
+
+    private var totalBalanceCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CONNECTED BALANCES")
+                .sectionHeaderStyle()
+            Text(totalBalance.formatted(.currency(code: "USD")))
+                .font(MilliFont.heroNumber)
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+            Text("Demo/local account state")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard(padding: 14)
+    }
+
+    private var accountsList: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("ACCOUNTS")
+                .sectionHeaderStyle()
+
+            VStack(spacing: 0) {
+                ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                    HStack(spacing: 10) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(account.color.opacity(0.10))
+                                .frame(width: 38, height: 38)
+                            Image(systemName: account.icon)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(account.color)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(account.name)
+                                .font(MilliFont.headlineSmall)
+                                .foregroundStyle(MilliColors.textPrimary)
+                            Text(account.subtitle)
+                                .font(MilliFont.caption)
+                                .foregroundStyle(MilliColors.textTertiary)
+                        }
+
+                        Spacer()
+
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(account.balance.formatted(.currency(code: "USD")))
+                                .font(MilliFont.numericSmall)
+                                .monospacedDigit()
+                                .foregroundStyle(MilliColors.textPrimary)
+                            Text(account.status)
+                                .font(MilliFont.caption)
+                                .foregroundStyle(account.statusColor)
                         }
                     }
-                }
-                
-                // MARK: - Recent Transfers
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("RECENT TRANSFERS")
-                        .sectionHeaderStyle()
-                        .padding(.leading, 4)
-                    
-                    MilliCard {
-                        VStack(spacing: 0) {
-                            ForEach(Array(SampleData.transactions.enumerated()), id: \.element.id) { index, transaction in
-                                TransactionRow(transaction: transaction)
-                                
-                                if index < SampleData.transactions.count - 1 {
-                                    Divider()
-                                        .background(Color(white: 0.15))
-                                        .padding(.vertical, 12)
-                                }
-                            }
-                        }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+
+                    if index < accounts.count - 1 {
+                        Divider().overlay(Color.white.opacity(0.05)).padding(.leading, 56)
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 120)
+            .background(MilliCardBackground(showGlow: true))
+        }
+    }
+
+    private var connectionButton: some View {
+        Button {
+            showConnectionSetup = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus.circle.fill")
+                Text("Connect Account")
+            }
+            .font(MilliFont.headlineSmall)
+            .foregroundStyle(MilliColors.blackGlass)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(MilliColors.cyanGlow)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 8)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var connectionStatus: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MilliColors.positive)
+                .padding(.top, 1)
+
+            Text("Production account linking is intentionally unavailable until the verified connection provider is configured. Seed balances are clearly isolated from live financial data.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .milliCard(padding: 12)
+    }
+
+    private var accountConnectionSheet: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Image(systemName: "link.circle.fill")
+                    .font(.system(size: 46, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+
+                Text("Account Connection Setup")
+                    .font(MilliFont.screenTitle)
+                    .foregroundStyle(MilliColors.textPrimary)
+
+                Text("Connect Account will be enabled when the production account-linking provider and secure token exchange are configured. This screen does not simulate a successful bank connection.")
+                    .font(MilliFont.bodyMedium)
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .multilineTextAlignment(.center)
+
+                Button("Done") {
+                    showConnectionSetup = false
+                }
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.blackGlass)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(MilliColors.cyanGlow)
+                )
+            }
+            .padding(24)
         }
     }
 }
 
-// MARK: - Transaction Row
+private struct ConnectedAccount: Identifiable {
+    let id = UUID()
+    let name: String
+    let subtitle: String
+    let balance: Double
+    let icon: String
+    let color: Color
+    let status: String
+    let statusColor: Color
 
-struct TransactionRow: View {
-    let transaction: Transaction
-    
+    static let seeded: [ConnectedAccount] = [
+        ConnectedAccount(
+            name: "Available to Spend",
+            subtitle: "Milli operating balance",
+            balance: 1_365.42,
+            icon: "wallet.pass.fill",
+            color: MilliColors.cyanGlow,
+            status: "Demo",
+            statusColor: MilliColors.warning
+        ),
+        ConnectedAccount(
+            name: "Milli Tax Vault™",
+            subtitle: "Protected tax reserve",
+            balance: 5_284.17,
+            icon: "lock.shield.fill",
+            color: MilliColors.deepCyan,
+            status: "Demo",
+            statusColor: MilliColors.warning
+        ),
+        ConnectedAccount(
+            name: "External Checking",
+            subtitle: "Connection placeholder",
+            balance: 2_840.66,
+            icon: "building.columns.fill",
+            color: MilliColors.silver,
+            status: "Not live",
+            statusColor: MilliColors.textTertiary
+        )
+    ]
+}
+
+// Legacy compatibility wrapper while the old architecture is retired.
+struct VaultView: View {
     var body: some View {
-        HStack(spacing: 14) {
-            // Icon circle
-            ZStack {
-                Circle()
-                    .fill(MilliColors.cyan.opacity(0.15))
-                    .frame(width: 40, height: 40)
-                
-                Image(systemName: transaction.icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(MilliColors.cyan)
-            }
-            
-            // Title and subtitle
-            VStack(alignment: .leading, spacing: 3) {
-                Text(transaction.title)
-                    .font(MilliFont.body)
-                    .foregroundColor(.white)
-                
-                Text(transaction.subtitle)
-                    .font(MilliFont.caption)
-                    .foregroundColor(MilliColors.secondaryText)
-            }
-            
-            Spacer()
-            
-            // Amount and date
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(transaction.amount)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(MilliColors.green)
-                
-                Text(transaction.date)
-                    .font(MilliFont.caption)
-                    .foregroundColor(MilliColors.secondaryText)
-            }
-        }
+        AccountsView()
     }
 }
