@@ -1,8 +1,7 @@
 import SwiftUI
 
-// MARK: - PlanSelectionView — Onboarding Step 4
-// Selects the product tier only. Billing/trial activation is intentionally kept
-// out of onboarding until the production subscription checkout is connected.
+// MARK: - PlanSelectionView — First-time onboarding only
+// The user selects the tier that will own their one-time three-day trial.
 
 struct PlanSelectionView: View {
     @Binding var selectedPlan: MilliPlan
@@ -11,8 +10,9 @@ struct PlanSelectionView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 header
+                trialBanner
 
                 VStack(spacing: 10) {
                     ForEach(MilliPlan.allCases, id: \.self) { plan in
@@ -22,13 +22,18 @@ struct PlanSelectionView: View {
 
                 HStack(spacing: 12) {
                     OnboardingBackButton(action: onBack)
-                    OnboardingPrimaryButton(title: "Continue", action: onComplete)
+                    OnboardingPrimaryButton(title: "Start 3-Day Trial", action: onComplete)
                 }
                 .padding(.top, 4)
-                .padding(.bottom, 34)
+
+                Text("No plan is charged during this setup screen. App Store billing must confirm the selected subscription before a production charge can occur.")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 34)
             }
             .padding(.horizontal, MilliLayout.screenMargin)
-            .padding(.top, 24)
+            .padding(.top, 22)
         }
     }
 
@@ -39,16 +44,46 @@ struct PlanSelectionView: View {
                 .tracking(1.0)
                 .foregroundStyle(MilliColors.cyanGlow)
 
-            Text("How much should Milli automate?")
+            Text("Choose how much Milli should automate.")
                 .font(.custom("Sora-Bold", size: 29, relativeTo: .largeTitle))
                 .foregroundStyle(MilliColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Pick the experience that fits your workflow. Billing is confirmed separately when production checkout is connected.")
+            Text("This is selected once during first-time setup. You can manage or change your plan later without repeating vehicle or tax onboarding.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var trialBanner: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(MilliColors.cyanGlow.opacity(0.09))
+                    .frame(width: 38, height: 38)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("3 DAYS FREE ON EVERY PLAN")
+                    .font(.custom("Sora-SemiBold", size: 12, relativeTo: .caption))
+                    .tracking(0.5)
+                    .foregroundStyle(MilliColors.textPrimary)
+                Text("Your trial starts when first-time setup is completed.")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(MilliColors.positive)
+        }
+        .milliCard(padding: 11)
     }
 
     private func planCard(plan: MilliPlan) -> some View {
@@ -61,7 +96,7 @@ struct PlanSelectionView: View {
         } label: {
             VStack(alignment: .leading, spacing: 11) {
                 HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(plan.rawValue)
                                 .font(MilliFont.headlineSmall)
@@ -78,9 +113,9 @@ struct PlanSelectionView: View {
                             }
                         }
 
-                        Text(plan.monthlyPrice)
-                            .font(MilliFont.bodySmall)
-                            .foregroundStyle(MilliColors.textSecondary)
+                        Text(plan.onboardingPriceLine)
+                            .font(.custom("Inter-SemiBold", size: 11, relativeTo: .caption))
+                            .foregroundStyle(isSelected ? MilliColors.cyanGlow : MilliColors.textSecondary)
                     }
 
                     Spacer()
@@ -133,6 +168,7 @@ struct PlanSelectionView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(plan.rawValue), \(plan.onboardingPriceLine)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
