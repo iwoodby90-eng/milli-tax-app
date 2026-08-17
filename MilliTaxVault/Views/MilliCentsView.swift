@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - MilliCentsView
 // Gig-offer profitability analyzer. This is NOT round-up or spare-change investing.
-// Recommendation is calculated from the offer economics; the user cannot manually pick GO/MAYBE/NO.
+// Recommendation is calculated from offer economics; the user cannot manually pick GO/MAYBE/NO.
 
 struct MilliCentsView: View {
     var onBack: () -> Void = {}
@@ -30,10 +30,8 @@ struct MilliCentsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                offerCard
-                analysisCard
-                profitCard
-                recommendationCard
+                offerAnalysisCard
+                decisionCard
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -55,13 +53,13 @@ struct MilliCentsView: View {
 
             Spacer()
 
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 Text("Milli Cents™")
                     .font(MilliFont.screenTitle)
                     .foregroundStyle(MilliColors.textPrimary)
                 Text("Offer Analyzer")
-                    .font(MilliFont.labelLarge)
-                    .foregroundStyle(MilliColors.cyanGlow)
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
             }
 
             Spacer()
@@ -71,167 +69,169 @@ struct MilliCentsView: View {
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(MilliColors.textSecondary)
                     .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.025)))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("About Milli Cents")
         }
+        .frame(minHeight: 38)
     }
 
-    private var offerCard: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
+    private var offerAnalysisCard: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 3) {
                 Text("OFFER AMOUNT")
                     .font(MilliFont.sectionLabel)
-                    .tracking(0.8)
+                    .tracking(0.85)
                     .foregroundStyle(MilliColors.textSecondary)
+
                 Text(currency(offer.offerAmount))
-                    .font(MilliFont.heroNumber)
+                    .font(.custom("Sora-SemiBold", size: 31, relativeTo: .largeTitle))
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("ANALYZING")
-                    .font(MilliFont.sectionLabel)
-                    .tracking(0.65)
                     .foregroundStyle(MilliColors.cyanGlow)
-                Image(systemName: "waveform.path.ecg")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(MilliColors.cyanGlow)
-            }
-        }
-        .milliCard(padding: 14)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Offer amount \(currency(offer.offerAmount))")
-    }
-
-    private var analysisCard: some View {
-        VStack(spacing: 0) {
-            analysisRow(icon: "point.topleft.down.to.point.bottomright.curvepath", label: "ESTIMATED MILES", value: miles(offer.estimatedMiles))
-            divider
-            analysisRow(icon: "arrow.trianglehead.2.clockwise.rotate.90", label: "DEAD MILES", value: miles(offer.deadMiles))
-            divider
-            analysisRow(icon: "arrow.uturn.backward", label: "RETURN MILES", value: miles(offer.returnMiles))
-            divider
-            analysisRow(icon: "road.lanes", label: "TOTAL MILES", value: miles(totalMiles))
-            divider
-            analysisRow(icon: "fuelpump.fill", label: "FUEL COST", value: currency(offer.fuelCost))
-            divider
-            analysisRow(icon: "building.columns.fill", label: "TAX IMPACT", value: currency(offer.taxImpact))
-        }
-        .background(MilliCardBackground(showGlow: true))
-    }
-
-    private var divider: some View {
-        Divider()
-            .overlay(Color.white.opacity(0.055))
-            .padding(.leading, 46)
-    }
-
-    private func analysisRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(MilliColors.textSecondary)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(Color.white.opacity(0.035)))
-
-            Text(label)
-                .font(MilliFont.sectionLabel)
-                .tracking(0.45)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            Spacer()
-
-            Text(value)
-                .font(MilliFont.numericSmall)
-                .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-    }
-
-    private var profitCard: some View {
-        VStack(spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("NET PROFIT")
-                    .font(MilliFont.labelLarge)
-                    .foregroundStyle(recommendation.color)
-                Spacer()
-                Text(currency(netProfit))
-                    .font(MilliFont.numericLarge)
-                    .monospacedDigit()
-                    .foregroundStyle(recommendation.color)
                     .contentTransition(.numericText())
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                LinearGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.055), Color.clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
 
-            Divider().overlay(Color.white.opacity(0.06))
+            Divider().overlay(MilliColors.cyanGlow.opacity(0.15))
 
-            HStack {
-                Text("PROFIT PER MILE")
-                    .font(MilliFont.sectionLabel)
-                    .foregroundStyle(MilliColors.textSecondary)
-                Spacer()
-                Text(currency(profitPerMile))
-                    .font(MilliFont.numericSmall)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
-            }
+            analysisRow(label: "Estimated Miles", value: number(offer.estimatedMiles))
+            divider
+            analysisRow(label: "Dead Miles", value: number(offer.deadMiles))
+            divider
+            analysisRow(label: "Return Miles", value: number(offer.returnMiles))
+            divider
+            analysisRow(label: "Total Miles", value: number(totalMiles), emphasized: true)
+            divider
+            analysisRow(label: "Fuel Cost", value: currency(offer.fuelCost))
+            divider
+            analysisRow(label: "Tax Impact", value: currency(offer.taxImpact))
         }
-        .milliCard(padding: 14)
-    }
-
-    private var recommendationCard: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text("MILLI RECOMMENDATION")
-                    .font(MilliFont.sectionLabel)
-                    .tracking(0.8)
-                    .foregroundStyle(MilliColors.textSecondary)
-                Spacer()
-
-                Image(systemName: recommendation.symbol)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(recommendation.color)
-            }
-
-            Text(recommendation.title)
-                .font(.custom("Sora-Bold", size: 38, relativeTo: .largeTitle))
-                .foregroundStyle(recommendation.color)
-                .shadow(color: recommendation.color.opacity(0.18), radius: 5)
-
-            Text(recommendation.message)
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-                .multilineTextAlignment(.center)
-
-            HStack(spacing: 6) {
-                calculationPill("$\(String(format: "%.2f", profitPerMile))/mi")
-                calculationPill("\(String(format: "%.1f", totalMiles)) mi total")
-                calculationPill("\(currency(netProfit)) net")
-            }
-            .padding(.top, 2)
-        }
-        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [recommendation.color.opacity(0.09), MilliColors.cardBackground],
+                        colors: [Color(hex: "0C1720"), Color(hex: "071014")],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                        .stroke(recommendation.color.opacity(0.52), lineWidth: 0.9)
+                        .stroke(MilliColors.focusedBorder, lineWidth: 0.75)
                 }
         )
+        .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Milli recommendation \(recommendation.title). \(recommendation.message)")
+        .accessibilityLabel("Offer amount \(currency(offer.offerAmount)), total distance \(miles(totalMiles)), fuel cost \(currency(offer.fuelCost)), estimated tax impact \(currency(offer.taxImpact))")
+    }
+
+    private var divider: some View {
+        Divider()
+            .overlay(Color.white.opacity(0.055))
+            .padding(.horizontal, 12)
+    }
+
+    private func analysisRow(label: String, value: String, emphasized: Bool = false) -> some View {
+        HStack(spacing: 10) {
+            Text(label)
+                .font(emphasized ? MilliFont.bodyMedium : MilliFont.bodySmall)
+                .foregroundStyle(emphasized ? MilliColors.textPrimary : MilliColors.textSecondary)
+
+            Spacer()
+
+            Text(value)
+                .font(emphasized ? MilliFont.numericSmall : MilliFont.bodyMedium)
+                .monospacedDigit()
+                .foregroundStyle(emphasized ? MilliColors.textPrimary : MilliColors.textPrimary)
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, emphasized ? 9 : 8)
+    }
+
+    private var decisionCard: some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 2) {
+                Text("NET PROFIT")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.8)
+                    .foregroundStyle(MilliColors.textSecondary)
+
+                Text(currency(netProfit))
+                    .font(.custom("Sora-Bold", size: 36, relativeTo: .largeTitle))
+                    .monospacedDigit()
+                    .foregroundStyle(recommendation.color)
+                    .contentTransition(.numericText())
+                    .shadow(color: recommendation.color.opacity(0.18), radius: 6)
+
+                Text("\(currency(profitPerMile)) per mile")
+                    .font(MilliFont.bodySmall)
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+
+            Divider()
+                .overlay(recommendation.color.opacity(0.22))
+
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(recommendation.color)
+                        .frame(width: 38, height: 38)
+                        .shadow(color: recommendation.color.opacity(0.28), radius: 8)
+
+                    Image(systemName: recommendation.symbol)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(MilliColors.blackGlass)
+                }
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(recommendation.title)
+                        .font(.custom("Sora-Bold", size: 34, relativeTo: .largeTitle))
+                        .foregroundStyle(recommendation.color)
+                        .shadow(color: recommendation.color.opacity(0.16), radius: 5)
+
+                    Text(recommendation.shortMessage)
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textPrimary)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 6) {
+                calculationPill("\(number(totalMiles)) mi total")
+                calculationPill("\(currency(offer.fuelCost)) fuel")
+                calculationPill("\(currency(offer.taxImpact)) tax")
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [recommendation.color.opacity(0.13), Color(hex: "07130F"), MilliColors.cardBackground],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .stroke(recommendation.color.opacity(0.72), lineWidth: 1.05)
+                }
+                .shadow(color: recommendation.color.opacity(0.12), radius: 14)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Net profit \(currency(netProfit)), \(currency(profitPerMile)) per mile. Milli recommendation \(recommendation.title). \(recommendation.message)")
     }
 
     private func calculationPill(_ text: String) -> some View {
@@ -239,12 +239,16 @@ struct MilliCentsView: View {
             .font(MilliFont.caption)
             .foregroundStyle(MilliColors.textSecondary)
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(0.72)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(
                 Capsule(style: .continuous)
                     .fill(Color.white.opacity(0.035))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .stroke(Color.white.opacity(0.045), lineWidth: 0.6)
+                    }
             )
     }
 
@@ -253,7 +257,11 @@ struct MilliCentsView: View {
     }
 
     private func miles(_ value: Double) -> String {
-        "\(value.formatted(.number.precision(.fractionLength(1)))) mi"
+        "\(number(value)) miles"
+    }
+
+    private func number(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(1)))
     }
 }
 
@@ -293,6 +301,14 @@ enum OfferRecommendation: CaseIterable {
         }
     }
 
+    var shortMessage: String {
+        switch self {
+        case .go: return "Profitable Offer"
+        case .maybe: return "Borderline Offer"
+        case .no: return "Not Profitable"
+        }
+    }
+
     var message: String {
         switch self {
         case .go: return "This offer clears Milli's current profitability threshold."
@@ -303,9 +319,9 @@ enum OfferRecommendation: CaseIterable {
 
     var symbol: String {
         switch self {
-        case .go: return "checkmark.circle.fill"
-        case .maybe: return "exclamationmark.triangle.fill"
-        case .no: return "xmark.circle.fill"
+        case .go: return "checkmark"
+        case .maybe: return "exclamationmark"
+        case .no: return "xmark"
         }
     }
 
