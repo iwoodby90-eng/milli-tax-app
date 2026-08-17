@@ -9,6 +9,7 @@ struct TaxVaultView: View {
     var onBack: () -> Void = {}
 
     @State private var showTransferSetup = false
+    @State private var showNotifications = false
 
     private let vault = TaxVaultDisplayModel.reference
 
@@ -31,6 +32,11 @@ struct TaxVaultView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showNotifications) {
+            MilliDetailSheet(title: "Notifications")
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var header: some View {
@@ -45,7 +51,9 @@ struct TaxVaultView: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                Button {} label: {
+                Button {
+                    showNotifications = true
+                } label: {
                     Image(systemName: "bell")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(MilliColors.textSecondary)
