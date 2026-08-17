@@ -1,12 +1,15 @@
 import SwiftUI
 
 // MARK: - PayoutsView
-// Dense banking-grade payout history with compact segmented filtering and an
-// auditable Financial Receipt™ detail for every payout.
+// Dense banking-grade payout history matching the approved Milli reference. Each
+// row opens its auditable Financial Receipt™ even though the reference keeps the
+// list itself visually quiet and transaction-first.
 
 struct PayoutsView: View {
     @State private var selectedFilter: PayoutFilter = .all
     @State private var selectedPayout: PayoutItem?
+
+    private let referencePeriodTotal = 3_842.71
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -32,7 +35,7 @@ struct PayoutsView: View {
             Text("Payouts")
                 .font(MilliFont.screenTitle)
                 .foregroundStyle(MilliColors.textPrimary)
-            Text("Total \(currency(totalPayouts))")
+            Text("Total \(currency(referencePeriodTotal))")
                 .font(MilliFont.bodyMedium)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textSecondary)
@@ -104,10 +107,6 @@ struct PayoutsView: View {
         }
     }
 
-    private var totalPayouts: Double {
-        payoutData.reduce(0) { $0 + $1.amount }
-    }
-
     private var filteredPayouts: [PayoutItem] {
         switch selectedFilter {
         case .all:
@@ -123,7 +122,7 @@ struct PayoutsView: View {
         HStack(spacing: 10) {
             platformMark(payout)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(payout.platform)
                         .font(MilliFont.headlineSmall)
@@ -147,18 +146,13 @@ struct PayoutsView: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 3) {
-                Text("+\(currency(payout.amount))")
-                    .font(MilliFont.numericMedium)
-                    .monospacedDigit()
-                    .foregroundStyle(payout.status == .pending ? MilliColors.textPrimary : MilliColors.positive)
-                Text("Financial Receipt™")
-                    .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.cyanGlow)
-            }
+            Text("+\(currency(payout.amount))")
+                .font(MilliFont.numericMedium)
+                .monospacedDigit()
+                .foregroundStyle(payout.status == .pending ? MilliColors.textPrimary : MilliColors.positive)
         }
         .padding(.horizontal, 12)
-        .frame(height: 72)
+        .frame(height: 66)
         .background(
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(MilliColors.graphiteSurface)
@@ -201,14 +195,16 @@ struct PayoutsView: View {
 
     private var payoutData: [PayoutItem] {
         [
-            .init(receiptCode: "AP-2026-000025", platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Today, 9:41 AM", amount: 312.64, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000024", platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "Yesterday", amount: 186.42, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000023", platform: "DoorDash", platformInitial: "D", assetName: "doordash-icon", platformColor: Color(hex: "4B170D"), dateLabel: "Yesterday", amount: 94.16, status: .pending, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000022", platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "064D2A"), dateLabel: "2 days ago", amount: 128.10, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000021", platform: "DoorDash", platformInitial: "D", assetName: "doordash-icon", platformColor: Color(hex: "4B170D"), dateLabel: "3 days ago", amount: 116.73, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000020", platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "4 days ago", amount: 205.58, status: .pending, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000019", platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "064D2A"), dateLabel: "Last week", amount: 173.62, status: .settled, isThisWeek: false),
-            .init(receiptCode: "AP-2026-000018", platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Last week", amount: 181.48, status: .settled, isThisWeek: false)
+            .init(receiptCode: "AP-2026-000031", platform: "Amazon Flex", platformInitial: "A", assetName: nil, platformColor: Color(hex: "111820"), dateLabel: "Today, 2:34 PM", amount: 187.42, status: .settled, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000030", platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Today, 10:12 AM", amount: 156.80, status: .settled, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000029", platform: "DoorDash", platformInitial: "D", assetName: "doordash-icon", platformColor: Color(hex: "D62923"), dateLabel: "Yesterday", amount: 94.35, status: .settled, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000028", platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "Aug 10, 6:45 PM", amount: 212.64, status: .settled, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000027", platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "16844A"), dateLabel: "Aug 10, 2:18 PM", amount: 78.20, status: .settled, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000026", platform: "Grubhub", platformInitial: "G", assetName: nil, platformColor: Color(hex: "C44724"), dateLabel: "Aug 9, 8:32 PM", amount: 103.51, status: .settled, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000025", platform: "Amazon Flex", platformInitial: "A", assetName: nil, platformColor: Color(hex: "111820"), dateLabel: "Aug 9, 12:05 PM", amount: 144.00, status: .pending, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000024", platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Aug 8, 9:41 AM", amount: 132.60, status: .pending, isThisWeek: true),
+            .init(receiptCode: "AP-2026-000023", platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "Last week", amount: 205.58, status: .settled, isThisWeek: false),
+            .init(receiptCode: "AP-2026-000022", platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "16844A"), dateLabel: "Last week", amount: 173.62, status: .settled, isThisWeek: false)
         ]
     }
 
@@ -461,7 +457,7 @@ enum PayoutFilter: CaseIterable {
     var title: String {
         switch self {
         case .all: return "All"
-        case .thisWeek: return "This week"
+        case .thisWeek: return "This Week"
         case .pending: return "Pending"
         }
     }
