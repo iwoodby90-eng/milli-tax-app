@@ -2,9 +2,9 @@ import SwiftUI
 import Charts
 
 // MARK: - TaxReadyScoreView
-// Readiness instrument: the hero score is derived from factor scores rather than
-// being a decorative hard-coded number. The factor model is ready to be fed by
-// authenticated income, expense, mileage, payment, and document services.
+// Premium readiness instrument matching the approved Milli reference. The hero
+// remains derived from the underlying factor scores so production services can
+// replace the seeded factors without redesigning the view.
 
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
@@ -117,7 +117,7 @@ struct TaxReadyScoreView: View {
                             Text(factor.name)
                                 .font(MilliFont.bodySmall)
                                 .foregroundStyle(MilliColors.textPrimary)
-                            Text("\(factor.score)/100")
+                            Text(factor.detail)
                                 .font(MilliFont.caption)
                                 .monospacedDigit()
                                 .foregroundStyle(MilliColors.textTertiary)
@@ -187,11 +187,11 @@ struct TaxReadyScoreView: View {
 
     private var factors: [ScoreFactor] {
         [
-            .init(name: "Income Tracking", score: 96, icon: "dollarsign.circle.fill"),
-            .init(name: "Expense Tracking", score: 84, icon: "receipt.fill"),
-            .init(name: "Mileage Tracking", score: 94, icon: "car.fill"),
-            .init(name: "Tax Payments", score: 82, icon: "building.columns.fill"),
-            .init(name: "Document Capture", score: 69, icon: "doc.text.fill")
+            .init(name: "Income Tracking", detail: "6 / 6 income sources connected", score: 96, icon: "dollarsign.circle.fill"),
+            .init(name: "Expenses Categorized", detail: "94% categorized", score: 84, icon: "receipt.fill"),
+            .init(name: "Mileage Tracking", detail: "100% tracking enabled", score: 94, icon: "car.fill"),
+            .init(name: "Quarterly Taxes", detail: "On time", score: 82, icon: "building.columns.fill"),
+            .init(name: "Documents Captured", detail: "12 / 12 expected", score: 69, icon: "doc.text.fill")
         ]
     }
 
@@ -212,6 +212,7 @@ struct TaxReadyScoreView: View {
 private struct ScoreFactor: Identifiable {
     let id = UUID()
     let name: String
+    let detail: String
     let score: Int
     let icon: String
 
