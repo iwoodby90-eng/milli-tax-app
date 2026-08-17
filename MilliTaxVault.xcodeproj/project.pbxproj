@@ -41,7 +41,7 @@
 		A10090 /* BelAirNavBarShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10090; };
 		A10075 /* MilliMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10075; };
 		A10076 /* MilliInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10076; };
-		A10100 /* MilliDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100; };
+		A10119 /* MilliDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10119; };
 		A10080 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10080; };
 		A10081 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10081; };
 		A10082 /* HomeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10082; };
@@ -117,7 +117,7 @@
 		B10074 /* MilliBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliBottomBar.swift; sourceTree = "<group>"; };
 		B10075 /* MilliMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetricCard.swift; sourceTree = "<group>"; };
 		B10076 /* MilliInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliInsightCard.swift; sourceTree = "<group>"; };
-		B10100 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
+		B10119 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
 		B10080 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		B10081 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
@@ -239,7 +239,7 @@
 				B10020 /* ChromeEmblemView.swift */,
 				B10021 /* MilliNavBar.swift */,
 				B10022 /* MilliAIOrb.swift */,
-				B10100 /* MilliDetailSheet.swift */,
+				B10119 /* MilliDetailSheet.swift */,
 				B10046 /* MilliMetalCard.swift */,
 				B10047 /* MilliAICompanion.swift */,
 				B10070 /* MilliSurface.swift */,
@@ -434,6 +434,7 @@
 				A10090,
 				A10075,
 				A10076,
+				A10119,
 				A10080,
 				A10081,
 				A10082,
