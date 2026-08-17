@@ -172,11 +172,14 @@ capture_screen() {
 
   xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
-  launch_output="$(xcrun simctl launch \
-    "$SIMULATOR_UDID" \
-    "$BUNDLE_ID" \
-    -milliScreenshotMode \
-    -milliScreen "$screen")"
+  # SIMCTL_CHILD_ variables are the most reliable way to inject per-launch
+  # state into a hosted iOS simulator. ContentView reads these DEBUG-only values
+  # and routes directly to the requested native screen.
+  launch_output="$(
+    SIMCTL_CHILD_MILLI_SCREENSHOT_MODE=1 \
+    SIMCTL_CHILD_MILLI_SCREEN="$screen" \
+    xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
+  )"
 
   wait_and_capture "$screen" "$output" "$launch_output"
 }
@@ -188,10 +191,10 @@ capture_app_state() {
 
   xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
-  launch_output="$(xcrun simctl launch \
-    "$SIMULATOR_UDID" \
-    "$BUNDLE_ID" \
-    -milliAppState "$state")"
+  launch_output="$(
+    SIMCTL_CHILD_MILLI_APP_STATE="$state" \
+    xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
+  )"
 
   wait_and_capture "auth-$state" "$output" "$launch_output"
 }
