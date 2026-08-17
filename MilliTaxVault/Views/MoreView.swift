@@ -14,6 +14,9 @@ struct MoreMenuView: View {
             VStack(spacing: 10) {
                 header
 
+                sectionTitle("AUTOPILOT")
+                menuTile(icon: "bolt.fill", title: "Milli Autopilot™", subtitle: "Control payout tax protection and optional wealth allocations", color: MilliColors.cyanGlow) { navigate?(.autopilot) }
+
                 sectionTitle("GIG & TAX TOOLS")
                 menuTile(icon: "gauge.with.dots.needle.67percent", title: "Milli Cents™", subtitle: "Analyze a gig offer before you accept it", color: MilliColors.cyanGlow) { navigate?(.milliCents) }
                 menuTile(icon: "creditcard.fill", title: "Expenses & Receipts", subtitle: "Track deductible spending and receipt capture", color: Color(hex: "7C8CFF")) { navigate?(.expenses) }
@@ -66,6 +69,7 @@ struct MoreMenuView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 30, height: 30)
+                .blendMode(.screen)
                 .opacity(0.78)
         }
         .padding(.bottom, 2)
@@ -191,6 +195,7 @@ private struct MilliSettingsSheet: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 34, height: 34)
+                                    .blendMode(.screen)
                             }
                             .milliCard(padding: 12)
                         }
@@ -265,6 +270,7 @@ private struct MilliHelpSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let topics: [(String, String, String)] = [
+        ("How does Milli Autopilot™ work?", "Autopilot applies the current tax-protection planning rate first, then follows your optional retirement, investing, and savings allocation settings. Actual money movement requires connected production financial rails.", "bolt.fill"),
         ("How does Milli Cents™ work?", "Milli Cents evaluates offer amount, total miles, dead distance, return distance, fuel cost, tax impact, net profit, and profit per mile before producing GO, MAYBE, or NO.", "gauge.with.dots.needle.67percent"),
         ("What is Milli Tax Vault™?", "The Tax Vault is the reserve and ledger experience used to separate estimated tax money from spendable income. Production transfers require a verified funding rail.", "lock.shield.fill"),
         ("How is Tax Ready Score™ calculated?", "The score summarizes readiness factors such as income tracking, expenses, mileage, tax payments, and document capture.", "checkmark.seal.fill"),
