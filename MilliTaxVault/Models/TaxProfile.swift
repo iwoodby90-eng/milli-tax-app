@@ -26,8 +26,18 @@ struct TaxProfile: Codable {
         }
     }
 
+    var annualIncomeAmount: Double? {
+        let cleaned = estimatedAnnualIncome
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let amount = Double(cleaned), amount > 0 else { return nil }
+        return amount
+    }
+
     var isValid: Bool {
-        !estimatedAnnualIncome.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        annualIncomeAmount != nil
+            && !state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
