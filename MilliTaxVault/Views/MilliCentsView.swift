@@ -8,6 +8,7 @@ struct MilliCentsView: View {
     var onBack: () -> Void = {}
 
     @State private var offer = GigOfferAnalysis.reference
+    @State private var showInfo = false
 
     private var totalMiles: Double {
         offer.estimatedMiles + offer.deadMiles + offer.returnMiles
@@ -38,6 +39,11 @@ struct MilliCentsView: View {
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showInfo) {
+            MilliCentsInfoSheet()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var header: some View {
@@ -64,7 +70,9 @@ struct MilliCentsView: View {
 
             Spacer()
 
-            Button {} label: {
+            Button {
+                showInfo = true
+            } label: {
                 Image(systemName: "info.circle")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(MilliColors.textSecondary)
@@ -151,7 +159,7 @@ struct MilliCentsView: View {
             Text(value)
                 .font(emphasized ? MilliFont.numericSmall : MilliFont.bodyMedium)
                 .monospacedDigit()
-                .foregroundStyle(emphasized ? MilliColors.textPrimary : MilliColors.textPrimary)
+                .foregroundStyle(MilliColors.textPrimary)
         }
         .padding(.horizontal, 13)
         .padding(.vertical, emphasized ? 9 : 8)
@@ -262,6 +270,74 @@ struct MilliCentsView: View {
 
     private func number(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(1)))
+    }
+}
+
+private struct MilliCentsInfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MilliColors.background.ignoresSafeArea()
+
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("MILLI CENTS™")
+                                .font(MilliFont.sectionLabel)
+                                .tracking(1)
+                                .foregroundStyle(MilliColors.cyanGlow)
+                            Text("Know the economics before you accept the offer.")
+                                .font(MilliFont.screenTitle)
+                                .foregroundStyle(MilliColors.textPrimary)
+                            Text("Milli Cents compares the offer against work miles, dead distance, return distance, fuel cost, and estimated tax impact. It then calculates net profit and profit per mile before returning GO, MAYBE, or NO.")
+                                .font(MilliFont.bodyMedium)
+                                .foregroundStyle(MilliColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .milliCard(padding: 14)
+
+                        infoRow("GO", detail: "The modeled net profit clears Milli's current profitability threshold.", color: MilliColors.positive)
+                        infoRow("MAYBE", detail: "The offer is borderline; wait time, traffic, and return distance can change the outcome.", color: MilliColors.warning)
+                        infoRow("NO", detail: "The modeled economics do not clear the current profitability threshold.", color: MilliColors.negative)
+
+                        Text("This analyzer is decision support, not a guarantee of actual profit. Live fuel pricing, vehicle operating cost, and individualized tax data should replace seeded assumptions as those services are connected.")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .milliCard(padding: 12)
+                    }
+                    .padding(.horizontal, MilliSpacing.screenHorizontal)
+                    .padding(.top, 14)
+                    .padding(.bottom, 28)
+                }
+            }
+            .navigationTitle("About Milli Cents™")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func infoRow(_ title: String, detail: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(title)
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(color)
+                .frame(width: 54, alignment: .leading)
+            Text(detail)
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .milliCard(padding: 12)
     }
 }
 
