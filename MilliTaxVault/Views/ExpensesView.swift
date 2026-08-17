@@ -1,9 +1,8 @@
 import SwiftUI
 
 // MARK: - ExpensesView
-// Native expense + receipt capture surface using the current Milli design system.
-// Seed content is isolated in local state so it can be replaced by the authenticated
-// expense repository/OCR service without changing the presentation hierarchy.
+// Premium native expense + receipt surface. All visible controls are functional;
+// OCR/camera ingestion remains explicitly unavailable until its production service is connected.
 
 struct ExpensesView: View {
     var onBack: () -> Void = {}
@@ -13,9 +12,10 @@ struct ExpensesView: View {
     @State private var receipts: [ReceiptItem] = ReceiptItem.seeded
     @State private var showAddExpense = false
     @State private var showAddReceipt = false
+    @State private var showNotifications = false
 
     private var totalDeductions: Double {
-        expenses.reduce(0) { $0 + $1.amount }
+        expenses.filter(\.isDeductible).reduce(0) { $0 + $1.amount }
     }
 
     var body: some View {
@@ -26,10 +26,9 @@ struct ExpensesView: View {
                     segmentedControl
                     summaryCard
 
-                    switch selectedTab {
-                    case .expenses:
+                    if selectedTab == .expenses {
                         expenseList
-                    case .receipts:
+                    } else {
                         receiptList
                     }
                 }
@@ -39,33 +38,7 @@ struct ExpensesView: View {
             }
             .background(MilliColors.background.ignoresSafeArea())
 
-            Button {
-                if selectedTab == .expenses {
-                    showAddExpense = true
-                } else {
-                    showAddReceipt = true
-                }
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(MilliColors.blackGlass)
-                    .frame(width: 52, height: 52)
-                    .background(
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [MilliColors.cyanGlow, Color(hex: "07B6D7")],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .shadow(color: MilliColors.cyanGlow.opacity(0.28), radius: 10)
-                    )
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, MilliSpacing.screenHorizontal)
-            .padding(.bottom, MilliSpacing.bottomNavHeight + 18)
-            .accessibilityLabel(selectedTab == .expenses ? "Add expense" : "Add receipt")
+            addButton
         }
         .sheet(isPresented: $showAddExpense) {
             AddExpenseSheet { expense in
@@ -81,6 +54,11 @@ struct ExpensesView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showNotifications) {
+            MilliDetailSheet(title: "Notifications")
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var header: some View {
@@ -94,14 +72,18 @@ struct ExpensesView: View {
                         .background(Circle().fill(Color.white.opacity(0.035)))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Back")
 
                 Spacer()
 
-                Button {} label: {
+                Button {
+                    showNotifications = true
+                } label: {
                     Image(systemName: "bell")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(MilliColors.textSecondary)
                         .frame(width: 34, height: 34)
+                        .background(Circle().fill(Color.white.opacity(0.025)))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Notifications")
@@ -242,7 +224,7 @@ struct ExpensesView: View {
                 Text("RECEIPT CAPTURE")
                     .sectionHeaderStyle()
                 Spacer()
-                Text("OCR READY")
+                Text("METADATA READY")
                     .font(MilliFont.caption)
                     .tracking(0.45)
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -307,6 +289,36 @@ struct ExpensesView: View {
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
     }
+
+    private var addButton: some View {
+        Button {
+            if selectedTab == .expenses {
+                showAddExpense = true
+            } else {
+                showAddReceipt = true
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(MilliColors.blackGlass)
+                .frame(width: 52, height: 52)
+                .background(
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [MilliColors.cyanGlow, Color(hex: "07B6D7")],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.28), radius: 10)
+                )
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, MilliSpacing.screenHorizontal)
+        .padding(.bottom, MilliSpacing.bottomNavHeight + 18)
+        .accessibilityLabel(selectedTab == .expenses ? "Add expense" : "Add receipt")
+    }
 }
 
 // MARK: - Add Expense
@@ -322,11 +334,7 @@ private struct AddExpenseSheet: View {
     @State private var deductible = true
 
     private var amount: Double? {
-        let cleaned = amountText
-            .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: ",", with: "")
-        guard let value = Double(cleaned), value > 0 else { return nil }
-        return value
+        parseCurrency(amountText)
     }
 
     private var canSave: Bool {
@@ -472,6 +480,12 @@ private struct AddExpenseSheet: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
             }
+    }
+
+    private func parseCurrency(_ raw: String) -> Double? {
+        let cleaned = raw.replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")
+        guard let value = Double(cleaned), value > 0 else { return nil }
+        return value
     }
 }
 
