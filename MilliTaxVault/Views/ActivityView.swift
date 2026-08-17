@@ -1,5 +1,71 @@
 import SwiftUI
 
+// MARK: - Shared Autopilot allocation domain
+// One calculation contract now powers the Autopilot settings preview and Financial Receipt™.
+// Money movement remains separate from this deterministic planning/allocation math.
+
+struct AutopilotAllocationSettings: Equatable {
+    var taxPercent: Double
+    var retirementEnabled: Bool
+    var retirementPercent: Double
+    var investingEnabled: Bool
+    var investingPercent: Double
+    var savingsEnabled: Bool
+    var savingsPercent: Double
+
+    static let reference = AutopilotAllocationSettings(
+        taxPercent: 23,
+        retirementEnabled: true,
+        retirementPercent: 5,
+        investingEnabled: false,
+        investingPercent: 0,
+        savingsEnabled: true,
+        savingsPercent: 3
+    )
+}
+
+struct AutopilotAllocationResult: Equatable {
+    let grossPayout: Double
+    let taxReserve: Double
+    let retirement: Double
+    let investing: Double
+    let savings: Double
+    let availableToSpend: Double
+
+    var allocatedTotal: Double {
+        taxReserve + retirement + investing + savings
+    }
+}
+
+enum AutopilotAllocationEngine {
+    static func allocate(
+        payout: Double,
+        settings: AutopilotAllocationSettings
+    ) -> AutopilotAllocationResult {
+        let gross = max(payout, 0)
+        let tax = allocation(gross, percent: settings.taxPercent, enabled: true)
+        let retirement = allocation(gross, percent: settings.retirementPercent, enabled: settings.retirementEnabled)
+        let investing = allocation(gross, percent: settings.investingPercent, enabled: settings.investingEnabled)
+        let savings = allocation(gross, percent: settings.savingsPercent, enabled: settings.savingsEnabled)
+        let total = tax + retirement + investing + savings
+
+        return AutopilotAllocationResult(
+            grossPayout: gross,
+            taxReserve: tax,
+            retirement: retirement,
+            investing: investing,
+            savings: savings,
+            availableToSpend: max(gross - total, 0)
+        )
+    }
+
+    private static func allocation(_ payout: Double, percent: Double, enabled: Bool) -> Double {
+        guard enabled else { return 0 }
+        let clampedPercent = min(max(percent, 0), 100)
+        return payout * clampedPercent / 100
+    }
+}
+
 // MARK: - AutopilotSettingsView
 // Milli Autopilot™ is the payout allocation control center. Taxes are always on;
 // retirement, investing and savings are user-controlled. Settings persist locally
@@ -19,24 +85,20 @@ struct AutopilotSettingsView: View {
     private let taxPercent = 23.0
     private let examplePayout = 312.64
 
-    private var retirementAllocation: Double {
-        retirementEnabled ? examplePayout * retirementPercent / 100 : 0
+    private var allocationSettings: AutopilotAllocationSettings {
+        AutopilotAllocationSettings(
+            taxPercent: taxPercent,
+            retirementEnabled: retirementEnabled,
+            retirementPercent: retirementPercent,
+            investingEnabled: investingEnabled,
+            investingPercent: investingPercent,
+            savingsEnabled: savingsEnabled,
+            savingsPercent: savingsPercent
+        )
     }
 
-    private var investingAllocation: Double {
-        investingEnabled ? examplePayout * investingPercent / 100 : 0
-    }
-
-    private var savingsAllocation: Double {
-        savingsEnabled ? examplePayout * savingsPercent / 100 : 0
-    }
-
-    private var taxAllocation: Double {
-        examplePayout * taxPercent / 100
-    }
-
-    private var availableToSpend: Double {
-        max(examplePayout - taxAllocation - retirementAllocation - investingAllocation - savingsAllocation, 0)
+    private var allocation: AutopilotAllocationResult {
+        AutopilotAllocationEngine.allocate(payout: examplePayout, settings: allocationSettings)
     }
 
     private var optionalAllocationTotal: Double {
@@ -90,6 +152,7 @@ struct AutopilotSettingsView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 34, height: 34)
+                .blendMode(.screen)
         }
     }
 
@@ -282,10 +345,10 @@ struct AutopilotSettingsView: View {
 
             Divider().overlay(Color.white.opacity(0.06))
 
-            previewRow("Milli Tax Vault™", taxAllocation, MilliColors.cyanGlow)
-            previewRow("Retirement", retirementAllocation, MilliColors.positive)
-            previewRow("Investing", investingAllocation, Color(hex: "7C8CFF"))
-            previewRow("Savings", savingsAllocation, MilliColors.deepCyan)
+            previewRow("Milli Tax Vault™", allocation.taxReserve, MilliColors.cyanGlow)
+            previewRow("Retirement", allocation.retirement, MilliColors.positive)
+            previewRow("Investing", allocation.investing, Color(hex: "7C8CFF"))
+            previewRow("Savings", allocation.savings, MilliColors.deepCyan)
 
             Divider().overlay(Color.white.opacity(0.07))
 
@@ -294,7 +357,7 @@ struct AutopilotSettingsView: View {
                     .font(MilliFont.sectionLabel)
                     .foregroundStyle(MilliColors.textSecondary)
                 Spacer()
-                Text(availableToSpend.formatted(.currency(code: "USD")))
+                Text(allocation.availableToSpend.formatted(.currency(code: "USD")))
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
