@@ -4,10 +4,13 @@ import SwiftUI
 // Native SwiftUI shell: screen router + persistent sculpted Milli navigation + contextual Milli AI companion.
 
 struct ContentView: View {
+    var onLogout: () -> Void = {}
+
     @State private var selectedTab: MilliTab
     @State private var activeScreen: ActiveScreen
 
-    init() {
+    init(onLogout: @escaping () -> Void = {}) {
+        self.onLogout = onLogout
         let initialScreen = Self.requestedDebugScreen() ?? .home
         _activeScreen = State(initialValue: initialScreen)
         _selectedTab = State(initialValue: initialScreen.debugTab)
@@ -102,7 +105,7 @@ struct ContentView: View {
         case .reports:
             ReportsView(onBack: { navigateTo(.more) })
         case .more:
-            MoreMenuView(navigate: navigateTo)
+            MoreMenuView(navigate: navigateTo, onLogout: onLogout)
         }
     }
 
@@ -123,10 +126,6 @@ struct ContentView: View {
         #if DEBUG
         let processInfo = ProcessInfo.processInfo
 
-        // GitHub-hosted simulators have proven inconsistent about forwarding
-        // dash-prefixed app arguments through `simctl launch`. Environment values
-        // prefixed with SIMCTL_CHILD_ are deterministic, so visual QA uses that
-        // transport first while keeping command-line arguments for local tooling.
         if let rawValue = processInfo.environment["MILLI_SCREEN"],
            let screen = ActiveScreen(rawValue: rawValue) {
             return screen
@@ -184,8 +183,6 @@ enum ActiveScreen: String, CaseIterable {
         }
     }
 
-    // Direct screenshot launches do not have an originating primary tab, so
-    // secondary screens use More as the neutral navigation context in DEBUG QA.
     var debugTab: MilliTab {
         primaryTab ?? .more
     }
