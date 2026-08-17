@@ -23,7 +23,7 @@ enum MilliTab: String, CaseIterable {
 
 // MARK: - MilliNavBar
 // Signature sculpted chrome bridge with a mechanically docked center-M command control.
-// The side destinations are intentionally icon-forward to preserve the approved cockpit silhouette.
+// This is intentionally not a stock TabView or floating pill.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
@@ -93,7 +93,13 @@ struct MilliNavBar: View {
             MilliNavigationBridgeHighlightShape()
                 .stroke(
                     LinearGradient(
-                        colors: [Color.clear, Color.white.opacity(0.85), MilliColors.cyanGlow.opacity(0.34), Color.white.opacity(0.75), Color.clear],
+                        colors: [
+                            Color.clear,
+                            Color.white.opacity(0.85),
+                            MilliColors.cyanGlow.opacity(0.34),
+                            Color.white.opacity(0.75),
+                            Color.clear
+                        ],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
@@ -114,43 +120,45 @@ struct MilliNavBar: View {
             tabButton(.more)
         }
         .padding(.horizontal, 8)
-        .padding(.top, 31)
+        .padding(.top, 27)
     }
 
     private func tabButton(_ tab: MilliTab) -> some View {
-        Button {
+        let isSelected = selectedTab == tab
+
+        return Button {
             selectedTab = tab
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
-            ZStack {
-                Color.clear
+            VStack(spacing: 2.5) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 16.5, weight: .semibold))
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(isSelected ? MilliColors.navTabActive : MilliColors.navTabInactive)
+                    .shadow(
+                        color: isSelected ? MilliColors.cyanGlow.opacity(0.48) : .clear,
+                        radius: 4
+                    )
 
-                VStack(spacing: 5) {
-                    Image(systemName: tab.icon)
-                        .font(.system(size: 18, weight: .semibold))
-                        .symbolRenderingMode(.monochrome)
-                        .foregroundStyle(selectedTab == tab ? MilliColors.navTabActive : MilliColors.navTabInactive)
-                        .shadow(
-                            color: selectedTab == tab ? MilliColors.cyanGlow.opacity(0.48) : .clear,
-                            radius: 5
-                        )
+                Text(tab.rawValue)
+                    .font(.custom("Inter-Medium", size: 9.3, relativeTo: .caption2))
+                    .tracking(0.15)
+                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : MilliColors.navTabInactive.opacity(0.80))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
 
-                    Capsule(style: .continuous)
-                        .fill(selectedTab == tab ? MilliColors.cyanGlow : Color.clear)
-                        .frame(width: 13, height: 2)
-                        .shadow(
-                            color: selectedTab == tab ? MilliColors.cyanGlow.opacity(0.55) : .clear,
-                            radius: 4
-                        )
-                }
+                Capsule(style: .continuous)
+                    .fill(isSelected ? MilliColors.cyanGlow : Color.clear)
+                    .frame(width: 11, height: 1.5)
+                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.52) : .clear, radius: 3)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 46)
+            .frame(height: 50)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tab.rawValue)
-        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var commandDock: some View {
@@ -159,17 +167,14 @@ struct MilliNavBar: View {
             onMDialTap()
         } label: {
             ZStack {
-                // Mechanical recess under the command dial.
                 Circle()
                     .fill(Color.black.opacity(0.82))
                     .frame(width: commandSize + 18, height: commandSize + 18)
                     .overlay {
-                        Circle()
-                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                        Circle().stroke(Color.white.opacity(0.05), lineWidth: 1)
                     }
                     .shadow(color: .black.opacity(0.92), radius: 12, y: 6)
 
-                // Brushed/chrome outer collar.
                 Circle()
                     .fill(
                         AngularGradient(
@@ -187,11 +192,9 @@ struct MilliNavBar: View {
                     )
                     .frame(width: commandSize, height: commandSize)
                     .overlay {
-                        Circle()
-                            .stroke(Color.white.opacity(0.42), lineWidth: 0.65)
+                        Circle().stroke(Color.white.opacity(0.42), lineWidth: 0.65)
                     }
 
-                // Black separator gives the bezel real physical depth.
                 Circle()
                     .fill(Color(hex: "05080A"))
                     .frame(width: commandSize - 9, height: commandSize - 9)
@@ -201,7 +204,6 @@ struct MilliNavBar: View {
 
                 segmentedLightRing
 
-                // Recessed black-glass face.
                 Circle()
                     .fill(
                         RadialGradient(
@@ -217,12 +219,32 @@ struct MilliNavBar: View {
                     }
                     .shadow(color: MilliColors.cyanGlow.opacity(0.16), radius: 8)
 
-                // Canonical approved M geometry only.
+                // The approved M asset contains a black source field. Screen compositing
+                // removes that plate against the black-glass face while preserving the M.
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 45, height: 45)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.44), radius: 5)
+                    .frame(width: 43, height: 43)
+                    .blendMode(.screen)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.38), radius: 4)
+                    .accessibilityHidden(true)
+
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.13), Color.clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    )
+                    .frame(width: commandSize - 34, height: commandSize - 34)
+                    .mask(
+                        VStack(spacing: 0) {
+                            Ellipse().frame(height: 17)
+                            Spacer()
+                        }
+                    )
+                    .allowsHitTesting(false)
             }
             .frame(width: commandSize + 20, height: commandSize + 20)
         }
