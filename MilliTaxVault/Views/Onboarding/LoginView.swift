@@ -1,21 +1,32 @@
 import SwiftUI
+import Security
 
 struct LoginView: View {
-    var onSignIn: () -> Void
+    var onSignIn: (String) -> Void
+    var onCreateAccount: (String) -> Void
     var onForgotPassword: (() -> Void)? = nil
-    var onCreateAccount: (() -> Void)? = nil
     var onAppleSignIn: (() -> Void)? = nil
     var onGoogleSignIn: (() -> Void)? = nil
 
-    @State private var email = ""
+    @State private var mode: AuthMode = .signIn
+    @State private var fullName = ""
+    @State private var email = UserDefaults.standard.string(forKey: "milliProfileEmail") ?? ""
     @State private var password = ""
+    @State private var confirmPassword = ""
     @State private var showPassword = false
     @State private var authenticationMessage: String?
     @FocusState private var focusedField: Field?
 
+    private enum AuthMode {
+        case signIn
+        case signUp
+    }
+
     private enum Field {
+        case name
         case email
         case password
+        case confirmPassword
     }
 
     private var normalizedEmail: String {
@@ -29,17 +40,42 @@ struct LoginView: View {
     }
 
     private var canSubmit: Bool {
-        hasValidEmailShape && password.count >= 8
+        switch mode {
+        case .signIn:
+            return hasValidEmailShape && password.count >= 8
+        case .signUp:
+            return fullName.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
+                && hasValidEmailShape
+                && password.count >= 8
+                && password == confirmPassword
+        }
     }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
                 brandHero
-                    .padding(.top, 58)
-                    .padding(.bottom, 34)
+                    .padding(.top, 44)
+                    .padding(.bottom, 22)
+
+                authModeControl
+                    .padding(.bottom, 18)
 
                 VStack(spacing: 12) {
+                    if mode == .signUp {
+                        credentialField(
+                            title: "FULL NAME",
+                            icon: "person.fill",
+                            isFocused: focusedField == .name
+                        ) {
+                            TextField("Your name", text: $fullName)
+                                .textContentType(.name)
+                                .submitLabel(.next)
+                                .focused($focusedField, equals: .name)
+                                .onSubmit { focusedField = .email }
+                        }
+                    }
+
                     credentialField(
                         title: "EMAIL",
                         icon: "envelope.fill",
@@ -63,15 +99,21 @@ struct LoginView: View {
                         HStack(spacing: 8) {
                             Group {
                                 if showPassword {
-                                    TextField("Password", text: $password)
+                                    TextField(mode == .signUp ? "Create password" : "Password", text: $password)
                                 } else {
-                                    SecureField("Password", text: $password)
+                                    SecureField(mode == .signUp ? "Create password" : "Password", text: $password)
                                 }
                             }
-                            .textContentType(.password)
-                            .submitLabel(.go)
+                            .textContentType(mode == .signUp ? .newPassword : .password)
+                            .submitLabel(mode == .signUp ? .next : .go)
                             .focused($focusedField, equals: .password)
-                            .onSubmit(submit)
+                            .onSubmit {
+                                if mode == .signUp {
+                                    focusedField = .confirmPassword
+                                } else {
+                                    submit()
+                                }
+                            }
 
                             Button {
                                 showPassword.toggle()
@@ -84,24 +126,54 @@ struct LoginView: View {
                             .accessibilityLabel(showPassword ? "Hide password" : "Show password")
                         }
                     }
+
+                    if mode == .signUp {
+                        credentialField(
+                            title: "CONFIRM PASSWORD",
+                            icon: "checkmark.shield.fill",
+                            isFocused: focusedField == .confirmPassword
+                        ) {
+                            SecureField("Repeat password", text: $confirmPassword)
+                                .textContentType(.newPassword)
+                                .submitLabel(.go)
+                                .focused($focusedField, equals: .confirmPassword)
+                                .onSubmit(submit)
+                        }
+                    }
                 }
 
                 HStack {
                     #if DEBUG
-                    Button("Use Demo Account", action: fillDemoCredentials)
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.cyanGlow)
+                    if mode == .signIn {
+                        Button("Use Demo Account", action: fillDemoCredentials)
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.cyanGlow)
+                    }
                     #endif
 
                     Spacer()
 
-                    if let onForgotPassword {
+                    if mode == .signIn, let onForgotPassword {
                         Button("Forgot password?", action: onForgotPassword)
                             .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.cyanGlow)
                     }
                 }
                 .padding(.top, 9)
+
+                if mode == .signUp {
+                    HStack(spacing: 7) {
+                        Image(systemName: "gift.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MilliColors.cyanGlow)
+                        Text("Choose Basic, Pro, or Elite during setup — every plan starts with 3 days free.")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 12)
+                }
 
                 if let authenticationMessage {
                     HStack(alignment: .top, spacing: 7) {
@@ -123,7 +195,7 @@ struct LoginView: View {
 
                 Button(action: submit) {
                     HStack(spacing: 8) {
-                        Text("SIGN IN")
+                        Text(mode == .signIn ? "SIGN IN" : "CREATE ACCOUNT")
                             .font(.custom("Sora-SemiBold", size: 15, relativeTo: .headline))
                             .tracking(0.8)
 
@@ -155,32 +227,63 @@ struct LoginView: View {
                 .disabled(!canSubmit)
                 .padding(.top, 18)
 
-                if onAppleSignIn != nil || onGoogleSignIn != nil {
+                if mode == .signIn, onAppleSignIn != nil || onGoogleSignIn != nil {
                     alternativeSignIn
                         .padding(.top, 24)
                 }
 
-                if let onCreateAccount {
-                    HStack(spacing: 5) {
-                        Text("New to Milli?")
-                            .font(MilliFont.bodySmall)
-                            .foregroundStyle(MilliColors.textSecondary)
-                        Button("Create Account", action: onCreateAccount)
-                            .font(MilliFont.bodyMedium)
-                            .foregroundStyle(MilliColors.cyanGlow)
-                    }
-                    .padding(.top, 24)
-                }
-
                 securityFooter
-                    .padding(.top, 30)
-                    .padding(.bottom, 38)
+                    .padding(.top, 26)
+                    .padding(.bottom, 34)
             }
             .padding(.horizontal, 24)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(loginBackground)
         .preferredColorScheme(.dark)
+    }
+
+    private var authModeControl: some View {
+        HStack(spacing: 4) {
+            modeButton(.signIn, title: "SIGN IN")
+            modeButton(.signUp, title: "CREATE ACCOUNT")
+        }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Color.black.opacity(0.34))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
+                }
+        )
+    }
+
+    private func modeButton(_ target: AuthMode, title: String) -> some View {
+        let selected = mode == target
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                mode = target
+                authenticationMessage = nil
+                password = ""
+                confirmPassword = ""
+                focusedField = nil
+            }
+        } label: {
+            Text(title)
+                .font(.custom("Inter-SemiBold", size: 10, relativeTo: .caption2))
+                .tracking(0.7)
+                .foregroundStyle(selected ? MilliColors.blackGlass : MilliColors.textSecondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 34)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(selected ? MilliColors.cyanGlow : Color.clear)
+                        .shadow(color: selected ? MilliColors.cyanGlow.opacity(0.18) : .clear, radius: 6)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private var brandHero: some View {
@@ -195,8 +298,8 @@ struct LoginView: View {
             }
 
             Text("MILLI")
-                .font(.custom("Sora-Bold", size: 32, relativeTo: .largeTitle))
-                .tracking(6.2)
+                .font(.custom("Sora-Bold", size: 34, relativeTo: .largeTitle))
+                .tracking(6.4)
                 .foregroundStyle(
                     LinearGradient(
                         colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
@@ -210,10 +313,10 @@ struct LoginView: View {
                 .font(MilliFont.bodyMedium)
                 .foregroundStyle(MilliColors.textSecondary)
 
-            Text("Welcome back")
+            Text(mode == .signIn ? "Welcome back" : "Build your Milli profile")
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
-                .padding(.top, 7)
+                .padding(.top, 5)
         }
         .frame(maxWidth: .infinity)
     }
@@ -268,15 +371,9 @@ struct LoginView: View {
     private var alternativeSignIn: some View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(height: 1)
-                Text("OR")
-                    .font(MilliFont.sectionLabel)
-                    .foregroundStyle(MilliColors.textTertiary)
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(height: 1)
+                Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
+                Text("OR").font(MilliFont.sectionLabel).foregroundStyle(MilliColors.textTertiary)
+                Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
             }
 
             if let onAppleSignIn {
@@ -325,7 +422,7 @@ struct LoginView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
-            Text("Secure access • credentials are never displayed")
+            Text("Secure profile access • onboarding data is saved after first setup")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
         }
@@ -358,15 +455,56 @@ struct LoginView: View {
         authenticationMessage = nil
         focusedField = nil
 
+        switch mode {
+        case .signIn:
+            signIn()
+        case .signUp:
+            createAccount()
+        }
+    }
+
+    private func signIn() {
         #if DEBUG
         if normalizedEmail == "ian@milli.local", password == "MilliDemo2026!" {
-            onSignIn()
-        } else {
-            authenticationMessage = "This native build currently exposes only the deterministic development account. Use Demo Account while production authentication is being connected."
+            onSignIn(normalizedEmail)
+            return
         }
-        #else
-        authenticationMessage = "Production authentication is not connected in this build yet. Milli will not simulate a successful sign-in without a verified authentication service."
         #endif
+
+        guard let storedEmail = UserDefaults.standard.string(forKey: "milliProfileEmail")?.lowercased(),
+              storedEmail == normalizedEmail
+        else {
+            authenticationMessage = "We couldn't find this Milli profile on this device. Create an account to begin first-time setup."
+            return
+        }
+
+        guard MilliLocalCredentialStore.passwordMatches(password, for: normalizedEmail) else {
+            authenticationMessage = "The email or password is incorrect."
+            return
+        }
+
+        onSignIn(normalizedEmail)
+    }
+
+    private func createAccount() {
+        let name = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard password == confirmPassword else {
+            authenticationMessage = "Passwords do not match."
+            return
+        }
+
+        guard MilliLocalCredentialStore.store(password: password, for: normalizedEmail) else {
+            authenticationMessage = "Milli couldn't securely save this local sign-in. Please try again."
+            return
+        }
+
+        let defaults = UserDefaults.standard
+        defaults.set(name, forKey: "milliProfileName")
+        defaults.set(normalizedEmail, forKey: "milliProfileEmail")
+        defaults.set(true, forKey: "milliHasCreatedAccount")
+
+        onCreateAccount(normalizedEmail)
     }
 
     #if DEBUG
@@ -379,6 +517,48 @@ struct LoginView: View {
     #endif
 }
 
+private enum MilliLocalCredentialStore {
+    private static let service = "com.milli.taxvault.local-auth"
+
+    static func store(password: String, for email: String) -> Bool {
+        guard let data = password.data(using: .utf8) else { return false }
+
+        let base: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: email
+        ]
+
+        SecItemDelete(base as CFDictionary)
+
+        var insert = base
+        insert[kSecValueData as String] = data
+        insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+
+        return SecItemAdd(insert as CFDictionary, nil) == errSecSuccess
+    }
+
+    static func passwordMatches(_ password: String, for email: String) -> Bool {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: email,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data,
+              let storedPassword = String(data: data, encoding: .utf8)
+        else {
+            return false
+        }
+
+        return storedPassword == password
+    }
+}
+
 #Preview {
-    LoginView(onSignIn: {})
+    LoginView(onSignIn: { _ in }, onCreateAccount: { _ in })
 }
