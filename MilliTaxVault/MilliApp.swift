@@ -30,10 +30,13 @@ struct MilliApp: App {
             let screenshotMode = environment["MILLI_SCREENSHOT_MODE"] == "1"
                 || environment["MILLI_SCREEN"] != nil
                 || arguments.contains("-milliScreenshotMode")
-            _appState = State(initialValue: screenshotMode ? .main : .splash)
+
+            // Production behavior begins at the secure sign-in/create-account gate.
+            // The marketing/setup flow is never replayed just because the app was relaunched.
+            _appState = State(initialValue: screenshotMode ? .main : .login)
         }
         #else
-        _appState = State(initialValue: .splash)
+        _appState = State(initialValue: .login)
         #endif
     }
 
@@ -43,51 +46,93 @@ struct MilliApp: App {
                 switch appState {
                 case .splash:
                     SplashView(onComplete: {
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            if hasCompletedOnboarding && hasCompletedSetup {
-                                appState = .login
-                            } else if hasCompletedOnboarding {
-                                appState = .setup
-                            } else {
-                                appState = .onboarding
-                            }
-                        }
+                        transition(to: .login)
                     })
+                    .transition(.opacity)
+
+                case .login:
+                    LoginView(
+                        onSignIn: { _ in
+                            handleReturningSignIn()
+                        },
+                        onCreateAccount: { _ in
+                            beginNewAccountSetup()
+                        }
+                    )
                     .transition(.opacity)
 
                 case .onboarding:
                     OnboardingView(onComplete: {
                         hasCompletedOnboarding = true
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            appState = .setup
-                        }
+                        transition(to: .setup)
                     })
                     .transition(.opacity)
 
                 case .setup:
                     OnboardingFlowView(onComplete: {
                         hasCompletedSetup = true
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            appState = .login
-                        }
-                    })
-                    .transition(.opacity)
-
-                case .login:
-                    LoginView(onSignIn: {
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            appState = .main
-                        }
+                        activateSelectedTrialIfNeeded()
+                        transition(to: .main)
                     })
                     .transition(.opacity)
 
                 case .main:
-                    ContentView()
-                        .transition(.opacity)
+                    ContentView(onLogout: {
+                        // Logging out ends access to the current app session, but deliberately
+                        // keeps the saved profile, vehicle, tax profile, selected plan, and
+                        // trial history. The next sign-in returns directly to Home.
+                        transition(to: .login)
+                    })
+                    .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.4), value: appState)
+            .animation(.easeInOut(duration: 0.32), value: appState)
             .preferredColorScheme(.dark)
+        }
+    }
+
+    private func handleReturningSignIn() {
+        if hasCompletedSetup {
+            transition(to: .main)
+        } else if hasCompletedOnboarding {
+            // Handles an account that was created but setup was interrupted before completion.
+            transition(to: .setup)
+        } else {
+            transition(to: .onboarding)
+        }
+    }
+
+    private func beginNewAccountSetup() {
+        let defaults = UserDefaults.standard
+
+        // A newly created local profile gets its own first-time setup. These values
+        // are not cleared by ordinary logout, only by explicit account creation.
+        hasCompletedOnboarding = false
+        hasCompletedSetup = false
+        defaults.removeObject(forKey: "onboarding_vehicle")
+        defaults.removeObject(forKey: "onboarding_taxProfile")
+        defaults.removeObject(forKey: "onboarding_plan")
+        defaults.removeObject(forKey: "milliAutopilotRetirementEnabled")
+        defaults.removeObject(forKey: "milliAutopilotInvestingEnabled")
+        defaults.removeObject(forKey: "milliAutopilotSavingsEnabled")
+        defaults.removeObject(forKey: "milliAutopilotRetirementPercent")
+        defaults.removeObject(forKey: "milliAutopilotInvestingPercent")
+        defaults.removeObject(forKey: "milliAutopilotSavingsPercent")
+        MilliTrialState.resetForNewLocalAccount()
+
+        transition(to: .onboarding)
+    }
+
+    private func activateSelectedTrialIfNeeded() {
+        let defaults = UserDefaults.standard
+        let rawPlan = defaults.string(forKey: "onboarding_plan") ?? MilliPlan.pro.rawValue
+        let plan = MilliPlan(rawValue: rawPlan) ?? .pro
+        MilliTrialState.activateIfNeeded(plan: plan)
+    }
+
+    private func transition(to state: AppState) {
+        withAnimation(.easeInOut(duration: 0.32)) {
+            appState = state
         }
     }
 }
