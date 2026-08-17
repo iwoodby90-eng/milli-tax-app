@@ -142,6 +142,9 @@ struct SubscriptionView: View {
     private func planButton(_ plan: MilliPlan) -> some View {
         let isSelected = selectedPlan == plan
         let accent = accent(for: plan)
+        let fillStyle = isSelected
+            ? AnyShapeStyle(accent)
+            : AnyShapeStyle(MilliColors.graphiteSurface)
 
         return Button {
             withAnimation(.easeInOut(duration: 0.18)) {
@@ -160,7 +163,7 @@ struct SubscriptionView: View {
             .frame(height: 64)
             .background(
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(isSelected ? accent : MilliColors.graphiteSurface)
+                    .fill(fillStyle)
                     .overlay {
                         RoundedRectangle(cornerRadius: 11, style: .continuous)
                             .stroke(isSelected ? accent : Color.white.opacity(0.06), lineWidth: 0.8)
