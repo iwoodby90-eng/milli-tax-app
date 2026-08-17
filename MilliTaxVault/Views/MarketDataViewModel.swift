@@ -1,260 +1,298 @@
 import Foundation
 import SwiftUI
 
-// MARK: - MarketDataViewModel — Fetches live market data from Yahoo Finance
+// MARK: - MarketDataViewModel
+// Fetches market data through the existing Yahoo Finance chart transport.
+// Crucially, this model no longer fabricates a random-walk fallback when the
+// network feed is unavailable. The UI can now distinguish live data from an
+// unavailable feed and avoid presenting synthetic prices as real market data.
+
 @MainActor
-class MarketDataViewModel: ObservableObject {
-    
+final class MarketDataViewModel: ObservableObject {
     @Published var chartPoints: [ChartPricePoint] = []
+    @Published var candles: [LiveOHLCCandle] = []
     @Published var currentPrice: Double = 0
     @Published var priceChange: Double = 0
     @Published var percentChange: Double = 0
     @Published var selectedTicker: String = "AAPL"
     @Published var isLoading: Bool = false
-    @Published var lastUpdated: Date = Date()
-    
+    @Published var lastUpdated: Date?
+    @Published var feedStatus: MarketFeedStatus = .loading
+
     @Published var indices: [MarketIndex] = [
-        MarketIndex(symbol: "^GSPC", name: "S&P 500", value: 5432.10, change: 0.87),
-        MarketIndex(symbol: "^IXIC", name: "NASDAQ", value: 17245.30, change: 1.12),
-        MarketIndex(symbol: "^DJI", name: "DOW", value: 39876.50, change: 0.45),
+        MarketIndex(symbol: "^GSPC", name: "S&P 500", value: 0, change: 0, isLive: false),
+        MarketIndex(symbol: "^IXIC", name: "NASDAQ", value: 0, change: 0, isLive: false),
+        MarketIndex(symbol: "^DJI", name: "DOW JONES", value: 0, change: 0, isLive: false)
     ]
-    
+
     @Published var holdings: [LiveHolding] = [
-        LiveHolding(ticker: "AAPL", name: "Apple Inc.", price: 198.45, change: 3.2, sparkData: [190, 192, 195, 193, 197, 198]),
-        LiveHolding(ticker: "VOO", name: "Vanguard S&P 500", price: 482.10, change: 1.8, sparkData: [470, 472, 475, 478, 480, 482]),
-        LiveHolding(ticker: "BTC-USD", name: "Bitcoin", price: 67240, change: 12.4, sparkData: [58000, 60000, 62000, 64000, 65000, 67240]),
-        LiveHolding(ticker: "NVDA", name: "NVIDIA Corp.", price: 124.80, change: -1.1, sparkData: [128, 127, 126, 125, 124, 124]),
-        LiveHolding(ticker: "QQQ", name: "Invesco QQQ", price: 498.32, change: 2.5, sparkData: [485, 488, 490, 493, 496, 498]),
+        LiveHolding(ticker: "AAPL", name: "Apple Inc.", price: 0, change: 0, sparkData: [], isLive: false),
+        LiveHolding(ticker: "VOO", name: "Vanguard S&P 500 ETF", price: 0, change: 0, sparkData: [], isLive: false),
+        LiveHolding(ticker: "BTC-USD", name: "Bitcoin", price: 0, change: 0, sparkData: [], isLive: false),
+        LiveHolding(ticker: "NVDA", name: "NVIDIA Corp.", price: 0, change: 0, sparkData: [], isLive: false),
+        LiveHolding(ticker: "QQQ", name: "Invesco QQQ", price: 0, change: 0, sparkData: [], isLive: false)
     ]
-    
+
     private var chartTimer: Timer?
     private var indicesTimer: Timer?
-    
-    // Seed prices for fallback random walk
-    private let seedPrices: [String: Double] = [
-        "AAPL": 198.45,
-        "VOO": 482.10,
-        "BTC-USD": 67240.0,
-        "NVDA": 124.80,
-        "QQQ": 498.32,
-        "^GSPC": 5432.10,
-        "^IXIC": 17245.30,
-        "^DJI": 39876.50,
-    ]
-    
+    private var activeInterval = "5m"
+    private var activeRange = "1d"
+
     init() {
         fetchChart(for: selectedTicker)
         fetchIndices()
+        refreshHoldings()
     }
-    
+
     func startAutoRefresh() {
-        chartTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+        stopAutoRefresh()
+
+        chartTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.fetchChart(for: self?.selectedTicker ?? "AAPL")
-                self?.refreshHoldings()
+                guard let self else { return }
+                self.fetchChart(
+                    for: self.selectedTicker,
+                    interval: self.activeInterval,
+                    range: self.activeRange
+                )
+                self.refreshHoldings()
             }
         }
-        
+
         indicesTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.fetchIndices()
             }
         }
     }
-    
+
     func stopAutoRefresh() {
         chartTimer?.invalidate()
         chartTimer = nil
         indicesTimer?.invalidate()
         indicesTimer = nil
     }
-    
+
     func switchTicker(_ ticker: String) {
         selectedTicker = ticker
-        fetchChart(for: ticker)
+        fetchChart(for: ticker, interval: activeInterval, range: activeRange)
     }
-    
-    // MARK: - Fetch Chart Data
-    func fetchChart(for symbol: String) {
+
+    func fetchChart(
+        for symbol: String,
+        interval: String = "5m",
+        range: String = "1d"
+    ) {
+        selectedTicker = symbol
+        activeInterval = interval
+        activeRange = range
         isLoading = true
-        
+        feedStatus = .loading
+
         Task {
-            let urlString = "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)?interval=5m&range=1d"
-            guard let url = URL(string: urlString) else {
-                await generateFallbackChart(for: symbol)
+            guard let url = marketChartURL(symbol: symbol, interval: interval, range: range) else {
+                markChartUnavailable()
                 return
             }
-            
+
             do {
                 let (data, response) = try await URLSession.shared.data(from: url)
-                
                 guard let httpResponse = response as? HTTPURLResponse,
-                      httpResponse.statusCode == 200 else {
-                    await generateFallbackChart(for: symbol)
+                      httpResponse.statusCode == 200,
+                      let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let chart = parsed["chart"] as? [String: Any],
+                      let results = (chart["result"] as? [[String: Any]])?.first,
+                      let timestamps = results["timestamp"] as? [Int],
+                      let indicators = results["indicators"] as? [String: Any],
+                      let quotes = (indicators["quote"] as? [[String: Any]])?.first,
+                      let opens = quotes["open"] as? [Double?],
+                      let highs = quotes["high"] as? [Double?],
+                      let lows = quotes["low"] as? [Double?],
+                      let closes = quotes["close"] as? [Double?]
+                else {
+                    markChartUnavailable()
                     return
                 }
-                
-                // Parse Yahoo Finance JSON
-                if let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let chart = parsed["chart"] as? [String: Any],
-                   let results = (chart["result"] as? [[String: Any]])?.first,
-                   let timestamps = results["timestamp"] as? [Int],
-                   let indicators = results["indicators"] as? [String: Any],
-                   let quotes = (indicators["quote"] as? [[String: Any]])?.first,
-                   let closes = quotes["close"] as? [Double?] {
-                    
-                    var points: [ChartPricePoint] = []
-                    for (index, timestamp) in timestamps.enumerated() {
-                        if let close = closes[safe: index] ?? nil {
-                            let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
-                            points.append(ChartPricePoint(time: date, price: close))
-                        }
+
+                var newPoints: [ChartPricePoint] = []
+                var newCandles: [LiveOHLCCandle] = []
+
+                for (index, timestamp) in timestamps.enumerated() {
+                    guard let open = opens[safe: index] ?? nil,
+                          let high = highs[safe: index] ?? nil,
+                          let low = lows[safe: index] ?? nil,
+                          let close = closes[safe: index] ?? nil
+                    else {
+                        continue
                     }
-                    
-                    if !points.isEmpty {
-                        chartPoints = points
-                        currentPrice = points.last?.price ?? 0
-                        let openPrice = points.first?.price ?? currentPrice
-                        priceChange = currentPrice - openPrice
-                        percentChange = openPrice > 0 ? (priceChange / openPrice) * 100 : 0
-                        lastUpdated = Date()
-                        isLoading = false
-                        return
-                    }
+
+                    let time = Date(timeIntervalSince1970: TimeInterval(timestamp))
+                    newPoints.append(ChartPricePoint(time: time, price: close))
+                    newCandles.append(
+                        LiveOHLCCandle(
+                            time: time,
+                            open: open,
+                            high: high,
+                            low: low,
+                            close: close
+                        )
+                    )
                 }
-                
-                await generateFallbackChart(for: symbol)
-                
+
+                guard let first = newCandles.first,
+                      let last = newCandles.last
+                else {
+                    markChartUnavailable()
+                    return
+                }
+
+                chartPoints = newPoints
+                candles = newCandles
+                currentPrice = last.close
+                priceChange = last.close - first.open
+                percentChange = first.open > 0 ? (priceChange / first.open) * 100 : 0
+                lastUpdated = Date()
+                feedStatus = .live
+                isLoading = false
             } catch {
-                await generateFallbackChart(for: symbol)
+                markChartUnavailable()
             }
         }
     }
-    
-    // MARK: - Fetch Indices
+
     func fetchIndices() {
         let symbols = ["^GSPC", "^IXIC", "^DJI"]
-        let names = ["S&P 500", "NASDAQ", "DOW"]
-        
-        for (i, symbol) in symbols.enumerated() {
+        let names = ["S&P 500", "NASDAQ", "DOW JONES"]
+
+        for (index, symbol) in symbols.enumerated() {
             Task {
-                let urlString = "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)?interval=1d&range=1d"
-                guard let url = URL(string: urlString) else { return }
-                
+                guard let url = marketChartURL(symbol: symbol, interval: "1d", range: "5d") else { return }
+
                 do {
                     let (data, response) = try await URLSession.shared.data(from: url)
                     guard let httpResponse = response as? HTTPURLResponse,
-                          httpResponse.statusCode == 200 else { return }
-                    
-                    if let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let chart = parsed["chart"] as? [String: Any],
-                       let results = (chart["result"] as? [[String: Any]])?.first,
-                       let meta = results["meta"] as? [String: Any],
-                       let regularPrice = meta["regularMarketPrice"] as? Double,
-                       let prevClose = meta["previousClose"] as? Double {
-                        
-                        let change = prevClose > 0 ? ((regularPrice - prevClose) / prevClose) * 100 : 0
-                        
-                        if i < indices.count {
-                            indices[i] = MarketIndex(symbol: symbol, name: names[i], value: regularPrice, change: change)
-                        }
+                          httpResponse.statusCode == 200,
+                          let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let chart = parsed["chart"] as? [String: Any],
+                          let results = (chart["result"] as? [[String: Any]])?.first,
+                          let meta = results["meta"] as? [String: Any],
+                          let regularPrice = number(meta["regularMarketPrice"]),
+                          let previousClose = number(meta["previousClose"])
+                    else {
+                        return
                     }
+
+                    let change = previousClose > 0
+                        ? ((regularPrice - previousClose) / previousClose) * 100
+                        : 0
+
+                    guard indices.indices.contains(index) else { return }
+                    indices[index] = MarketIndex(
+                        symbol: symbol,
+                        name: names[index],
+                        value: regularPrice,
+                        change: change,
+                        isLive: true
+                    )
                 } catch {
-                    // Keep existing fallback values
+                    // Preserve the explicit non-live state rather than fabricating a value.
                 }
             }
         }
     }
-    
-    // MARK: - Refresh Holdings
-    private func refreshHoldings() {
+
+    func refreshHoldings() {
         for (index, holding) in holdings.enumerated() {
             Task {
-                let urlString = "https://query1.finance.yahoo.com/v8/finance/chart/\(holding.ticker)?interval=5m&range=1d"
-                guard let url = URL(string: urlString) else { return }
-                
+                guard let url = marketChartURL(symbol: holding.ticker, interval: "15m", range: "5d") else { return }
+
                 do {
                     let (data, response) = try await URLSession.shared.data(from: url)
                     guard let httpResponse = response as? HTTPURLResponse,
-                          httpResponse.statusCode == 200 else { return }
-                    
-                    if let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let chart = parsed["chart"] as? [String: Any],
-                       let results = (chart["result"] as? [[String: Any]])?.first,
-                       let meta = results["meta"] as? [String: Any],
-                       let regularPrice = meta["regularMarketPrice"] as? Double,
-                       let prevClose = meta["previousClose"] as? Double {
-                        
-                        let change = prevClose > 0 ? ((regularPrice - prevClose) / prevClose) * 100 : 0
-                        
-                        // Get last 6 closes for sparkline
-                        var spark: [Double] = []
-                        if let indicators = results["indicators"] as? [String: Any],
-                           let quotes = (indicators["quote"] as? [[String: Any]])?.first,
-                           let closes = quotes["close"] as? [Double?] {
-                            let validCloses = closes.compactMap { $0 }
-                            let lastSix = Array(validCloses.suffix(6))
-                            spark = lastSix
-                        }
-                        
-                        if spark.isEmpty { spark = holdings[index].sparkData }
-                        
-                        holdings[index] = LiveHolding(
-                            ticker: holding.ticker,
-                            name: holding.name,
-                            price: regularPrice,
-                            change: change,
-                            sparkData: spark
-                        )
+                          httpResponse.statusCode == 200,
+                          let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let chart = parsed["chart"] as? [String: Any],
+                          let results = (chart["result"] as? [[String: Any]])?.first,
+                          let meta = results["meta"] as? [String: Any],
+                          let regularPrice = number(meta["regularMarketPrice"]),
+                          let previousClose = number(meta["previousClose"])
+                    else {
+                        return
                     }
+
+                    let change = previousClose > 0
+                        ? ((regularPrice - previousClose) / previousClose) * 100
+                        : 0
+
+                    var spark: [Double] = []
+                    if let indicators = results["indicators"] as? [String: Any],
+                       let quotes = (indicators["quote"] as? [[String: Any]])?.first,
+                       let closes = quotes["close"] as? [Double?] {
+                        spark = Array(closes.compactMap { $0 }.suffix(12))
+                    }
+
+                    guard holdings.indices.contains(index) else { return }
+                    holdings[index] = LiveHolding(
+                        ticker: holding.ticker,
+                        name: holding.name,
+                        price: regularPrice,
+                        change: change,
+                        sparkData: spark,
+                        isLive: true
+                    )
                 } catch {
-                    // Keep existing values
+                    // Leave the holding visibly unavailable/non-live.
                 }
             }
         }
     }
-    
-    // MARK: - Fallback Random Walk
-    @MainActor
-    private func generateFallbackChart(for symbol: String) async {
-        let seed = seedPrices[symbol] ?? 100.0
-        var points: [ChartPricePoint] = []
-        var price = seed
-        
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfDay = calendar.startOfDay(for: now)
-        let marketOpen = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: startOfDay) ?? startOfDay
-        
-        // Generate 78 points (6.5 hours * 12 five-minute intervals)
-        for i in 0..<78 {
-            let time = marketOpen.addingTimeInterval(TimeInterval(i * 300))
-            if time > now { break }
-            
-            let volatility = seed * 0.001 // 0.1% per 5-min candle
-            let randomChange = Double.random(in: -volatility...volatility)
-            price += randomChange
-            points.append(ChartPricePoint(time: time, price: price))
-        }
-        
-        if !points.isEmpty {
-            chartPoints = points
-            currentPrice = points.last?.price ?? seed
-            let openPrice = points.first?.price ?? seed
-            priceChange = currentPrice - openPrice
-            percentChange = openPrice > 0 ? (priceChange / openPrice) * 100 : 0
-        }
-        
-        lastUpdated = Date()
+
+    private func markChartUnavailable() {
+        chartPoints = []
+        candles = []
+        currentPrice = 0
+        priceChange = 0
+        percentChange = 0
         isLoading = false
+        feedStatus = .unavailable
+    }
+
+    private func marketChartURL(symbol: String, interval: String, range: String) -> URL? {
+        let encodedSymbol = symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
+        return URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encodedSymbol)?interval=\(interval)&range=\(range)")
+    }
+
+    private func number(_ value: Any?) -> Double? {
+        if let double = value as? Double { return double }
+        if let int = value as? Int { return Double(int) }
+        if let number = value as? NSNumber { return number.doubleValue }
+        return nil
     }
 }
 
 // MARK: - Data Models
+
+enum MarketFeedStatus: Equatable {
+    case loading
+    case live
+    case unavailable
+}
+
 struct ChartPricePoint: Identifiable {
     let id = UUID()
     let time: Date
     let price: Double
+}
+
+struct LiveOHLCCandle: Identifiable {
+    let id = UUID()
+    let time: Date
+    let open: Double
+    let high: Double
+    let low: Double
+    let close: Double
+
+    var isUp: Bool { close >= open }
 }
 
 struct MarketIndex: Identifiable {
@@ -263,6 +301,7 @@ struct MarketIndex: Identifiable {
     let name: String
     let value: Double
     let change: Double
+    let isLive: Bool
 }
 
 struct LiveHolding: Identifiable {
@@ -270,11 +309,11 @@ struct LiveHolding: Identifiable {
     let ticker: String
     let name: String
     let price: Double
-    let change: Double // percentage
+    let change: Double
     let sparkData: [Double]
+    let isLive: Bool
 }
 
-// Safe array subscript
 extension Collection {
     subscript(safe index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil
