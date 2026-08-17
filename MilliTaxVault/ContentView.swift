@@ -121,7 +121,18 @@ struct ContentView: View {
 
     private static func requestedDebugScreen() -> ActiveScreen? {
         #if DEBUG
-        let arguments = ProcessInfo.processInfo.arguments
+        let processInfo = ProcessInfo.processInfo
+
+        // GitHub-hosted simulators have proven inconsistent about forwarding
+        // dash-prefixed app arguments through `simctl launch`. Environment values
+        // prefixed with SIMCTL_CHILD_ are deterministic, so visual QA uses that
+        // transport first while keeping command-line arguments for local tooling.
+        if let rawValue = processInfo.environment["MILLI_SCREEN"],
+           let screen = ActiveScreen(rawValue: rawValue) {
+            return screen
+        }
+
+        let arguments = processInfo.arguments
         guard arguments.contains("-milliScreenshotMode"),
               let flagIndex = arguments.firstIndex(of: "-milliScreen"),
               arguments.indices.contains(flagIndex + 1)
@@ -129,8 +140,7 @@ struct ContentView: View {
             return nil
         }
 
-        let rawValue = arguments[flagIndex + 1]
-        return ActiveScreen(rawValue: rawValue)
+        return ActiveScreen(rawValue: arguments[flagIndex + 1])
         #else
         return nil
         #endif
