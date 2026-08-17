@@ -10,7 +10,7 @@ struct ContentView: View {
     init() {
         let initialScreen = Self.requestedDebugScreen() ?? .home
         _activeScreen = State(initialValue: initialScreen)
-        _selectedTab = State(initialValue: initialScreen.primaryTab)
+        _selectedTab = State(initialValue: initialScreen.debugTab)
     }
 
     var body: some View {
@@ -109,7 +109,13 @@ struct ContentView: View {
     private func navigateTo(_ screen: ActiveScreen) {
         withAnimation(.easeInOut(duration: 0.2)) {
             activeScreen = screen
-            selectedTab = screen.primaryTab
+
+            // Primary destinations own the bottom-nav selection. Secondary screens
+            // intentionally retain the user's originating primary context; opening
+            // Tax Vault from Home should not make the UI claim that More was tapped.
+            if let primaryTab = screen.primaryTab {
+                selectedTab = primaryTab
+            }
         }
     }
 
@@ -153,7 +159,7 @@ enum ActiveScreen: String, CaseIterable {
     case reports
     case more
 
-    var primaryTab: MilliTab {
+    var primaryTab: MilliTab? {
         switch self {
         case .home:
             return .home
@@ -164,7 +170,13 @@ enum ActiveScreen: String, CaseIterable {
         case .more:
             return .more
         default:
-            return .more
+            return nil
         }
+    }
+
+    // Direct screenshot launches do not have an originating primary tab, so
+    // secondary screens use More as the neutral navigation context in DEBUG QA.
+    var debugTab: MilliTab {
+        primaryTab ?? .more
     }
 }
