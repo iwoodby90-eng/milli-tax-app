@@ -42,8 +42,9 @@ struct TaxProfile: Codable {
 }
 
 // MARK: - Milli Subscription Plan
-// These tiers match the approved product model. Selecting a tier in onboarding
-// does not charge the user; production billing remains a separate checkout action.
+// Every new Milli account receives one three-day trial of the plan selected during
+// first-time onboarding. Production App Store billing still needs to bind this
+// entitlement state to StoreKit before release.
 
 enum MilliPlan: String, Codable, CaseIterable {
     case basic = "Basic"
@@ -58,11 +59,10 @@ enum MilliPlan: String, Codable, CaseIterable {
         }
     }
 
-    var trialLabel: String? {
-        switch self {
-        case .basic: return "3-day trial"
-        case .pro, .elite: return nil
-        }
+    var trialLabel: String { "3-day free trial" }
+
+    var onboardingPriceLine: String {
+        "3 days free • then \(monthlyPrice)"
     }
 
     var features: [String] {
@@ -95,4 +95,54 @@ enum MilliPlan: String, Codable, CaseIterable {
     }
 
     var isPopular: Bool { self == .pro }
+}
+
+// MARK: - Trial persistence
+
+struct MilliTrialState {
+    static let hasActivatedKey = "milliTrialHasActivated"
+    static let planKey = "milliTrialPlan"
+    static let startedAtKey = "milliTrialStartedAt"
+    static let endsAtKey = "milliTrialEndsAt"
+
+    let plan: MilliPlan
+    let startedAt: Date
+    let endsAt: Date
+
+    var isActive: Bool { Date() < endsAt }
+
+    static func activateIfNeeded(plan: MilliPlan, now: Date = Date()) {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: hasActivatedKey) else { return }
+
+        let endsAt = Calendar.current.date(byAdding: .day, value: 3, to: now)
+            ?? now.addingTimeInterval(3 * 24 * 60 * 60)
+
+        defaults.set(true, forKey: hasActivatedKey)
+        defaults.set(plan.rawValue, forKey: planKey)
+        defaults.set(now, forKey: startedAtKey)
+        defaults.set(endsAt, forKey: endsAtKey)
+    }
+
+    static func current() -> MilliTrialState? {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: hasActivatedKey),
+              let rawPlan = defaults.string(forKey: planKey),
+              let plan = MilliPlan(rawValue: rawPlan),
+              let startedAt = defaults.object(forKey: startedAtKey) as? Date,
+              let endsAt = defaults.object(forKey: endsAtKey) as? Date
+        else {
+            return nil
+        }
+
+        return MilliTrialState(plan: plan, startedAt: startedAt, endsAt: endsAt)
+    }
+
+    static func resetForNewLocalAccount() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: hasActivatedKey)
+        defaults.removeObject(forKey: planKey)
+        defaults.removeObject(forKey: startedAtKey)
+        defaults.removeObject(forKey: endsAtKey)
+    }
 }
