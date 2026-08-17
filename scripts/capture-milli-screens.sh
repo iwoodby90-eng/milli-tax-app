@@ -74,8 +74,43 @@ export SIMULATOR_UDID
 
 echo "Using simulator: $SIMULATOR_UDID"
 
-xcrun simctl boot "$SIMULATOR_UDID" >/dev/null 2>&1 || true
-xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+# simctl bootstatus -b can hang for several minutes on a degraded hosted runner.
+# Request boot with a hard timeout, then poll the simulator registry ourselves.
+python3 - <<'PY'
+import os, subprocess
+udid = os.environ["SIMULATOR_UDID"]
+try:
+    result = subprocess.run(
+        ["xcrun", "simctl", "boot", udid],
+        timeout=20,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr)
+except subprocess.TimeoutExpired:
+    print("simctl boot request exceeded 20 seconds; continuing with bounded readiness polling")
+PY
+
+SIMULATOR_READY=0
+for attempt in {1..50}; do
+  STATE_LINE="$(xcrun simctl list devices | grep "$SIMULATOR_UDID" || true)"
+  echo "$STATE_LINE"
+  if echo "$STATE_LINE" | grep -q "Booted"; then
+    SIMULATOR_READY=1
+    break
+  fi
+  sleep 2
+done
+
+if [[ "$SIMULATOR_READY" -ne 1 ]]; then
+  echo "Simulator $SIMULATOR_UDID did not reach Booted state within 100 seconds." >&2
+  xcrun simctl list devices >&2 || true
+  exit 1
+fi
 
 rm -rf "$DERIVED_DATA"
 
