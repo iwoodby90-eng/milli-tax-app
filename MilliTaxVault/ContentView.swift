@@ -24,7 +24,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .transition(.opacity)
 
-            if activeScreen != .milliAI {
+            if shouldShowAIOrb {
                 HStack {
                     Spacer()
                     MilliAIOrb {
@@ -58,6 +58,17 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private var shouldShowAIOrb: Bool {
+        switch activeScreen {
+        case .milliAI, .expenses, .plans:
+            // Expenses owns the bottom-right Add action and Plans owns a large
+            // subscription CTA. The global assistant must never obscure a primary control.
+            return false
+        default:
+            return true
+        }
     }
 
     @ViewBuilder
