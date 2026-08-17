@@ -70,6 +70,8 @@ struct HomeView: View {
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
                 .contentTransition(.numericText())
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
             Text("Updated just now")
                 .font(MilliFont.caption)
@@ -130,6 +132,7 @@ struct HomeView: View {
                         .font(MilliFont.numericMedium)
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
+                        .lineLimit(1)
 
                     Text("\(viewModel.latestPayout.dateTime)  •  \(viewModel.latestPayout.platformName)")
                         .font(MilliFont.caption)
@@ -176,19 +179,28 @@ struct HomeView: View {
                     .font(MilliFont.sectionLabel)
                     .tracking(0.55)
                     .foregroundStyle(MilliColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
 
-                HStack(alignment: .center, spacing: 8) {
+                HStack(alignment: .center, spacing: 7) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(viewModel.taxVaultBalance)
                             .font(MilliFont.numericMedium)
                             .monospacedDigit()
                             .foregroundStyle(MilliColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.66)
+                            .allowsTightening(true)
                         Text("23% of annual target")
                             .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.textTertiary)
+                            .lineLimit(2)
                     }
-                    Spacer(minLength: 2)
-                    progressRing(progress: 0.23, value: nil, size: 36)
+                    .layoutPriority(1)
+
+                    Spacer(minLength: 0)
+                    progressRing(progress: 0.23, value: nil, size: 34)
+                        .fixedSize()
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
@@ -204,6 +216,8 @@ struct HomeView: View {
                     .font(MilliFont.sectionLabel)
                     .tracking(0.55)
                     .foregroundStyle(MilliColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
 
                 HStack(spacing: 8) {
                     progressRing(
@@ -239,6 +253,8 @@ struct HomeView: View {
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
                 HStack(spacing: 5) {
                     Text(viewModel.quarterlyDueLabel)
                         .font(MilliFont.caption)
@@ -267,6 +283,8 @@ struct HomeView: View {
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
                 HStack {
                     Text("This quarter")
                         .font(MilliFont.caption)
@@ -314,8 +332,13 @@ struct HomeView: View {
             HStack(spacing: 10) {
                 Image("MilliAIOrb")
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: 38, height: 38)
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(MilliColors.cyanGlow.opacity(0.18), lineWidth: 0.7)
+                    }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("MILLI AI INSIGHT")
