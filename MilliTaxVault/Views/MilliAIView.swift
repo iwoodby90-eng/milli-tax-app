@@ -79,11 +79,7 @@ struct MilliAIView: View {
 
     private var intro: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image("MilliAIOrb")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 54, height: 54)
-                .shadow(color: MilliColors.cyanGlow.opacity(0.25), radius: 7)
+            aiPortrait(size: 54)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text("How can I help?")
@@ -132,10 +128,7 @@ struct MilliAIView: View {
 
     private func aiCard(_ message: MilliAIMessage) -> some View {
         HStack(alignment: .top, spacing: 9) {
-            Image("MilliAIOrb")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 32, height: 32)
+            aiPortrait(size: 32)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(message.text)
@@ -169,6 +162,33 @@ struct MilliAIView: View {
 
             Spacer(minLength: 22)
         }
+    }
+
+    private func aiPortrait(size: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color(hex: "10202A"), MilliColors.blackGlass],
+                        center: .topLeading,
+                        startRadius: 1,
+                        endRadius: size * 0.7
+                    )
+                )
+                .frame(width: size, height: size)
+                .overlay {
+                    Circle()
+                        .stroke(MilliColors.cyanGlow.opacity(0.22), lineWidth: 0.7)
+                }
+                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 6)
+
+            Image("MilliAIOrb")
+                .resizable()
+                .scaledToFill()
+                .frame(width: max(size - 4, 1), height: max(size - 4, 1))
+                .clipShape(Circle())
+        }
+        .frame(width: size, height: size)
     }
 
     private var composer: some View {
