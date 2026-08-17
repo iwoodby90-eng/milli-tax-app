@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum AppState {
+enum AppState: String {
     case splash
     case onboarding
     case setup
@@ -16,8 +16,16 @@ struct MilliApp: App {
 
     init() {
         #if DEBUG
-        let screenshotMode = ProcessInfo.processInfo.arguments.contains("-milliScreenshotMode")
-        _appState = State(initialValue: screenshotMode ? .main : .splash)
+        let arguments = ProcessInfo.processInfo.arguments
+
+        if let stateFlag = arguments.firstIndex(of: "-milliAppState"),
+           arguments.indices.contains(stateFlag + 1),
+           let requestedState = AppState(rawValue: arguments[stateFlag + 1]) {
+            _appState = State(initialValue: requestedState)
+        } else {
+            let screenshotMode = arguments.contains("-milliScreenshotMode")
+            _appState = State(initialValue: screenshotMode ? .main : .splash)
+        }
         #else
         _appState = State(initialValue: .splash)
         #endif
