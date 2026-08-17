@@ -22,11 +22,11 @@ struct PlanSelectionView: View {
 
                 HStack(spacing: 12) {
                     OnboardingBackButton(action: onBack)
-                    OnboardingPrimaryButton(title: "Start 3-Day Trial", action: onComplete)
+                    OnboardingPrimaryButton(title: "Continue with \(selectedPlan.rawValue)", action: onComplete)
                 }
                 .padding(.top, 4)
 
-                Text("No plan is charged during this setup screen. App Store billing must confirm the selected subscription before a production charge can occur.")
+                Text("Your 3-day trial starts only after the remaining first-time setup is completed. No plan is charged on this screen; production billing must be confirmed by the App Store.")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
