@@ -39,10 +39,7 @@ struct PayoutEntry: Identifiable {
 
     static let placeholder = PayoutEntry(
         platformName: "Amazon Flex",
-        // The current asset pack does not yet contain the Amazon Flex mark. Use
-        // the existing dark platform tile so the approved black-icon silhouette
-        // remains intact instead of rendering a missing-image hole.
-        platformAssetName: "uber-icon",
+        platformAssetName: "amazon-flex-icon",
         dateTime: "Today, 2:34 PM",
         amount: "$187.42"
     )
