@@ -5,6 +5,8 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @State private var showNotifications = false
+
     var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
@@ -21,6 +23,11 @@ struct HomeView: View {
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showNotifications) {
+            MilliDetailSheet(title: "Notifications")
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: Header
@@ -29,7 +36,9 @@ struct HomeView: View {
         ZStack {
             HStack {
                 Spacer()
-                Button {} label: {
+                Button {
+                    showNotifications = true
+                } label: {
                     Image(systemName: "bell")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(MilliColors.silverBright)
@@ -85,7 +94,9 @@ struct HomeView: View {
                     lineWidth: 1.8
                 )
 
-                Button {} label: {
+                Button {
+                    navigate?(.accounts)
+                } label: {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(MilliColors.blackGlass)
@@ -94,6 +105,7 @@ struct HomeView: View {
                         .shadow(color: MilliColors.cyanGlow.opacity(0.34), radius: 7)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open accounts")
                 .padding(.trailing, 2)
             }
         }
