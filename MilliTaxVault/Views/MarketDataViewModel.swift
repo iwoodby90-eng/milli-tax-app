@@ -3,9 +3,8 @@ import SwiftUI
 
 // MARK: - MarketDataViewModel
 // Fetches market data through the existing Yahoo Finance chart transport.
-// Crucially, this model no longer fabricates a random-walk fallback when the
-// network feed is unavailable. The UI can now distinguish live data from an
-// unavailable feed and avoid presenting synthetic prices as real market data.
+// The model never fabricates a random-walk fallback: the UI distinguishes live,
+// loading and unavailable feed states explicitly.
 
 @MainActor
 final class MarketDataViewModel: ObservableObject {
@@ -104,12 +103,18 @@ final class MarketDataViewModel: ObservableObject {
                       let results = (chart["result"] as? [[String: Any]])?.first,
                       let timestamps = results["timestamp"] as? [Int],
                       let indicators = results["indicators"] as? [String: Any],
-                      let quotes = (indicators["quote"] as? [[String: Any]])?.first,
-                      let opens = quotes["open"] as? [Double?],
-                      let highs = quotes["high"] as? [Double?],
-                      let lows = quotes["low"] as? [Double?],
-                      let closes = quotes["close"] as? [Double?]
+                      let quotes = (indicators["quote"] as? [[String: Any]])?.first
                 else {
+                    markChartUnavailable()
+                    return
+                }
+
+                let opens = numberArray(quotes["open"])
+                let highs = numberArray(quotes["high"])
+                let lows = numberArray(quotes["low"])
+                let closes = numberArray(quotes["close"])
+
+                guard !opens.isEmpty, !highs.isEmpty, !lows.isEmpty, !closes.isEmpty else {
                     markChartUnavailable()
                     return
                 }
@@ -118,10 +123,10 @@ final class MarketDataViewModel: ObservableObject {
                 var newCandles: [LiveOHLCCandle] = []
 
                 for (index, timestamp) in timestamps.enumerated() {
-                    guard let open = opens[safe: index] ?? nil,
-                          let high = highs[safe: index] ?? nil,
-                          let low = lows[safe: index] ?? nil,
-                          let close = closes[safe: index] ?? nil
+                    guard let open = flattenedValue(opens, at: index),
+                          let high = flattenedValue(highs, at: index),
+                          let low = flattenedValue(lows, at: index),
+                          let close = flattenedValue(closes, at: index)
                     else {
                         continue
                     }
@@ -176,12 +181,14 @@ final class MarketDataViewModel: ObservableObject {
                           let chart = parsed["chart"] as? [String: Any],
                           let results = (chart["result"] as? [[String: Any]])?.first,
                           let meta = results["meta"] as? [String: Any],
-                          let regularPrice = number(meta["regularMarketPrice"]),
-                          let previousClose = number(meta["previousClose"])
+                          let regularPrice = number(meta["regularMarketPrice"])
                     else {
                         return
                     }
 
+                    let previousClose = number(meta["previousClose"])
+                        ?? number(meta["chartPreviousClose"])
+                        ?? regularPrice
                     let change = previousClose > 0
                         ? ((regularPrice - previousClose) / previousClose) * 100
                         : 0
@@ -214,21 +221,22 @@ final class MarketDataViewModel: ObservableObject {
                           let chart = parsed["chart"] as? [String: Any],
                           let results = (chart["result"] as? [[String: Any]])?.first,
                           let meta = results["meta"] as? [String: Any],
-                          let regularPrice = number(meta["regularMarketPrice"]),
-                          let previousClose = number(meta["previousClose"])
+                          let regularPrice = number(meta["regularMarketPrice"])
                     else {
                         return
                     }
 
+                    let previousClose = number(meta["previousClose"])
+                        ?? number(meta["chartPreviousClose"])
+                        ?? regularPrice
                     let change = previousClose > 0
                         ? ((regularPrice - previousClose) / previousClose) * 100
                         : 0
 
                     var spark: [Double] = []
                     if let indicators = results["indicators"] as? [String: Any],
-                       let quotes = (indicators["quote"] as? [[String: Any]])?.first,
-                       let closes = quotes["close"] as? [Double?] {
-                        spark = Array(closes.compactMap { $0 }.suffix(12))
+                       let quotes = (indicators["quote"] as? [[String: Any]])?.first {
+                        spark = Array(numberArray(quotes["close"]).compactMap { $0 }.suffix(12))
                     }
 
                     guard holdings.indices.contains(index) else { return }
@@ -262,10 +270,25 @@ final class MarketDataViewModel: ObservableObject {
         return URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encodedSymbol)?interval=\(interval)&range=\(range)")
     }
 
+    private func numberArray(_ value: Any?) -> [Double?] {
+        guard let values = value as? [Any] else { return [] }
+        return values.map { element in
+            if element is NSNull { return nil }
+            return number(element)
+        }
+    }
+
+    private func flattenedValue(_ values: [Double?], at index: Int) -> Double? {
+        guard values.indices.contains(index) else { return nil }
+        return values[index]
+    }
+
     private func number(_ value: Any?) -> Double? {
+        if value is NSNull { return nil }
         if let double = value as? Double { return double }
         if let int = value as? Int { return Double(int) }
         if let number = value as? NSNumber { return number.doubleValue }
+        if let string = value as? String { return Double(string) }
         return nil
     }
 }
