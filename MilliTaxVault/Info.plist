@@ -13,9 +13,13 @@
 		<string>Inter-SemiBold.ttf</string>
 		<string>Inter-Bold.ttf</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location to track mileage for tax deductions while driving.</string>
+	<string>Milli uses your location while a mileage trip is active to record deductible business miles.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli uses background location to automatically track mileage for tax deductions.</string>
+	<string>Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
 </dict>
 </plist>
