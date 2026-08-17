@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - TaxVaultView
-// Compact premium reserve-account presentation with an auditable ledger.
+// Compact premium reserve-account presentation matching the approved Milli reference.
 // Production money movement remains explicit: the transfer control opens setup
 // until a verified funding rail is connected rather than pretending a transfer occurred.
 
@@ -19,7 +19,7 @@ struct TaxVaultView: View {
                 reserveHero
                 targetRow
                 addButton
-                transactions
+                recentActivity
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -55,9 +55,8 @@ struct TaxVaultView: View {
                 .accessibilityLabel("Notifications")
             }
 
-            Text("MILLI TAX VAULT™")
+            Text("Milli Tax Vault™")
                 .font(MilliFont.headlineSmall)
-                .tracking(1.0)
                 .foregroundStyle(MilliColors.textPrimary)
         }
         .frame(height: 40)
@@ -95,6 +94,7 @@ struct TaxVaultView: View {
                         style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 7)
                 Text(progressPercentText)
                     .font(.custom("Sora-SemiBold", size: 17))
                     .monospacedDigit()
@@ -107,28 +107,34 @@ struct TaxVaultView: View {
 
     private var targetRow: some View {
         HStack(spacing: 0) {
-            metric("ANNUAL TARGET", currency(vault.annualTarget))
+            metric("ANNUAL TARGET", currency(vault.annualTarget), subtitle: "Tax reserve goal")
             Rectangle()
                 .fill(Color.white.opacity(0.06))
-                .frame(width: 1, height: 42)
-            metric("TARGET DATE", vault.targetDate.formatted(date: .abbreviated, time: .omitted))
+                .frame(width: 1, height: 48)
+            metric("CURRENT RESERVE RATE", "\(Int(vault.reserveRate * 100))%", subtitle: "Applied to payouts")
         }
         .milliCard(padding: 12)
     }
 
-    private func metric(_ title: String, _ value: String) -> some View {
+    private func metric(_ title: String, _ value: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(MilliFont.sectionLabel)
                 .foregroundStyle(MilliColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
             Text(value)
                 .font(MilliFont.numericSmall)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
+            Text(subtitle)
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
     }
 
     private var addButton: some View {
@@ -159,10 +165,10 @@ struct TaxVaultView: View {
         .buttonStyle(.plain)
     }
 
-    private var transactions: some View {
+    private var recentActivity: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("TRANSACTIONS")
+                Text("RECENT ACTIVITY")
                     .sectionHeaderStyle()
                 Spacer()
                 Text("AUDIT LEDGER")
@@ -262,7 +268,7 @@ struct TaxVaultView: View {
 private struct TaxVaultDisplayModel {
     let balance: Double
     let annualTarget: Double
-    let targetDate: Date
+    let reserveRate: Double
     let activity: [VaultActivity]
 
     var progress: CGFloat {
@@ -271,18 +277,14 @@ private struct TaxVaultDisplayModel {
     }
 
     static var reference: TaxVaultDisplayModel {
-        let calendar = Calendar.current
-        let year = calendar.component(.year, from: Date())
-        let target = calendar.date(from: DateComponents(year: year, month: 12, day: 31)) ?? Date()
-
-        return TaxVaultDisplayModel(
+        TaxVaultDisplayModel(
             balance: 5_284.17,
-            annualTarget: 22_500,
-            targetDate: target,
+            annualTarget: 22_800,
+            reserveRate: 0.23,
             activity: [
-                VaultActivity(title: "Payout Allocation", dateLabel: "Today", amount: 72.91, icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow),
-                VaultActivity(title: "Payout Allocation", dateLabel: "Yesterday", amount: 69.21, icon: "arrow.down.to.line", iconColor: MilliColors.cyanGlow),
-                VaultActivity(title: "Manual Transfer", dateLabel: "3 days ago", amount: 250.00, icon: "arrow.left.arrow.right", iconColor: MilliColors.deepCyan),
+                VaultActivity(title: "Amazon Flex", dateLabel: "Today, 2:34 PM", amount: 43.11, icon: "shippingbox.fill", iconColor: MilliColors.cyanGlow),
+                VaultActivity(title: "Spark Driver", dateLabel: "Today, 10:12 AM", amount: 36.06, icon: "sparkles", iconColor: Color(hex: "4E8CFF")),
+                VaultActivity(title: "DoorDash", dateLabel: "Yesterday", amount: 21.70, icon: "bag.fill", iconColor: MilliColors.negative),
                 VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Previous quarter", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
             ]
         )
