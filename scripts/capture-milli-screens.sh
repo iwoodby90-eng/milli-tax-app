@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Captures deterministic native SwiftUI screenshots for Milli's primary screens.
+# Captures deterministic native SwiftUI screenshots for Milli's production screens
+# plus the pre-auth native entry states.
 # Usage:
 #   bash scripts/capture-milli-screens.sh
 #   SIMULATOR_UDID=<udid> bash scripts/capture-milli-screens.sh
 #   OUTPUT_DIR=/tmp/milli-visual-qa bash scripts/capture-milli-screens.sh
-#
-# The app supports -milliScreenshotMode to skip onboarding/login and
-# -milliScreen <screen> to launch a specific native screen in DEBUG builds.
 
 PROJECT="${PROJECT:-MilliTaxVault.xcodeproj}"
 SCHEME="${SCHEME:-MilliTaxVault}"
@@ -38,6 +36,12 @@ SCREENS=(
   documents
   plans
   more
+)
+
+APP_STATES=(
+  login
+  onboarding
+  setup
 )
 
 mkdir -p "$OUTPUT_DIR"
@@ -101,11 +105,35 @@ show_recent_app_logs() {
     --predicate 'process == "MilliTaxVault"' 2>/dev/null | tail -n 160 >&2 || true
 }
 
+wait_and_capture() {
+  local label="$1"
+  local output="$2"
+  local launch_output="$3"
+  local pid
+
+  echo "$launch_output"
+  pid="$(printf '%s\n' "$launch_output" | awk -F': ' 'NF > 1 {print $NF}' | tail -n 1)"
+
+  # Hosted Xcode simulators can spend several seconds on the native launch screen
+  # during cold starts. Give every screen a deterministic render window before
+  # accepting a screenshot.
+  sleep "$SCREEN_SETTLE_SECONDS"
+
+  if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
+    echo "MilliTaxVault exited before '$label' was ready (pid $pid)." >&2
+    show_recent_app_logs
+    exit 1
+  fi
+
+  xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
+  test -s "$output"
+  echo "Captured $label -> $output"
+}
+
 capture_screen() {
   local screen="$1"
   local output="$OUTPUT_DIR/${screen}.png"
   local launch_output
-  local pid
 
   xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
@@ -115,28 +143,30 @@ capture_screen() {
     -milliScreenshotMode \
     -milliScreen "$screen")"
 
-  echo "$launch_output"
-  pid="$(printf '%s\n' "$launch_output" | awk -F': ' 'NF > 1 {print $NF}' | tail -n 1)"
+  wait_and_capture "$screen" "$output" "$launch_output"
+}
 
-  # A 1.5-second fixed delay proved too short for a few cold SwiftUI launches on
-  # hosted Xcode 26 simulators and captured the white launch screen. Give every
-  # screen a deterministic render window, then verify the launched process is
-  # still alive before accepting the screenshot.
-  sleep "$SCREEN_SETTLE_SECONDS"
+capture_app_state() {
+  local state="$1"
+  local output="$OUTPUT_DIR/auth-${state}.png"
+  local launch_output
 
-  if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
-    echo "MilliTaxVault exited before '$screen' was ready (pid $pid)." >&2
-    show_recent_app_logs
-    exit 1
-  fi
+  xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
-  xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
-  test -s "$output"
-  echo "Captured $screen -> $output"
+  launch_output="$(xcrun simctl launch \
+    "$SIMULATOR_UDID" \
+    "$BUNDLE_ID" \
+    -milliAppState "$state")"
+
+  wait_and_capture "auth-$state" "$output" "$launch_output"
 }
 
 for screen in "${SCREENS[@]}"; do
   capture_screen "$screen"
+done
+
+for state in "${APP_STATES[@]}"; do
+  capture_app_state "$state"
 done
 
 echo
