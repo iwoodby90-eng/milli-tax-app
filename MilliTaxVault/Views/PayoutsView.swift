@@ -223,17 +223,30 @@ private struct FinancialReceiptSheet: View {
     @Environment(\.dismiss) private var dismiss
     let payout: PayoutItem
 
-    private let taxRate = 0.23
-    private let retirementRate = 0.05
-    private let investingRate = 0.00
-    private let savingsRate = 0.03
+    @AppStorage("milliAutopilotRetirementEnabled") private var retirementEnabled = true
+    @AppStorage("milliAutopilotInvestingEnabled") private var investingEnabled = false
+    @AppStorage("milliAutopilotSavingsEnabled") private var savingsEnabled = true
 
-    private var taxReserve: Double { payout.amount * taxRate }
-    private var retirement: Double { payout.amount * retirementRate }
-    private var investing: Double { payout.amount * investingRate }
-    private var savings: Double { payout.amount * savingsRate }
-    private var available: Double {
-        payout.amount - taxReserve - retirement - investing - savings
+    @AppStorage("milliAutopilotRetirementPercent") private var retirementPercent = 5.0
+    @AppStorage("milliAutopilotInvestingPercent") private var investingPercent = 0.0
+    @AppStorage("milliAutopilotSavingsPercent") private var savingsPercent = 3.0
+
+    private let taxPercent = 23.0
+
+    private var settings: AutopilotAllocationSettings {
+        AutopilotAllocationSettings(
+            taxPercent: taxPercent,
+            retirementEnabled: retirementEnabled,
+            retirementPercent: retirementPercent,
+            investingEnabled: investingEnabled,
+            investingPercent: investingPercent,
+            savingsEnabled: savingsEnabled,
+            savingsPercent: savingsPercent
+        )
+    }
+
+    private var allocation: AutopilotAllocationResult {
+        AutopilotAllocationEngine.allocate(payout: payout.amount, settings: settings)
     }
 
     var body: some View {
@@ -271,6 +284,7 @@ private struct FinancialReceiptSheet: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 62, height: 62)
+                .blendMode(.screen)
 
             Text("MILLI AUTOPILOT™")
                 .font(MilliFont.sectionLabel)
@@ -305,7 +319,12 @@ private struct FinancialReceiptSheet: View {
             Divider().overlay(Color.white.opacity(0.06))
 
             receiptLine("Payout received", payout.amount, color: MilliColors.textPrimary)
-            receiptLine("Processing status", payout.status == .settled ? 1 : 0, textualValue: payout.status == .settled ? "Settled" : "Pending", color: payout.status == .settled ? MilliColors.positive : MilliColors.warning)
+            receiptLine(
+                "Processing status",
+                payout.status == .settled ? 1 : 0,
+                textualValue: payout.status == .settled ? "Settled" : "Pending",
+                color: payout.status == .settled ? MilliColors.positive : MilliColors.warning
+            )
         }
         .milliCard(padding: 14)
     }
@@ -336,15 +355,15 @@ private struct FinancialReceiptSheet: View {
                 Text("AUTOPILOT ALLOCATION")
                     .sectionHeaderStyle()
                 Spacer()
-                Text("Seed settings")
+                Text("Current settings")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
 
-            allocationLine("Milli Tax Vault™", taxReserve, rate: taxRate, icon: "lock.shield.fill", color: MilliColors.cyanGlow)
-            allocationLine("Retirement", retirement, rate: retirementRate, icon: "building.columns.fill", color: MilliColors.positive)
-            allocationLine("Investing", investing, rate: investingRate, icon: "chart.line.uptrend.xyaxis", color: Color(hex: "7C8CFF"))
-            allocationLine("Savings", savings, rate: savingsRate, icon: "banknote.fill", color: MilliColors.deepCyan)
+            allocationLine("Milli Tax Vault™", allocation.taxReserve, percent: taxPercent, icon: "lock.shield.fill", color: MilliColors.cyanGlow)
+            allocationLine("Retirement", allocation.retirement, percent: retirementEnabled ? retirementPercent : 0, icon: "building.columns.fill", color: MilliColors.positive)
+            allocationLine("Investing", allocation.investing, percent: investingEnabled ? investingPercent : 0, icon: "chart.line.uptrend.xyaxis", color: Color(hex: "7C8CFF"))
+            allocationLine("Savings", allocation.savings, percent: savingsEnabled ? savingsPercent : 0, icon: "banknote.fill", color: MilliColors.deepCyan)
 
             Divider().overlay(Color.white.opacity(0.07))
 
@@ -353,12 +372,12 @@ private struct FinancialReceiptSheet: View {
                     Text("AVAILABLE TO SPEND")
                         .font(MilliFont.sectionLabel)
                         .foregroundStyle(MilliColors.textSecondary)
-                    Text("After current seed allocations")
+                    Text("After current Autopilot settings")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                 }
                 Spacer()
-                Text(available.formatted(.currency(code: "USD")))
+                Text(allocation.availableToSpend.formatted(.currency(code: "USD")))
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
@@ -367,7 +386,7 @@ private struct FinancialReceiptSheet: View {
         .milliCard(padding: 14)
     }
 
-    private func allocationLine(_ title: String, _ amount: Double, rate: Double, icon: String, color: Color) -> some View {
+    private func allocationLine(_ title: String, _ amount: Double, percent: Double, icon: String, color: Color) -> some View {
         HStack(spacing: 9) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .semibold))
@@ -379,7 +398,7 @@ private struct FinancialReceiptSheet: View {
                 Text(title)
                     .font(MilliFont.bodySmall)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text(rate.formatted(.percent.precision(.fractionLength(0))))
+                Text("\(Int(percent))%")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
@@ -408,7 +427,7 @@ private struct FinancialReceiptSheet: View {
                     .foregroundStyle(MilliColors.warning)
             }
 
-            Text("This receipt screen is wired to the payout model and allocation math. Cryptographic signing/verification must remain disabled until the production receipt-signing service is connected; the UI does not claim a fake verified signature.")
+            Text("This receipt screen is wired to the payout model and shared Autopilot allocation engine. Cryptographic signing/verification remains disabled until the production receipt-signing service is connected; the UI does not claim a fake verified signature.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
