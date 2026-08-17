@@ -5,9 +5,11 @@ import SwiftUI
 
 struct MoreMenuView: View {
     var navigate: ((ActiveScreen) -> Void)?
+    var onLogout: () -> Void = {}
 
     @State private var showSettings = false
     @State private var showHelp = false
+    @State private var confirmLogout = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -41,6 +43,7 @@ struct MoreMenuView: View {
                 menuTile(icon: "crown.fill", title: "Plans", subtitle: "Basic, Pro, and Elite subscription options", color: MilliColors.warning) { navigate?(.plans) }
                 menuTile(icon: "gearshape.fill", title: "Settings", subtitle: "Security, notifications, and local preferences", color: MilliColors.silver) { showSettings = true }
                 menuTile(icon: "questionmark.circle.fill", title: "Help Center", subtitle: "Product guidance and common questions", color: MilliColors.textSecondary) { showHelp = true }
+                menuTile(icon: "rectangle.portrait.and.arrow.right", title: "Log Out", subtitle: "Return to secure sign in without repeating onboarding", color: MilliColors.negative) { confirmLogout = true }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -56,6 +59,16 @@ struct MoreMenuView: View {
             MilliHelpSheet()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .confirmationDialog(
+            "Log out of Milli?",
+            isPresented: $confirmLogout,
+            titleVisibility: .visible
+        ) {
+            Button("Log Out", role: .destructive, action: onLogout)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your saved profile, vehicle, tax setup, selected plan, and trial history stay on this device. You will not repeat onboarding when you sign back in.")
         }
     }
 
