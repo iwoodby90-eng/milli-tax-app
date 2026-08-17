@@ -9,6 +9,7 @@ on:
       - 'MilliTaxVault/**'
       - 'MilliTaxVault.xcodeproj/**'
       - 'scripts/capture-milli-screens.sh'
+      - 'scripts/verify-milli-screen-captures.sh'
       - '.github/workflows/swiftui-visual-qa.yml'
 
 permissions:
@@ -35,6 +36,12 @@ jobs:
         run: |
           set -euo pipefail
           OUTPUT_DIR="$RUNNER_TEMP/milli-screen-qa" bash scripts/capture-milli-screens.sh
+
+      - name: Verify capture routing and image sanity
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-milli-screen-captures.sh "$RUNNER_TEMP/milli-screen-qa"
 
       - name: Upload visual QA screenshots
         uses: actions/upload-artifact@v4
