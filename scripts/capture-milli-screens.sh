@@ -15,6 +15,7 @@ SCHEME="${SCHEME:-MilliTaxVault}"
 BUNDLE_ID="${BUNDLE_ID:-com.milli.taxvault}"
 OUTPUT_DIR="${OUTPUT_DIR:-artifacts/milli-screen-qa}"
 DERIVED_DATA="${DERIVED_DATA:-/tmp/MilliVisualQADerivedData}"
+SCREEN_SETTLE_SECONDS="${SCREEN_SETTLE_SECONDS:-4}"
 
 SCREENS=(
   home
@@ -92,20 +93,45 @@ fi
 
 xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
+show_recent_app_logs() {
+  echo "Recent MilliTaxVault simulator logs:" >&2
+  xcrun simctl spawn "$SIMULATOR_UDID" log show \
+    --style compact \
+    --last 20s \
+    --predicate 'process == "MilliTaxVault"' 2>/dev/null | tail -n 160 >&2 || true
+}
+
 capture_screen() {
   local screen="$1"
   local output="$OUTPUT_DIR/${screen}.png"
+  local launch_output
+  local pid
 
   xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
-  xcrun simctl launch \
+  launch_output="$(xcrun simctl launch \
     "$SIMULATOR_UDID" \
     "$BUNDLE_ID" \
     -milliScreenshotMode \
-    -milliScreen "$screen" >/dev/null
+    -milliScreen "$screen")"
 
-  sleep 1.5
+  echo "$launch_output"
+  pid="$(printf '%s\n' "$launch_output" | awk -F': ' 'NF > 1 {print $NF}' | tail -n 1)"
+
+  # A 1.5-second fixed delay proved too short for a few cold SwiftUI launches on
+  # hosted Xcode 26 simulators and captured the white launch screen. Give every
+  # screen a deterministic render window, then verify the launched process is
+  # still alive before accepting the screenshot.
+  sleep "$SCREEN_SETTLE_SECONDS"
+
+  if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
+    echo "MilliTaxVault exited before '$screen' was ready (pid $pid)." >&2
+    show_recent_app_logs
+    exit 1
+  fi
+
   xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
+  test -s "$output"
   echo "Captured $screen -> $output"
 }
 
