@@ -108,39 +108,66 @@ struct RetirementView: View {
     private var projectionChart: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack {
-                Text("PROJECTED GROWTH")
-                    .sectionHeaderStyle()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("PROJECTED GROWTH")
+                        .sectionHeaderStyle()
+                    Text("Moderate scenario")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
                 Spacer()
                 Text("\(Int(contribution))% • age \(Int(retirementAge))")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
 
-            Chart(projection.points) { point in
-                BarMark(
-                    x: .value("Year", point.year),
-                    yStart: .value("Start", 0),
-                    yEnd: .value("Contributions", point.totalContributions),
-                    width: 8
-                )
-                .foregroundStyle(Color(hex: "3276D9"))
-
-                BarMark(
-                    x: .value("Year", point.year),
-                    yStart: .value("Contributions", point.totalContributions),
-                    yEnd: .value("Portfolio", point.balance),
-                    width: 8
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.positive, Color(hex: "2EA1A7")],
-                        startPoint: .top,
-                        endPoint: .bottom
+            Chart {
+                ForEach(projection.points) { point in
+                    AreaMark(
+                        x: .value("Year", point.year),
+                        y: .value("Total Projection", point.balance)
                     )
-                )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [MilliColors.cyanGlow.opacity(0.23), MilliColors.cyanGlow.opacity(0.015)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+
+                    LineMark(
+                        x: .value("Year", point.year),
+                        y: .value("Total Projection", point.balance),
+                        series: .value("Series", "Total Projection")
+                    )
+                    .foregroundStyle(MilliColors.cyanGlow)
+                    .lineStyle(StrokeStyle(lineWidth: 2.1, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.catmullRom)
+
+                    LineMark(
+                        x: .value("Year", point.year),
+                        y: .value("Investment Growth", point.investmentGrowth),
+                        series: .value("Series", "Investment Growth")
+                    )
+                    .foregroundStyle(Color(hex: "19AFC4"))
+                    .lineStyle(StrokeStyle(lineWidth: 1.55, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.catmullRom)
+
+                    LineMark(
+                        x: .value("Year", point.year),
+                        y: .value("Contributions", point.totalContributions),
+                        series: .value("Series", "Your Contributions")
+                    )
+                    .foregroundStyle(Color(hex: "3276D9"))
+                    .lineStyle(StrokeStyle(lineWidth: 1.35, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.catmullRom)
+                }
             }
+            .chartXScale(domain: chartYearDomain)
+            .chartYScale(domain: 0...chartMaximum)
             .chartYAxis {
-                AxisMarks(position: .leading) { value in
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine().foregroundStyle(Color.white.opacity(0.04))
                     AxisValueLabel {
                         if let amount = value.as(Double.self) {
@@ -152,7 +179,8 @@ struct RetirementView: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine().foregroundStyle(Color.clear)
                     AxisValueLabel {
                         if let year = value.as(Int.self) {
                             Text(String(year))
@@ -164,20 +192,33 @@ struct RetirementView: View {
             }
             .frame(height: 210)
 
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
+                legend(MilliColors.cyanGlow, "Total Projection")
+                legend(Color(hex: "19AFC4"), "Investment Growth")
                 legend(Color(hex: "3276D9"), "Contributions")
-                legend(MilliColors.positive, "Investment Growth")
             }
         }
         .milliCard(padding: 14)
     }
 
+    private var chartYearDomain: ClosedRange<Int> {
+        let first = projection.points.first?.year ?? projection.retirementYear - 10
+        let last = projection.points.last?.year ?? projection.retirementYear
+        return first...max(last, first + 1)
+    }
+
+    private var chartMaximum: Double {
+        max(projection.endingBalance * 1.08, 1)
+    }
+
     private func legend(_ color: Color, _ title: String) -> some View {
-        HStack(spacing: 5) {
-            RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 6)
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 5, height: 5)
             Text(title)
-                .font(MilliFont.caption)
+                .font(.custom("Inter-Regular", size: 8.2, relativeTo: .caption2))
                 .foregroundStyle(MilliColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
@@ -286,6 +327,10 @@ private struct RetirementProjectionPoint: Identifiable {
     let year: Int
     let totalContributions: Double
     let balance: Double
+
+    var investmentGrowth: Double {
+        max(balance - totalContributions, 0)
+    }
 }
 
 private enum RetirementProjectionCalculator {
@@ -324,8 +369,8 @@ private enum RetirementProjectionCalculator {
             }
         }
 
-        // Keep the chart dense but legible on iPhone by sampling at most ~9 annual points.
-        let strideSize = max(annualPoints.count / 8, 1)
+        // Keep the chart dense but legible on iPhone by sampling at most ~10 annual points.
+        let strideSize = max(annualPoints.count / 9, 1)
         var sampled = Array(annualPoints.enumerated().compactMap { index, point in
             index % strideSize == 0 ? point : nil
         })
