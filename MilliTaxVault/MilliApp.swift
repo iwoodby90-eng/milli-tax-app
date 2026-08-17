@@ -16,14 +16,20 @@ struct MilliApp: App {
 
     init() {
         #if DEBUG
-        let arguments = ProcessInfo.processInfo.arguments
+        let processInfo = ProcessInfo.processInfo
+        let environment = processInfo.environment
+        let arguments = processInfo.arguments
 
-        if let stateFlag = arguments.firstIndex(of: "-milliAppState"),
-           arguments.indices.contains(stateFlag + 1),
-           let requestedState = AppState(rawValue: arguments[stateFlag + 1]) {
+        if let requestedState = environment["MILLI_APP_STATE"].flatMap(AppState.init(rawValue:)) {
+            _appState = State(initialValue: requestedState)
+        } else if let stateFlag = arguments.firstIndex(of: "-milliAppState"),
+                  arguments.indices.contains(stateFlag + 1),
+                  let requestedState = AppState(rawValue: arguments[stateFlag + 1]) {
             _appState = State(initialValue: requestedState)
         } else {
-            let screenshotMode = arguments.contains("-milliScreenshotMode")
+            let screenshotMode = environment["MILLI_SCREENSHOT_MODE"] == "1"
+                || environment["MILLI_SCREEN"] != nil
+                || arguments.contains("-milliScreenshotMode")
             _appState = State(initialValue: screenshotMode ? .main : .splash)
         }
         #else
