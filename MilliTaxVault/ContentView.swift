@@ -4,8 +4,14 @@ import SwiftUI
 // Native SwiftUI shell: screen router + persistent sculpted Milli navigation + contextual Milli AI companion.
 
 struct ContentView: View {
-    @State private var selectedTab: MilliTab = .home
-    @State private var activeScreen: ActiveScreen = .home
+    @State private var selectedTab: MilliTab
+    @State private var activeScreen: ActiveScreen
+
+    init() {
+        let initialScreen = Self.requestedDebugScreen() ?? .home
+        _activeScreen = State(initialValue: initialScreen)
+        _selectedTab = State(initialValue: initialScreen.primaryTab)
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -103,23 +109,29 @@ struct ContentView: View {
     private func navigateTo(_ screen: ActiveScreen) {
         withAnimation(.easeInOut(duration: 0.2)) {
             activeScreen = screen
-            switch screen {
-            case .home:
-                selectedTab = .home
-            case .payouts:
-                selectedTab = .payouts
-            case .mileage:
-                selectedTab = .mileage
-            case .more:
-                selectedTab = .more
-            default:
-                break
-            }
+            selectedTab = screen.primaryTab
         }
+    }
+
+    private static func requestedDebugScreen() -> ActiveScreen? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("-milliScreenshotMode"),
+              let flagIndex = arguments.firstIndex(of: "-milliScreen"),
+              arguments.indices.contains(flagIndex + 1)
+        else {
+            return nil
+        }
+
+        let rawValue = arguments[flagIndex + 1]
+        return ActiveScreen(rawValue: rawValue)
+        #else
+        return nil
+        #endif
     }
 }
 
-enum ActiveScreen {
+enum ActiveScreen: String, CaseIterable {
     case home
     case payouts
     case mileage
@@ -140,4 +152,19 @@ enum ActiveScreen {
     case milliAI
     case reports
     case more
+
+    var primaryTab: MilliTab {
+        switch self {
+        case .home:
+            return .home
+        case .payouts:
+            return .payouts
+        case .mileage:
+            return .mileage
+        case .more:
+            return .more
+        default:
+            return .more
+        }
+    }
 }
