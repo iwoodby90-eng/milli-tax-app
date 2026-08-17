@@ -4,15 +4,17 @@ import Combine
 // MARK: - HomeViewModel — Drives the Home dashboard
 
 final class HomeViewModel: ObservableObject {
-    @Published var availableToSpend: String = "$1,365.42"
-    @Published var sparklineData: [CGFloat] = [0.3, 0.5, 0.4, 0.6, 0.55, 0.7, 0.65, 0.8, 0.75, 0.85]
+    // Seeded presentation values mirror the approved Milli visual reference.
+    // Production data should replace these through the authenticated dashboard snapshot.
+    @Published var availableToSpend: String = "$3,428.65"
+    @Published var sparklineData: [CGFloat] = [0.28, 0.42, 0.36, 0.51, 0.47, 0.63, 0.58, 0.72, 0.67, 0.82]
     @Published var latestPayout: PayoutEntry = .placeholder
     @Published var taxVaultBalance: String = "$5,284.17"
     @Published var taxReadyScore: Int = 85
     @Published var quarterlyTaxes: String = "$1,247.00"
-    @Published var quarterlyDueLabel: String = "Next estimated payment"
-    @Published var mileage: String = "2,345 mi"
-    @Published var aiInsight: String = "You're on pace to save $3,421 in taxes this year."
+    @Published var quarterlyDueLabel: String = "Due Sep 16"
+    @Published var mileage: String = "2,847.6 mi"
+    @Published var aiInsight: String = "$621 potential deduction increase if you drive 200 more business miles this month."
     @Published var isLoading: Bool = false
 
     init() {
@@ -36,9 +38,9 @@ struct PayoutEntry: Identifiable {
     let amount: String
 
     static let placeholder = PayoutEntry(
-        platformName: "Spark Driver",
-        platformAssetName: "spark-driver-icon",
-        dateTime: "Today, 9:41 AM",
-        amount: "$312.64"
+        platformName: "Amazon Flex",
+        platformAssetName: "amazon-flex-icon",
+        dateTime: "Today, 2:34 PM",
+        amount: "$187.42"
     )
 }
