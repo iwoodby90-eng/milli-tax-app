@@ -1,110 +1,219 @@
 import SwiftUI
 
 // MARK: - TreeOfLifeView
-// Signature life-planning visualization. Native SwiftUI Canvas — not a static image.
-// Nodes are real planning models and can be added through AddLifeEventSheet.
+// Milli's signature life-planning visualization. The tree contains only goals
+// created by the signed-in user; no seeded dollar amounts or fake milestones.
 
 struct TreeOfLifeView: View {
     var onBack: () -> Void = {}
 
     @State private var reveal: CGFloat = 0
+    @State private var pulse = false
     @State private var showAddEvent = false
-    @State private var events: [LifePlanningEvent] = LifePlanningEvent.seededTree
+    @State private var events: [LifePlanningEvent] = []
 
     private let nodePositions: [(x: CGFloat, y: CGFloat)] = [
-        (0.52, 0.18),
-        (0.20, 0.32),
-        (0.80, 0.36),
-        (0.25, 0.60),
-        (0.76, 0.62),
-        (0.64, 0.25)
+        (0.50, 0.16),
+        (0.22, 0.30),
+        (0.78, 0.31),
+        (0.15, 0.50),
+        (0.85, 0.51),
+        (0.30, 0.66),
+        (0.70, 0.66),
+        (0.50, 0.47)
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-
-            GeometryReader { geo in
-                ZStack {
-                    RadialGradient(
-                        colors: [MilliColors.cyanGlow.opacity(0.09), Color.clear],
-                        center: UnitPoint(x: 0.5, y: 0.55),
-                        startRadius: 10,
-                        endRadius: geo.size.width * 0.54
-                    )
-
-                    treeCanvas(size: geo.size)
-
-                    ForEach(Array(events.prefix(nodePositions.count).enumerated()), id: \.element.id) { index, event in
-                        let position = nodePositions[index]
-                        eventNode(event, x: position.x, y: position.y, in: geo.size)
-                    }
-                }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 10) {
+                header
+                planningSummary
+                treeStage
+                guidanceCard
             }
-            .frame(minHeight: 520)
-            .padding(.horizontal, 4)
+            .padding(.horizontal, MilliSpacing.screenHorizontal)
+            .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
         .sheet(isPresented: $showAddEvent) {
             AddLifeEventSheet { event in
-                withAnimation(.easeOut(duration: 0.35)) {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
                     if events.count < nodePositions.count {
                         events.append(event)
-                    } else {
-                        // Preserve the visual density of the approved tree while retaining
-                        // the newest plan in the currently visible set.
-                        events[events.count - 1] = event
                     }
                 }
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 1.25)) {
+            withAnimation(.easeOut(duration: 1.1)) {
                 reveal = 1
+            }
+            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
+                pulse = true
             }
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(MilliColors.textSecondary)
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(Color.white.opacity(0.035)))
-                }
-                .buttonStyle(.plain)
+        HStack(alignment: .center) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.white.opacity(0.035)))
+            }
+            .buttonStyle(.plain)
 
-                Spacer()
-
-                Button {
-                    showAddEvent = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(MilliColors.blackGlass)
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(MilliColors.cyanGlow))
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 6)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Add life event")
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Tree of Life")
+                    .font(MilliFont.screenTitle)
+                    .foregroundStyle(MilliColors.textPrimary)
+                Text("YOUR LIFE · YOUR PLAN")
+                    .font(MilliFont.caption)
+                    .tracking(1.35)
+                    .foregroundStyle(MilliColors.cyanGlow)
             }
 
-            Text("Tree of Life")
-                .font(MilliFont.displaySmall)
+            Spacer()
+
+            Button {
+                showAddEvent = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(MilliColors.blackGlass)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        Circle()
+                            .fill(MilliColors.cyanGlow)
+                            .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 8)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add life event")
+        }
+    }
+
+    private var planningSummary: some View {
+        HStack(spacing: 8) {
+            summaryMetric(
+                label: "PLANNED EVENTS",
+                value: events.isEmpty ? "—" : String(events.count),
+                icon: "point.3.connected.trianglepath.dotted"
+            )
+
+            summaryMetric(
+                label: "NEXT EVENT",
+                value: nextEventLabel,
+                icon: "calendar"
+            )
+        }
+    }
+
+    private func summaryMetric(label: String, value: String, icon: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(MilliFont.sectionLabel)
+                    .foregroundStyle(MilliColors.textTertiary)
+                Text(value)
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity)
+        .milliCard(padding: 10)
+    }
+
+    private var treeStage: some View {
+        GeometryReader { geo in
+            ZStack {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "061016"), Color(hex: "030709")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.06), lineWidth: 0.7)
+                    }
+
+                RadialGradient(
+                    colors: [MilliColors.cyanGlow.opacity(pulse ? 0.12 : 0.07), Color.clear],
+                    center: UnitPoint(x: 0.5, y: 0.54),
+                    startRadius: 8,
+                    endRadius: geo.size.width * 0.58
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                treeCanvas(size: geo.size)
+
+                ForEach(Array(events.prefix(nodePositions.count).enumerated()), id: \.element.id) { index, event in
+                    let position = nodePositions[index]
+                    eventNode(event, x: position.x, y: position.y, in: geo.size)
+                }
+
+                if events.isEmpty {
+                    emptyState
+                }
+            }
+        }
+        .frame(height: 520)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(Color.black.opacity(0.78))
+                    .frame(width: 54, height: 54)
+                    .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.42), lineWidth: 1))
+                Image(systemName: "sparkles")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Your tree starts with your first goal")
+                .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
 
-            Text("Life events and goals planning")
-                .font(MilliFont.bodyMedium)
+            Text("Add a real life event and Milli will place it on your financial timeline.")
+                .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 250)
+
+            Button("Add Life Event") {
+                showAddEvent = true
+            }
+            .font(MilliFont.labelLarge)
+            .foregroundStyle(MilliColors.cyanGlow)
+            .padding(.top, 2)
         }
-        .padding(.horizontal, MilliSpacing.screenHorizontal)
-        .padding(.top, 8)
-        .padding(.bottom, 2)
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.black.opacity(0.62))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.10), lineWidth: 0.7)
+                }
+        )
     }
 
     @ViewBuilder
@@ -112,47 +221,53 @@ struct TreeOfLifeView: View {
         Canvas { context, canvasSize in
             let tree = TreeGeometry(size: canvasSize)
 
-            for width in stride(from: 18.0, through: 5.0, by: -4.0) {
-                context.stroke(
-                    tree.fullTree,
-                    with: .color(MilliColors.cyanGlow.opacity(width == 18 ? 0.025 : 0.045)),
-                    style: StrokeStyle(lineWidth: width * reveal, lineCap: .round, lineJoin: .round)
-                )
-            }
+            context.stroke(
+                tree.fullTree,
+                with: .color(MilliColors.cyanGlow.opacity(0.055 * reveal)),
+                style: StrokeStyle(lineWidth: 14, lineCap: .round, lineJoin: .round)
+            )
 
             context.stroke(
                 tree.roots,
                 with: .linearGradient(
-                    Gradient(colors: [Color(hex: "A77B52").opacity(0.55), MilliColors.cyanGlow.opacity(0.42)]),
-                    startPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.86),
-                    endPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.70)
+                    Gradient(colors: [Color(hex: "7D5E48"), Color(hex: "D0B69D"), MilliColors.chromeMid]),
+                    startPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.91),
+                    endPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.73)
                 ),
-                style: StrokeStyle(lineWidth: 3.0 * reveal, lineCap: .round, lineJoin: .round)
+                style: StrokeStyle(lineWidth: 4.4 * reveal, lineCap: .round, lineJoin: .round)
             )
 
             context.stroke(
                 tree.fullTree,
                 with: .linearGradient(
-                    Gradient(colors: [MilliColors.cyanGlow, Color(hex: "57F3FF"), MilliColors.deepCyan]),
-                    startPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.82),
-                    endPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.14)
+                    Gradient(colors: [MilliColors.chromeDeep, MilliColors.chromeWhite, MilliColors.cyanGlow, MilliColors.chromeMid]),
+                    startPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.84),
+                    endPoint: CGPoint(x: canvasSize.width * 0.5, y: canvasSize.height * 0.12)
                 ),
-                style: StrokeStyle(lineWidth: 3.1 * reveal, lineCap: .round, lineJoin: .round)
+                style: StrokeStyle(lineWidth: 4.2 * reveal, lineCap: .round, lineJoin: .round)
+            )
+
+            context.stroke(
+                tree.highlight,
+                with: .color(Color.white.opacity(0.58 * reveal)),
+                style: StrokeStyle(lineWidth: 0.9, lineCap: .round, lineJoin: .round)
             )
 
             context.stroke(
                 tree.ground,
                 with: .linearGradient(
-                    Gradient(colors: [Color.clear, MilliColors.cyanGlow, Color.clear]),
-                    startPoint: CGPoint(x: 0, y: canvasSize.height * 0.86),
-                    endPoint: CGPoint(x: canvasSize.width, y: canvasSize.height * 0.86)
+                    Gradient(colors: [Color.clear, MilliColors.cyanGlow.opacity(0.72), Color.clear]),
+                    startPoint: CGPoint(x: 0, y: canvasSize.height * 0.90),
+                    endPoint: CGPoint(x: canvasSize.width, y: canvasSize.height * 0.90)
                 ),
-                style: StrokeStyle(lineWidth: 1.7 * reveal, lineCap: .round)
+                style: StrokeStyle(lineWidth: 1.4 * reveal, lineCap: .round)
             )
 
             for point in tree.growthNodes {
-                let rect = CGRect(x: point.x - 5, y: point.y - 5, width: 10, height: 10)
-                context.fill(Path(ellipseIn: rect), with: .color(MilliColors.cyanGlow.opacity(reveal)))
+                let halo = CGRect(x: point.x - 7, y: point.y - 7, width: 14, height: 14)
+                let core = CGRect(x: point.x - 2.5, y: point.y - 2.5, width: 5, height: 5)
+                context.fill(Path(ellipseIn: halo), with: .color(MilliColors.cyanGlow.opacity(0.08 * reveal)))
+                context.fill(Path(ellipseIn: core), with: .color(MilliColors.cyanGlow.opacity(0.90 * reveal)))
             }
         }
         .frame(width: size.width, height: size.height)
@@ -167,13 +282,19 @@ struct TreeOfLifeView: View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
-                    .fill(Color(hex: "0A171D"))
-                    .frame(width: 42, height: 42)
+                    .fill(Color.black.opacity(0.90))
+                    .frame(width: 46, height: 46)
                     .overlay {
                         Circle()
-                            .stroke(MilliColors.cyanGlow.opacity(0.68), lineWidth: 1.4)
+                            .stroke(
+                                AngularGradient(
+                                    colors: [MilliColors.chromeDeep, MilliColors.chromeWhite, MilliColors.cyanGlow, MilliColors.chromeMid],
+                                    center: .center
+                                ),
+                                lineWidth: 2.0
+                            )
                     }
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.36), radius: 8)
+                    .shadow(color: MilliColors.cyanGlow.opacity(pulse ? 0.42 : 0.22), radius: pulse ? 9 : 5)
 
                 Image(systemName: event.type.icon)
                     .font(.system(size: 15, weight: .semibold))
@@ -184,17 +305,53 @@ struct TreeOfLifeView: View {
                 .font(MilliFont.labelLarge)
                 .foregroundStyle(MilliColors.textPrimary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
 
             Text(compactCurrency(event.estimatedCost))
                 .font(MilliFont.bodySmall)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textSecondary)
         }
+        .frame(width: 105)
         .position(x: size.width * x, y: size.height * y)
         .opacity(reveal)
-        .scaleEffect(0.92 + 0.08 * reveal)
+        .scaleEffect(0.90 + 0.10 * reveal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(event.type.rawValue), target \(compactCurrency(event.estimatedCost)), \(event.targetDate.formatted(date: .abbreviated, time: .omitted))")
+    }
+
+    private var nextEventLabel: String {
+        guard let next = events
+            .filter({ $0.targetDate >= Date() })
+            .sorted(by: { $0.targetDate < $1.targetDate })
+            .first
+        else {
+            return "—"
+        }
+        return next.targetDate.formatted(.dateTime.month(.abbreviated).year())
+    }
+
+    private var guidanceCard: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Your plan grows with you")
+                    .font(MilliFont.headlineSmall)
+                    .foregroundStyle(MilliColors.textPrimary)
+                Text(events.isEmpty
+                     ? "Add only the milestones that matter to you. Milli will never populate your financial future with invented assumptions."
+                     : "Each event is based on information you entered. Add, revise, or remove milestones as your plans change.")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .milliCard(padding: 12)
     }
 
     private func compactCurrency(_ value: Double) -> String {
@@ -204,143 +361,85 @@ struct TreeOfLifeView: View {
     }
 }
 
-private extension LifePlanningEvent {
-    static var seededTree: [LifePlanningEvent] {
-        let calendar = Calendar.current
-        let now = Date()
-        func date(years: Int) -> Date {
-            calendar.date(byAdding: .year, value: years, to: now) ?? now
-        }
-
-        return [
-            LifePlanningEvent(type: .homePurchase, targetDate: date(years: 4), estimatedCost: 500_000),
-            LifePlanningEvent(type: .vehicle, targetDate: date(years: 2), estimatedCost: 40_000),
-            LifePlanningEvent(type: .marriage, targetDate: date(years: 3), estimatedCost: 30_000),
-            LifePlanningEvent(type: .child, targetDate: date(years: 5), estimatedCost: 25_000),
-            LifePlanningEvent(type: .retirement, targetDate: date(years: 21), estimatedCost: 1_500_000)
-        ]
-    }
-}
-
 private struct TreeGeometry {
     let size: CGSize
 
     private var w: CGFloat { size.width }
     private var h: CGFloat { size.height }
-    private var crown: CGPoint { CGPoint(x: w * 0.5, y: h * 0.30) }
 
     var fullTree: Path {
         var p = Path()
+        p.move(to: CGPoint(x: w * 0.46, y: h * 0.84))
+        p.addCurve(to: CGPoint(x: w * 0.50, y: h * 0.28), control1: CGPoint(x: w * 0.45, y: h * 0.68), control2: CGPoint(x: w * 0.47, y: h * 0.43))
+        p.move(to: CGPoint(x: w * 0.54, y: h * 0.84))
+        p.addCurve(to: CGPoint(x: w * 0.50, y: h * 0.28), control1: CGPoint(x: w * 0.55, y: h * 0.68), control2: CGPoint(x: w * 0.53, y: h * 0.43))
 
-        p.move(to: CGPoint(x: w * 0.46, y: h * 0.82))
-        p.addCurve(
-            to: crown,
-            control1: CGPoint(x: w * 0.48, y: h * 0.70),
-            control2: CGPoint(x: w * 0.48, y: h * 0.47)
-        )
+        branch(&p, from: (0.49, 0.55), to: (0.14, 0.49), c1: (0.39, 0.49), c2: (0.24, 0.47))
+        branch(&p, from: (0.49, 0.45), to: (0.21, 0.30), c1: (0.40, 0.39), c2: (0.31, 0.31))
+        branch(&p, from: (0.49, 0.36), to: (0.35, 0.17), c1: (0.43, 0.29), c2: (0.38, 0.21))
+        branch(&p, from: (0.31, 0.36), to: (0.16, 0.22), c1: (0.25, 0.31), c2: (0.20, 0.25))
+        branch(&p, from: (0.34, 0.50), to: (0.25, 0.65), c1: (0.29, 0.55), c2: (0.27, 0.61))
 
-        p.move(to: CGPoint(x: w * 0.54, y: h * 0.82))
-        p.addCurve(
-            to: crown,
-            control1: CGPoint(x: w * 0.52, y: h * 0.70),
-            control2: CGPoint(x: w * 0.52, y: h * 0.47)
-        )
+        branch(&p, from: (0.51, 0.55), to: (0.86, 0.50), c1: (0.61, 0.49), c2: (0.76, 0.48))
+        branch(&p, from: (0.51, 0.45), to: (0.79, 0.31), c1: (0.60, 0.39), c2: (0.70, 0.31))
+        branch(&p, from: (0.51, 0.36), to: (0.65, 0.17), c1: (0.57, 0.29), c2: (0.62, 0.21))
+        branch(&p, from: (0.69, 0.36), to: (0.84, 0.22), c1: (0.75, 0.31), c2: (0.80, 0.25))
+        branch(&p, from: (0.66, 0.50), to: (0.75, 0.65), c1: (0.71, 0.55), c2: (0.73, 0.61))
+        branch(&p, from: (0.50, 0.31), to: (0.50, 0.12), c1: (0.49, 0.24), c2: (0.50, 0.17))
+        return p
+    }
 
-        p.move(to: CGPoint(x: w * 0.49, y: h * 0.52))
-        p.addCurve(
-            to: CGPoint(x: w * 0.18, y: h * 0.32),
-            control1: CGPoint(x: w * 0.42, y: h * 0.44),
-            control2: CGPoint(x: w * 0.30, y: h * 0.34)
-        )
-
-        p.move(to: CGPoint(x: w * 0.49, y: h * 0.43))
-        p.addCurve(
-            to: CGPoint(x: w * 0.36, y: h * 0.20),
-            control1: CGPoint(x: w * 0.43, y: h * 0.35),
-            control2: CGPoint(x: w * 0.39, y: h * 0.27)
-        )
-
-        p.move(to: CGPoint(x: w * 0.47, y: h * 0.61))
-        p.addCurve(
-            to: CGPoint(x: w * 0.24, y: h * 0.59),
-            control1: CGPoint(x: w * 0.38, y: h * 0.55),
-            control2: CGPoint(x: w * 0.31, y: h * 0.57)
-        )
-
-        p.move(to: CGPoint(x: w * 0.50, y: h * 0.36))
-        p.addCurve(
-            to: CGPoint(x: w * 0.52, y: h * 0.18),
-            control1: CGPoint(x: w * 0.49, y: h * 0.29),
-            control2: CGPoint(x: w * 0.51, y: h * 0.23)
-        )
-
-        p.move(to: CGPoint(x: w * 0.51, y: h * 0.50))
-        p.addCurve(
-            to: CGPoint(x: w * 0.81, y: h * 0.35),
-            control1: CGPoint(x: w * 0.59, y: h * 0.43),
-            control2: CGPoint(x: w * 0.70, y: h * 0.37)
-        )
-
-        p.move(to: CGPoint(x: w * 0.52, y: h * 0.40))
-        p.addCurve(
-            to: CGPoint(x: w * 0.67, y: h * 0.22),
-            control1: CGPoint(x: w * 0.58, y: h * 0.34),
-            control2: CGPoint(x: w * 0.63, y: h * 0.27)
-        )
-
-        p.move(to: CGPoint(x: w * 0.53, y: h * 0.62))
-        p.addCurve(
-            to: CGPoint(x: w * 0.76, y: h * 0.61),
-            control1: CGPoint(x: w * 0.61, y: h * 0.56),
-            control2: CGPoint(x: w * 0.69, y: h * 0.58)
-        )
-
-        p.move(to: CGPoint(x: w * 0.34, y: h * 0.40))
-        p.addCurve(
-            to: CGPoint(x: w * 0.23, y: h * 0.25),
-            control1: CGPoint(x: w * 0.29, y: h * 0.34),
-            control2: CGPoint(x: w * 0.26, y: h * 0.28)
-        )
-        p.move(to: CGPoint(x: w * 0.65, y: h * 0.40))
-        p.addCurve(
-            to: CGPoint(x: w * 0.75, y: h * 0.25),
-            control1: CGPoint(x: w * 0.70, y: h * 0.34),
-            control2: CGPoint(x: w * 0.73, y: h * 0.29)
-        )
-
+    var highlight: Path {
+        var p = Path()
+        p.move(to: CGPoint(x: w * 0.49, y: h * 0.81))
+        p.addCurve(to: CGPoint(x: w * 0.50, y: h * 0.30), control1: CGPoint(x: w * 0.48, y: h * 0.63), control2: CGPoint(x: w * 0.49, y: h * 0.42))
+        branch(&p, from: (0.50, 0.43), to: (0.22, 0.30), c1: (0.41, 0.38), c2: (0.31, 0.32))
+        branch(&p, from: (0.50, 0.43), to: (0.78, 0.31), c1: (0.59, 0.38), c2: (0.69, 0.32))
         return p
     }
 
     var roots: Path {
         var p = Path()
-        p.move(to: CGPoint(x: w * 0.48, y: h * 0.80))
-        p.addCurve(to: CGPoint(x: w * 0.30, y: h * 0.90), control1: CGPoint(x: w * 0.44, y: h * 0.85), control2: CGPoint(x: w * 0.36, y: h * 0.88))
-        p.move(to: CGPoint(x: w * 0.50, y: h * 0.81))
-        p.addCurve(to: CGPoint(x: w * 0.50, y: h * 0.91), control1: CGPoint(x: w * 0.48, y: h * 0.86), control2: CGPoint(x: w * 0.51, y: h * 0.88))
-        p.move(to: CGPoint(x: w * 0.52, y: h * 0.80))
-        p.addCurve(to: CGPoint(x: w * 0.70, y: h * 0.90), control1: CGPoint(x: w * 0.56, y: h * 0.85), control2: CGPoint(x: w * 0.64, y: h * 0.88))
+        branch(&p, from: (0.48, 0.82), to: (0.24, 0.91), c1: (0.42, 0.87), c2: (0.32, 0.90))
+        branch(&p, from: (0.50, 0.83), to: (0.50, 0.93), c1: (0.48, 0.88), c2: (0.51, 0.91))
+        branch(&p, from: (0.52, 0.82), to: (0.76, 0.91), c1: (0.58, 0.87), c2: (0.68, 0.90))
         return p
     }
 
     var ground: Path {
         var p = Path()
-        p.move(to: CGPoint(x: w * 0.20, y: h * 0.88))
-        p.addCurve(
-            to: CGPoint(x: w * 0.80, y: h * 0.88),
-            control1: CGPoint(x: w * 0.36, y: h * 0.84),
-            control2: CGPoint(x: w * 0.64, y: h * 0.84)
-        )
+        p.move(to: CGPoint(x: w * 0.12, y: h * 0.92))
+        p.addCurve(to: CGPoint(x: w * 0.88, y: h * 0.92), control1: CGPoint(x: w * 0.34, y: h * 0.88), control2: CGPoint(x: w * 0.66, y: h * 0.88))
         return p
     }
 
     var growthNodes: [CGPoint] {
         [
-            CGPoint(x: w * 0.31, y: h * 0.38),
-            CGPoint(x: w * 0.40, y: h * 0.29),
-            CGPoint(x: w * 0.44, y: h * 0.49),
-            CGPoint(x: w * 0.57, y: h * 0.31),
-            CGPoint(x: w * 0.63, y: h * 0.43),
-            CGPoint(x: w * 0.69, y: h * 0.53)
+            CGPoint(x: w * 0.50, y: h * 0.28),
+            CGPoint(x: w * 0.31, y: h * 0.36),
+            CGPoint(x: w * 0.69, y: h * 0.36),
+            CGPoint(x: w * 0.34, y: h * 0.50),
+            CGPoint(x: w * 0.66, y: h * 0.50)
         ]
     }
+
+    private func branch(
+        _ path: inout Path,
+        from: (CGFloat, CGFloat),
+        to: (CGFloat, CGFloat),
+        c1: (CGFloat, CGFloat),
+        c2: (CGFloat, CGFloat)
+    ) {
+        path.move(to: CGPoint(x: w * from.0, y: h * from.1))
+        path.addCurve(
+            to: CGPoint(x: w * to.0, y: h * to.1),
+            control1: CGPoint(x: w * c1.0, y: h * c1.1),
+            control2: CGPoint(x: w * c2.0, y: h * c2.1)
+        )
+    }
+}
+
+#Preview {
+    TreeOfLifeView()
+        .preferredColorScheme(.dark)
 }
