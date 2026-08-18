@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - MilliAIView
-// Dedicated assistant surface using the full approved Milli character artwork.
+// Dedicated assistant surface using Milli's transparent vector companion.
 // Until a production conversational-AI endpoint is connected, the screen uses a
 // deterministic on-device routing fallback rather than pretending a remote model answered.
 
@@ -85,7 +85,7 @@ struct MilliAIView: View {
 
     private var intro: some View {
         HStack(alignment: .center, spacing: 8) {
-            aiPortrait(size: 76)
+            aiPortrait(size: 78, animated: true)
                 .offset(y: companionFloat)
 
             VStack(alignment: .leading, spacing: 5) {
@@ -135,7 +135,7 @@ struct MilliAIView: View {
 
     private func aiCard(_ message: MilliAIMessage) -> some View {
         HStack(alignment: .top, spacing: 7) {
-            aiPortrait(size: 38)
+            aiPortrait(size: 42, animated: false)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(message.text)
@@ -171,13 +171,8 @@ struct MilliAIView: View {
         }
     }
 
-    private func aiPortrait(size: CGFloat) -> some View {
-        Image("milli-ai-robot-large")
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 6, x: 0, y: 2)
-            .accessibilityLabel("Milli AI")
+    private func aiPortrait(size: CGFloat, animated: Bool) -> some View {
+        MilliAICharacterView(size: size, animated: animated)
     }
 
     private var composer: some View {
