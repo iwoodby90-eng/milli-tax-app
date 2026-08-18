@@ -1,13 +1,15 @@
 import SwiftUI
+import Foundation
 
-// MARK: - OnboardingFlowView — Native five-step setup
-// Welcome → Vehicle → Tax Profile → Plan → Milli Autopilot™
-// Persists the local setup contract used by the current native prototype.
+// MARK: - OnboardingFlowView — Native six-step setup
+// Welcome → Vehicle → Tax Profile → Bank + Gig Sources → Plan → Milli Autopilot™
+// The bank-link step is required for automatic Tax Vault operation.
 
 struct OnboardingFlowView: View {
     @State private var currentStep = 0
     @State private var vehicle = VehicleProfile()
     @State private var taxProfile = TaxProfile()
+    @State private var bankProfile = BankAutopilotProfile()
     @State private var selectedPlan: MilliPlan = .pro
 
     @State private var retirementEnabled = true
@@ -19,8 +21,19 @@ struct OnboardingFlowView: View {
 
     var onComplete: () -> Void
 
-    private let stepCount = 5
-    private let taxPercent = 23.0
+    private let stepCount = 6
+
+    private var taxPercent: Double {
+        // Temporary native planning estimate until the production tax service is connected.
+        // The reserve rate is no longer hard-coded into the payout-detection contract.
+        let income = taxProfile.annualIncomeAmount ?? 55_000
+        switch income {
+        case ..<30_000: return 20
+        case ..<60_000: return 23
+        case ..<100_000: return 27
+        default: return 30
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -52,12 +65,18 @@ struct OnboardingFlowView: View {
                             onBack: { move(to: 1) }
                         )
                     case 3:
-                        PlanSelectionView(
-                            selectedPlan: $selectedPlan,
-                            onComplete: { move(to: 4) },
+                        BankConnectionSetupView(
+                            profile: $bankProfile,
+                            onNext: { move(to: 4) },
                             onBack: { move(to: 2) }
                         )
                     case 4:
+                        PlanSelectionView(
+                            selectedPlan: $selectedPlan,
+                            onComplete: { move(to: 5) },
+                            onBack: { move(to: 3) }
+                        )
+                    case 5:
                         autopilotStep
                     default:
                         welcomeStep
@@ -158,7 +177,7 @@ struct OnboardingFlowView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(-1)
 
-                Text("We'll configure your vehicle, tax profile, product tier, and Autopilot allocation preferences before you enter the financial cockpit.")
+                Text("We'll configure your vehicle, tax profile, connected payout account, gig sources, product tier, and Autopilot preferences before you enter Milli.")
                     .font(MilliFont.bodyMedium)
                     .foregroundStyle(MilliColors.textSecondary)
                     .multilineTextAlignment(.center)
@@ -192,7 +211,7 @@ struct OnboardingFlowView: View {
                         .foregroundStyle(MilliColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Tax protection stays on. Optional allocations can be changed later from the Autopilot control center.")
+                    Text("Once the connected account reports an eligible gig payout, Milli identifies the source, applies your tax profile, and prepares the matching Tax Vault reserve automatically.")
                         .font(MilliFont.bodySmall)
                         .foregroundStyle(MilliColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -230,7 +249,7 @@ struct OnboardingFlowView: View {
                 onboardingAllocationPreview
 
                 HStack(spacing: 12) {
-                    OnboardingBackButton { move(to: 3) }
+                    OnboardingBackButton { move(to: 4) }
                     OnboardingPrimaryButton(title: "Enter Milli") {
                         saveAndComplete()
                     }
@@ -255,7 +274,7 @@ struct OnboardingFlowView: View {
                 Text("Tax Protection")
                     .font(MilliFont.headlineSmall)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("Always on • current planning rate \(Int(taxPercent))%")
+                Text("On • estimated reserve \(Int(taxPercent))% from your current tax profile")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textSecondary)
             }
@@ -385,11 +404,16 @@ struct OnboardingFlowView: View {
     }
 
     private func saveAndComplete() {
+        guard bankProfile.isReadyForAutopilot else { return }
+
         if let vehicleData = try? JSONEncoder().encode(vehicle) {
             UserDefaults.standard.set(vehicleData, forKey: "onboarding_vehicle")
         }
         if let taxData = try? JSONEncoder().encode(taxProfile) {
             UserDefaults.standard.set(taxData, forKey: "onboarding_taxProfile")
+        }
+        if let bankData = try? JSONEncoder().encode(bankProfile) {
+            UserDefaults.standard.set(bankData, forKey: "onboarding_bankAutopilotProfile")
         }
         UserDefaults.standard.set(selectedPlan.rawValue, forKey: "onboarding_plan")
 
@@ -401,6 +425,227 @@ struct OnboardingFlowView: View {
         UserDefaults.standard.set(savingsPercent, forKey: "milliAutopilotSavingsPercent")
 
         onComplete()
+    }
+}
+
+// MARK: - Bank-linked Autopilot domain
+
+struct BankAutopilotProfile: Codable, Equatable {
+    var connectionStatus: BankConnectionStatus = .notConnected
+    var institutionName: String = ""
+    var accountName: String = ""
+    var accountLastFour: String = ""
+    var selectedPlatforms: Set<GigPlatform> = []
+    var autoDetectPlatforms: Bool = true
+    var transactionMonitoringConsent: Bool = false
+    var taxVaultTransferConsent: Bool = false
+
+    var isReadyForAutopilot: Bool {
+        connectionStatus == .connected
+            && transactionMonitoringConsent
+            && taxVaultTransferConsent
+    }
+}
+
+enum BankConnectionStatus: String, Codable {
+    case notConnected
+    case connecting
+    case connected
+    case needsAttention
+}
+
+enum GigPlatform: String, Codable, CaseIterable, Hashable, Identifiable {
+    case amazonFlex = "Amazon Flex"
+    case sparkDriver = "Spark Driver"
+    case uber = "Uber"
+    case lyft = "Lyft"
+    case doorDash = "DoorDash"
+    case grubhub = "Grubhub"
+    case instacart = "Instacart"
+    case roadie = "Roadie"
+    case shipt = "Shipt"
+    case other = "Other"
+
+    var id: String { rawValue }
+
+    var descriptorHints: [String] {
+        switch self {
+        case .amazonFlex: return ["AMAZON FLEX", "AMZN FLEX", "AMAZON.COM SERVICES"]
+        case .sparkDriver: return ["SPARK DRIVER", "WALMART SPARK", "DDI SPARK"]
+        case .uber: return ["UBER", "UBER TECHNOLOGIES", "UBER PAY"]
+        case .lyft: return ["LYFT", "LYFT DRIVER"]
+        case .doorDash: return ["DOORDASH", "DASHER", "DOORDASH PAY"]
+        case .grubhub: return ["GRUBHUB", "GRUBHUB DRIVER"]
+        case .instacart: return ["INSTACART", "MAPLEBEAR", "INSTACART SHOPPER"]
+        case .roadie: return ["ROADIE", "ROADIE DRIVER"]
+        case .shipt: return ["SHIPT", "SHIPT SHOPPER"]
+        case .other: return []
+        }
+    }
+}
+
+struct BankTransactionObservation: Equatable {
+    let id: String
+    let postedAt: Date
+    let amount: Decimal
+    let description: String
+    let merchantName: String?
+    let isPending: Bool
+}
+
+struct DetectedGigPayout: Equatable {
+    let transactionID: String
+    let platform: GigPlatform
+    let grossAmount: Decimal
+    let postedAt: Date
+    let confidence: Double
+}
+
+enum GigPayoutDetectionEngine {
+    static func detect(
+        transaction: BankTransactionObservation,
+        allowedPlatforms: Set<GigPlatform> = Set(GigPlatform.allCases)
+    ) -> DetectedGigPayout? {
+        guard !transaction.isPending, transaction.amount > 0 else { return nil }
+
+        let searchable = [transaction.description, transaction.merchantName ?? ""]
+            .joined(separator: " ")
+            .uppercased()
+
+        for platform in allowedPlatforms where platform != .other {
+            if platform.descriptorHints.contains(where: { searchable.contains($0) }) {
+                return DetectedGigPayout(
+                    transactionID: transaction.id,
+                    platform: platform,
+                    grossAmount: transaction.amount,
+                    postedAt: transaction.postedAt,
+                    confidence: 0.92
+                )
+            }
+        }
+        return nil
+    }
+}
+
+// MARK: - Required bank onboarding step
+
+struct BankConnectionSetupView: View {
+    @Binding var profile: BankAutopilotProfile
+    var onNext: () -> Void
+    var onBack: () -> Void
+
+    @State private var showConnectionUnavailable = false
+
+    private let preferredPlatforms: [GigPlatform] = [
+        .amazonFlex, .sparkDriver, .uber, .lyft, .doorDash,
+        .grubhub, .instacart, .roadie, .shipt
+    ]
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("BANK + PAYOUT DETECTION")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(1.0)
+                        .foregroundStyle(MilliColors.cyanGlow)
+                    Text("Connect where your gig payouts land.")
+                        .font(.custom("Sora-Bold", size: 28, relativeTo: .largeTitle))
+                        .foregroundStyle(MilliColors.textPrimary)
+                    Text("Milli monitors the connected account for eligible gig-company payouts so the matching Tax Vault reserve can be calculated automatically.")
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("PAYOUT ACCOUNT").sectionHeaderStyle()
+                        Spacer()
+                        Text(profile.connectionStatus == .connected ? "CONNECTED" : "REQUIRED")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(profile.connectionStatus == .connected ? MilliColors.positive : MilliColors.warning)
+                    }
+
+                    Button {
+                        showConnectionUnavailable = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "building.columns.fill")
+                            Text(profile.connectionStatus == .connected ? "Bank Connected" : "Connect Bank Securely")
+                            Spacer()
+                            Image(systemName: profile.connectionStatus == .connected ? "checkmark.seal.fill" : "chevron.right")
+                        }
+                        .font(MilliFont.headlineSmall)
+                        .foregroundStyle(MilliColors.blackGlass)
+                        .padding(.horizontal, 13)
+                        .frame(height: 48)
+                        .background(RoundedRectangle(cornerRadius: 11).fill(MilliColors.cyanGlow))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .milliCard(padding: 13)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("GIG PAYOUT SOURCES").sectionHeaderStyle()
+                        Spacer()
+                        Toggle("", isOn: $profile.autoDetectPlatforms).labelsHidden().tint(MilliColors.cyanGlow)
+                    }
+                    Text("Confirm the companies you drive or deliver for. Auto-detect uses this as a high-confidence filter when matching bank deposits.")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textSecondary)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(preferredPlatforms) { platform in
+                            let selected = profile.selectedPlatforms.contains(platform)
+                            Button {
+                                if selected { profile.selectedPlatforms.remove(platform) }
+                                else { profile.selectedPlatforms.insert(platform) }
+                            } label: {
+                                HStack(spacing: 7) {
+                                    Circle().fill(selected ? MilliColors.cyanGlow : Color.white.opacity(0.08)).frame(width: 8, height: 8)
+                                    Text(platform.rawValue)
+                                        .font(MilliFont.bodySmall)
+                                        .foregroundStyle(selected ? MilliColors.textPrimary : MilliColors.textSecondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 10)
+                                .frame(height: 38)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 9)
+                                        .fill(selected ? MilliColors.cyanGlow.opacity(0.08) : Color.white.opacity(0.025))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .milliCard(padding: 13)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("AUTOPILOT PERMISSIONS").sectionHeaderStyle()
+                    onboardingToggle(label: "Detect gig payouts", isOn: $profile.transactionMonitoringConsent)
+                    onboardingToggle(label: "Move calculated tax reserve to Milli Tax Vault™", isOn: $profile.taxVaultTransferConsent)
+                }
+                .milliCard(padding: 13)
+
+                HStack(spacing: 12) {
+                    OnboardingBackButton(action: onBack)
+                    OnboardingPrimaryButton(title: "Continue", action: onNext)
+                        .opacity(profile.isReadyForAutopilot ? 1 : 0.38)
+                        .allowsHitTesting(profile.isReadyForAutopilot)
+                }
+                .padding(.bottom, 34)
+            }
+            .padding(.horizontal, MilliLayout.screenMargin)
+            .padding(.top, 22)
+        }
+        .alert("Secure bank connection not configured", isPresented: $showConnectionUnavailable) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This build still needs the production bank-link provider and server credentials. Milli will not fake a connected bank account or automatic transfer permission.")
+        }
     }
 }
 
