@@ -2,12 +2,12 @@ import SwiftUI
 import Charts
 
 // MARK: - WealthOverviewView
-// Consolidated wealth cockpit: investments, retirement, savings and cash in one
-// premium surface. Values are isolated in a model so production account services
-// can replace the seed data without changing the view hierarchy.
+// Primary wealth hub: one premium surface for investing, retirement, savings,
+// longer-term planning, and the payout flows that fund them.
 
 struct WealthOverviewView: View {
     var onBack: () -> Void = {}
+    var navigate: ((ActiveScreen) -> Void)? = nil
 
     private let model = WealthOverviewModel.reference
 
@@ -15,6 +15,7 @@ struct WealthOverviewView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
+                wealthDestinations
                 netWorthHero
                 allocationCard
                 projectionCard
@@ -40,9 +41,15 @@ struct WealthOverviewView: View {
 
             Spacer()
 
-            Text("Wealth Overview")
-                .font(MilliFont.screenTitle)
-                .foregroundStyle(MilliColors.textPrimary)
+            VStack(spacing: 1) {
+                Text("Wealth")
+                    .font(MilliFont.screenTitle)
+                    .foregroundStyle(MilliColors.textPrimary)
+                Text("BUILD · PLAN · GROW")
+                    .font(MilliFont.caption)
+                    .tracking(1.45)
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
 
             Spacer()
 
@@ -51,6 +58,110 @@ struct WealthOverviewView: View {
                 .foregroundStyle(MilliColors.cyanGlow)
                 .frame(width: 34, height: 34)
         }
+    }
+
+    private var wealthDestinations: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("WEALTH HUB")
+                .sectionHeaderStyle()
+
+            HStack(spacing: 7) {
+                destinationTile(
+                    title: "Investing",
+                    subtitle: "Markets & portfolio",
+                    icon: "chart.xyaxis.line",
+                    destination: .investing
+                )
+                destinationTile(
+                    title: "Retirement",
+                    subtitle: "Projection & 401(k)",
+                    icon: "hourglass.bottomhalf.filled",
+                    destination: .retirement
+                )
+            }
+
+            HStack(spacing: 7) {
+                destinationTile(
+                    title: "Savings",
+                    subtitle: "Goals & reserves",
+                    icon: "banknote.fill",
+                    destination: .savings
+                )
+                destinationTile(
+                    title: "Payouts",
+                    subtitle: "Fund the future",
+                    icon: "arrow.down.circle.fill",
+                    destination: .payouts
+                )
+            }
+
+            HStack(spacing: 7) {
+                destinationTile(
+                    title: "Tree of Life",
+                    subtitle: "Life-event planning",
+                    icon: "point.3.filled.connected.trianglepath.dotted",
+                    destination: .treeOfLife
+                )
+                destinationTile(
+                    title: "Reports",
+                    subtitle: "Track progress",
+                    icon: "doc.text.magnifyingglass",
+                    destination: .reports
+                )
+            }
+        }
+        .milliCard(padding: 12)
+    }
+
+    private func destinationTile(
+        title: String,
+        subtitle: String,
+        icon: String,
+        destination: ActiveScreen
+    ) -> some View {
+        Button {
+            navigate?(destination)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MilliColors.cyanGlow)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(MilliColors.cyanGlow.opacity(0.08))
+                    )
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textPrimary)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+
+                Spacer(minLength: 2)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
+            .padding(9)
+            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(0.025))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.white.opacity(0.055), lineWidth: 0.6)
+                    }
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var netWorthHero: some View {
