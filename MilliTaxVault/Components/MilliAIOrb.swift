@@ -1,8 +1,9 @@
 import SwiftUI
 
 // MARK: - MilliAIOrb
-// Persistent floating Milli companion. The approved character artwork is rendered
-// directly with no circular plate, card, badge, or artificial background.
+// Persistent floating Milli companion. The source art is rendered optically over
+// the interface with its black plate removed by screen compositing so Milli reads
+// as a free-floating character rather than a square image tile.
 
 struct MilliAIOrb: View {
     @State private var floatY: CGFloat = 2
@@ -12,7 +13,7 @@ struct MilliAIOrb: View {
 
     var onTap: () -> Void = {}
 
-    private let characterSize: CGFloat = 68
+    private let characterSize: CGFloat = 64
 
     var body: some View {
         Button(action: onTap) {
@@ -20,18 +21,20 @@ struct MilliAIOrb: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: characterSize, height: characterSize)
+                .compositingGroup()
+                .blendMode(.screen)
                 .offset(x: floatX, y: floatY)
                 .rotationEffect(.degrees(tilt))
                 .shadow(
-                    color: MilliColors.cyanGlow.opacity(glowPulse ? 0.33 : 0.18),
-                    radius: glowPulse ? 9 : 5,
+                    color: MilliColors.cyanGlow.opacity(glowPulse ? 0.30 : 0.16),
+                    radius: glowPulse ? 8 : 4,
                     x: 0,
                     y: 3
                 )
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(width: characterSize + 10, height: characterSize + 10)
+        .frame(width: characterSize + 12, height: characterSize + 12)
         .accessibilityLabel("Open Milli AI")
         .onAppear {
             withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
