@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - MilliAIView
-// Dedicated assistant surface using the approved Milli AI character.
+// Dedicated assistant surface using the full approved Milli character artwork.
 // Until a production conversational-AI endpoint is connected, the screen uses a
 // deterministic on-device routing fallback rather than pretending a remote model answered.
 
@@ -11,6 +11,7 @@ struct MilliAIView: View {
 
     @State private var messageText = ""
     @State private var messages: [MilliAIMessage] = MilliAIMessage.seedConversation
+    @State private var companionFloat: CGFloat = 1
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -44,6 +45,11 @@ struct MilliAIView: View {
                 .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
         }
         .background(MilliColors.background.ignoresSafeArea())
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+                companionFloat = -3
+            }
+        }
     }
 
     private var header: some View {
@@ -78,8 +84,9 @@ struct MilliAIView: View {
     }
 
     private var intro: some View {
-        HStack(alignment: .top, spacing: 10) {
-            aiPortrait(size: 54)
+        HStack(alignment: .center, spacing: 8) {
+            aiPortrait(size: 76)
+                .offset(y: companionFloat)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text("How can I help?")
@@ -127,8 +134,8 @@ struct MilliAIView: View {
     }
 
     private func aiCard(_ message: MilliAIMessage) -> some View {
-        HStack(alignment: .top, spacing: 9) {
-            aiPortrait(size: 32)
+        HStack(alignment: .top, spacing: 7) {
+            aiPortrait(size: 38)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(message.text)
@@ -160,35 +167,17 @@ struct MilliAIView: View {
             }
             .milliCard(padding: 12)
 
-            Spacer(minLength: 22)
+            Spacer(minLength: 14)
         }
     }
 
     private func aiPortrait(size: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(hex: "10202A"), MilliColors.blackGlass],
-                        center: .topLeading,
-                        startRadius: 1,
-                        endRadius: size * 0.7
-                    )
-                )
-                .frame(width: size, height: size)
-                .overlay {
-                    Circle()
-                        .stroke(MilliColors.cyanGlow.opacity(0.22), lineWidth: 0.7)
-                }
-                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 6)
-
-            Image("MilliAIOrb")
-                .resizable()
-                .scaledToFill()
-                .frame(width: max(size - 4, 1), height: max(size - 4, 1))
-                .clipShape(Circle())
-        }
-        .frame(width: size, height: size)
+        Image("milli-ai-robot-large")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 6, x: 0, y: 2)
+            .accessibilityLabel("Milli AI")
     }
 
     private var composer: some View {
@@ -317,7 +306,7 @@ private enum MilliAIFallbackEngine {
         if query.contains("invest") || query.contains("market") || query.contains("portfolio") {
             return MilliAIMessage(
                 role: .assistant,
-                text: "The Investing view contains your portfolio surface, holdings, market indicators, and OHLC chart presentation.",
+                text: "The Investing view contains your portfolio surface, holdings, live market indicators, and OHLC candlestick chart.",
                 actionTitle: "View Investing",
                 destination: .investing
             )
