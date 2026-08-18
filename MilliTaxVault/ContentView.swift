@@ -30,8 +30,8 @@ struct ContentView: View {
                     MilliAIOrb {
                         navigateTo(.milliAI)
                     }
-                    .padding(.trailing, 10)
-                    .padding(.bottom, MilliSpacing.bottomNavHeight - 4)
+                    .padding(.trailing, 8)
+                    .padding(.bottom, aiBottomClearance)
                 }
                 .allowsHitTesting(true)
             }
@@ -43,14 +43,14 @@ struct ContentView: View {
             .onChange(of: selectedTab) { _, newTab in
                 withAnimation(.easeInOut(duration: 0.2)) {
                     switch newTab {
-                    case .home:
+                    case .home, .mDial:
                         activeScreen = .home
                     case .payouts:
                         activeScreen = .payouts
-                    case .mDial:
-                        activeScreen = .home
                     case .mileage:
                         activeScreen = .mileage
+                    case .wealth:
+                        activeScreen = .wealthOverview
                     case .more:
                         activeScreen = .more
                     }
@@ -61,13 +61,19 @@ struct ContentView: View {
     }
 
     private var shouldShowAIOrb: Bool {
+        // The companion is persistent throughout the product shell. It disappears only
+        // inside the dedicated Milli AI conversation so the same character is not duplicated.
+        activeScreen != .milliAI
+    }
+
+    private var aiBottomClearance: CGFloat {
         switch activeScreen {
-        case .milliAI, .expenses, .plans:
-            // Expenses owns the bottom-right Add action and Plans owns a large
-            // subscription CTA. The global assistant must never obscure a primary control.
-            return false
+        case .expenses, .plans:
+            // These screens have important lower-right actions. Milli remains present,
+            // but floats slightly higher instead of covering a primary control.
+            return MilliSpacing.bottomNavHeight + 52
         default:
-            return true
+            return MilliSpacing.bottomNavHeight + 2
         }
     }
 
@@ -89,7 +95,7 @@ struct ContentView: View {
         case .accounts:
             AccountsView(onBack: { navigateTo(.more) })
         case .savings:
-            SavingsView(onBack: { navigateTo(.more) })
+            SavingsView(onBack: { navigateTo(.wealthOverview) })
         case .documents:
             DocumentsView(onBack: { navigateTo(.more) })
         case .plans:
@@ -101,13 +107,16 @@ struct ContentView: View {
         case .quarterlyTaxes:
             QuarterlyTaxesView(onBack: { navigateTo(.home) })
         case .investing:
-            InvestingView(onBack: { navigateTo(.more) })
+            InvestingView(onBack: { navigateTo(.wealthOverview) })
         case .retirement:
-            RetirementView(onBack: { navigateTo(.more) })
+            RetirementView(onBack: { navigateTo(.wealthOverview) })
         case .wealthOverview:
-            WealthOverviewView(onBack: { navigateTo(.more) })
+            WealthOverviewView(
+                onBack: { navigateTo(.home) },
+                navigate: navigateTo
+            )
         case .treeOfLife:
-            TreeOfLifeView(onBack: { navigateTo(.more) })
+            TreeOfLifeView(onBack: { navigateTo(.wealthOverview) })
         case .milliAI:
             MilliAIView(
                 onBack: { navigateTo(.home) },
@@ -125,8 +134,8 @@ struct ContentView: View {
             activeScreen = screen
 
             // Primary destinations own the bottom-nav selection. Secondary screens
-            // intentionally retain the user's originating primary context; opening
-            // Tax Vault from Home should not make the UI claim that More was tapped.
+            // intentionally retain their originating context. For example, Investing
+            // opened from Wealth keeps Wealth highlighted until the user leaves that hub.
             if let primaryTab = screen.primaryTab {
                 selectedTab = primaryTab
             }
@@ -187,6 +196,8 @@ enum ActiveScreen: String, CaseIterable {
             return .payouts
         case .mileage:
             return .mileage
+        case .wealthOverview:
+            return .wealth
         case .more:
             return .more
         default:
@@ -195,6 +206,11 @@ enum ActiveScreen: String, CaseIterable {
     }
 
     var debugTab: MilliTab {
-        primaryTab ?? .more
+        switch self {
+        case .investing, .retirement, .savings, .treeOfLife:
+            return .wealth
+        default:
+            return primaryTab ?? .more
+        }
     }
 }
