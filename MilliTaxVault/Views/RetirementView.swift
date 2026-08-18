@@ -70,7 +70,7 @@ struct RetirementView: View {
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
 
-            Text("\(projection.retirementYear)")
+            Text(String(projection.retirementYear))
                 .font(.custom("Sora-Bold", size: 48, relativeTo: .largeTitle))
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
@@ -267,7 +267,7 @@ struct RetirementView: View {
                 .sectionHeaderStyle()
 
             HStack(spacing: 8) {
-                summary("Retirement Year", "\(projection.retirementYear)")
+                summary("Retirement Year", String(projection.retirementYear))
                 summary("Estimated Value", compactCurrency(projection.endingBalance))
             }
             HStack(spacing: 8) {
