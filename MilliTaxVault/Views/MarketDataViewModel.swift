@@ -34,7 +34,7 @@ final class MarketDataViewModel: ObservableObject {
     ]
 
     private var chartTimer: Timer?
-    private var indicesTimer: Timer?
+    private var supportingDataTimer: Timer?
     private var activeInterval = "1h"
     private var activeRange = "1mo"
 
@@ -47,8 +47,8 @@ final class MarketDataViewModel: ObservableObject {
     func startAutoRefresh() {
         stopAutoRefresh()
 
-        // Polling rather than pretending to stream. Every refresh re-reads the
-        // external market feed and rebuilds the latest real OHLC candle sequence.
+        // Keep the selected chart responsive without hammering the external feed.
+        // Only the actively viewed OHLC series is refreshed every 10 seconds.
         chartTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -57,13 +57,15 @@ final class MarketDataViewModel: ObservableObject {
                     interval: self.activeInterval,
                     range: self.activeRange
                 )
-                self.refreshHoldings()
             }
         }
 
-        indicesTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+        // Indices and watchlist quotes do not need the same cadence as the chart.
+        supportingDataTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.fetchIndices()
+                guard let self else { return }
+                self.fetchIndices()
+                self.refreshHoldings()
             }
         }
     }
@@ -71,8 +73,8 @@ final class MarketDataViewModel: ObservableObject {
     func stopAutoRefresh() {
         chartTimer?.invalidate()
         chartTimer = nil
-        indicesTimer?.invalidate()
-        indicesTimer = nil
+        supportingDataTimer?.invalidate()
+        supportingDataTimer = nil
     }
 
     func switchTicker(_ ticker: String) {
