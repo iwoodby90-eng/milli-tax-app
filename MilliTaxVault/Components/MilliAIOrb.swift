@@ -1,69 +1,44 @@
 import SwiftUI
 
 // MARK: - MilliAIOrb
-// Uses the approved robot artwork. The companion floats subtly above the shell and never becomes a generic chatbot icon.
+// Persistent floating Milli companion. The approved character artwork is rendered
+// directly with no circular plate, card, badge, or artificial background.
 
 struct MilliAIOrb: View {
-    @State private var hovering = false
-    @State private var breathing = false
+    @State private var floatY: CGFloat = 2
+    @State private var floatX: CGFloat = -1
+    @State private var tilt: Double = -1.0
+    @State private var glowPulse = false
+
     var onTap: () -> Void = {}
 
-    private let orbSize: CGFloat = 54
+    private let characterSize: CGFloat = 68
 
     var body: some View {
         Button(action: onTap) {
-            ZStack {
-                Circle()
-                    .fill(MilliColors.cyanGlow.opacity(breathing ? 0.13 : 0.07))
-                    .frame(width: orbSize + 14, height: orbSize + 14)
-                    .blur(radius: 10)
-
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color(hex: "101A22"), MilliColors.blackGlass],
-                            center: .topLeading,
-                            startRadius: 2,
-                            endRadius: orbSize * 0.62
-                        )
-                    )
-                    .frame(width: orbSize, height: orbSize)
-                    .overlay {
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [MilliColors.silverBright.opacity(0.42), MilliColors.cyanGlow.opacity(0.34), Color.white.opacity(0.08)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 0.8
-                            )
-                    }
-                    .shadow(color: .black.opacity(0.65), radius: 9, y: 5)
-
-                Image("MilliAIOrb")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: orbSize - 5, height: orbSize - 5)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(MilliColors.cyanGlow.opacity(0.16), lineWidth: 0.7)
-                    }
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.26), radius: 7, x: 0, y: 2)
-                    .offset(y: hovering ? -1 : 1)
-            }
-            .frame(width: orbSize + 18, height: orbSize + 18)
-            .contentShape(Circle())
+            Image("milli-ai-robot-large")
+                .resizable()
+                .scaledToFit()
+                .frame(width: characterSize, height: characterSize)
+                .offset(x: floatX, y: floatY)
+                .rotationEffect(.degrees(tilt))
+                .shadow(
+                    color: MilliColors.cyanGlow.opacity(glowPulse ? 0.33 : 0.18),
+                    radius: glowPulse ? 9 : 5,
+                    x: 0,
+                    y: 3
+                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(width: characterSize + 10, height: characterSize + 10)
         .accessibilityLabel("Open Milli AI")
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
-                hovering = true
-            }
-            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-                breathing = true
+            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                floatY = -3
+                floatX = 2
+                tilt = 1.4
+                glowPulse = true
             }
         }
     }
