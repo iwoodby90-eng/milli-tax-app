@@ -97,13 +97,7 @@ struct ContentView: View {
         case .payouts:
             PayoutsView()
         case .mileage:
-            MileageView(
-                onBack: { navigateTo(.home) },
-                navigationHandoff: pendingNavigationRequest,
-                onNavigationHandoffConsumed: {
-                    pendingNavigationRequest = nil
-                }
-            )
+            MileageView(onBack: { navigateTo(.home) })
         case .milliCents:
             MilliCentsView(onBack: { navigateTo(.home) })
         case .autopilot:
