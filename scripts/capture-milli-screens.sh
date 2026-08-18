@@ -14,6 +14,7 @@ BUNDLE_ID="${BUNDLE_ID:-com.milli.taxvault}"
 OUTPUT_DIR="${OUTPUT_DIR:-artifacts/milli-screen-qa}"
 DERIVED_DATA="${DERIVED_DATA:-/tmp/MilliVisualQADerivedData}"
 SCREEN_SETTLE_SECONDS="${SCREEN_SETTLE_SECONDS:-4}"
+MAP_SETTLE_SECONDS="${MAP_SETTLE_SECONDS:-7}"
 
 SCREENS=(
   home
@@ -144,15 +145,16 @@ wait_and_capture() {
   local label="$1"
   local output="$2"
   local launch_output="$3"
+  local settle_seconds="${4:-$SCREEN_SETTLE_SECONDS}"
   local pid
 
   echo "$launch_output"
   pid="$(printf '%s\n' "$launch_output" | awk -F': ' 'NF > 1 {print $NF}' | tail -n 1)"
 
   # Hosted Xcode simulators can spend several seconds on the native launch screen
-  # during cold starts. Give every screen a deterministic render window before
-  # accepting a screenshot.
-  sleep "$SCREEN_SETTLE_SECONDS"
+  # during cold starts. MapKit also needs a little extra time to load real map
+  # tiles before the Mileage reference capture is accepted.
+  sleep "$settle_seconds"
 
   if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
     echo "MilliTaxVault exited before '$label' was ready (pid $pid)." >&2
@@ -169,6 +171,11 @@ capture_screen() {
   local screen="$1"
   local output="$OUTPUT_DIR/${screen}.png"
   local launch_output
+  local settle_seconds="$SCREEN_SETTLE_SECONDS"
+
+  if [[ "$screen" == "mileage" ]]; then
+    settle_seconds="$MAP_SETTLE_SECONDS"
+  fi
 
   xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
@@ -181,7 +188,7 @@ capture_screen() {
     xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
   )"
 
-  wait_and_capture "$screen" "$output" "$launch_output"
+  wait_and_capture "$screen" "$output" "$launch_output" "$settle_seconds"
 }
 
 capture_app_state() {
