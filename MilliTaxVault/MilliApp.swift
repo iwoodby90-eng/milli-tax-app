@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 enum AppState: String {
     case splash
@@ -8,13 +9,107 @@ enum AppState: String {
     case main
 }
 
+// MARK: - Navigation handoff
+// Milli accepts its own deep-link contract everywhere and can also parse Apple's
+// geo-navigation payload when iOS launches Milli as an eligible navigation app.
+// A handoff is retained through sign-in so the destination is already loaded
+// when the authenticated user reaches Mileage.
+
+struct NavigationHandoffRequest: Identifiable, Equatable {
+    let id = UUID()
+    let destinationAddress: String?
+    let destinationName: String?
+    let latitude: Double?
+    let longitude: Double?
+    let sourceApp: String?
+
+    var coordinate: CLLocationCoordinate2D? {
+        guard let latitude, let longitude else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+enum NavigationHandoffParser {
+    static func parse(_ url: URL) -> NavigationHandoffRequest? {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+
+        let scheme = (components.scheme ?? "").lowercased()
+        guard scheme == "milli" || scheme == "geo-navigation" else { return nil }
+
+        let items = Dictionary(
+            uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name.lowercased(), $0.value ?? "") }
+        )
+
+        let address = firstNonEmpty(
+            items["address"],
+            items["destination"],
+            items["daddr"],
+            items["q"],
+            items["query"]
+        )
+
+        let name = firstNonEmpty(items["name"], items["label"], items["title"])
+        let source = firstNonEmpty(items["source"], items["app"], items["provider"])
+
+        var latitude = double(items["lat"] ?? items["latitude"])
+        var longitude = double(items["lon"] ?? items["lng"] ?? items["longitude"])
+
+        if (latitude == nil || longitude == nil),
+           let coordinateText = firstNonEmpty(items["ll"], items["coordinate"], items["destination_coordinate"]) {
+            let parts = coordinateText
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            if parts.count >= 2 {
+                latitude = Double(parts[0])
+                longitude = Double(parts[1])
+            }
+        }
+
+        // milli://navigate/123-main-st also works without a query string.
+        let pathAddress: String? = {
+            guard scheme == "milli" else { return nil }
+            let path = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            guard !path.isEmpty else { return nil }
+            return path.removingPercentEncoding ?? path
+        }()
+
+        guard address != nil || pathAddress != nil || (latitude != nil && longitude != nil) else {
+            return nil
+        }
+
+        return NavigationHandoffRequest(
+            destinationAddress: address ?? pathAddress,
+            destinationName: name,
+            latitude: latitude,
+            longitude: longitude,
+            sourceApp: source
+        )
+    }
+
+    private static func firstNonEmpty(_ values: String?...) -> String? {
+        values
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
+    }
+
+    private static func double(_ value: String?) -> Double? {
+        guard let value, !value.isEmpty else { return nil }
+        return Double(value)
+    }
+}
+
 @main
 struct MilliApp: App {
     @State private var appState: AppState
+    @State private var pendingNavigationRequest: NavigationHandoffRequest?
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
 
     init() {
+        _pendingNavigationRequest = State(initialValue: nil)
+
         #if DEBUG
         let processInfo = ProcessInfo.processInfo
         let environment = processInfo.environment
@@ -31,8 +126,6 @@ struct MilliApp: App {
                 || environment["MILLI_SCREEN"] != nil
                 || arguments.contains("-milliScreenshotMode")
 
-            // Production behavior begins at the secure sign-in/create-account gate.
-            // The marketing/setup flow is never replayed just because the app was relaunched.
             _appState = State(initialValue: screenshotMode ? .main : .login)
         }
         #else
@@ -77,17 +170,34 @@ struct MilliApp: App {
                     .transition(.opacity)
 
                 case .main:
-                    ContentView(onLogout: {
-                        // Logging out ends access to the current app session, but deliberately
-                        // keeps the saved profile, vehicle, tax profile, selected plan, and
-                        // trial history. The next sign-in returns directly to Home.
-                        transition(to: .login)
-                    })
+                    ContentView(
+                        pendingNavigationRequest: $pendingNavigationRequest,
+                        onLogout: {
+                            transition(to: .login)
+                        }
+                    )
                     .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.32), value: appState)
             .preferredColorScheme(.dark)
+            .onOpenURL(perform: handleIncomingNavigationURL)
+        }
+    }
+
+    private func handleIncomingNavigationURL(_ url: URL) {
+        guard let request = NavigationHandoffParser.parse(url) else { return }
+        pendingNavigationRequest = request
+
+        // Never bypass authentication. If the user is already authenticated,
+        // ContentView immediately routes to Mileage. Otherwise the request waits
+        // through sign-in/onboarding and is consumed once the main shell appears.
+        if appState == .main {
+            return
+        }
+
+        if hasCompletedSetup, appState != .login {
+            transition(to: .login)
         }
     }
 
@@ -95,7 +205,6 @@ struct MilliApp: App {
         if hasCompletedSetup {
             transition(to: .main)
         } else if hasCompletedOnboarding {
-            // Handles an account that was created but setup was interrupted before completion.
             transition(to: .setup)
         } else {
             transition(to: .onboarding)
@@ -105,8 +214,6 @@ struct MilliApp: App {
     private func beginNewAccountSetup() {
         let defaults = UserDefaults.standard
 
-        // A newly created local profile gets its own first-time setup. These values
-        // are not cleared by ordinary logout, only by explicit account creation.
         hasCompletedOnboarding = false
         hasCompletedSetup = false
         defaults.removeObject(forKey: "onboarding_vehicle")
