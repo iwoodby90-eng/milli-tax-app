@@ -2,9 +2,9 @@ import Foundation
 import SwiftUI
 
 // MARK: - MarketDataViewModel
-// Fetches market data through the existing Yahoo Finance chart transport.
-// The model never fabricates a random-walk fallback: the UI distinguishes live,
-// loading and unavailable feed states explicitly.
+// Pulls real OHLC market observations from the existing Yahoo Finance chart
+// transport. There is deliberately no synthetic/random fallback: if the external
+// feed is unavailable the UI says so instead of drawing invented prices.
 
 @MainActor
 final class MarketDataViewModel: ObservableObject {
@@ -13,9 +13,10 @@ final class MarketDataViewModel: ObservableObject {
     @Published var currentPrice: Double = 0
     @Published var priceChange: Double = 0
     @Published var percentChange: Double = 0
-    @Published var selectedTicker: String = "AAPL"
+    @Published var selectedTicker: String = "VOO"
     @Published var isLoading: Bool = false
     @Published var lastUpdated: Date?
+    @Published var latestMarketTimestamp: Date?
     @Published var feedStatus: MarketFeedStatus = .loading
 
     @Published var indices: [MarketIndex] = [
@@ -34,11 +35,11 @@ final class MarketDataViewModel: ObservableObject {
 
     private var chartTimer: Timer?
     private var indicesTimer: Timer?
-    private var activeInterval = "5m"
-    private var activeRange = "1d"
+    private var activeInterval = "1h"
+    private var activeRange = "1mo"
 
     init() {
-        fetchChart(for: selectedTicker)
+        fetchChart(for: selectedTicker, interval: activeInterval, range: activeRange)
         fetchIndices()
         refreshHoldings()
     }
@@ -46,7 +47,9 @@ final class MarketDataViewModel: ObservableObject {
     func startAutoRefresh() {
         stopAutoRefresh()
 
-        chartTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+        // Polling rather than pretending to stream. Every refresh re-reads the
+        // external market feed and rebuilds the latest real OHLC candle sequence.
+        chartTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.fetchChart(
@@ -95,7 +98,7 @@ final class MarketDataViewModel: ObservableObject {
             }
 
             do {
-                let (data, response) = try await URLSession.shared.data(from: url)
+                let (data, response) = try await performMarketRequest(url: url)
                 guard let httpResponse = response as? HTTPURLResponse,
                       httpResponse.statusCode == 200,
                       let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -126,7 +129,12 @@ final class MarketDataViewModel: ObservableObject {
                     guard let open = flattenedValue(opens, at: index),
                           let high = flattenedValue(highs, at: index),
                           let low = flattenedValue(lows, at: index),
-                          let close = flattenedValue(closes, at: index)
+                          let close = flattenedValue(closes, at: index),
+                          open.isFinite,
+                          high.isFinite,
+                          low.isFinite,
+                          close.isFinite,
+                          high >= low
                     else {
                         continue
                     }
@@ -156,6 +164,7 @@ final class MarketDataViewModel: ObservableObject {
                 currentPrice = last.close
                 priceChange = last.close - first.open
                 percentChange = first.open > 0 ? (priceChange / first.open) * 100 : 0
+                latestMarketTimestamp = last.time
                 lastUpdated = Date()
                 feedStatus = .live
                 isLoading = false
@@ -174,7 +183,7 @@ final class MarketDataViewModel: ObservableObject {
                 guard let url = marketChartURL(symbol: symbol, interval: "1d", range: "5d") else { return }
 
                 do {
-                    let (data, response) = try await URLSession.shared.data(from: url)
+                    let (data, response) = try await performMarketRequest(url: url)
                     guard let httpResponse = response as? HTTPURLResponse,
                           httpResponse.statusCode == 200,
                           let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -202,7 +211,7 @@ final class MarketDataViewModel: ObservableObject {
                         isLive: true
                     )
                 } catch {
-                    // Preserve the explicit non-live state rather than fabricating a value.
+                    // Preserve explicit non-live state rather than fabricating a value.
                 }
             }
         }
@@ -214,7 +223,7 @@ final class MarketDataViewModel: ObservableObject {
                 guard let url = marketChartURL(symbol: holding.ticker, interval: "15m", range: "5d") else { return }
 
                 do {
-                    let (data, response) = try await URLSession.shared.data(from: url)
+                    let (data, response) = try await performMarketRequest(url: url)
                     guard let httpResponse = response as? HTTPURLResponse,
                           httpResponse.statusCode == 200,
                           let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -255,19 +264,33 @@ final class MarketDataViewModel: ObservableObject {
         }
     }
 
+    private func performMarketRequest(url: URL) async throws -> (Data, URLResponse) {
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        request.timeoutInterval = 12
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS like Mac OS X) AppleWebKit/605.1.15",
+            forHTTPHeaderField: "User-Agent"
+        )
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        return try await URLSession.shared.data(for: request)
+    }
+
     private func markChartUnavailable() {
         chartPoints = []
         candles = []
         currentPrice = 0
         priceChange = 0
         percentChange = 0
+        latestMarketTimestamp = nil
         isLoading = false
         feedStatus = .unavailable
     }
 
     private func marketChartURL(symbol: String, interval: String, range: String) -> URL? {
         let encodedSymbol = symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
-        return URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encodedSymbol)?interval=\(interval)&range=\(range)")
+        return URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encodedSymbol)?interval=\(interval)&range=\(range)&includePrePost=true&events=div%2Csplits")
     }
 
     private func numberArray(_ value: Any?) -> [Double?] {
