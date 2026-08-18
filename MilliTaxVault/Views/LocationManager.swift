@@ -68,6 +68,13 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         }
     }
 
+    /// Refreshes the MapKit viewport with the user's current position when Milli
+    /// already has location permission. This never triggers a permission prompt.
+    func refreshCurrentLocation() {
+        guard canTrackLocation, !isTracking else { return }
+        manager.requestLocation()
+    }
+
     /// Requests the stronger authorization needed for the most reliable
     /// background mileage experience. iOS only presents this upgrade after the
     /// user has already granted When In Use access.
