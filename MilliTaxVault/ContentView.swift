@@ -4,14 +4,24 @@ import SwiftUI
 // Native SwiftUI shell: screen router + persistent sculpted Milli navigation + contextual Milli AI companion.
 
 struct ContentView: View {
+    @Binding private var pendingNavigationRequest: NavigationHandoffRequest?
     var onLogout: () -> Void = {}
 
     @State private var selectedTab: MilliTab
     @State private var activeScreen: ActiveScreen
 
-    init(onLogout: @escaping () -> Void = {}) {
+    init(
+        pendingNavigationRequest: Binding<NavigationHandoffRequest?> = .constant(nil),
+        onLogout: @escaping () -> Void = {}
+    ) {
+        _pendingNavigationRequest = pendingNavigationRequest
         self.onLogout = onLogout
-        let initialScreen = Self.requestedDebugScreen() ?? .home
+
+        let debugScreen = Self.requestedDebugScreen()
+        let initialScreen: ActiveScreen = pendingNavigationRequest.wrappedValue != nil
+            ? .mileage
+            : (debugScreen ?? .home)
+
         _activeScreen = State(initialValue: initialScreen)
         _selectedTab = State(initialValue: initialScreen.debugTab)
     }
@@ -58,19 +68,21 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            routePendingNavigationRequestIfNeeded()
+        }
+        .onChange(of: pendingNavigationRequest?.id) { _, _ in
+            routePendingNavigationRequestIfNeeded()
+        }
     }
 
     private var shouldShowAIOrb: Bool {
-        // The companion is persistent throughout the product shell. It disappears only
-        // inside the dedicated Milli AI conversation so the same character is not duplicated.
         activeScreen != .milliAI
     }
 
     private var aiBottomClearance: CGFloat {
         switch activeScreen {
         case .expenses, .plans:
-            // These screens have important lower-right actions. Milli remains present,
-            // but floats slightly higher instead of covering a primary control.
             return MilliSpacing.bottomNavHeight + 52
         default:
             return MilliSpacing.bottomNavHeight + 2
@@ -85,7 +97,13 @@ struct ContentView: View {
         case .payouts:
             PayoutsView()
         case .mileage:
-            MileageView(onBack: { navigateTo(.home) })
+            MileageView(
+                onBack: { navigateTo(.home) },
+                navigationHandoff: pendingNavigationRequest,
+                onNavigationHandoffConsumed: {
+                    pendingNavigationRequest = nil
+                }
+            )
         case .milliCents:
             MilliCentsView(onBack: { navigateTo(.home) })
         case .autopilot:
@@ -129,13 +147,17 @@ struct ContentView: View {
         }
     }
 
+    private func routePendingNavigationRequestIfNeeded() {
+        guard pendingNavigationRequest != nil else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            activeScreen = .mileage
+            selectedTab = .mileage
+        }
+    }
+
     private func navigateTo(_ screen: ActiveScreen) {
         withAnimation(.easeInOut(duration: 0.2)) {
             activeScreen = screen
-
-            // Primary destinations own the bottom-nav selection. Secondary screens
-            // intentionally retain their originating context. For example, Investing
-            // opened from Wealth keeps Wealth highlighted until the user leaves that hub.
             if let primaryTab = screen.primaryTab {
                 selectedTab = primaryTab
             }
