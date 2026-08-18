@@ -2,15 +2,22 @@ import SwiftUI
 import Charts
 
 // MARK: - InvestingView
-// Reference-driven institutional market surface. Every candle comes from the
-// external OHLC transport in MarketDataViewModel; no random or synthetic chart
-// points are drawn when the market feed is unavailable.
+// Institutional market surface backed only by real OHLC observations from
+// MarketDataViewModel. No synthetic portfolio balances, holdings values, or
+// fallback candles are presented as user data.
 
 struct InvestingView: View {
     var onBack: () -> Void = {}
 
     @StateObject private var market = MarketDataViewModel()
     @State private var selectedPeriod: ChartPeriod = .oneMonth
+
+    // Interactive candle window. Pinch changes the number of bars visible;
+    // horizontal drag pans through the loaded observations.
+    @State private var visibleCandleCount = 38
+    @State private var chartEndIndex: Int? = nil
+    @State private var magnificationBaseCount: Int? = nil
+    @State private var dragBaseEndIndex: Int? = nil
 
     private let tickers = ["VOO", "AAPL", "NVDA", "QQQ", "BTC-USD"]
 
@@ -19,8 +26,8 @@ struct InvestingView: View {
             VStack(spacing: 10) {
                 header
                 marketStrip
-                portfolioCard
-                holdings
+                marketCard
+                watchlist
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -29,10 +36,16 @@ struct InvestingView: View {
         .background(MilliColors.background.ignoresSafeArea())
         .onAppear {
             market.startAutoRefresh()
-            loadMarketChart()
+            loadMarketChart(resetViewport: true)
         }
         .onDisappear {
             market.stopAutoRefresh()
+        }
+        .onChange(of: market.candles.count) { _, newCount in
+            guard newCount > 0 else { return }
+            if chartEndIndex == nil || chartEndIndex! > newCount {
+                chartEndIndex = newCount
+            }
         }
     }
 
@@ -53,12 +66,9 @@ struct InvestingView: View {
 
             Spacer()
 
-            HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                Image(systemName: "bell")
-            }
-            .font(.system(size: 16, weight: .medium))
-            .foregroundStyle(MilliColors.textSecondary)
+            Image(systemName: "chart.xyaxis.line")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
         }
     }
 
@@ -80,9 +90,7 @@ struct InvestingView: View {
                     .foregroundStyle(MilliColors.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
-
                 Spacer(minLength: 0)
-
                 Circle()
                     .fill(index.isLive ? MilliColors.cyanGlow : MilliColors.textTertiary)
                     .frame(width: 4, height: 4)
@@ -95,17 +103,19 @@ struct InvestingView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.68)
 
-            HStack(spacing: 3) {
-                if index.isLive {
+            if index.isLive {
+                HStack(spacing: 3) {
                     Image(systemName: index.change >= 0 ? "arrow.up.right" : "arrow.down.right")
                         .font(.system(size: 8, weight: .bold))
                     Text(String(format: "%+.2f%%", index.change))
-                } else {
-                    Text("Connecting")
                 }
+                .font(MilliFont.caption)
+                .foregroundStyle(changeColor)
+            } else {
+                Text("Connecting")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
-            .font(MilliFont.caption)
-            .foregroundStyle(index.isLive ? changeColor : MilliColors.textTertiary)
         }
         .padding(9)
         .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
@@ -119,21 +129,27 @@ struct InvestingView: View {
         )
     }
 
-    private var portfolioCard: some View {
+    private var marketCard: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("PORTFOLIO VALUE")
+                    Text("LIVE MARKET")
                         .sectionHeaderStyle()
 
-                    Text("$42,685.73")
+                    Text(market.feedStatus == .live ? marketPriceText : "—")
                         .font(MilliFont.heroNumber)
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
+                        .contentTransition(.numericText())
 
-                    Text("▲ $1,324.67 (3.20%) Today")
+                    if market.feedStatus == .live {
+                        HStack(spacing: 4) {
+                            Image(systemName: market.priceChange >= 0 ? "arrow.up.right" : "arrow.down.right")
+                            Text(String(format: "%+.2f%%", market.percentChange))
+                        }
                         .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.positive)
+                        .foregroundStyle(market.priceChange >= 0 ? MilliColors.positive : MilliColors.negative)
+                    }
                 }
 
                 Spacer()
@@ -144,10 +160,10 @@ struct InvestingView: View {
 
             tickerControl
             periodControl
-            marketHeader
+            chartToolbar
 
             marketChart
-                .frame(height: 238)
+                .frame(height: 270)
 
             HStack(spacing: 7) {
                 Circle()
@@ -189,6 +205,7 @@ struct InvestingView: View {
             ForEach(tickers, id: \.self) { ticker in
                 Button {
                     market.switchTicker(ticker)
+                    resetChartViewport()
                 } label: {
                     Text(ticker == "BTC-USD" ? "BTC" : ticker)
                         .font(MilliFont.caption)
@@ -210,7 +227,7 @@ struct InvestingView: View {
             ForEach(ChartPeriod.allCases, id: \.self) { period in
                 Button {
                     selectedPeriod = period
-                    loadMarketChart()
+                    loadMarketChart(resetViewport: true)
                 } label: {
                     Text(period.label)
                         .font(MilliFont.caption)
@@ -227,77 +244,89 @@ struct InvestingView: View {
         }
     }
 
-    private var marketHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
+    private var chartToolbar: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(market.selectedTicker == "BTC-USD" ? "BTC / USD" : market.selectedTicker)
                     .font(MilliFont.sectionLabel)
                     .tracking(0.8)
                     .foregroundStyle(MilliColors.textSecondary)
-
-                Text(market.feedStatus == .live ? marketPriceText : "—")
-                    .font(MilliFont.numericLarge)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
-                    .contentTransition(.numericText())
+                Text("Pinch to zoom · drag to pan")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
 
             Spacer()
 
-            if market.feedStatus == .live {
-                VStack(alignment: .trailing, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Image(systemName: market.priceChange >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        Text(String(format: "%+.2f%%", market.percentChange))
-                    }
-                    .font(MilliFont.labelLarge)
-                    .foregroundStyle(market.priceChange >= 0 ? MilliColors.positive : MilliColors.negative)
-
-                    Text(selectedPeriod.label)
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
-                }
-            } else if market.feedStatus == .loading {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(MilliColors.cyanGlow)
+            zoomButton(systemName: "minus.magnifyingglass", accessibility: "Zoom out") {
+                zoomChart(out: true)
+            }
+            zoomButton(systemName: "plus.magnifyingglass", accessibility: "Zoom in") {
+                zoomChart(out: false)
+            }
+            zoomButton(systemName: "arrow.counterclockwise", accessibility: "Reset chart zoom") {
+                resetChartViewport()
             }
         }
     }
 
+    private func zoomButton(systemName: String, accessibility: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle()
+                        .fill(Color.white.opacity(0.04))
+                        .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.14), lineWidth: 0.6))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibility)
+    }
+
     @ViewBuilder
     private var marketChart: some View {
-        if market.feedStatus == .live, !market.candles.isEmpty {
+        if market.feedStatus == .live, !visibleCandles.isEmpty {
             Chart {
-                ForEach(market.candles) { candle in
+                ForEach(visibleCandles) { candle in
                     RuleMark(
                         x: .value("Time", candle.time),
                         yStart: .value("Low", candle.low),
                         yEnd: .value("High", candle.high)
                     )
-                    .foregroundStyle(candle.isUp ? MilliColors.positive : MilliColors.negative)
-                    .lineStyle(StrokeStyle(lineWidth: 1.05, lineCap: .round))
+                    .foregroundStyle(candle.isUp ? MilliColors.cyanGlow : Color.white.opacity(0.92))
+                    .lineStyle(StrokeStyle(lineWidth: 1.45, lineCap: .round))
 
                     RectangleMark(
                         x: .value("Time", candle.time),
                         yStart: .value("Open", min(candle.open, candle.close)),
                         yEnd: .value("Close", max(candle.open, candle.close)),
-                        width: 5
+                        width: 8
                     )
                     .foregroundStyle(
-                        LinearGradient(
-                            colors: candle.isUp
-                                ? [MilliColors.positive.opacity(0.98), MilliColors.positive.opacity(0.66)]
-                                : [MilliColors.negative.opacity(0.98), MilliColors.negative.opacity(0.66)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                        candle.isUp
+                            ? AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            : AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [Color.white, MilliColors.silver],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
                     )
-                    .cornerRadius(0.9)
+                    .cornerRadius(1.4)
                 }
 
                 RuleMark(y: .value("Last Price", market.currentPrice))
-                    .foregroundStyle(MilliColors.cyanGlow.opacity(0.68))
+                    .foregroundStyle(MilliColors.cyanGlow.opacity(0.62))
                     .lineStyle(StrokeStyle(lineWidth: 0.8, dash: [4, 4]))
                     .annotation(position: .trailing, alignment: .center, spacing: 3) {
                         Text(compactMarketPrice(market.currentPrice))
@@ -317,45 +346,49 @@ struct InvestingView: View {
                 plotArea
                     .background(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.018), Color.black.opacity(0.12)],
+                            colors: [Color.white.opacity(0.020), Color.black.opacity(0.16)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
                     .overlay {
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .stroke(Color.white.opacity(0.035), lineWidth: 0.5)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(MilliColors.cyanGlow.opacity(0.08), lineWidth: 0.6)
                     }
             }
             .chartYAxis {
                 AxisMarks(position: .trailing, values: .automatic(desiredCount: 5)) { value in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.45, dash: [2, 5]))
-                        .foregroundStyle(Color.white.opacity(0.055))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 5]))
+                        .foregroundStyle(Color.white.opacity(0.075))
                     AxisTick(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color.white.opacity(0.12))
+                        .foregroundStyle(Color.white.opacity(0.16))
                     AxisValueLabel {
                         if let amount = value.as(Double.self) {
                             Text(compactMarketPrice(amount))
-                                .font(.custom("Inter-Medium", size: 8, relativeTo: .caption2))
+                                .font(.custom("Inter-Medium", size: 9, relativeTo: .caption2))
                                 .monospacedDigit()
-                                .foregroundStyle(MilliColors.textTertiary)
+                                .foregroundStyle(MilliColors.textSecondary)
                         }
                     }
                 }
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 5)) { value in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4, dash: [2, 6]))
-                        .foregroundStyle(Color.white.opacity(0.035))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.45, dash: [2, 6]))
+                        .foregroundStyle(Color.white.opacity(0.045))
                     AxisValueLabel {
                         if let date = value.as(Date.self) {
                             Text(chartDateLabel(date))
-                                .font(.custom("Inter-Medium", size: 8, relativeTo: .caption2))
-                                .foregroundStyle(MilliColors.textTertiary)
+                                .font(.custom("Inter-Medium", size: 9, relativeTo: .caption2))
+                                .foregroundStyle(MilliColors.textSecondary)
                         }
                     }
                 }
             }
+            .contentShape(Rectangle())
+            .simultaneousGesture(chartMagnificationGesture)
+            .simultaneousGesture(chartPanGesture)
+            .accessibilityLabel("Live OHLC candlestick chart. Cyan candles closed at or above open. White candles closed below open. Pinch to zoom and drag horizontally to pan.")
         } else {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.white.opacity(0.018))
@@ -378,42 +411,40 @@ struct InvestingView: View {
                             Text("Milli will not substitute simulated candles.")
                                 .font(MilliFont.caption)
                                 .foregroundStyle(MilliColors.textTertiary)
-                            Button("Retry") {
-                                loadMarketChart()
-                            }
-                            .font(MilliFont.labelLarge)
-                            .foregroundStyle(MilliColors.cyanGlow)
+                            Button("Retry") { loadMarketChart(resetViewport: true) }
+                                .font(MilliFont.labelLarge)
+                                .foregroundStyle(MilliColors.cyanGlow)
                         }
                     }
                 }
         }
     }
 
-    private var holdings: some View {
+    private var watchlist: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("TOP HOLDINGS")
+                Text("MARKET WATCHLIST")
                     .sectionHeaderStyle()
                 Spacer()
-                Text("View All")
-                    .font(MilliFont.labelLarge)
-                    .foregroundStyle(MilliColors.cyanGlow)
+                Text("LIVE WHEN AVAILABLE")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
 
             VStack(spacing: 0) {
-                ForEach(Array(holdingData.enumerated()), id: \.element.id) { index, holding in
+                ForEach(Array(market.holdings.enumerated()), id: \.element.id) { index, holding in
                     HStack(spacing: 9) {
                         Circle()
-                            .fill(holding.color)
-                            .frame(width: 28, height: 28)
+                            .fill(MilliColors.cyanGlow.opacity(0.09))
+                            .frame(width: 30, height: 30)
                             .overlay {
-                                Text(holding.symbol.prefix(2))
+                                Text(displayTicker(holding.ticker).prefix(2))
                                     .font(.system(size: 8, weight: .bold))
-                                    .foregroundStyle(Color.white)
+                                    .foregroundStyle(MilliColors.cyanGlow)
                             }
 
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(holding.symbol)
+                            Text(displayTicker(holding.ticker))
                                 .font(MilliFont.headlineSmall)
                                 .foregroundStyle(MilliColors.textPrimary)
                             Text(holding.name)
@@ -424,21 +455,27 @@ struct InvestingView: View {
 
                         Spacer()
 
-                        VStack(alignment: .trailing, spacing: 1) {
-                            Text(holding.value)
+                        if holding.isLive {
+                            VStack(alignment: .trailing, spacing: 1) {
+                                Text(livePriceText(holding.price))
+                                    .font(MilliFont.numericSmall)
+                                    .monospacedDigit()
+                                    .foregroundStyle(MilliColors.textPrimary)
+                                Text(String(format: "%+.2f%%", holding.change))
+                                    .font(MilliFont.caption)
+                                    .foregroundStyle(holding.change >= 0 ? MilliColors.positive : MilliColors.negative)
+                            }
+                        } else {
+                            Text("—")
                                 .font(MilliFont.numericSmall)
-                                .monospacedDigit()
-                                .foregroundStyle(MilliColors.textPrimary)
-                            Text(holding.change)
-                                .font(MilliFont.caption)
-                                .foregroundStyle(MilliColors.positive)
+                                .foregroundStyle(MilliColors.textTertiary)
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 9)
 
-                    if index < holdingData.count - 1 {
-                        Divider().overlay(Color.white.opacity(0.05)).padding(.leading, 49)
+                    if index < market.holdings.count - 1 {
+                        Divider().overlay(Color.white.opacity(0.05)).padding(.leading, 51)
                     }
                 }
             }
@@ -446,7 +483,91 @@ struct InvestingView: View {
         }
     }
 
-    private func loadMarketChart() {
+    private var visibleCandles: [LiveOHLCCandle] {
+        let candles = market.candles
+        guard !candles.isEmpty else { return [] }
+
+        let count = min(max(visibleCandleCount, minimumVisibleCandles), candles.count)
+        let proposedEnd = chartEndIndex ?? candles.count
+        let end = min(max(proposedEnd, count), candles.count)
+        let start = max(0, end - count)
+        return Array(candles[start..<end])
+    }
+
+    private var minimumVisibleCandles: Int { 8 }
+
+    private var chartMagnificationGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { scale in
+                let base = magnificationBaseCount ?? visibleCandleCount
+                if magnificationBaseCount == nil {
+                    magnificationBaseCount = visibleCandleCount
+                }
+                let adjusted = Int((Double(base) / max(scale, 0.25)).rounded())
+                setVisibleCandleCount(adjusted)
+            }
+            .onEnded { _ in
+                magnificationBaseCount = nil
+            }
+    }
+
+    private var chartPanGesture: some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard abs(value.translation.width) > abs(value.translation.height), !market.candles.isEmpty else { return }
+                let base = dragBaseEndIndex ?? (chartEndIndex ?? market.candles.count)
+                if dragBaseEndIndex == nil {
+                    dragBaseEndIndex = base
+                }
+                let pointsPerCandle: CGFloat = 11
+                let delta = Int((value.translation.width / pointsPerCandle).rounded())
+                let minimumEnd = min(visibleCandleCount, market.candles.count)
+                chartEndIndex = min(max(base - delta, minimumEnd), market.candles.count)
+            }
+            .onEnded { _ in
+                dragBaseEndIndex = nil
+            }
+    }
+
+    private func zoomChart(out: Bool) {
+        let factor = out ? 1.35 : 0.72
+        setVisibleCandleCount(Int((Double(visibleCandleCount) * factor).rounded()))
+    }
+
+    private func setVisibleCandleCount(_ requested: Int) {
+        guard !market.candles.isEmpty else {
+            visibleCandleCount = max(requested, minimumVisibleCandles)
+            return
+        }
+        let clamped = min(max(requested, minimumVisibleCandles), market.candles.count)
+        visibleCandleCount = clamped
+        let currentEnd = chartEndIndex ?? market.candles.count
+        chartEndIndex = min(max(currentEnd, clamped), market.candles.count)
+    }
+
+    private func resetChartViewport() {
+        visibleCandleCount = defaultVisibleCandleCount
+        chartEndIndex = market.candles.isEmpty ? nil : market.candles.count
+        magnificationBaseCount = nil
+        dragBaseEndIndex = nil
+    }
+
+    private var defaultVisibleCandleCount: Int {
+        switch selectedPeriod {
+        case .oneDay: return 48
+        case .oneWeek: return 42
+        case .oneMonth: return 38
+        case .threeMonths: return 46
+        case .oneYear: return 50
+        case .all: return 52
+        }
+    }
+
+    private func loadMarketChart(resetViewport: Bool) {
+        if resetViewport {
+            visibleCandleCount = defaultVisibleCandleCount
+            chartEndIndex = nil
+        }
         market.fetchChart(
             for: market.selectedTicker,
             interval: selectedPeriod.interval,
@@ -455,23 +576,19 @@ struct InvestingView: View {
     }
 
     private var chartYDomain: ClosedRange<Double> {
-        guard let low = market.candles.map(\.low).min(),
-              let high = market.candles.map(\.high).max(),
-              high >= low
-        else {
+        guard let low = visibleCandles.map(\.low).min(),
+              let high = visibleCandles.map(\.high).max(),
+              high >= low else {
             return 0...1
         }
 
         let spread = max(high - low, max(high * 0.0025, 0.01))
-        let padding = spread * 0.12
+        let padding = spread * 0.10
         return (low - padding)...(high + padding)
     }
 
     private var marketPriceText: String {
-        if market.currentPrice >= 10_000 {
-            return market.currentPrice.formatted(.currency(code: "USD").precision(.fractionLength(0)))
-        }
-        return market.currentPrice.formatted(.currency(code: "USD").precision(.fractionLength(2)))
+        livePriceText(market.currentPrice)
     }
 
     private var marketTimestamp: String {
@@ -500,14 +617,21 @@ struct InvestingView: View {
         }
     }
 
-    private func compactMarketPrice(_ value: Double) -> String {
+    private func livePriceText(_ value: Double) -> String {
         if value >= 10_000 {
-            return String(format: "$%.1fK", value / 1_000)
+            return value.formatted(.currency(code: "USD").precision(.fractionLength(0)))
         }
-        if value >= 1_000 {
-            return String(format: "$%.0f", value)
-        }
+        return value.formatted(.currency(code: "USD").precision(.fractionLength(2)))
+    }
+
+    private func compactMarketPrice(_ value: Double) -> String {
+        if value >= 10_000 { return String(format: "$%.1fK", value / 1_000) }
+        if value >= 1_000 { return String(format: "$%.0f", value) }
         return String(format: "$%.2f", value)
+    }
+
+    private func displayTicker(_ ticker: String) -> String {
+        ticker == "BTC-USD" ? "BTC" : ticker
     }
 
     private func chartDateLabel(_ date: Date) -> String {
@@ -519,15 +643,6 @@ struct InvestingView: View {
         default:
             return date.formatted(.dateTime.month(.abbreviated).day())
         }
-    }
-
-    private var holdingData: [Holding] {
-        [
-            .init(symbol: "VTI", name: "Vanguard Total Stock Market ETF", value: "$12,663.43", change: "+3.15%", color: Color(hex: "C23A36")),
-            .init(symbol: "VOO", name: "Vanguard S&P 500 ETF", value: "$9,742.21", change: "+3.20%", color: Color(hex: "D64B45")),
-            .init(symbol: "QQQM", name: "Invesco NASDAQ 100 ETF", value: "$6,521.37", change: "+2.18%", color: Color(hex: "248BEA")),
-            .init(symbol: "SCHD", name: "Schwab U.S. Dividend Equity ETF", value: "$3,865.12", change: "+1.25%", color: Color(hex: "0CA6D8"))
-        ]
     }
 }
 
@@ -566,13 +681,4 @@ enum ChartPeriod: CaseIterable {
         case .all: return "5y"
         }
     }
-}
-
-struct Holding: Identifiable {
-    let id = UUID()
-    let symbol: String
-    let name: String
-    let value: String
-    let change: String
-    let color: Color
 }
