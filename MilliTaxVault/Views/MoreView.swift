@@ -1,7 +1,8 @@
 import SwiftUI
 
 // MARK: - MoreMenuView
-// Secondary product hub. Primary navigation stays Home / Payouts / M / Mileage / More.
+// Secondary product hub. Primary navigation is Payouts / Mileage / HOME M / Wealth / More.
+// Investing, retirement, savings and long-term planning live canonically under Wealth.
 
 struct MoreMenuView: View {
     var navigate: ((ActiveScreen) -> Void)?
@@ -26,14 +27,7 @@ struct MoreMenuView: View {
                 menuTile(icon: "checkmark.seal.fill", title: "Tax Ready Score™", subtitle: "See how prepared you are for tax season", color: MilliColors.positive) { navigate?(.taxReadyScore) }
                 menuTile(icon: "calendar.badge.clock", title: "Quarterly Taxes", subtitle: "Estimate, prepare, and track payments", color: MilliColors.warning) { navigate?(.quarterlyTaxes) }
 
-                sectionTitle("BUILD WEALTH")
-                menuTile(icon: "circle.grid.2x2.fill", title: "Wealth Overview", subtitle: "See investments, retirement, savings and cash together", color: MilliColors.silverBright) { navigate?(.wealthOverview) }
-                menuTile(icon: "target", title: "Savings", subtitle: "Build goal-based savings plans without confusing them with Milli Cents™", color: Color(hex: "8C70FF")) { navigate?(.savings) }
-                menuTile(icon: "chart.xyaxis.line", title: "Investing", subtitle: "Markets, holdings, and portfolio performance", color: MilliColors.cyanGlow) { navigate?(.investing) }
-                menuTile(icon: "building.columns.fill", title: "Retirement", subtitle: "Contribution-based retirement projections", color: MilliColors.positive) { navigate?(.retirement) }
-                menuTile(icon: "tree.fill", title: "Tree of Life", subtitle: "Plan life events against your financial future", color: MilliColors.cyanGlow) { navigate?(.treeOfLife) }
-
-                sectionTitle("INSIGHTS")
+                sectionTitle("INSIGHTS & RECORDS")
                 menuTile(icon: "doc.text.fill", title: "Reports", subtitle: "Deductions, trips, exports, and summaries", color: Color(hex: "7C8CFF")) { navigate?(.reports) }
                 menuTile(icon: "folder.fill", title: "Documents", subtitle: "Tax documents, receipts, reports, and native file import", color: MilliColors.silverBright) { navigate?(.documents) }
                 menuTile(icon: "sparkles", title: "Milli AI", subtitle: "Personalized intelligence across your money", color: MilliColors.cyanGlow) { navigate?(.milliAI) }
