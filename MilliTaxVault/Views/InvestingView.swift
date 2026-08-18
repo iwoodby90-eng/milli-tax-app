@@ -2,17 +2,17 @@ import SwiftUI
 import Charts
 
 // MARK: - InvestingView
-// Institutional-style market surface. Market indices and OHLC candlesticks come
-// from the live market transport; if that transport fails the UI says so instead
-// of substituting synthetic prices.
+// Reference-driven institutional market surface. Every candle comes from the
+// external OHLC transport in MarketDataViewModel; no random or synthetic chart
+// points are drawn when the market feed is unavailable.
 
 struct InvestingView: View {
     var onBack: () -> Void = {}
 
     @StateObject private var market = MarketDataViewModel()
-    @State private var selectedPeriod: ChartPeriod = .oneDay
+    @State private var selectedPeriod: ChartPeriod = .oneMonth
 
-    private let tickers = ["AAPL", "VOO", "NVDA", "QQQ", "BTC-USD"]
+    private let tickers = ["VOO", "AAPL", "NVDA", "QQQ", "BTC-USD"]
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -53,7 +53,7 @@ struct InvestingView: View {
 
             Spacer()
 
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                 Image(systemName: "bell")
             }
@@ -79,7 +79,7 @@ struct InvestingView: View {
                     .font(MilliFont.sectionLabel)
                     .foregroundStyle(MilliColors.textSecondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.74)
+                    .minimumScaleFactor(0.72)
 
                 Spacer(minLength: 0)
 
@@ -93,7 +93,7 @@ struct InvestingView: View {
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.70)
+                .minimumScaleFactor(0.68)
 
             HStack(spacing: 3) {
                 if index.isLive {
@@ -144,18 +144,24 @@ struct InvestingView: View {
 
             tickerControl
             periodControl
-
             marketHeader
 
             marketChart
-                .frame(height: 220)
+                .frame(height: 238)
 
-            HStack {
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(feedColor)
+                    .frame(width: 5, height: 5)
+
                 Text(marketTimestamp)
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
-                Spacer()
-                Text("Market data")
+                    .lineLimit(1)
+
+                Spacer(minLength: 6)
+
+                Text("OHLC · 10s refresh")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
@@ -182,8 +188,7 @@ struct InvestingView: View {
         HStack(spacing: 3) {
             ForEach(tickers, id: \.self) { ticker in
                 Button {
-                    market.selectedTicker = ticker
-                    loadMarketChart()
+                    market.switchTicker(ticker)
                 } label: {
                     Text(ticker == "BTC-USD" ? "BTC" : ticker)
                         .font(MilliFont.caption)
@@ -225,7 +230,7 @@ struct InvestingView: View {
     private var marketHeader: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(market.selectedTicker == "BTC-USD" ? "BTC" : market.selectedTicker)
+                Text(market.selectedTicker == "BTC-USD" ? "BTC / USD" : market.selectedTicker)
                     .font(MilliFont.sectionLabel)
                     .tracking(0.8)
                     .foregroundStyle(MilliColors.textSecondary)
@@ -234,17 +239,24 @@ struct InvestingView: View {
                     .font(MilliFont.numericLarge)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
+                    .contentTransition(.numericText())
             }
 
             Spacer()
 
             if market.feedStatus == .live {
-                HStack(spacing: 4) {
-                    Image(systemName: market.priceChange >= 0 ? "arrow.up.right" : "arrow.down.right")
-                    Text(String(format: "%+.2f%%", market.percentChange))
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: market.priceChange >= 0 ? "arrow.up.right" : "arrow.down.right")
+                        Text(String(format: "%+.2f%%", market.percentChange))
+                    }
+                    .font(MilliFont.labelLarge)
+                    .foregroundStyle(market.priceChange >= 0 ? MilliColors.positive : MilliColors.negative)
+
+                    Text(selectedPeriod.label)
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
                 }
-                .font(MilliFont.labelLarge)
-                .foregroundStyle(market.priceChange >= 0 ? MilliColors.positive : MilliColors.negative)
             } else if market.feedStatus == .loading {
                 ProgressView()
                     .controlSize(.small)
@@ -256,42 +268,89 @@ struct InvestingView: View {
     @ViewBuilder
     private var marketChart: some View {
         if market.feedStatus == .live, !market.candles.isEmpty {
-            Chart(market.candles) { candle in
-                RuleMark(
-                    x: .value("Time", candle.time),
-                    yStart: .value("Low", candle.low),
-                    yEnd: .value("High", candle.high)
-                )
-                .foregroundStyle(candle.isUp ? MilliColors.positive : MilliColors.negative)
-                .lineStyle(StrokeStyle(lineWidth: 0.9))
+            Chart {
+                ForEach(market.candles) { candle in
+                    RuleMark(
+                        x: .value("Time", candle.time),
+                        yStart: .value("Low", candle.low),
+                        yEnd: .value("High", candle.high)
+                    )
+                    .foregroundStyle(candle.isUp ? MilliColors.positive : MilliColors.negative)
+                    .lineStyle(StrokeStyle(lineWidth: 1.05, lineCap: .round))
 
-                RectangleMark(
-                    x: .value("Time", candle.time),
-                    yStart: .value("Open", min(candle.open, candle.close)),
-                    yEnd: .value("Close", max(candle.open, candle.close)),
-                    width: 4
-                )
-                .foregroundStyle(candle.isUp ? MilliColors.positive : MilliColors.negative)
-                .cornerRadius(0.8)
+                    RectangleMark(
+                        x: .value("Time", candle.time),
+                        yStart: .value("Open", min(candle.open, candle.close)),
+                        yEnd: .value("Close", max(candle.open, candle.close)),
+                        width: 5
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: candle.isUp
+                                ? [MilliColors.positive.opacity(0.98), MilliColors.positive.opacity(0.66)]
+                                : [MilliColors.negative.opacity(0.98), MilliColors.negative.opacity(0.66)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .cornerRadius(0.9)
+                }
+
+                RuleMark(y: .value("Last Price", market.currentPrice))
+                    .foregroundStyle(MilliColors.cyanGlow.opacity(0.68))
+                    .lineStyle(StrokeStyle(lineWidth: 0.8, dash: [4, 4]))
+                    .annotation(position: .trailing, alignment: .center, spacing: 3) {
+                        Text(compactMarketPrice(market.currentPrice))
+                            .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
+                            .monospacedDigit()
+                            .foregroundStyle(MilliColors.blackGlass)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(MilliColors.cyanGlow)
+                            )
+                    }
+            }
+            .chartYScale(domain: chartYDomain)
+            .chartPlotStyle { plotArea in
+                plotArea
+                    .background(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.018), Color.black.opacity(0.12)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(Color.white.opacity(0.035), lineWidth: 0.5)
+                    }
             }
             .chartYAxis {
-                AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { value in
-                    AxisGridLine().foregroundStyle(Color.white.opacity(0.04))
+                AxisMarks(position: .trailing, values: .automatic(desiredCount: 5)) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.45, dash: [2, 5]))
+                        .foregroundStyle(Color.white.opacity(0.055))
+                    AxisTick(stroke: StrokeStyle(lineWidth: 0.5))
+                        .foregroundStyle(Color.white.opacity(0.12))
                     AxisValueLabel {
                         if let amount = value.as(Double.self) {
                             Text(compactMarketPrice(amount))
-                                .font(MilliFont.caption)
+                                .font(.custom("Inter-Medium", size: 8, relativeTo: .caption2))
+                                .monospacedDigit()
                                 .foregroundStyle(MilliColors.textTertiary)
                         }
                     }
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4, dash: [2, 6]))
+                        .foregroundStyle(Color.white.opacity(0.035))
                     AxisValueLabel {
                         if let date = value.as(Date.self) {
                             Text(chartDateLabel(date))
-                                .font(MilliFont.caption)
+                                .font(.custom("Inter-Medium", size: 8, relativeTo: .caption2))
                                 .foregroundStyle(MilliColors.textTertiary)
                         }
                     }
@@ -304,7 +363,7 @@ struct InvestingView: View {
                     if market.feedStatus == .loading {
                         VStack(spacing: 7) {
                             ProgressView().tint(MilliColors.cyanGlow)
-                            Text("Connecting to live market data")
+                            Text("Connecting to live OHLC market data")
                                 .font(MilliFont.caption)
                                 .foregroundStyle(MilliColors.textTertiary)
                         }
@@ -316,6 +375,9 @@ struct InvestingView: View {
                             Text("Live market data unavailable")
                                 .font(MilliFont.bodySmall)
                                 .foregroundStyle(MilliColors.textSecondary)
+                            Text("Milli will not substitute simulated candles.")
+                                .font(MilliFont.caption)
+                                .foregroundStyle(MilliColors.textTertiary)
                             Button("Retry") {
                                 loadMarketChart()
                             }
@@ -392,6 +454,19 @@ struct InvestingView: View {
         )
     }
 
+    private var chartYDomain: ClosedRange<Double> {
+        guard let low = market.candles.map(\.low).min(),
+              let high = market.candles.map(\.high).max(),
+              high >= low
+        else {
+            return 0...1
+        }
+
+        let spread = max(high - low, max(high * 0.0025, 0.01))
+        let padding = spread * 0.12
+        return (low - padding)...(high + padding)
+    }
+
     private var marketPriceText: String {
         if market.currentPrice >= 10_000 {
             return market.currentPrice.formatted(.currency(code: "USD").precision(.fractionLength(0)))
@@ -400,16 +475,19 @@ struct InvestingView: View {
     }
 
     private var marketTimestamp: String {
-        guard let lastUpdated = market.lastUpdated else {
-            return market.feedStatus == .unavailable ? "No live update" : "Connecting…"
+        if let marketTime = market.latestMarketTimestamp {
+            return "Market bar \(marketTime.formatted(date: .omitted, time: .shortened))"
         }
-        return "Updated \(lastUpdated.formatted(date: .omitted, time: .shortened))"
+        if market.feedStatus == .unavailable {
+            return "No live market update"
+        }
+        return "Connecting…"
     }
 
     private var feedText: String {
         switch market.feedStatus {
         case .loading: return "CONNECTING"
-        case .live: return "LIVE"
+        case .live: return "LIVE DATA"
         case .unavailable: return "OFFLINE"
         }
     }
@@ -424,7 +502,7 @@ struct InvestingView: View {
 
     private func compactMarketPrice(_ value: Double) -> String {
         if value >= 10_000 {
-            return String(format: "$%.0fK", value / 1_000)
+            return String(format: "$%.1fK", value / 1_000)
         }
         if value >= 1_000 {
             return String(format: "$%.0f", value)
@@ -434,8 +512,10 @@ struct InvestingView: View {
 
     private func chartDateLabel(_ date: Date) -> String {
         switch selectedPeriod {
-        case .oneDay, .oneWeek:
+        case .oneDay:
             return date.formatted(date: .omitted, time: .shortened)
+        case .oneWeek:
+            return date.formatted(.dateTime.weekday(.abbreviated).hour())
         default:
             return date.formatted(.dateTime.month(.abbreviated).day())
         }
