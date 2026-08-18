@@ -1,22 +1,55 @@
 import SwiftUI
 import CoreLocation
+import MapKit
 
 // MARK: - MileageView
 // Native mileage instrumentation matching the approved production reference.
-// DEBUG visual-QA launches keep deterministic reference values, while normal app
-// launches bind the same presentation directly to LocationManager.
+// The route panel is a real interactive Apple MapKit map. DEBUG visual-QA uses
+// deterministic coordinates on that real map; production uses CLLocationManager.
 
 struct MileageView: View {
     var onBack: () -> Void = {}
 
     @StateObject private var locationManager = LocationManager()
+    @State private var mapPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 39.5, longitude: -98.35),
+            span: MKCoordinateSpan(latitudeDelta: 42, longitudeDelta: 58)
+        )
+    )
+
+    private static let demoRouteCoordinates: [CLLocationCoordinate2D] = [
+        .init(latitude: 42.33182, longitude: -83.04772),
+        .init(latitude: 42.33275, longitude: -83.04492),
+        .init(latitude: 42.33402, longitude: -83.04216),
+        .init(latitude: 42.33562, longitude: -83.03988),
+        .init(latitude: 42.33712, longitude: -83.03748),
+        .init(latitude: 42.33872, longitude: -83.03531),
+        .init(latitude: 42.34048, longitude: -83.03312),
+        .init(latitude: 42.34164, longitude: -83.03031),
+        .init(latitude: 42.34274, longitude: -83.02721),
+        .init(latitude: 42.34422, longitude: -83.02474),
+        .init(latitude: 42.34608, longitude: -83.02318)
+    ]
 
     private var isScreenshotMode: Bool {
         #if DEBUG
         ProcessInfo.processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("-milliScreenshotMode")
         #else
         false
         #endif
+    }
+
+    private var displayedRoute: [CLLocationCoordinate2D] {
+        isScreenshotMode ? Self.demoRouteCoordinates : locationManager.routeCoordinates
+    }
+
+    private var displayedCurrentCoordinate: CLLocationCoordinate2D? {
+        if let last = displayedRoute.last {
+            return last
+        }
+        return locationManager.lastLocation?.coordinate
     }
 
     var body: some View {
@@ -37,6 +70,19 @@ struct MileageView: View {
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
+        .onAppear {
+            updateMapCamera(animated: false)
+            if !isScreenshotMode {
+                locationManager.refreshCurrentLocation()
+            }
+        }
+        .onChange(of: locationManager.routeCoordinates.count) { _, _ in
+            updateMapCamera(animated: true)
+        }
+        .onChange(of: locationManager.lastLocation?.timestamp) { _, _ in
+            guard locationManager.routeCoordinates.isEmpty else { return }
+            updateMapCamera(animated: true)
+        }
         .alert(
             "Mileage Tracking",
             isPresented: Binding(
@@ -217,43 +263,121 @@ struct MileageView: View {
     }
 
     private var routePanel: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 0)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "061018"), Color(hex: "07141D"), Color(hex: "041018")],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+        Map(position: $mapPosition, interactionModes: .all) {
+            if displayedRoute.count >= 2 {
+                MapPolyline(coordinates: displayedRoute)
+                    .stroke(MilliColors.cyanGlow.opacity(0.18), lineWidth: 10)
 
-            streetGrid
-                .opacity(0.75)
+                MapPolyline(coordinates: displayedRoute)
+                    .stroke(MilliColors.cyanGlow, lineWidth: 4)
+            }
 
-            if isScreenshotMode {
-                demoRoutePath
-                demoMarkers
-            } else if locationManager.routeCoordinates.count >= 2 {
-                MileageLiveRouteCanvas(coordinates: locationManager.routeCoordinates)
-                    .padding(12)
-            } else {
-                VStack(spacing: 6) {
-                    Image(systemName: "location.north.line.fill")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(MilliColors.cyanGlow.opacity(0.72))
-                    Text(locationManager.isTracking ? "Waiting for GPS route…" : "Start a trip to build your route")
-                        .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.textSecondary)
+            if let start = displayedRoute.first {
+                Annotation("Trip start", coordinate: start) {
+                    startMapMarker
+                }
+            }
+
+            if let current = displayedCurrentCoordinate {
+                Annotation("Current location", coordinate: current) {
+                    currentMapMarker
                 }
             }
         }
         .frame(height: 246)
+        .overlay {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.20),
+                    Color.clear,
+                    Color(hex: "001A22").opacity(0.14)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+        }
         .overlay(alignment: .topTrailing) {
             gpsBadge
                 .padding(8)
         }
-        .accessibilityElement(children: .ignore)
+        .overlay(alignment: .bottomTrailing) {
+            if displayedCurrentCoordinate != nil || !displayedRoute.isEmpty {
+                Button {
+                    updateMapCamera(animated: true)
+                } label: {
+                    Image(systemName: "scope")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.black.opacity(0.72))
+                                .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 0.6))
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(8)
+                .accessibilityLabel("Recenter mileage map")
+            }
+        }
+        .overlay {
+            if displayedRoute.isEmpty && displayedCurrentCoordinate == nil {
+                VStack(spacing: 6) {
+                    Image(systemName: "location.north.line.fill")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(MilliColors.cyanGlow.opacity(0.82))
+                    Text(locationManager.isTracking ? "Waiting for GPS route…" : "Start a trip to map your route")
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textPrimary)
+                    Text("The map itself is live MapKit data.")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textSecondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.black.opacity(0.64))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(MilliColors.cyanGlow.opacity(0.14), lineWidth: 0.6)
+                        }
+                )
+                .allowsHitTesting(false)
+            }
+        }
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(routeAccessibilityLabel)
+    }
+
+    private var startMapMarker: some View {
+        ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.82))
+                .frame(width: 28, height: 28)
+                .overlay(Circle().stroke(MilliColors.silverBright.opacity(0.74), lineWidth: 1))
+            Image(systemName: "flag.checkered")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(MilliColors.silverBright)
+        }
+        .shadow(color: .black.opacity(0.55), radius: 4, y: 2)
+    }
+
+    private var currentMapMarker: some View {
+        ZStack {
+            Circle()
+                .fill(MilliColors.cyanGlow.opacity(0.18))
+                .frame(width: 34, height: 34)
+            Circle()
+                .fill(Color.black.opacity(0.86))
+                .frame(width: 22, height: 22)
+                .overlay(Circle().stroke(MilliColors.cyanGlow, lineWidth: 2.5))
+            Circle()
+                .fill(MilliColors.cyanGlow)
+                .frame(width: 7, height: 7)
+        }
+        .shadow(color: MilliColors.cyanGlow.opacity(0.52), radius: 7)
     }
 
     private var gpsBadge: some View {
@@ -270,7 +394,7 @@ struct MileageView: View {
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 5)
-        .background(Capsule().fill(Color.black.opacity(0.40)))
+        .background(Capsule().fill(Color.black.opacity(0.66)))
     }
 
     private var permissionBadgeText: String {
@@ -288,143 +412,15 @@ struct MileageView: View {
 
     private var routeAccessibilityLabel: String {
         if isScreenshotMode {
-            return "Active trip route overview. GPS locked."
+            return "Active trip on an interactive map. GPS locked."
         }
         if locationManager.routeCoordinates.count >= 2 {
-            return "Active mileage route with \(locationManager.routeCoordinates.count) recorded GPS points."
+            return "Interactive mileage map with \(locationManager.routeCoordinates.count) recorded GPS points."
         }
-        return locationManager.isTracking ? "Mileage tracking is waiting for a GPS route." : "No active mileage route."
-    }
-
-    private var streetGrid: some View {
-        Canvas { context, size in
-            let primary = Color(hex: "183446").opacity(0.65)
-            let secondary = Color(hex: "253621").opacity(0.55)
-            let tertiary = Color(hex: "102332").opacity(0.72)
-
-            for index in 0..<10 {
-                let y = size.height * (0.08 + CGFloat(index) * 0.095)
-                var path = Path()
-                path.move(to: CGPoint(x: -20, y: y + CGFloat(index % 2) * 8))
-                path.addCurve(
-                    to: CGPoint(x: size.width + 20, y: y - 18),
-                    control1: CGPoint(x: size.width * 0.28, y: y - 14),
-                    control2: CGPoint(x: size.width * 0.63, y: y + 11)
-                )
-                context.stroke(
-                    path,
-                    with: .color(index % 3 == 0 ? secondary : tertiary),
-                    lineWidth: index % 3 == 0 ? 1.0 : 0.65
-                )
-            }
-
-            for index in 0..<9 {
-                let x = size.width * (0.05 + CGFloat(index) * 0.12)
-                var path = Path()
-                path.move(to: CGPoint(x: x - 20, y: -10))
-                path.addCurve(
-                    to: CGPoint(x: x + 38, y: size.height + 10),
-                    control1: CGPoint(x: x + 22, y: size.height * 0.28),
-                    control2: CGPoint(x: x - 18, y: size.height * 0.68)
-                )
-                context.stroke(path, with: .color(primary), lineWidth: index % 4 == 0 ? 1.0 : 0.6)
-            }
-
-            for index in 0..<5 {
-                var diagonal = Path()
-                diagonal.move(to: CGPoint(x: -15, y: size.height * (0.18 + CGFloat(index) * 0.18)))
-                diagonal.addLine(to: CGPoint(x: size.width + 20, y: size.height * (0.06 + CGFloat(index) * 0.19)))
-                context.stroke(diagonal, with: .color(Color(hex: "4B4522").opacity(0.42)), lineWidth: 0.7)
-            }
+        if locationManager.lastLocation != nil {
+            return "Interactive mileage map centered on the current location."
         }
-    }
-
-    private var demoRoutePath: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-
-            Path { path in
-                path.move(to: CGPoint(x: w * 0.14, y: h * 0.18))
-                path.addLine(to: CGPoint(x: w * 0.22, y: h * 0.29))
-                path.addLine(to: CGPoint(x: w * 0.38, y: h * 0.39))
-                path.addLine(to: CGPoint(x: w * 0.51, y: h * 0.38))
-                path.addLine(to: CGPoint(x: w * 0.63, y: h * 0.51))
-                path.addCurve(
-                    to: CGPoint(x: w * 0.70, y: h * 0.68),
-                    control1: CGPoint(x: w * 0.69, y: h * 0.56),
-                    control2: CGPoint(x: w * 0.61, y: h * 0.65)
-                )
-                path.addLine(to: CGPoint(x: w * 0.79, y: h * 0.77))
-                path.addCurve(
-                    to: CGPoint(x: w * 0.86, y: h * 0.52),
-                    control1: CGPoint(x: w * 0.91, y: h * 0.73),
-                    control2: CGPoint(x: w * 0.90, y: h * 0.62)
-                )
-            }
-            .stroke(
-                LinearGradient(
-                    colors: [MilliColors.cyanGlow, Color(hex: "16C8E9")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round)
-            )
-            .shadow(color: MilliColors.cyanGlow.opacity(0.50), radius: 5)
-        }
-        .padding(.horizontal, 6)
-    }
-
-    private var demoMarkers: some View {
-        GeometryReader { geo in
-            ZStack {
-                startMarker
-                    .position(x: geo.size.width * 0.14, y: geo.size.height * 0.18)
-                destinationMarker
-                    .position(x: geo.size.width * 0.63, y: geo.size.height * 0.51)
-                currentMarker
-                    .position(x: geo.size.width * 0.79, y: geo.size.height * 0.77)
-            }
-        }
-    }
-
-    private var startMarker: some View {
-        ZStack {
-            Circle()
-                .fill(MilliColors.cyanGlow.opacity(0.18))
-                .frame(width: 25, height: 25)
-            Image(systemName: "location.fill")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(MilliColors.cyanGlow)
-        }
-    }
-
-    private var destinationMarker: some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: "12303B"))
-                .frame(width: 23, height: 23)
-                .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.55), lineWidth: 1))
-            Circle()
-                .fill(MilliColors.cyanGlow)
-                .frame(width: 7, height: 7)
-        }
-        .shadow(color: MilliColors.cyanGlow.opacity(0.32), radius: 5)
-    }
-
-    private var currentMarker: some View {
-        ZStack {
-            Circle()
-                .fill(MilliColors.cyanGlow.opacity(0.12))
-                .frame(width: 30, height: 30)
-            Circle()
-                .stroke(MilliColors.cyanGlow, lineWidth: 3)
-                .frame(width: 19, height: 19)
-            Circle()
-                .fill(MilliColors.cyanGlow)
-                .frame(width: 6, height: 6)
-        }
-        .shadow(color: MilliColors.cyanGlow.opacity(0.38), radius: 6)
+        return locationManager.isTracking ? "Mileage map is waiting for a GPS route." : "Interactive mileage map ready for a trip."
     }
 
     private var todaySummary: some View {
@@ -532,75 +528,63 @@ struct MileageView: View {
         let seconds = totalSeconds % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
-}
 
-// MARK: - Live route projection
+    private func updateMapCamera(animated: Bool) {
+        let coordinates = displayedRoute
 
-private struct MileageLiveRouteCanvas: View {
-    let coordinates: [CLLocationCoordinate2D]
+        let region: MKCoordinateRegion
+        if !coordinates.isEmpty {
+            region = mapRegion(for: coordinates)
+        } else if let current = locationManager.lastLocation?.coordinate {
+            region = MKCoordinateRegion(
+                center: current,
+                span: MKCoordinateSpan(latitudeDelta: 0.018, longitudeDelta: 0.018)
+            )
+        } else {
+            return
+        }
 
-    var body: some View {
-        Canvas { context, size in
-            guard coordinates.count >= 2 else { return }
-
-            let latitudes = coordinates.map(\.latitude)
-            let longitudes = coordinates.map(\.longitude)
-            guard let minLat = latitudes.min(),
-                  let maxLat = latitudes.max(),
-                  let minLon = longitudes.min(),
-                  let maxLon = longitudes.max()
-            else {
-                return
+        if animated {
+            withAnimation(.easeInOut(duration: 0.45)) {
+                mapPosition = .region(region)
             }
+        } else {
+            mapPosition = .region(region)
+        }
+    }
 
-            let latSpan = max(maxLat - minLat, 0.000_01)
-            let lonSpan = max(maxLon - minLon, 0.000_01)
-            let inset: CGFloat = 10
-            let drawableWidth = max(size.width - inset * 2, 1)
-            let drawableHeight = max(size.height - inset * 2, 1)
-
-            func point(for coordinate: CLLocationCoordinate2D) -> CGPoint {
-                let xRatio = (coordinate.longitude - minLon) / lonSpan
-                let yRatio = (coordinate.latitude - minLat) / latSpan
-                return CGPoint(
-                    x: inset + drawableWidth * CGFloat(xRatio),
-                    y: inset + drawableHeight * CGFloat(1 - yRatio)
-                )
-            }
-
-            var route = Path()
-            route.move(to: point(for: coordinates[0]))
-            for coordinate in coordinates.dropFirst() {
-                route.addLine(to: point(for: coordinate))
-            }
-
-            context.stroke(
-                route,
-                with: .color(MilliColors.cyanGlow.opacity(0.20)),
-                style: StrokeStyle(lineWidth: 9, lineCap: .round, lineJoin: .round)
-            )
-            context.stroke(
-                route,
-                with: .color(MilliColors.cyanGlow),
-                style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round)
-            )
-
-            let start = point(for: coordinates[0])
-            let current = point(for: coordinates[coordinates.count - 1])
-
-            context.fill(
-                Path(ellipseIn: CGRect(x: start.x - 5, y: start.y - 5, width: 10, height: 10)),
-                with: .color(MilliColors.silverBright)
-            )
-            context.fill(
-                Path(ellipseIn: CGRect(x: current.x - 8, y: current.y - 8, width: 16, height: 16)),
-                with: .color(MilliColors.cyanGlow.opacity(0.24))
-            )
-            context.fill(
-                Path(ellipseIn: CGRect(x: current.x - 4, y: current.y - 4, width: 8, height: 8)),
-                with: .color(MilliColors.cyanGlow)
+    private func mapRegion(for coordinates: [CLLocationCoordinate2D]) -> MKCoordinateRegion {
+        guard let first = coordinates.first else {
+            return MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 39.5, longitude: -98.35),
+                span: MKCoordinateSpan(latitudeDelta: 42, longitudeDelta: 58)
             )
         }
+
+        guard coordinates.count > 1 else {
+            return MKCoordinateRegion(
+                center: first,
+                span: MKCoordinateSpan(latitudeDelta: 0.018, longitudeDelta: 0.018)
+            )
+        }
+
+        let minLat = coordinates.map(\.latitude).min() ?? first.latitude
+        let maxLat = coordinates.map(\.latitude).max() ?? first.latitude
+        let minLon = coordinates.map(\.longitude).min() ?? first.longitude
+        let maxLon = coordinates.map(\.longitude).max() ?? first.longitude
+
+        let center = CLLocationCoordinate2D(
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLon + maxLon) / 2
+        )
+
+        let latDelta = max((maxLat - minLat) * 1.55, 0.010)
+        let lonDelta = max((maxLon - minLon) * 1.55, 0.010)
+
+        return MKCoordinateRegion(
+            center: center,
+            span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
+        )
     }
 }
 
