@@ -37,9 +37,9 @@ enum MilliColors {
 
     // MARK: Text
     static let textPrimary = Color.white
-    static let textSecondary = Color(hex: "8E9AA4")
-    static let textTertiary = Color(hex: "65717A")
-    static let textLabel = Color(hex: "90A2AF")
+    static let textSecondary = Color(hex: "98A5AE")
+    static let textTertiary = Color(hex: "6D7982")
+    static let textLabel = Color(hex: "9AAAB5")
     static let textMuted = textSecondary
     static let secondaryText = textSecondary
 
@@ -58,13 +58,16 @@ enum MilliColors {
     static let navTabInactive = Color(hex: "7A858D")
 
     // MARK: Borders / highlights
-    static let border = Color.white.opacity(0.08)
+    static let border = Color.white.opacity(0.085)
     static let borderSubtle = Color.white.opacity(0.045)
-    static let cardBorderGlow = Color.white.opacity(0.08)
-    static let focusedBorder = cyanGlow.opacity(0.24)
+    static let cardBorderGlow = Color.white.opacity(0.105)
+    static let focusedBorder = cyanGlow.opacity(0.30)
     static let cyanGlowOpacity = cyanGlow.opacity(0.28)
-    static let shimmer = Color.white.opacity(0.045)
+    static let shimmer = Color.white.opacity(0.05)
+    static let glassHighlight = Color.white.opacity(0.075)
+    static let glassLowlight = Color.black.opacity(0.30)
 
+    // MARK: Shared material recipes
     static var chromeGradient: LinearGradient {
         LinearGradient(
             colors: [chromeDeep, chromeLight, chromeWhite, chromeMid, chromeDark],
@@ -75,7 +78,37 @@ enum MilliColors {
 
     static var graphiteSurface: LinearGradient {
         LinearGradient(
-            colors: [Color.white.opacity(0.035), cardBackgroundElevated, cardBackground],
+            stops: [
+                .init(color: Color(hex: "151D24"), location: 0.00),
+                .init(color: Color(hex: "0D141A"), location: 0.42),
+                .init(color: Color(hex: "080D11"), location: 1.00)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    static var blackGlassSurface: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: Color.white.opacity(0.035), location: 0.00),
+                .init(color: cardBackgroundElevated.opacity(0.94), location: 0.18),
+                .init(color: cardBackground.opacity(0.98), location: 0.66),
+                .init(color: blackGlass, location: 1.00)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    static var precisionChromeEdge: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color.white.opacity(0.48),
+                chromeMid.opacity(0.18),
+                cyanGlow.opacity(0.20),
+                chromeDeep.opacity(0.10)
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -98,6 +131,15 @@ enum MilliGradients {
                 MilliColors.chromeDark
             ],
             center: .center
+        )
+    }
+
+    static var cyanAmbient: RadialGradient {
+        RadialGradient(
+            colors: [MilliColors.cyanGlow.opacity(0.12), Color.clear],
+            center: .topTrailing,
+            startRadius: 0,
+            endRadius: 180
         )
     }
 }
