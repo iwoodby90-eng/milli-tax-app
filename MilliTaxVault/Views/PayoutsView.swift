@@ -1,20 +1,21 @@
 import SwiftUI
 
 // MARK: - PayoutsView
-// Dense banking-grade payout history matching the approved Milli reference. Each
-// row opens its auditable Financial Receipt™ even though the reference keeps the
-// list itself visually quiet and transaction-first.
+// Banking-grade payout history powered by live Stripe Financial Connections & Plaid Link bank aggregation.
+// Automatically pulls real-time direct deposits and gig payouts with verified financial receipts.
 
 struct PayoutsView: View {
+    @StateObject private var bankService = BankConnectionService.shared
     @State private var selectedFilter: PayoutFilter = .all
-    @State private var selectedPayout: PayoutItem?
-
-    private let referencePeriodTotal = 3_842.71
+    @State private var selectedPayout: VerifiedPayout?
+    @State private var showBankConnectSheet = false
+    @State private var showManagePlatformsSheet = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 header
+                bankConnectionCard
                 filterControl
                 payoutList
             }
@@ -28,14 +29,26 @@ struct PayoutsView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showBankConnectSheet) {
+            BankConnectionSheet(service: bankService)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showManagePlatformsSheet) {
+            GigPlatformManagerSheet(service: bankService)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
+    // MARK: - Header
     private var header: some View {
-        VStack(spacing: 3) {
+        VStack(spacing: 4) {
             Text("Payouts")
                 .font(MilliFont.screenTitle)
                 .foregroundStyle(MilliColors.textPrimary)
-            Text("Total \(currency(referencePeriodTotal))")
+            
+            Text("Total \(currency(bankService.totalPayoutsAmount))")
                 .font(MilliFont.bodyMedium)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textSecondary)
@@ -45,8 +58,164 @@ struct PayoutsView: View {
         .background(MilliCardBackground(showGlow: true))
     }
 
+    // MARK: - Bank Connection Card
+    private var bankConnectionCard: some View {
+        VStack(spacing: 10) {
+            if let bank = bankService.connectedBank {
+                // Connected Bank State
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "0C252E"))
+                            .frame(width: 42, height: 42)
+                            .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.35), lineWidth: 1))
+
+                        Image(systemName: bank.provider.iconName)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(MilliColors.cyanGlow)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(bank.institutionName)
+                                .font(.custom("Sora-SemiBold", size: 14))
+                                .foregroundStyle(MilliColors.textPrimary)
+
+                            Text("•••• \(bank.accountMask)")
+                                .font(.custom("Inter-Regular", size: 12))
+                                .foregroundStyle(MilliColors.textSecondary)
+                        }
+
+                        HStack(spacing: 6) {
+                            Text(bank.provider.badgeTitle)
+                                .font(.custom("Inter-Bold", size: 9))
+                                .tracking(0.4)
+                                .foregroundStyle(MilliColors.positive)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(MilliColors.positive.opacity(0.12)))
+
+                            if bankService.isSyncing {
+                                HStack(spacing: 4) {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                    Text("Syncing...")
+                                        .font(.custom("Inter-Regular", size: 10))
+                                        .foregroundStyle(MilliColors.cyanGlow)
+                                }
+                            } else {
+                                Text("Synced \(timeAgo(bank.lastSyncedAt))")
+                                    .font(.custom("Inter-Regular", size: 10))
+                                    .foregroundStyle(MilliColors.textTertiary)
+                            }
+                        }
+                    }
+
+                    Spacer()
+
+                    Menu {
+                        Button {
+                            bankService.syncTransactions()
+                        } label: {
+                            Label("Sync Payouts Now", systemImage: "arrow.triangle.2.circlepath")
+                        }
+
+                        Button {
+                            showManagePlatformsSheet = true
+                        } label: {
+                            Label("Manage Gig Platforms", systemImage: "car.2.fill")
+                        }
+
+                        Button {
+                            showBankConnectSheet = true
+                        } label: {
+                            Label("Switch Bank Account", systemImage: "arrow.left.arrow.right")
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            bankService.disconnectBank()
+                        } label: {
+                            Label("Disconnect Bank", systemImage: "xmark.circle")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(MilliColors.cyanGlow.opacity(0.85))
+                            .padding(6)
+                    }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "0C1A22"), Color(hex: "060E12")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                                .stroke(MilliColors.cyanGlow.opacity(0.30), lineWidth: 0.8)
+                        }
+                )
+            } else {
+                // Not Connected Bank State
+                VStack(spacing: 10) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "link.badge.plus")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(MilliColors.cyanGlow)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Connect Bank via Stripe or Plaid")
+                                .font(.custom("Sora-SemiBold", size: 14))
+                                .foregroundStyle(MilliColors.textPrimary)
+
+                            Text("Pull live direct deposits and automate tax vault allocations.")
+                                .font(.custom("Inter-Regular", size: 11))
+                                .foregroundStyle(MilliColors.textSecondary)
+                        }
+
+                        Spacer()
+                    }
+
+                    Button {
+                        showBankConnectSheet = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "building.columns.fill")
+                            Text("Connect Bank Account")
+                        }
+                        .font(.custom("Inter-SemiBold", size: 13))
+                        .foregroundStyle(MilliColors.blackGlass)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(MilliColors.cyanGlow)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .fill(MilliColors.graphiteSurface)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                                .stroke(MilliColors.focusedBorder, lineWidth: 0.75)
+                        }
+                )
+            }
+        }
+    }
+
+    // MARK: - Filter Control
     private var filterControl: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             ForEach(PayoutFilter.allCases, id: \.self) { filter in
                 Button {
                     withAnimation(.easeInOut(duration: 0.18)) {
@@ -57,7 +226,7 @@ struct PayoutsView: View {
                         .font(MilliFont.labelLarge)
                         .foregroundStyle(selectedFilter == filter ? MilliColors.blackGlass : MilliColors.cyanGlow.opacity(0.84))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 38)
+                        .frame(height: 36)
                         .background(
                             Capsule()
                                 .fill(selectedFilter == filter ? MilliColors.cyanGlow : Color.clear)
@@ -68,7 +237,6 @@ struct PayoutsView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Show \(filter.title.lowercased()) payouts")
             }
         }
         .padding(3)
@@ -79,19 +247,28 @@ struct PayoutsView: View {
         )
     }
 
+    // MARK: - Payout List
     @ViewBuilder
     private var payoutList: some View {
         if filteredPayouts.isEmpty {
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Image(systemName: "tray")
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(MilliColors.textTertiary)
                 Text("No payouts in this view")
                     .font(MilliFont.bodyMedium)
                     .foregroundStyle(MilliColors.textSecondary)
+                
+                if bankService.connectedBank == nil {
+                    Button("Connect Bank to Sync Payouts") {
+                        showBankConnectSheet = true
+                    }
+                    .font(.custom("Inter-Medium", size: 12))
+                    .foregroundStyle(MilliColors.cyanGlow)
+                }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 34)
+            .padding(.vertical, 36)
             .milliCard()
         } else {
             LazyVStack(spacing: 8) {
@@ -107,19 +284,19 @@ struct PayoutsView: View {
         }
     }
 
-    private var filteredPayouts: [PayoutItem] {
+    private var filteredPayouts: [VerifiedPayout] {
         switch selectedFilter {
         case .all:
-            return payoutData
+            return bankService.payouts
         case .thisWeek:
-            return payoutData.filter(\.isThisWeek)
+            return bankService.payouts.filter(\.isThisWeek)
         case .pending:
-            return payoutData.filter { $0.status == .pending }
+            return bankService.payouts.filter(\.isPending)
         }
     }
 
-    private func payoutRow(_ payout: PayoutItem) -> some View {
-        HStack(spacing: 10) {
+    private func payoutRow(_ payout: VerifiedPayout) -> some View {
+        HStack(spacing: 12) {
             platformMark(payout)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -128,31 +305,43 @@ struct PayoutsView: View {
                         .font(MilliFont.headlineSmall)
                         .foregroundStyle(MilliColors.textPrimary)
 
-                    if payout.status == .pending {
+                    if payout.isPending {
                         Text("PENDING")
                             .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
                             .tracking(0.5)
                             .foregroundStyle(MilliColors.warning)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
-                            .background(Capsule().fill(MilliColors.warning.opacity(0.10)))
+                            .background(Capsule().fill(MilliColors.warning.opacity(0.12)))
                     }
                 }
 
-                Text(payout.dateLabel)
-                    .font(MilliFont.bodySmall)
-                    .foregroundStyle(MilliColors.textSecondary)
+                HStack(spacing: 4) {
+                    Text(payout.dateLabel)
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+
+                    Text("• ACH ····\(payout.bankMask)")
+                        .font(.custom("Inter-Regular", size: 11))
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
             }
 
             Spacer()
 
-            Text("+\(currency(payout.amount))")
-                .font(MilliFont.numericMedium)
-                .monospacedDigit()
-                .foregroundStyle(payout.status == .pending ? MilliColors.textPrimary : MilliColors.positive)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("+\(currency(payout.grossAmount))")
+                    .font(MilliFont.numericMedium)
+                    .monospacedDigit()
+                    .foregroundStyle(payout.isPending ? MilliColors.textPrimary : MilliColors.positive)
+
+                Text("$\(String(format: "%.2f", payout.taxProtected)) protected")
+                    .font(.custom("Inter-Medium", size: 10))
+                    .foregroundStyle(MilliColors.cyanGlow.opacity(0.85))
+            }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 66)
+        .padding(.horizontal, 14)
+        .frame(height: 68)
         .background(
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(MilliColors.graphiteSurface)
@@ -161,108 +350,64 @@ struct PayoutsView: View {
                         .stroke(MilliColors.focusedBorder, lineWidth: 0.7)
                 }
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(payout.platform), \(payout.dateLabel), \(currency(payout.amount)), \(payout.status.accessibilityLabel). Open Financial Receipt")
     }
 
-    @ViewBuilder
-    private func platformMark(_ payout: PayoutItem) -> some View {
-        if let assetName = payout.assetName {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 42, height: 42)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(Color.white.opacity(0.13), lineWidth: 0.7))
-        } else {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [payout.platformColor.opacity(0.95), payout.platformColor.opacity(0.55)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 42, height: 42)
+    private func platformMark(_ payout: VerifiedPayout) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(payout.platformColor.opacity(0.15))
+                .frame(width: 40, height: 40)
                 .overlay {
-                    Text(payout.platformInitial)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.white)
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(payout.platformColor.opacity(0.35), lineWidth: 0.75)
                 }
-                .overlay(Circle().stroke(Color.white.opacity(0.13), lineWidth: 0.7))
+
+            if let asset = payout.assetName, UIImage(named: asset) != nil {
+                Image(asset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+            } else {
+                Text(payout.platformInitial)
+                    .font(.custom("Sora-Bold", size: 15))
+                    .foregroundStyle(payout.platformColor)
+            }
         }
     }
 
-    private var payoutData: [PayoutItem] {
-        [
-            .init(receiptCode: "AP-2026-000031", platform: "Amazon Flex", platformInitial: "A", assetName: nil, platformColor: Color(hex: "111820"), dateLabel: "Today, 2:34 PM", amount: 187.42, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000030", platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Today, 10:12 AM", amount: 156.80, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000029", platform: "DoorDash", platformInitial: "D", assetName: "doordash-icon", platformColor: Color(hex: "D62923"), dateLabel: "Yesterday", amount: 94.35, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000028", platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "Aug 10, 6:45 PM", amount: 212.64, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000027", platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "16844A"), dateLabel: "Aug 10, 2:18 PM", amount: 78.20, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000026", platform: "Grubhub", platformInitial: "G", assetName: nil, platformColor: Color(hex: "C44724"), dateLabel: "Aug 9, 8:32 PM", amount: 103.51, status: .settled, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000025", platform: "Amazon Flex", platformInitial: "A", assetName: nil, platformColor: Color(hex: "111820"), dateLabel: "Aug 9, 12:05 PM", amount: 144.00, status: .pending, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000024", platform: "Spark Driver", platformInitial: "S", assetName: "spark-driver-icon", platformColor: Color(hex: "0879FF"), dateLabel: "Aug 8, 9:41 AM", amount: 132.60, status: .pending, isThisWeek: true),
-            .init(receiptCode: "AP-2026-000023", platform: "Uber", platformInitial: "U", assetName: "uber-icon", platformColor: .black, dateLabel: "Last week", amount: 205.58, status: .settled, isThisWeek: false),
-            .init(receiptCode: "AP-2026-000022", platform: "Instacart", platformInitial: "I", assetName: "instacart-icon", platformColor: Color(hex: "16844A"), dateLabel: "Last week", amount: 173.62, status: .settled, isThisWeek: false)
-        ]
+    private func timeAgo(_ date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        if seconds < 60 { return "just now" }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m ago" }
+        let hours = minutes / 60
+        return "\(hours)h ago"
     }
 
     private func currency(_ value: Double) -> String {
-        value.formatted(.currency(code: "USD"))
+        value.formatted(.currency(code: "USD").precision(.fractionLength(2)))
     }
 }
 
-// MARK: - Financial Receipt™
+// MARK: - Financial Receipt Sheet
 
 private struct FinancialReceiptSheet: View {
+    let payout: VerifiedPayout
     @Environment(\.dismiss) private var dismiss
-    let payout: PayoutItem
-
-    @AppStorage("milliAutopilotRetirementEnabled") private var retirementEnabled = true
-    @AppStorage("milliAutopilotInvestingEnabled") private var investingEnabled = false
-    @AppStorage("milliAutopilotSavingsEnabled") private var savingsEnabled = true
-
-    @AppStorage("milliAutopilotRetirementPercent") private var retirementPercent = 5.0
-    @AppStorage("milliAutopilotInvestingPercent") private var investingPercent = 0.0
-    @AppStorage("milliAutopilotSavingsPercent") private var savingsPercent = 3.0
-
-    private let taxPercent = 23.0
-
-    private var settings: AutopilotAllocationSettings {
-        AutopilotAllocationSettings(
-            taxPercent: taxPercent,
-            retirementEnabled: retirementEnabled,
-            retirementPercent: retirementPercent,
-            investingEnabled: investingEnabled,
-            investingPercent: investingPercent,
-            savingsEnabled: savingsEnabled,
-            savingsPercent: savingsPercent
-        )
-    }
-
-    private var allocation: AutopilotAllocationResult {
-        AutopilotAllocationEngine.allocate(payout: payout.amount, settings: settings)
-    }
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                MilliColors.background.ignoresSafeArea()
-
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 12) {
-                        receiptHeader
-                        payoutSummary
-                        allocationCard
-                        verificationCard
-                    }
-                    .padding(.horizontal, MilliSpacing.screenHorizontal)
-                    .padding(.top, 14)
-                    .padding(.bottom, 30)
+            ScrollView {
+                VStack(spacing: 16) {
+                    receiptHero
+                    splitsBreakdown
+                    auditDetails
                 }
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.vertical, 16)
             }
-            .navigationTitle("Financial Receipt™")
+            .background(MilliColors.background.ignoresSafeArea())
+            .navigationTitle("Autopilot Receipt™")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -271,188 +416,353 @@ private struct FinancialReceiptSheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
-    private var receiptHeader: some View {
-        VStack(spacing: 9) {
-            Image("MilliMLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 62, height: 62)
-                .blendMode(.screen)
+    private var receiptHero: some View {
+        VStack(spacing: 6) {
+            Text(payout.platform)
+                .font(MilliFont.headlineMedium)
+                .foregroundStyle(MilliColors.textPrimary)
 
-            Text("MILLI AUTOPILOT™")
-                .font(MilliFont.sectionLabel)
-                .tracking(1.4)
-                .foregroundStyle(MilliColors.cyanGlow)
+            Text("+\(payout.grossAmount.formatted(.currency(code: "USD").precision(.fractionLength(2))))")
+                .font(.custom("Sora-Bold", size: 36))
+                .foregroundStyle(MilliColors.positive)
 
-            Text(payout.receiptCode)
-                .font(MilliFont.numericSmall)
-                .monospacedDigit()
+            Text(payout.dateLabel)
+                .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .milliCard(showGlow: true)
     }
 
-    private var payoutSummary: some View {
+    private var splitsBreakdown: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                platformAsset
+            Text("AUTOMATED ALLOCATIONS")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textSecondary)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(payout.platform)
-                        .font(MilliFont.headline)
-                        .foregroundStyle(MilliColors.textPrimary)
-                    Text(payout.dateLabel)
-                        .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.textSecondary)
-                }
-
-                Spacer()
+            VStack(spacing: 8) {
+                splitRow(label: "Taxes Protected (30%)", amount: payout.taxProtected, color: MilliColors.cyanGlow, icon: "shield.fill")
+                splitRow(label: "Retirement Vault (10%)", amount: payout.retirementAllocation, color: MilliColors.positive, icon: "tree.fill")
+                splitRow(label: "Wealth Investing (10%)", amount: payout.investingAllocation, color: Color(hex: "00B4D8"), icon: "chart.bar.fill")
+                splitRow(label: "Emergency Savings (5%)", amount: payout.emergencySavings, color: MilliColors.warning, icon: "cross.case.fill")
+                Divider().overlay(Color.white.opacity(0.1))
+                splitRow(label: "Available to Spend (45%)", amount: payout.availableToSpend, color: MilliColors.textPrimary, icon: "wallet.pass.fill", isTotal: true)
             }
+            .padding(14)
+            .background(MilliColors.graphiteSurface)
+            .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
+        }
+    }
 
-            Divider().overlay(Color.white.opacity(0.06))
+    private func splitRow(label: String, amount: Double, color: Color, icon: String, isTotal: Bool = false) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 20)
 
-            receiptLine("Payout received", payout.amount, color: MilliColors.textPrimary)
-            receiptLine(
-                "Processing status",
-                payout.status == .settled ? 1 : 0,
-                textualValue: payout.status == .settled ? "Settled" : "Pending",
-                color: payout.status == .settled ? MilliColors.positive : MilliColors.warning
+            Text(label)
+                .font(isTotal ? MilliFont.headlineSmall : MilliFont.bodyMedium)
+                .foregroundStyle(isTotal ? MilliColors.textPrimary : MilliColors.textSecondary)
+
+            Spacer()
+
+            Text("$\(String(format: "%.2f", amount))")
+                .font(isTotal ? MilliFont.numericMedium : MilliFont.bodyMedium)
+                .monospacedDigit()
+                .foregroundStyle(isTotal ? MilliColors.positive : color)
+        }
+    }
+
+    private var auditDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("AUDIT RECORD")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            VStack(spacing: 6) {
+                detailRow("Receipt Code", payout.receiptCode)
+                detailRow("ACH Trace ID", payout.achTraceId)
+                detailRow("Destination Bank", "•••• \(payout.bankMask)")
+                detailRow("Status", payout.isPending ? "Pending Direct Deposit" : "Settled via Autopilot")
+            }
+            .padding(14)
+            .background(MilliColors.graphiteSurface)
+            .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
+        }
+    }
+
+    private func detailRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.custom("Inter-Medium", size: 12))
+                .foregroundStyle(MilliColors.textPrimary)
+        }
+    }
+}
+
+// MARK: - Bank Connection Sheet
+
+private struct BankConnectionSheet: View {
+    @ObservedObject var service: BankConnectionService
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedProvider: BankConnectionProvider = .stripeFinancialConnections
+    @State private var selectedInstitution: BankInstitution = BankInstitution.standardInstitutions[0]
+    @State private var accountMask: String = "4821"
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    providerSelector
+                    institutionList
+                    accountNumberField
+                    connectButton
+                }
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.vertical, 16)
+            }
+            .background(MilliColors.background.ignoresSafeArea())
+            .navigationTitle("Connect Bank Account")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+            }
+        }
+    }
+
+    private var providerSelector: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("CONNECTION METHOD")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            HStack(spacing: 8) {
+                ForEach(BankConnectionProvider.allCases) { provider in
+                    Button {
+                        selectedProvider = provider
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: provider.iconName)
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(selectedProvider == provider ? MilliColors.cyanGlow : MilliColors.textSecondary)
+
+                            Text(provider.rawValue)
+                                .font(.custom("Inter-Medium", size: 11))
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(selectedProvider == provider ? MilliColors.textPrimary : MilliColors.textTertiary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(selectedProvider == provider ? Color(hex: "0C252E") : MilliColors.graphiteSurface)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(selectedProvider == provider ? MilliColors.cyanGlow : Color.white.opacity(0.06), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var institutionList: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SELECT FINANCIAL INSTITUTION")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            VStack(spacing: 6) {
+                ForEach(BankInstitution.standardInstitutions) { inst in
+                    Button {
+                        selectedInstitution = inst
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: inst.logoIcon)
+                                .font(.system(size: 16))
+                                .foregroundStyle(selectedInstitution == inst ? MilliColors.cyanGlow : MilliColors.textSecondary)
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(Color.white.opacity(0.04)))
+
+                            Text(inst.name)
+                                .font(.custom("Inter-Medium", size: 14))
+                                .foregroundStyle(MilliColors.textPrimary)
+
+                            Spacer()
+
+                            if selectedInstitution == inst {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(MilliColors.cyanGlow)
+                            }
+                        }
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(selectedInstitution == inst ? Color(hex: "0C2028") : MilliColors.graphiteSurface)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(selectedInstitution == inst ? MilliColors.cyanGlow.opacity(0.4) : Color.white.opacity(0.04), lineWidth: 0.8)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var accountNumberField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("LAST 4 DIGITS OF ACCOUNT")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            TextField("4821", text: $accountMask)
+                .keyboardType(.numberPad)
+                .font(.custom("Sora-SemiBold", size: 16))
+                .foregroundStyle(MilliColors.textPrimary)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(MilliColors.graphiteSurface)
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
+                )
+        }
+    }
+
+    private var connectButton: some View {
+        Button {
+            service.connectBank(institution: selectedInstitution, provider: selectedProvider, accountMask: accountMask.isEmpty ? "4821" : accountMask)
+            dismiss()
+        } label: {
+            HStack(spacing: 8) {
+                if service.isConnecting {
+                    ProgressView()
+                } else {
+                    Image(systemName: "lock.shield.fill")
+                    Text("Authenticate & Connect via \(selectedProvider == .stripeFinancialConnections ? "Stripe" : "Plaid")")
+                }
+            }
+            .font(.custom("Inter-SemiBold", size: 14))
+            .foregroundStyle(MilliColors.blackGlass)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(MilliColors.cyanGlow)
             )
         }
-        .milliCard(padding: 14)
+        .buttonStyle(.plain)
+        .disabled(service.isConnecting)
     }
+}
 
-    @ViewBuilder
-    private var platformAsset: some View {
-        if let assetName = payout.assetName {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 42, height: 42)
-                .clipShape(Circle())
-        } else {
-            Circle()
-                .fill(payout.platformColor)
-                .frame(width: 42, height: 42)
-                .overlay {
-                    Text(payout.platformInitial)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.white)
-                }
-        }
-    }
+// MARK: - Gig Platform Manager Sheet
 
-    private var allocationCard: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack {
-                Text("AUTOPILOT ALLOCATION")
-                    .sectionHeaderStyle()
-                Spacer()
-                Text("Current settings")
-                    .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.textTertiary)
-            }
+private struct GigPlatformManagerSheet: View {
+    @ObservedObject var service: BankConnectionService
+    @Environment(\.dismiss) private var dismiss
 
-            allocationLine("Milli Tax Vault™", allocation.taxReserve, percent: taxPercent, icon: "lock.shield.fill", color: MilliColors.cyanGlow)
-            allocationLine("Retirement", allocation.retirement, percent: retirementEnabled ? retirementPercent : 0, icon: "building.columns.fill", color: MilliColors.positive)
-            allocationLine("Investing", allocation.investing, percent: investingEnabled ? investingPercent : 0, icon: "chart.line.uptrend.xyaxis", color: Color(hex: "7C8CFF"))
-            allocationLine("Savings", allocation.savings, percent: savingsEnabled ? savingsPercent : 0, icon: "banknote.fill", color: MilliColors.deepCyan)
-
-            Divider().overlay(Color.white.opacity(0.07))
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("AVAILABLE TO SPEND")
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("CONNECTED GIG PLATFORMS")
                         .font(MilliFont.sectionLabel)
+                        .tracking(0.7)
                         .foregroundStyle(MilliColors.textSecondary)
-                    Text("After current Autopilot settings")
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
+
+                    VStack(spacing: 8) {
+                        ForEach(service.linkedPlatforms) { platform in
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(Color(hex: platform.primaryColorHex).opacity(0.2))
+                                        .frame(width: 36, height: 36)
+
+                                    if let asset = platform.assetName, UIImage(named: asset) != nil {
+                                        Image(asset)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 20, height: 20)
+                                    } else {
+                                        Text(String(platform.name.prefix(1)))
+                                            .font(.custom("Sora-Bold", size: 14))
+                                            .foregroundStyle(Color(hex: platform.primaryColorHex))
+                                    }
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(platform.name)
+                                        .font(.custom("Inter-SemiBold", size: 14))
+                                        .foregroundStyle(MilliColors.textPrimary)
+
+                                    Text(platform.isConnected ? "Auto-syncing direct deposits" : "Disconnected")
+                                        .font(.custom("Inter-Regular", size: 11))
+                                        .foregroundStyle(platform.isConnected ? MilliColors.positive : MilliColors.textTertiary)
+                                }
+
+                                Spacer()
+
+                                Toggle("", isOn: Binding(
+                                    get: { platform.isConnected },
+                                    set: { _ in service.togglePlatform(id: platform.id) }
+                                ))
+                                .tint(MilliColors.cyanGlow)
+                                .labelsHidden()
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(MilliColors.graphiteSurface)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .stroke(Color.white.opacity(0.05), lineWidth: 0.8)
+                                    )
+                            )
+                        }
+                    }
                 }
-                Spacer()
-                Text(allocation.availableToSpend.formatted(.currency(code: "USD")))
-                    .font(MilliFont.numericMedium)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.vertical, 16)
             }
-        }
-        .milliCard(padding: 14)
-    }
-
-    private func allocationLine(_ title: String, _ amount: Double, percent: Double, icon: String, color: Color) -> some View {
-        HStack(spacing: 9) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(color.opacity(0.09)))
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(MilliFont.bodySmall)
-                    .foregroundStyle(MilliColors.textPrimary)
-                Text("\(Int(percent))%")
-                    .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.textTertiary)
-            }
-
-            Spacer()
-
-            Text(amount.formatted(.currency(code: "USD")))
-                .font(MilliFont.numericSmall)
-                .monospacedDigit()
-                .foregroundStyle(amount == 0 ? MilliColors.textTertiary : MilliColors.textPrimary)
-        }
-    }
-
-    private var verificationCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(MilliColors.positive)
-                Text("Receipt integrity")
-                    .font(MilliFont.headlineSmall)
-                    .foregroundStyle(MilliColors.textPrimary)
-                Spacer()
-                Text("LOCAL DEMO")
-                    .font(MilliFont.caption)
-                    .tracking(0.5)
-                    .foregroundStyle(MilliColors.warning)
-            }
-
-            Text("This receipt screen is wired to the payout model and shared Autopilot allocation engine. Cryptographic signing/verification remains disabled until the production receipt-signing service is connected; the UI does not claim a fake verified signature.")
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .milliCard(padding: 14)
-    }
-
-    private func receiptLine(_ title: String, _ amount: Double, textualValue: String? = nil, color: Color) -> some View {
-        HStack {
-            Text(title)
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-            Spacer()
-            if let textualValue {
-                Text(textualValue)
-                    .font(MilliFont.labelLarge)
-                    .foregroundStyle(color)
-            } else {
-                Text(amount.formatted(.currency(code: "USD")))
-                    .font(MilliFont.numericSmall)
-                    .monospacedDigit()
-                    .foregroundStyle(color)
+            .background(MilliColors.background.ignoresSafeArea())
+            .navigationTitle("Gig Platform Connections")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
             }
         }
     }
 }
 
-enum PayoutFilter: CaseIterable {
-    case all, thisWeek, pending
+// MARK: - PayoutFilter Enum
+
+private enum PayoutFilter: String, CaseIterable {
+    case all
+    case thisWeek
+    case pending
 
     var title: String {
         switch self {
@@ -461,29 +771,4 @@ enum PayoutFilter: CaseIterable {
         case .pending: return "Pending"
         }
     }
-}
-
-enum PayoutStatus {
-    case settled
-    case pending
-
-    var accessibilityLabel: String {
-        switch self {
-        case .settled: return "settled"
-        case .pending: return "pending"
-        }
-    }
-}
-
-struct PayoutItem: Identifiable {
-    let id = UUID()
-    let receiptCode: String
-    let platform: String
-    let platformInitial: String
-    let assetName: String?
-    let platformColor: Color
-    let dateLabel: String
-    let amount: Double
-    let status: PayoutStatus
-    let isThisWeek: Bool
 }
