@@ -73,6 +73,9 @@
 		A10208 /* PayoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10208; };
 		A10209 /* QuarterlyTaxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10209; };
 		A10210 /* TaxReadyScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10210; };
+		A10301 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10301; };
+		A10302 /* AppleAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10302; };
+		A10303 /* MilliSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B10303; };
 		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
 		AF0002 /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0002; };
 		AF0003 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0003; };
@@ -115,12 +118,6 @@
 		B10072 /* MilliProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliProgressRing.swift; sourceTree = "<group>"; };
 		B10073 /* MilliCenterMButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCenterMButton.swift; sourceTree = "<group>"; };
 		B10074 /* MilliBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliBottomBar.swift; sourceTree = "<group>"; };
-		B10075 /* MilliMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetricCard.swift; sourceTree = "<group>"; };
-		B10076 /* MilliInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliInsightCard.swift; sourceTree = "<group>"; };
-		B10119 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
-		B10080 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		B10081 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
-		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
 		B10090 /* BelAirNavBarShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BelAirNavBarShape.swift; sourceTree = "<group>"; };
 		B10099 /* MilliTaxVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MilliTaxVault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10107 /* MilliTaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultView.swift; sourceTree = "<group>"; };
@@ -160,6 +157,9 @@
 		BF0007 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		BF0008 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
+		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
+		B10303 /* MilliSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MilliSubscriptions.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -180,12 +180,23 @@
 				C10006 /* Theme */,
 				C10007 /* Components */,
 				C10009 /* Models */,
+				C10013 /* Services */,
 				C10003 /* Views */,
 				C10011 /* Features */,
 				B10013 /* Assets.xcassets */,
+				B10303 /* MilliSubscriptions.storekit */,
 				CF0001 /* Resources */,
 			);
 			path = MilliTaxVault;
+			sourceTree = "<group>";
+		};
+		C10013 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B10301 /* StoreKitService.swift */,
+				B10302 /* AppleAuthManager.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		C10003 /* Views */ = {
@@ -466,6 +477,8 @@
 				A10208,
 				A10209,
 				A10210,
+				A10301,
+				A10302,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -477,6 +490,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10013,
+				A10303,
 				AF0001,
 				AF0002,
 				AF0003,
