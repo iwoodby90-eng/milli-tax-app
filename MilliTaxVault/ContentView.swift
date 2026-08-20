@@ -53,7 +53,7 @@ struct ContentView: View {
             .onChange(of: selectedTab) { _, newTab in
                 withAnimation(.easeInOut(duration: 0.2)) {
                     switch newTab {
-                    case .home, .mDial:
+                    case .home:
                         activeScreen = .home
                     case .payouts:
                         activeScreen = .payouts
