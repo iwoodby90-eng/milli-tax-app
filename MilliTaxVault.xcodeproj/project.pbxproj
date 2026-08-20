@@ -75,6 +75,7 @@
 		A10210 /* TaxReadyScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10210; };
 		A10301 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10301; };
 		A10302 /* AppleAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10302; };
+		A10304 /* BankConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10304; };
 		A10303 /* MilliSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B10303; };
 		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
 		AF0002 /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0002; };
@@ -159,6 +160,7 @@
 		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
 		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
+		B10304 /* BankConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankConnectionService.swift; sourceTree = "<group>"; };
 		B10303 /* MilliSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MilliSubscriptions.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -195,6 +197,7 @@
 			children = (
 				B10301 /* StoreKitService.swift */,
 				B10302 /* AppleAuthManager.swift */,
+				B10304 /* BankConnectionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -479,6 +482,7 @@
 				A10210,
 				A10301,
 				A10302,
+				A10304,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
