@@ -1,129 +1,217 @@
 import SwiftUI
 
-// MARK: - AddRetirementAccountSheet — Add accounts to retirement projection
+// MARK: - AddRetirementAccountSheet & Rollover Wizard
+// Supports connecting past/current accounts (401k, Traditional IRA, Roth IRA, SEP-IRA, Brokerage)
+// and merging them into the Milli Retirement Portfolio with direct ACATS rollover support.
+
+public struct ConnectedExternalRetirementAccount: Identifiable, Codable, Equatable {
+    public let id: String
+    public let custodianName: String
+    public let accountType: String
+    public let nickname: String
+    public var balance: Double
+    public var monthlyContribution: Double
+    public var annualReturnPercent: Double
+    public var rolloverStatus: RolloverStatus
+    public let accountMask: String
+
+    public enum RolloverStatus: String, Codable, CaseIterable {
+        case connected = "Connected & Merged"
+        case transferInitiated = "Rollover In Progress"
+        case completed = "ACATS Rollover Completed"
+
+        public var badgeColor: Color {
+            switch self {
+            case .connected: return Color(hex: "00E5FF")
+            case .transferInitiated: return Color(hex: "FFB800")
+            case .completed: return Color(hex: "34C759")
+            }
+        }
+    }
+
+    public static let standardCustodians = [
+        "Fidelity Investments",
+        "Vanguard",
+        "Charles Schwab",
+        "Empower Retirement",
+        "Principal Financial",
+        "Betterment",
+        "Robinhood Retirement",
+        "Merrill Edge",
+        "T. Rowe Price",
+        "Other Custodian"
+    ]
+}
+
 struct AddRetirementAccountSheet: View {
     @Environment(\.dismiss) private var dismiss
     
-    let onAdd: (RetirementAccount) -> Void
+    let onAdd: (ConnectedExternalRetirementAccount) -> Void
     
-    @State private var accountType: String = "Roth IRA"
-    @State private var nickname: String = ""
-    @State private var currentBalance: String = ""
-    @State private var monthlyContribution: String = ""
-    @State private var annualReturn: String = "7"
+    @State private var selectedCustodian: String = "Fidelity Investments"
+    @State private var accountType: String = "401(k)"
+    @State private var nickname: String = "Past Employer 401(k)"
+    @State private var currentBalance: String = "34850"
+    @State private var monthlyContribution: String = "250"
+    @State private var annualReturn: String = "7.5"
+    @State private var isDirectRollover: Bool = true
+    @State private var accountMask: String = "8102"
     
     private let accountTypes = [
-        "Roth IRA",
-        "Traditional IRA",
         "401(k)",
-        "Pension",
-        "Brokerage",
-        "Other"
+        "Traditional IRA",
+        "Roth IRA",
+        "SEP-IRA",
+        "403(b)",
+        "Brokerage / Taxable",
+        "Pension"
     ]
     
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "0A0A0C").ignoresSafeArea()
+                Color(hex: "07090B").ignoresSafeArea()
                 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        // Account Type
-                        formSection(title: "ACCOUNT TYPE") {
+                    VStack(spacing: 20) {
+                        // Custodian Institution
+                        formSection(title: "PAST / CURRENT CUSTODIAN") {
                             Menu {
-                                ForEach(accountTypes, id: \.self) { type in
-                                    Button(type) { accountType = type }
+                                ForEach(ConnectedExternalRetirementAccount.standardCustodians, id: \.self) { inst in
+                                    Button(inst) {
+                                        selectedCustodian = inst
+                                        if nickname.isEmpty || nickname.contains("401(k)") {
+                                            nickname = "\(inst) \(accountType)"
+                                        }
+                                    }
                                 }
                             } label: {
                                 HStack {
-                                    Text(accountType)
-                                        .font(.system(size: 15))
-                                        .foregroundStyle(.white)
+                                    Image(systemName: "building.columns.fill")
+                                        .foregroundStyle(MilliColors.cyanGlow)
+                                    Text(selectedCustodian)
+                                        .font(.custom("Inter-Medium", size: 15))
+                                        .foregroundStyle(MilliColors.textPrimary)
                                     Spacer()
-                                    Image(systemName: "chevron.down")
+                                    Image(systemName: "chevron.up.chevron.down")
                                         .font(.system(size: 12))
-                                        .foregroundStyle(MilliColors.textMuted)
+                                        .foregroundStyle(MilliColors.textSecondary)
                                 }
                                 .fieldStyle()
                             }
                         }
                         
-                        // Nickname
-                        formSection(title: "ACCOUNT NICKNAME") {
-                            TextField("e.g. Fidelity 401k", text: $nickname)
-                                .font(.system(size: 15))
-                                .foregroundStyle(.white)
+                        // Account Type
+                        formSection(title: "ACCOUNT TYPE") {
+                            Menu {
+                                ForEach(accountTypes, id: \.self) { type in
+                                    Button(type) {
+                                        accountType = type
+                                        nickname = "\(selectedCustodian) \(type)"
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(accountType)
+                                        .font(.custom("Inter-Medium", size: 15))
+                                        .foregroundStyle(MilliColors.textPrimary)
+                                    Spacer()
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(MilliColors.textSecondary)
+                                }
                                 .fieldStyle()
+                            }
+                        }
+                        
+                        // Nickname & Mask
+                        HStack(spacing: 12) {
+                            formSection(title: "ACCOUNT NICKNAME") {
+                                TextField("e.g. Fidelity 401(k)", text: $nickname)
+                                    .font(.custom("Inter-Regular", size: 15))
+                                    .foregroundStyle(MilliColors.textPrimary)
+                                    .fieldStyle()
+                            }
+                            
+                            formSection(title: "LAST 4") {
+                                TextField("8102", text: $accountMask)
+                                    .keyboardType(.numberPad)
+                                    .font(.custom("Inter-SemiBold", size: 15))
+                                    .foregroundStyle(MilliColors.textPrimary)
+                                    .fieldStyle()
+                                    .frame(width: 80)
+                            }
                         }
                         
                         // Current Balance
                         formSection(title: "CURRENT BALANCE") {
                             HStack(spacing: 4) {
                                 Text("$")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(MilliColors.textSecondary)
-                                TextField("0", text: $currentBalance)
+                                    .font(.custom("Sora-SemiBold", size: 16))
+                                    .foregroundStyle(MilliColors.cyanGlow)
+                                TextField("34850", text: $currentBalance)
                                     .keyboardType(.decimalPad)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
+                                    .font(.custom("Sora-SemiBold", size: 16))
+                                    .foregroundStyle(MilliColors.textPrimary)
                             }
                             .fieldStyle()
                         }
                         
-                        // Monthly Contribution
-                        formSection(title: "MONTHLY CONTRIBUTION") {
-                            HStack(spacing: 4) {
-                                Text("$")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(MilliColors.textSecondary)
-                                TextField("0", text: $monthlyContribution)
-                                    .keyboardType(.decimalPad)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
+                        // Rollover & Merge Option
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("ROLLOVER & MERGE STRATEGY")
+                                .font(.custom("Inter-Bold", size: 11))
+                                .tracking(0.5)
+                                .foregroundStyle(MilliColors.textSecondary)
+                            
+                            Toggle(isOn: $isDirectRollover) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Initiate Direct ACATS Rollover")
+                                        .font(.custom("Inter-SemiBold", size: 13))
+                                        .foregroundStyle(MilliColors.textPrimary)
+                                    Text("Consolidate directly into your Milli Retirement Account with zero tax penalties.")
+                                        .font(.custom("Inter-Regular", size: 11))
+                                        .foregroundStyle(MilliColors.textSecondary)
+                                }
                             }
-                            .fieldStyle()
+                            .tint(MilliColors.cyanGlow)
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(MilliColors.graphiteSurface)
+                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 0.8))
+                            )
                         }
                         
-                        // Expected Annual Return
-                        formSection(title: "EXPECTED ANNUAL RETURN (%)") {
-                            HStack(spacing: 4) {
-                                TextField("7", text: $annualReturn)
-                                    .keyboardType(.decimalPad)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
-                                Text("%")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(MilliColors.textSecondary)
+                        // Add / Merge Button
+                        Button(action: submitAccount) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.triangle.merge")
+                                Text(isDirectRollover ? "Connect & Rollover into Milli" : "Connect & Merge Balance")
                             }
-                            .fieldStyle()
-                        }
-                        
-                        // Add to Projection button
-                        Button(action: addAccount) {
-                            Text("Add to Projection")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(MilliColors.obsidian)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(MilliColors.cyan)
-                                )
+                            .font(.custom("Inter-SemiBold", size: 15))
+                            .foregroundStyle(MilliColors.blackGlass)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(MilliColors.cyanGlow)
+                            )
                         }
                         .buttonStyle(.plain)
                         .padding(.top, 8)
                     }
-                    .padding(.horizontal, MilliLayout.screenMargin)
-                    .padding(.top, 24)
+                    .padding(.horizontal, MilliSpacing.screenHorizontal)
+                    .padding(.top, 16)
                     .padding(.bottom, 40)
                 }
             }
-            .navigationTitle("Add Account")
+            .navigationTitle("Connect Past Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(MilliColors.cyan)
+                        .foregroundStyle(MilliColors.cyanGlow)
                 }
             }
         }
@@ -131,27 +219,30 @@ struct AddRetirementAccountSheet: View {
     }
     
     private func formSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(MilliColors.textSecondary)
+                .font(.custom("Inter-Bold", size: 11))
                 .tracking(0.5)
+                .foregroundStyle(MilliColors.textSecondary)
             content()
         }
     }
     
-    private func addAccount() {
-        let balance = Double(currentBalance) ?? 0
+    private func submitAccount() {
+        let bal = Double(currentBalance) ?? 0
         let contrib = Double(monthlyContribution) ?? 0
-        let returnRate = (Double(annualReturn) ?? 7) / 100.0
-        let name = nickname.isEmpty ? accountType : nickname
+        let rate = Double(annualReturn) ?? 7.0
         
-        let account = RetirementAccount(
-            name: name,
-            type: accountType,
-            currentBalance: balance,
+        let account = ConnectedExternalRetirementAccount(
+            id: UUID().uuidString,
+            custodianName: selectedCustodian,
+            accountType: accountType,
+            nickname: nickname.isEmpty ? "\(selectedCustodian) \(accountType)" : nickname,
+            balance: bal,
             monthlyContribution: contrib,
-            annualReturn: returnRate
+            annualReturnPercent: rate,
+            rolloverStatus: isDirectRollover ? .transferInitiated : .connected,
+            accountMask: accountMask.isEmpty ? "8102" : accountMask
         )
         
         onAdd(account)
@@ -159,17 +250,16 @@ struct AddRetirementAccountSheet: View {
     }
 }
 
-// MARK: - Field Style Modifier
 private struct FieldStyleModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(hex: "12141A"))
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: "0C1015"))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(Color.white.opacity(0.08), lineWidth: 1)
                     )
             )
@@ -180,8 +270,4 @@ extension View {
     fileprivate func fieldStyle() -> some View {
         modifier(FieldStyleModifier())
     }
-}
-
-#Preview {
-    AddRetirementAccountSheet { _ in }
 }
