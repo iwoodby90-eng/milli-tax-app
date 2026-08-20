@@ -605,7 +605,8 @@ private enum ReportExporter {
 
     private static func csvEscape(_ value: String) -> String {
         if value.contains(",") || value.contains("\"") || value.contains("\n") {
-            return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
+            let escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
+            return "\"" + escaped + "\""
         }
         return value
     }
