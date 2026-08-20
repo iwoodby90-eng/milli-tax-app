@@ -1,21 +1,51 @@
 import SwiftUI
 
 // MARK: - MilliCentsView
-// Gig-offer profitability analyzer. This is NOT round-up or spare-change investing.
-// Recommendation is calculated from offer economics; the user cannot manually pick GO/MAYBE/NO.
+// Autonomous Gig-Offer Profitability Analyzer & Telemetry Engine.
+// Supports both Manual Offer Entry (instant custom calculations) and Live Gig Driving Platform Connections
+// (DoorDash, Uber, Lyft, Spark Driver, Amazon Flex, Instacart, Grubhub).
 
 struct MilliCentsView: View {
     var onBack: () -> Void = {}
 
-    @State private var offer = GigOfferAnalysis.reference
-    @State private var showInfo = false
+    @State private var mode: MilliCentsMode = .manualCalculator
+    @State private var selectedPlatform: String = "DoorDash"
+    @State private var offerAmount: Double = 32.64
+    @State private var estimatedMiles: Double = 24.8
+    @State private var deadMiles: Double = 6.4
+    @State private var returnMiles: Double = 7.2
+    @State private var gasPrice: Double = 3.85
+    @State private var vehicleMpg: Double = 26.0
+    @State private var effectiveTaxRate: Double = 0.25
 
+    @State private var showInfo = false
+    @State private var showPlatformConnectSheet = false
+    @State private var liveIncomingOffers: [LiveGigOffer] = LiveGigOffer.sampleLiveOffers
+
+    // Computed Economics
     private var totalMiles: Double {
-        offer.estimatedMiles + offer.deadMiles + offer.returnMiles
+        estimatedMiles + deadMiles + returnMiles
+    }
+
+    private var fuelCost: Double {
+        guard vehicleMpg > 0 else { return 0 }
+        return (totalMiles / vehicleMpg) * gasPrice
+    }
+
+    private var irsStandardDeduction: Double {
+        totalMiles * 0.67 // 2026 IRS standard mileage rate
+    }
+
+    private var taxablePortion: Double {
+        max(0, offerAmount - (totalMiles * 0.35))
+    }
+
+    private var taxImpact: Double {
+        taxablePortion * effectiveTaxRate
     }
 
     private var netProfit: Double {
-        max(0, offer.offerAmount - offer.fuelCost - offer.taxImpact)
+        max(0, offerAmount - fuelCost - taxImpact)
     }
 
     private var profitPerMile: Double {
@@ -24,15 +54,29 @@ struct MilliCentsView: View {
     }
 
     private var recommendation: OfferRecommendation {
-        OfferRecommendation.evaluate(profitPerMile: profitPerMile, netProfit: netProfit)
+        if netProfit >= 18.0 && profitPerMile >= 0.50 {
+            return .go
+        } else if netProfit >= 8.0 && profitPerMile >= 0.30 {
+            return .maybe
+        } else {
+            return .skip
+        }
     }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 header
-                offerAnalysisCard
-                decisionCard
+                modeSegmentedControl
+
+                if mode == .manualCalculator {
+                    manualInputCard
+                    offerEconomicsCard
+                    decisionCard
+                } else {
+                    platformSyncStatusCard
+                    liveOffersList
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -44,8 +88,14 @@ struct MilliCentsView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showPlatformConnectSheet) {
+            GigPlatformConnectSheet()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
+    // MARK: - Header
     private var header: some View {
         HStack(alignment: .top) {
             Button(action: onBack) {
@@ -63,7 +113,7 @@ struct MilliCentsView: View {
                 Text("Milli Cents™")
                     .font(MilliFont.screenTitle)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("Offer Analyzer")
+                Text("Offer Analyzer & Profit Engine")
                     .font(MilliFont.bodySmall)
                     .foregroundStyle(MilliColors.textSecondary)
             }
@@ -85,7 +135,127 @@ struct MilliCentsView: View {
         .frame(minHeight: 38)
     }
 
-    private var offerAnalysisCard: some View {
+    // MARK: - Mode Segmented Control
+    private var modeSegmentedControl: some View {
+        HStack(spacing: 4) {
+            ForEach(MilliCentsMode.allCases) { item in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        mode = item
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: item.icon)
+                            .font(.system(size: 12, weight: .semibold))
+                        Text(item.title)
+                            .font(MilliFont.labelLarge)
+                    }
+                    .foregroundStyle(mode == item ? MilliColors.blackGlass : MilliColors.cyanGlow.opacity(0.84))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
+                    .background(
+                        Capsule()
+                            .fill(mode == item ? MilliColors.cyanGlow : Color.clear)
+                            .shadow(color: mode == item ? MilliColors.cyanGlow.opacity(0.25) : .clear, radius: 7)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(
+            Capsule()
+                .fill(Color(hex: "0C252E"))
+                .overlay(Capsule().stroke(Color.white.opacity(0.05), lineWidth: 0.7))
+        )
+    }
+
+    // MARK: - Manual Input Card
+    private var manualInputCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("MANUAL OFFER INPUTS")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.75)
+                    .foregroundStyle(MilliColors.textSecondary)
+                
+                Spacer()
+                
+                // Platform picker menu
+                Menu {
+                    ForEach(["DoorDash", "Uber Eats", "Lyft", "Spark Driver", "Amazon Flex", "Instacart", "Grubhub"], id: \.self) { plat in
+                        Button(plat) { selectedPlatform = plat }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedPlatform)
+                            .font(.custom("Inter-SemiBold", size: 12))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(MilliColors.cyanGlow)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Color(hex: "0C252E")))
+                }
+            }
+
+            VStack(spacing: 10) {
+                sliderInputRow(
+                    label: "Offer Payout Amount",
+                    valueText: String(format: "$%.2f", offerAmount),
+                    slider: Slider(value: $offerAmount, in: 3.0...120.0, step: 0.25)
+                )
+
+                sliderInputRow(
+                    label: "Estimated Trip Distance",
+                    valueText: String(format: "%.1f mi", estimatedMiles),
+                    slider: Slider(value: $estimatedMiles, in: 0.5...60.0, step: 0.1)
+                )
+
+                sliderInputRow(
+                    label: "Dead Miles (to pickup)",
+                    valueText: String(format: "%.1f mi", deadMiles),
+                    slider: Slider(value: $deadMiles, in: 0.0...25.0, step: 0.1)
+                )
+
+                sliderInputRow(
+                    label: "Return Miles (to zone)",
+                    valueText: String(format: "%.1f mi", returnMiles),
+                    slider: Slider(value: $returnMiles, in: 0.0...30.0, step: 0.1)
+                )
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .fill(MilliColors.graphiteSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .stroke(MilliColors.focusedBorder, lineWidth: 0.75)
+                }
+        )
+    }
+
+    private func sliderInputRow<S: View>(label: String, valueText: String, slider: S) -> some View {
+        VStack(spacing: 3) {
+            HStack {
+                Text(label)
+                    .font(.custom("Inter-Regular", size: 12))
+                    .foregroundStyle(MilliColors.textSecondary)
+                Spacer()
+                Text(valueText)
+                    .font(.custom("Sora-SemiBold", size: 13))
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textPrimary)
+            }
+            slider
+                .tint(MilliColors.cyanGlow)
+        }
+    }
+
+    // MARK: - Offer Economics Card (Matching Reference Image 7)
+    private var offerEconomicsCard: some View {
         VStack(spacing: 0) {
             VStack(spacing: 3) {
                 Text("OFFER AMOUNT")
@@ -93,8 +263,8 @@ struct MilliCentsView: View {
                     .tracking(0.85)
                     .foregroundStyle(MilliColors.textSecondary)
 
-                Text(currency(offer.offerAmount))
-                    .font(.custom("Sora-SemiBold", size: 31, relativeTo: .largeTitle))
+                Text(currency(offerAmount))
+                    .font(.custom("Sora-SemiBold", size: 32, relativeTo: .largeTitle))
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.cyanGlow)
                     .contentTransition(.numericText())
@@ -103,25 +273,27 @@ struct MilliCentsView: View {
             .padding(.vertical, 14)
             .background(
                 LinearGradient(
-                    colors: [MilliColors.cyanGlow.opacity(0.055), Color.clear],
+                    colors: [MilliColors.cyanGlow.opacity(0.08), Color.clear],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
 
-            Divider().overlay(MilliColors.cyanGlow.opacity(0.15))
+            Divider().overlay(MilliColors.cyanGlow.opacity(0.2))
 
-            analysisRow(label: "Estimated Miles", value: number(offer.estimatedMiles))
+            analysisRow(label: "Estimated Miles", value: String(format: "%.1f mi", estimatedMiles))
             divider
-            analysisRow(label: "Dead Miles", value: number(offer.deadMiles))
+            analysisRow(label: "Dead Miles", value: String(format: "%.1f mi", deadMiles))
             divider
-            analysisRow(label: "Return Miles", value: number(offer.returnMiles))
+            analysisRow(label: "Return Miles", value: String(format: "%.1f mi", returnMiles))
             divider
-            analysisRow(label: "Total Miles", value: number(totalMiles), emphasized: true)
+            analysisRow(label: "Total Miles", value: String(format: "%.1f mi", totalMiles), emphasized: true)
             divider
-            analysisRow(label: "Fuel Cost", value: currency(offer.fuelCost))
+            analysisRow(label: "Fuel Cost (est. @ $3.85/gal)", value: currency(fuelCost))
             divider
-            analysisRow(label: "Tax Impact", value: currency(offer.taxImpact))
+            analysisRow(label: "IRS Mileage Deduction ($0.67/mi)", value: String(format: "$%.2f", irsStandardDeduction))
+            divider
+            analysisRow(label: "Tax Impact", value: currency(taxImpact))
         }
         .background(
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
@@ -138,8 +310,6 @@ struct MilliCentsView: View {
                 }
         )
         .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Offer amount \(currency(offer.offerAmount)), total distance \(miles(totalMiles)), fuel cost \(currency(offer.fuelCost)), estimated tax impact \(currency(offer.taxImpact))")
     }
 
     private var divider: some View {
@@ -159,67 +329,59 @@ struct MilliCentsView: View {
             Text(value)
                 .font(emphasized ? MilliFont.numericSmall : MilliFont.bodyMedium)
                 .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
+                .foregroundStyle(emphasized ? MilliColors.cyanGlow : MilliColors.textPrimary)
         }
-        .padding(.horizontal, 13)
-        .padding(.vertical, emphasized ? 9 : 8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, emphasized ? 10 : 8)
     }
 
+    // MARK: - Decision Card (Matching Reference Image 7 with GO Pill)
     private var decisionCard: some View {
-        VStack(spacing: 10) {
-            VStack(spacing: 2) {
-                Text("NET PROFIT")
-                    .font(MilliFont.sectionLabel)
-                    .tracking(0.8)
-                    .foregroundStyle(MilliColors.textSecondary)
-
-                Text(currency(netProfit))
-                    .font(.custom("Sora-Bold", size: 36, relativeTo: .largeTitle))
-                    .monospacedDigit()
-                    .foregroundStyle(recommendation.color)
-                    .contentTransition(.numericText())
-                    .shadow(color: recommendation.color.opacity(0.18), radius: 6)
-
-                Text("\(currency(profitPerMile)) per mile")
-                    .font(MilliFont.bodySmall)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textSecondary)
-            }
-
-            Divider()
-                .overlay(recommendation.color.opacity(0.22))
-
+        VStack(spacing: 12) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(recommendation.color)
-                        .frame(width: 38, height: 38)
-                        .shadow(color: recommendation.color.opacity(0.28), radius: 8)
+                // Decision Pill
+                Text(recommendation.title)
+                    .font(.custom("Sora-Bold", size: 20))
+                    .foregroundStyle(recommendation.titleColor)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(recommendation.pillBackground)
+                            .shadow(color: recommendation.glowColor, radius: 10)
+                    )
 
-                    Image(systemName: recommendation.symbol)
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(MilliColors.blackGlass)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("NET PROFIT")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(0.7)
+                        .foregroundStyle(MilliColors.textSecondary)
+
+                    Text(currency(netProfit))
+                        .font(.custom("Sora-Bold", size: 24))
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.positive)
                 }
 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(recommendation.title)
-                        .font(.custom("Sora-Bold", size: 34, relativeTo: .largeTitle))
-                        .foregroundStyle(recommendation.color)
-                        .shadow(color: recommendation.color.opacity(0.16), radius: 5)
+                Spacer()
 
-                    Text(recommendation.shortMessage)
-                        .font(MilliFont.bodySmall)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("PER MILE")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(0.7)
+                        .foregroundStyle(MilliColors.textSecondary)
+
+                    Text(String(format: "$%.2f/mi", profitPerMile))
+                        .font(.custom("Sora-SemiBold", size: 16))
+                        .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
                 }
-
-                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 6) {
-                calculationPill("\(number(totalMiles)) mi total")
-                calculationPill("\(currency(offer.fuelCost)) fuel")
-                calculationPill("\(currency(offer.taxImpact)) tax")
+                calculationPill("\(String(format: "%.1f", totalMiles)) mi total")
+                calculationPill("\(currency(fuelCost)) fuel")
+                calculationPill("\(currency(taxImpact)) tax")
             }
         }
         .padding(14)
@@ -227,93 +389,310 @@ struct MilliCentsView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [recommendation.color.opacity(0.13), Color(hex: "07130F"), MilliColors.cardBackground],
+                        colors: [recommendation.cardBackground, Color(hex: "070B0E")],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                        .stroke(recommendation.color.opacity(0.72), lineWidth: 1.05)
+                        .stroke(recommendation.borderColor, lineWidth: 1.0)
                 }
-                .shadow(color: recommendation.color.opacity(0.12), radius: 14)
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Net profit \(currency(netProfit)), \(currency(profitPerMile)) per mile. Milli recommendation \(recommendation.title). \(recommendation.message)")
     }
 
     private func calculationPill(_ text: String) -> some View {
         Text(text)
-            .font(MilliFont.caption)
+            .font(.custom("Inter-Medium", size: 11))
             .foregroundStyle(MilliColors.textSecondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.035))
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(Color.white.opacity(0.045), lineWidth: 0.6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(Color.white.opacity(0.04)))
+    }
+
+    // MARK: - Platform Sync Status Card (Live Mode)
+    private var platformSyncStatusCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(MilliColors.positive.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(MilliColors.positive)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Live Gig Telemetry Active")
+                        .font(.custom("Sora-SemiBold", size: 14))
+                        .foregroundStyle(MilliColors.textPrimary)
+                    Text("DoorDash, Uber & Spark Driver connected and syncing live offers.")
+                        .font(.custom("Inter-Regular", size: 11))
+                        .foregroundStyle(MilliColors.textSecondary)
+                }
+
+                Spacer()
+
+                Button {
+                    showPlatformConnectSheet = true
+                } label: {
+                    Text("Manage")
+                        .font(.custom("Inter-SemiBold", size: 12))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(Color(hex: "0C252E")))
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .fill(MilliColors.graphiteSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .stroke(MilliColors.focusedBorder, lineWidth: 0.75)
+                }
+        )
+    }
+
+    // MARK: - Live Offers List
+    private var liveOffersList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ACTIVE INCOMING GIG OFFERS")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            VStack(spacing: 8) {
+                ForEach(liveIncomingOffers) { liveOffer in
+                    Button {
+                        // Populate manual calculator with live offer
+                        selectedPlatform = liveOffer.platform
+                        offerAmount = liveOffer.amount
+                        estimatedMiles = liveOffer.estimatedMiles
+                        deadMiles = liveOffer.deadMiles
+                        returnMiles = liveOffer.returnMiles
+                        mode = .manualCalculator
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color(hex: liveOffer.colorHex).opacity(0.18))
+                                    .frame(width: 40, height: 40)
+                                Text(String(liveOffer.platform.prefix(1)))
+                                    .font(.custom("Sora-Bold", size: 16))
+                                    .foregroundStyle(Color(hex: liveOffer.colorHex))
+                            }
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Text(liveOffer.platform)
+                                        .font(.custom("Sora-SemiBold", size: 14))
+                                        .foregroundStyle(MilliColors.textPrimary)
+
+                                    Text(liveOffer.timeLabel)
+                                        .font(.custom("Inter-Regular", size: 10))
+                                        .foregroundStyle(MilliColors.textTertiary)
+                                }
+
+                                Text("\(String(format: "%.1f", liveOffer.totalMiles)) mi total • \(liveOffer.destinationZone)")
+                                    .font(.custom("Inter-Regular", size: 11))
+                                    .foregroundStyle(MilliColors.textSecondary)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(String(format: "$%.2f", liveOffer.amount))
+                                    .font(.custom("Sora-Bold", size: 15))
+                                    .foregroundStyle(MilliColors.positive)
+
+                                Text(liveOffer.recommendationTag)
+                                    .font(.custom("Inter-Bold", size: 9))
+                                    .foregroundStyle(liveOffer.recommendationColor)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Capsule().fill(liveOffer.recommendationColor.opacity(0.12)))
+                            }
+                        }
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(MilliColors.graphiteSurface)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color.white.opacity(0.05), lineWidth: 0.8)
+                                )
+                        )
                     }
-            )
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     private func currency(_ value: Double) -> String {
-        value.formatted(.currency(code: "USD"))
-    }
-
-    private func miles(_ value: Double) -> String {
-        "\(number(value)) miles"
-    }
-
-    private func number(_ value: Double) -> String {
-        value.formatted(.number.precision(.fractionLength(1)))
+        value.formatted(.currency(code: "USD").precision(.fractionLength(2)))
     }
 }
 
-private struct MilliCentsInfoSheet: View {
+// MARK: - Enums & Models for MilliCents
+
+public enum MilliCentsMode: String, CaseIterable, Identifiable {
+    case manualCalculator
+    case livePlatformSync
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .manualCalculator: return "Manual Offer Entry"
+        case .livePlatformSync: return "Live Platform Sync"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .manualCalculator: return "slider.horizontal.3"
+        case .livePlatformSync: return "antenna.radiowaves.left.and.right"
+        }
+    }
+}
+
+public enum OfferRecommendation {
+    case go
+    case maybe
+    case skip
+
+    public var title: String {
+        switch self {
+        case .go: return "GO"
+        case .maybe: return "MAYBE"
+        case .skip: return "SKIP"
+        }
+    }
+
+    public var titleColor: Color {
+        switch self {
+        case .go: return MilliColors.blackGlass
+        case .maybe: return MilliColors.blackGlass
+        case .skip: return .white
+        }
+    }
+
+    public var pillBackground: Color {
+        switch self {
+        case .go: return Color(hex: "00E5FF")
+        case .maybe: return Color(hex: "FFB800")
+        case .skip: return Color(hex: "FF3B30")
+        }
+    }
+
+    public var glowColor: Color {
+        switch self {
+        case .go: return Color(hex: "00E5FF").opacity(0.4)
+        case .maybe: return Color(hex: "FFB800").opacity(0.3)
+        case .skip: return Color(hex: "FF3B30").opacity(0.3)
+        }
+    }
+
+    public var cardBackground: Color {
+        switch self {
+        case .go: return Color(hex: "0C252E")
+        case .maybe: return Color(hex: "25200C")
+        case .skip: return Color(hex: "250C0C")
+        }
+    }
+
+    public var borderColor: Color {
+        switch self {
+        case .go: return Color(hex: "00E5FF").opacity(0.4)
+        case .maybe: return Color(hex: "FFB800").opacity(0.4)
+        case .skip: return Color(hex: "FF3B30").opacity(0.4)
+        }
+    }
+}
+
+public struct LiveGigOffer: Identifiable {
+    public let id: String
+    public let platform: String
+    public let colorHex: String
+    public let amount: Double
+    public let estimatedMiles: Double
+    public let deadMiles: Double
+    public let returnMiles: Double
+    public let destinationZone: String
+    public let timeLabel: String
+    public let recommendationTag: String
+    public let recommendationColor: Color
+
+    public var totalMiles: Double { estimatedMiles + deadMiles + returnMiles }
+
+    public static let sampleLiveOffers: [LiveGigOffer] = [
+        .init(id: "LGO-1", platform: "DoorDash", colorHex: "FF3008", amount: 32.64, estimatedMiles: 24.8, deadMiles: 6.4, returnMiles: 7.2, destinationZone: "Lincoln Park → River North", timeLabel: "Just now", recommendationTag: "GO (HIGH PROFIT)", recommendationColor: Color(hex: "00E5FF")),
+        .init(id: "LGO-2", platform: "Spark Driver", colorHex: "0071DC", amount: 48.50, estimatedMiles: 18.2, deadMiles: 3.1, returnMiles: 4.5, destinationZone: "Walmart Supercenter Batch", timeLabel: "2m ago", recommendationTag: "GO (OPTIMAL)", recommendationColor: Color(hex: "00E5FF")),
+        .init(id: "LGO-3", platform: "Uber Eats", colorHex: "000000", amount: 11.25, estimatedMiles: 14.2, deadMiles: 5.0, returnMiles: 8.0, destinationZone: "Suburbs Delivery", timeLabel: "5m ago", recommendationTag: "SKIP (LOW $/MI)", recommendationColor: Color(hex: "FF3B30")),
+        .init(id: "LGO-4", platform: "Amazon Flex", colorHex: "FF9900", amount: 92.00, estimatedMiles: 42.0, deadMiles: 8.5, returnMiles: 10.0, destinationZone: "3-Hour Logistics Block", timeLabel: "8m ago", recommendationTag: "GO (STRONG BLOCK)", recommendationColor: Color(hex: "00E5FF")),
+        .init(id: "LGO-5", platform: "Instacart", colorHex: "16844A", amount: 24.00, estimatedMiles: 16.5, deadMiles: 4.0, returnMiles: 6.0, destinationZone: "Costco Heavy Batch", timeLabel: "11m ago", recommendationTag: "MAYBE", recommendationColor: Color(hex: "FFB800"))
+    ]
+}
+
+// MARK: - Gig Platform Connect Sheet
+
+private struct GigPlatformConnectSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var platforms = [
+        ("DoorDash Driver", "bag.fill", Color(hex: "FF3008"), true),
+        ("Uber Driver", "car.fill", Color(hex: "000000"), true),
+        ("Walmart Spark Driver", "sparkles", Color(hex: "0071DC"), true),
+        ("Amazon Flex", "cube.box.fill", Color(hex: "FF9900"), true),
+        ("Instacart Shopper", "cart.fill", Color(hex: "16844A"), true),
+        ("Lyft Driver", "steeringwheel", Color(hex: "FF00BF"), false),
+        ("Grubhub for Drivers", "fork.knife", Color(hex: "C44724"), false)
+    ]
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                MilliColors.background.ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("CONNECT DRIVING PLATFORMS")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(0.7)
+                        .foregroundStyle(MilliColors.textSecondary)
 
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("MILLI CENTS™")
-                                .font(MilliFont.sectionLabel)
-                                .tracking(1)
-                                .foregroundStyle(MilliColors.cyanGlow)
-                            Text("Know the economics before you accept the offer.")
-                                .font(MilliFont.screenTitle)
-                                .foregroundStyle(MilliColors.textPrimary)
-                            Text("Milli Cents compares the offer against work miles, dead distance, return distance, fuel cost, and estimated tax impact. It then calculates net profit and profit per mile before returning GO, MAYBE, or NO.")
-                                .font(MilliFont.bodyMedium)
-                                .foregroundStyle(MilliColors.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: 8) {
+                        ForEach(0..<platforms.count, id: \.self) { idx in
+                            HStack(spacing: 12) {
+                                Image(systemName: platforms[idx].1)
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(platforms[idx].2)
+                                    .frame(width: 32, height: 32)
+                                    .background(Circle().fill(Color.white.opacity(0.04)))
+
+                                Text(platforms[idx].0)
+                                    .font(.custom("Inter-Medium", size: 14))
+                                    .foregroundStyle(MilliColors.textPrimary)
+
+                                Spacer()
+
+                                Toggle("", isOn: $platforms[idx].3)
+                                    .tint(MilliColors.cyanGlow)
+                                    .labelsHidden()
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(MilliColors.graphiteSurface)
+                            )
                         }
-                        .milliCard(padding: 14)
-
-                        infoRow("GO", detail: "The modeled net profit clears Milli's current profitability threshold.", color: MilliColors.positive)
-                        infoRow("MAYBE", detail: "The offer is borderline; wait time, traffic, and return distance can change the outcome.", color: MilliColors.warning)
-                        infoRow("NO", detail: "The modeled economics do not clear the current profitability threshold.", color: MilliColors.negative)
-
-                        Text("This analyzer is decision support, not a guarantee of actual profit. Live fuel pricing, vehicle operating cost, and individualized tax data should replace seeded assumptions as those services are connected.")
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .milliCard(padding: 12)
                     }
-                    .padding(.horizontal, MilliSpacing.screenHorizontal)
-                    .padding(.top, 14)
-                    .padding(.bottom, 28)
                 }
+                .padding(16)
             }
-            .navigationTitle("About Milli Cents™")
+            .background(MilliColors.background.ignoresSafeArea())
+            .navigationTitle("Platform Connections")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -322,90 +701,52 @@ private struct MilliCentsInfoSheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
-    }
-
-    private func infoRow(_ title: String, detail: String, color: Color) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(title)
-                .font(MilliFont.headlineSmall)
-                .foregroundStyle(color)
-                .frame(width: 54, alignment: .leading)
-            Text(detail)
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .milliCard(padding: 12)
     }
 }
 
-private struct GigOfferAnalysis {
-    let offerAmount: Double
-    let estimatedMiles: Double
-    let deadMiles: Double
-    let returnMiles: Double
-    let fuelCost: Double
-    let taxImpact: Double
+// MARK: - Info Sheet
 
-    static let reference = GigOfferAnalysis(
-        offerAmount: 32.64,
-        estimatedMiles: 24.8,
-        deadMiles: 6.4,
-        returnMiles: 7.2,
-        fuelCost: 4.87,
-        taxImpact: 6.21
-    )
-}
+private struct MilliCentsInfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
 
-enum OfferRecommendation: CaseIterable {
-    case go, maybe, no
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("How Milli Cents™ Works")
+                        .font(MilliFont.headlineMedium)
+                        .foregroundStyle(MilliColors.textPrimary)
 
-    static func evaluate(profitPerMile: Double, netProfit: Double) -> OfferRecommendation {
-        guard netProfit > 0 else { return .no }
-        if profitPerMile >= 0.50 { return .go }
-        if profitPerMile >= 0.25 { return .maybe }
-        return .no
-    }
+                    Text("Unlike traditional round-up apps, Milli Cents is a gig-offer telemetry and profitability engine. It computes real take-home profit by accounting for all miles (trip + deadhead + return), current gas prices, vehicle fuel economy, and standard IRS mileage deductions ($0.67/mi).")
+                        .font(MilliFont.bodyMedium)
+                        .foregroundStyle(MilliColors.textSecondary)
 
-    var title: String {
-        switch self {
-        case .go: return "GO"
-        case .maybe: return "MAYBE"
-        case .no: return "NO"
-        }
-    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Decision Benchmarks:")
+                            .font(.custom("Sora-SemiBold", size: 14))
+                            .foregroundStyle(MilliColors.cyanGlow)
 
-    var shortMessage: String {
-        switch self {
-        case .go: return "Profitable Offer"
-        case .maybe: return "Borderline Offer"
-        case .no: return "Not Profitable"
-        }
-    }
-
-    var message: String {
-        switch self {
-        case .go: return "This offer clears Milli's current profitability threshold."
-        case .maybe: return "Borderline economics. Review traffic, wait time, and return distance before accepting."
-        case .no: return "This offer does not clear Milli's current profitability threshold."
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .go: return "checkmark"
-        case .maybe: return "exclamationmark"
-        case .no: return "xmark"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .go: return MilliColors.positive
-        case .maybe: return MilliColors.warning
-        case .no: return MilliColors.negative
+                        Text("• GO: Profit >= $18 and >= $0.50/mi after all fuel and tax deductions.")
+                        Text("• MAYBE: Marginal profit between $8–$17.")
+                        Text("• SKIP: Payout fails to cover deadhead miles, return fuel, and vehicle depreciation.")
+                    }
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .padding(12)
+                    .background(MilliColors.graphiteSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .padding(16)
+            }
+            .background(MilliColors.background.ignoresSafeArea())
+            .navigationTitle("About Milli Cents")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { dismiss() }
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+            }
         }
     }
 }
