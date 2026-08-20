@@ -1,5 +1,7 @@
 import SwiftUI
 import CoreLocation
+import AuthenticationServices
+import StoreKit
 
 enum AppState: String {
     case splash
@@ -107,6 +109,9 @@ struct MilliApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
 
+    @StateObject private var appleAuthManager = AppleAuthManager.shared
+    @StateObject private var storeKitService = StoreKitService.shared
+
     init() {
         _pendingNavigationRequest = State(initialValue: nil)
 
@@ -179,9 +184,17 @@ struct MilliApp: App {
                     .transition(.opacity)
                 }
             }
+            .environmentObject(appleAuthManager)
+            .environmentObject(storeKitService)
             .animation(.easeInOut(duration: 0.32), value: appState)
             .preferredColorScheme(.dark)
             .onOpenURL(perform: handleIncomingNavigationURL)
+            .task {
+                // Verify Apple ID credential state on app launch
+                _ = await appleAuthManager.verifyAppleCredentialState()
+                // Update App Store entitlements on app launch
+                await storeKitService.updateCustomerProductStatus()
+            }
         }
     }
 
