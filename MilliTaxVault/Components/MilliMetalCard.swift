@@ -1,12 +1,15 @@
 import SwiftUI
 
+// MARK: - MilliMetalCard
+// Dark titanium metal card with polished chip and canonical M emblem.
+
 struct MilliMetalCard: View {
     var size: CGSize = CGSize(width: 150, height: 95)
     
     var body: some View {
         ZStack {
             // Dark titanium base
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(LinearGradient(
                     colors: [Color(hex: "1C2028"), Color(hex: "252B38")],
                     startPoint: .topLeading,
@@ -26,7 +29,7 @@ struct MilliMetalCard: View {
                 }
                 .fill(Color.white.opacity(0.08))
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             
             // Chip
             VStack {
@@ -39,33 +42,32 @@ struct MilliMetalCard: View {
                 Spacer()
             }
             
-            // M letter bottom-right
+            // Canonical M Logo bottom-right
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-                    Text("M")
-                        .font(.system(size: 22, weight: .bold, design: .default))
-                        .foregroundStyle(LinearGradient(
-                            colors: [.white, Color(hex: "8E92A0")],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ))
+                    Image("MilliMLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                        .blendMode(.screen)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.35), radius: 3)
                         .padding(.trailing, 14)
                         .padding(.bottom, 10)
                 }
             }
             
             // Inner border overlay
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         }
         .frame(width: size.width, height: size.height)
     }
     
     private var chipView: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 3)
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .fill(LinearGradient(
                     colors: [Color(hex: "A0A8B4"), Color(hex: "707880")],
                     startPoint: .top,
