@@ -1,9 +1,10 @@
-import SwiftUI
+import Foundation
+import Combine
 import StoreKit
 
 // MARK: - StoreKit 2 In-App Subscription & Payment Service
-// Handles Apple App Store Pay (StoreKit 2) subscriptions across Basic, Pro, and Elite tiers.
-// Manages real-time transaction updates, verification, entitlements, and restore flow.
+// Handles Apple App Store subscriptions across Basic, Pro, and Elite tiers.
+// Manages transaction updates, verification, entitlements, and restore flow.
 
 @MainActor
 final class StoreKitService: ObservableObject {
@@ -31,7 +32,6 @@ final class StoreKitService: ObservableObject {
     private var transactionListenerTask: Task<Void, Never>?
 
     init() {
-        // Start listening to background App Store transactions and renewals.
         transactionListenerTask = listenForTransactions()
 
         Task {
@@ -45,15 +45,18 @@ final class StoreKitService: ObservableObject {
     }
 
     // MARK: - Transaction Listener
+    // Explicitly qualify StoreKit.Transaction because SwiftUI also defines a
+    // Transaction type. Keeping the listener on the MainActor also avoids
+    // crossing actor isolation just to update this observable service.
     private func listenForTransactions() -> Task<Void, Never> {
-        Task.detached(priority: .background) { [weak self] in
-            for await result in Transaction.updates {
+        Task { [weak self] in
+            for await result in StoreKit.Transaction.updates {
+                guard let self else { return }
+
                 do {
-                    let transaction = try self?.checkVerified(result)
-                    if let transaction {
-                        await self?.updateCustomerProductStatus()
-                        await transaction.finish()
-                    }
+                    let transaction = try self.checkVerified(result)
+                    await self.updateCustomerProductStatus()
+                    await transaction.finish()
                 } catch {
                     print("[StoreKitService] Unverified transaction update: \(error.localizedDescription)")
                 }
@@ -68,7 +71,6 @@ final class StoreKitService: ObservableObject {
 
         do {
             let storeProducts = try await Product.products(for: Self.productIdentifiers)
-            // Sort by price ascending: Basic -> Pro -> Elite.
             products = storeProducts.sorted(by: { $0.price < $1.price })
             isLoading = false
         } catch {
@@ -79,7 +81,7 @@ final class StoreKitService: ObservableObject {
     }
 
     // MARK: - Purchase Product
-    func purchase(_ product: Product) async throws -> Transaction? {
+    func purchase(_ product: Product) async throws -> StoreKit.Transaction? {
         isPurchasing = true
         errorMessage = nil
 
@@ -107,7 +109,7 @@ final class StoreKitService: ObservableObject {
     }
 
     // MARK: - Purchase by MilliPlan
-    func purchase(plan: MilliPlan) async throws -> Transaction? {
+    func purchase(plan: MilliPlan) async throws -> StoreKit.Transaction? {
         let productID = productID(for: plan)
         guard let product = products.first(where: { $0.id == productID }) else {
             // Development fallback only: no App Store transaction is claimed as successful.
@@ -122,6 +124,7 @@ final class StoreKitService: ObservableObject {
     func restorePurchases() async {
         isLoading = true
         errorMessage = nil
+
         do {
             try await AppStore.sync()
             await updateCustomerProductStatus()
@@ -136,7 +139,7 @@ final class StoreKitService: ObservableObject {
     func updateCustomerProductStatus() async {
         var purchasedIDs = Set<String>()
 
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
                 if transaction.revocationDate == nil {
@@ -149,7 +152,6 @@ final class StoreKitService: ObservableObject {
 
         purchasedProductIDs = purchasedIDs
 
-        // Determine active plan based on active entitlement.
         if purchasedIDs.contains(Self.eliteSubscriptionID) {
             activePlan = .elite
         } else if purchasedIDs.contains(Self.proSubscriptionID) {
