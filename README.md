@@ -10,33 +10,45 @@ Pure SwiftUI, iOS 17+, Swift Charts.
 
 ```
 MilliTaxVault/
-├── MilliTaxVaultApp.swift          # App entry point
-├── ContentView.swift               # Tab bar + floating AI button
+├── MilliApp.swift                  # App entry point
+├── ContentView.swift               # Root view & custom navigation coordinator
 ├── Views/
 │   ├── VaultView.swift             # Tax vault balance & transfers
 │   ├── WealthView.swift            # Net worth & spending overview
 │   ├── ActivityView.swift          # Income sources & payouts
 │   ├── CockpitView.swift           # Settings & profile
+│   ├── TaxVaultView.swift          # Tax reserve and breakdown
+│   ├── OnboardingFlowView.swift    # Multi-step setup flow
+│   ├── TreeOfLifeView.swift        # Financial health visualizer
 │   └── Components/
 │       ├── MilliCard.swift         # Reusable card component
-│       ├── CircularProgressView.swift  # Animated progress ring
-│       ├── MilliChart.swift        # Area chart & sparkline
-│       └── NavBar.swift            # Custom bottom navigation
+│       ├── CircularProgressView.swift # Animated progress ring
+│       ├── MilliChart.swift        # Area chart & sparklines
+│       └── MilliNavBar.swift       # Canonical custom bottom navigation bar
 ├── Models/
-│   └── AppModels.swift             # All data models
+│   ├── AppModels.swift             # Core financial and transaction models
+│   ├── TaxProfile.swift            # Tax filing status and subscription tiers
+│   └── VehicleProfile.swift        # Vehicle mileage deduction tracking
 ├── Theme/
-│   └── MilliTheme.swift            # Colors, fonts, gradients
-└── Assets.xcassets/                # App icon & accent color
+│   ├── MilliTheme.swift            # Colors, typography, spacing tokens
+│   └── DesignSystem/               # MilliColors, MilliTypography, MilliSpacing
+└── Assets.xcassets/                # App icon, accent colors, and design tokens
 ```
 
 ## Design System
 
-- Background: #080B12 with radial gradient
-- Accent: #00B4FF (cyan)
-- Cards: frosted glass with cyan stroke glow
-- Typography: SF Pro Rounded for numbers, SF Pro for text
-- Charts: Swift Charts with cyan gradient fill
-- Nav: Custom brushed-chrome center M button, 4 icon tabs
+- Background: `#080B12` with subtle radial gradients
+- Accent: `#00B4FF` (Electric Cyan) & Emerald Green (`#00E599`)
+- Cards: Frosted glass with subtle stroke glow and chrome finishes
+- Typography: SF Pro Rounded for financial metrics, SF Pro / Inter for UI text
+- Charts: Swift Charts with cyan/emerald gradient fill
+- Navigation: Custom brushed-chrome center `M` button with custom tab routing (`MilliNavBar.swift`)
+
+## Validation & Quality Assurance
+
+- **Native Build CI**: Automated Xcode build validation on macOS runners (`.github/workflows/validate.yml`)
+- **Visual QA**: Comprehensive UI screen capture and integrity verification suite (`scripts/verify-milli-screen-captures.sh`)
+- **Repository Health**: Architecture and reference verification script (`scripts/verify-repo-health.sh`)
 
 ## Requirements
 
