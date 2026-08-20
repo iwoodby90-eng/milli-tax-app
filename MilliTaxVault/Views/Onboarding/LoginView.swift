@@ -1,5 +1,6 @@
 import SwiftUI
 import Security
+import AuthenticationServices
 
 struct LoginView: View {
     var onSignIn: (String) -> Void
@@ -7,6 +8,8 @@ struct LoginView: View {
     var onForgotPassword: (() -> Void)? = nil
     var onAppleSignIn: (() -> Void)? = nil
     var onGoogleSignIn: (() -> Void)? = nil
+
+    @StateObject private var appleAuthManager = AppleAuthManager.shared
 
     @State private var mode: AuthMode = .signIn
     @State private var fullName = ""
@@ -156,27 +159,13 @@ struct LoginView: View {
                     if mode == .signIn, let onForgotPassword {
                         Button("Forgot password?", action: onForgotPassword)
                             .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.cyanGlow)
-                    }
-                }
-                .padding(.top, 9)
-
-                if mode == .signUp {
-                    HStack(spacing: 7) {
-                        Image(systemName: "gift.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(MilliColors.cyanGlow)
-                        Text("Choose Basic, Pro, or Elite during setup — every plan starts with 3 days free.")
-                            .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 12)
                 }
+                .padding(.top, 8)
 
                 if let authenticationMessage {
-                    HStack(alignment: .top, spacing: 7) {
+                    HStack(alignment: .top, spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(MilliColors.warning)
@@ -227,13 +216,11 @@ struct LoginView: View {
                 .disabled(!canSubmit)
                 .padding(.top, 18)
 
-                if mode == .signIn, onAppleSignIn != nil || onGoogleSignIn != nil {
-                    alternativeSignIn
-                        .padding(.top, 24)
-                }
+                alternativeSignIn
+                    .padding(.top, 20)
 
                 securityFooter
-                    .padding(.top, 26)
+                    .padding(.top, 24)
                     .padding(.bottom, 34)
             }
             .padding(.horizontal, 24)
@@ -376,20 +363,28 @@ struct LoginView: View {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
             }
 
-            if let onAppleSignIn {
-                Button(action: onAppleSignIn) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "apple.logo")
-                        Text("Continue with Apple")
+            // Native Sign In / Sign Up with Apple
+            SignInWithAppleButton(
+                mode == .signUp ? .signUp : .signIn,
+                onRequest: { request in
+                    appleAuthManager.configureAppleRequest(request)
+                },
+                onCompletion: { result in
+                    if let user = appleAuthManager.handleAuthorizationCompletion(result: result, isSignUp: mode == .signUp) {
+                        if mode == .signUp {
+                            onCreateAccount(user.email)
+                        } else {
+                            onSignIn(user.email)
+                        }
+                    } else if let error = appleAuthManager.authErrorMessage {
+                        authenticationMessage = error
                     }
-                    .font(MilliFont.bodyMedium)
-                    .foregroundStyle(Color.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
                 }
-                .buttonStyle(.plain)
-            }
+            )
+            .signInWithAppleButtonStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             if let onGoogleSignIn {
                 Button(action: onGoogleSignIn) {
@@ -397,7 +392,7 @@ struct LoginView: View {
                         Text("G")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(MilliColors.cyanGlow)
-                        Text("Continue with Google")
+                        Text(mode == .signUp ? "Sign up with Google" : "Continue with Google")
                     }
                     .font(MilliFont.bodyMedium)
                     .foregroundStyle(MilliColors.textPrimary)
@@ -422,7 +417,7 @@ struct LoginView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
-            Text("Secure profile access • onboarding data is saved after first setup")
+            Text("Secure biometric & Apple ID authentication • Onboarding data is encrypted")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
         }

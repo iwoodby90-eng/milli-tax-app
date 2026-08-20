@@ -1,0 +1,176 @@
+{
+  "identifier" : "E2B7A812-F543-4C1E-B8D9-44A9812A6E91",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6478901234",
+    "_developerTeamID" : "TEAM123456",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 745804800.0,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21456789",
+      "localizations" : [
+        {
+          "description" : "Milli Tax Vault Auto-Piloted Gig Tax & Wealth Subscriptions",
+          "displayName" : "Milli Memberships",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Milli Memberships",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6500000001",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "INTRO_BASIC_3DAY",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Tax calculations, automated mileage tracking, and quarterly guidance.",
+              "displayName" : "Milli Basic",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.milli.taxvault.subscription.basic",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Milli Basic Monthly",
+          "subscriptionGroupID" : "21456789",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6500000002",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "INTRO_PRO_3DAY",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Automated quarterly tax vaulting, retirement, investing, and tax prep.",
+              "displayName" : "Milli Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.milli.taxvault.subscription.pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Milli Pro Monthly",
+          "subscriptionGroupID" : "21456789",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6500000003",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "INTRO_ELITE_3DAY",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Full tax filing automation, wealth management cockpit, and priority support.",
+              "displayName" : "Milli Elite",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.milli.taxvault.subscription.elite",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Milli Elite Monthly",
+          "subscriptionGroupID" : "21456789",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
