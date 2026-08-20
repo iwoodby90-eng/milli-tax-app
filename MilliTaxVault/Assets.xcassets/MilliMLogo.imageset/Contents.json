@@ -1,12 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "milli_m_logo_1x.png",
+      "filename" : "milli_m_logo.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "milli_m_logo_2x.png",
+      "filename" : "milli_m_logo.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
