@@ -15,6 +15,7 @@ enum MilliFont {
     // Screen / Section
     static var screenTitle: Font { .custom("Sora-Bold", size: 22, relativeTo: .title3) }
     static var headline: Font { .custom("Sora-SemiBold", size: 17, relativeTo: .headline) }
+    static var headlineMedium: Font { .custom("Sora-SemiBold", size: 16, relativeTo: .headline) }
     static var headlineSmall: Font { .custom("Sora-SemiBold", size: 15, relativeTo: .subheadline) }
     static var cardTitle: Font { .custom("Sora-SemiBold", size: 16, relativeTo: .headline) }
 
