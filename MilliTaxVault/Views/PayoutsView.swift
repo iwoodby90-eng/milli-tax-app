@@ -321,7 +321,7 @@ struct PayoutsView: View {
                         .font(MilliFont.bodySmall)
                         .foregroundStyle(MilliColors.textSecondary)
 
-                    Text("• ACH ····\(payout.bankMask)")
+                    Text("• ACH ···\(payout.bankMask)")
                         .font(.custom("Inter-Regular", size: 11))
                         .foregroundStyle(MilliColors.textTertiary)
                 }
@@ -488,7 +488,7 @@ private struct FinancialReceiptSheet: View {
             VStack(spacing: 6) {
                 detailRow("Receipt Code", payout.receiptCode)
                 detailRow("ACH Trace ID", payout.achTraceId)
-                detailRow("Destination Bank", "•••• \(payout.bankMask)")
+                detailRow("Destination Bank", "•••• •••• •••• \(payout.bankMask)")
                 detailRow("Status", payout.isPending ? "Pending Direct Deposit" : "Settled via Autopilot")
             }
             .padding(14)
@@ -568,12 +568,19 @@ private struct BankConnectionSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(selectedProvider == provider ? Color(hex: "0C252E") : MilliColors.graphiteSurface)
-                                .overlay(
+                            Group {
+                                if selectedProvider == provider {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(selectedProvider == provider ? MilliColors.cyanGlow : Color.white.opacity(0.06), lineWidth: 1)
-                                )
+                                        .fill(Color(hex: "0C252E"))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(MilliColors.graphiteSurface)
+                                }
+                            }
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(selectedProvider == provider ? MilliColors.cyanGlow : Color.white.opacity(0.06), lineWidth: 1)
+                            )
                         )
                     }
                     .buttonStyle(.plain)
@@ -614,12 +621,19 @@ private struct BankConnectionSheet: View {
                         }
                         .padding(12)
                         .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(selectedInstitution == inst ? Color(hex: "0C2028") : MilliColors.graphiteSurface)
-                                .overlay(
+                            Group {
+                                if selectedInstitution == inst {
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(selectedInstitution == inst ? MilliColors.cyanGlow.opacity(0.4) : Color.white.opacity(0.04), lineWidth: 0.8)
-                                )
+                                        .fill(Color(hex: "0C2028"))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(MilliColors.graphiteSurface)
+                                }
+                            }
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(selectedInstitution == inst ? MilliColors.cyanGlow.opacity(0.4) : Color.white.opacity(0.04), lineWidth: 0.8)
+                            )
                         )
                     }
                     .buttonStyle(.plain)
