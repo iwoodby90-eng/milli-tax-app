@@ -187,13 +187,20 @@ struct SubscriptionView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 64)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? accent : MilliColors.graphiteSurface)
-                    .overlay {
+                Group {
+                    if isSelected {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(isSelected ? accent.opacity(0.40) : Color.white.opacity(0.06), lineWidth: 0.8)
+                            .fill(accent)
+                    } else {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(MilliColors.graphiteSurface)
                     }
-                    .shadow(color: isSelected ? accent.opacity(0.20) : .clear, radius: 7)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(isSelected ? accent.opacity(0.40) : Color.white.opacity(0.06), lineWidth: 0.8)
+                }
+                .shadow(color: isSelected ? accent.opacity(0.20) : .clear, radius: 7)
             )
         }
         .buttonStyle(.plain)
