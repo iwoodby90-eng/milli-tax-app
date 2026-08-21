@@ -448,7 +448,7 @@ struct RetirementView: View {
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 5)) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Color.white.opacity(0.06))
-                    AxisValueLabel() {
+                    AxisValueLabel {
                         if let year = value.as(Int.self) {
                             Text(String(year))
                                 .font(MilliFont.caption)
@@ -460,7 +460,7 @@ struct RetirementView: View {
             .chartYAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Color.white.opacity(0.06))
-                    AxisValueLabel() {
+                    AxisValueLabel {
                         if let amount = value.as(Double.self) {
                             Text(compactCurrency(amount))
                                 .font(MilliFont.caption)
@@ -770,12 +770,19 @@ private struct MilliRetirementOnboardingSheet: View {
             }
             .padding(14)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(planType == type ? Color(hex: "0C1A22") : MilliColors.graphiteSurface)
-                    .overlay(
+                Group {
+                    if planType == type {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(planType == type ? MilliColors.cyanGlow : Color.white.opacity(0.06), lineWidth: 1)
-                    )
+                            .fill(Color(hex: "0C1A22"))
+                    } else {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(MilliColors.graphiteSurface)
+                    }
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(planType == type ? MilliColors.cyanGlow : Color.white.opacity(0.06), lineWidth: 1)
+                )
             )
         }
         .buttonStyle(.plain)
