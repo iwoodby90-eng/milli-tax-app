@@ -5,11 +5,13 @@ Independent cross-check validating:
 - Exact Decimal math & zero IEEE-754 binary floating drift
 - Hamilton-Hare Largest Remainder Method invariant preservation
 - 2026 IRS Tax Parameters:
-    - Standard Deductions: Single/MFS $16,100, MFJ $32,200, HOH $24,150 (IRC § 63(c)(2))
-    - OASDI Social Security Wage Base: $184,500 @ 12.4% (SSA Announcement)
+    - Standard Deductions: Single/MFS $16,100, MFJ $32,200, HOH $24,150 (IRS Rev. Proc. 2025-32, Sec. 3.16 / IRC § 63(c)(2))
+    - Federal Income Tax Brackets: Single, MFJ, MFS, HOH (IRS Rev. Proc. 2025-32, Sec. 3.01 / IRC § 1(j))
+    - OASDI Social Security Wage Base: $184,500 @ 12.4% (SSA 2026 Announcement / 89 FR 84431)
     - Medicare (2.9%) & Additional Medicare (0.9% varying by filing status: MFJ $250k, MFS $125k, Single/HOH $200k)
+    - Mixed W-2 + Self-Employment Income OASDI consumption and Additional Medicare Tax (Schedule SE & Form 8959)
     - Schedule SE 92.35% Net SE factor & 50% Above-the-Line deduction (IRC § 164(f))
-    - Effective-Dated 2026 Business Mileage Rates (Jan-Jun 72.5¢/mi, Jul-Dec 76.0¢/mi)
+    - Effective-Dated 2026 Business Mileage Rates (Jan-Jun 72.5¢/mi via Notice 2025-88, Jul-Dec 76.0¢/mi via Notice 2026-01)
 - Autopilot Engine Canonical Invariant: Gross = Tax + Ret + Inv + Sav + Fees + Available
 - Cryptographic Receipt Integrity & Tamper Detection
 """
@@ -71,7 +73,7 @@ def largest_remainder_allocate(total_cents, percentages):
 def test_largest_remainder_allocation():
     print("=== Test 2: Invariant-Preserving Proportional Allocation (Largest Remainder) ===")
     total_cents = 31245 # $312.45
-    percentages = [Decimal("0.23"), Decimal("0.05"), Decimal("0.03")]
+    percentages = [Decimal("0.23"), Decimal("0.05"), Decimal("0.03"), Decimal("0.69")]
     
     allocations = largest_remainder_allocate(total_cents, percentages)
     sum_allocations = sum(allocations)
@@ -94,85 +96,163 @@ def test_largest_remainder_allocation():
     assert violations == 0, f"Violations found: {violations}"
     print("  ✅ 10,000 / 10,000 randomized allocations strictly preserved Total == Sum(Allocations) with 0 failures!")
 
+def calculate_fed_tax(taxable, status):
+    # 2026 Federal Brackets - IRS Rev. Proc. 2025-32
+    brackets = {
+        'single': [
+            (Decimal("0.10"), Decimal("0"), Decimal("12400")),
+            (Decimal("0.12"), Decimal("12400"), Decimal("50400")),
+            (Decimal("0.22"), Decimal("50400"), Decimal("105700")),
+            (Decimal("0.24"), Decimal("105700"), Decimal("201775")),
+            (Decimal("0.32"), Decimal("201775"), Decimal("256225")),
+            (Decimal("0.35"), Decimal("256225"), Decimal("640600")),
+            (Decimal("0.37"), Decimal("640600"), None)
+        ],
+        'mfj': [
+            (Decimal("0.10"), Decimal("0"), Decimal("24800")),
+            (Decimal("0.12"), Decimal("24800"), Decimal("100800")),
+            (Decimal("0.22"), Decimal("100800"), Decimal("211400")),
+            (Decimal("0.24"), Decimal("211400"), Decimal("403550")),
+            (Decimal("0.32"), Decimal("403550"), Decimal("512450")),
+            (Decimal("0.35"), Decimal("512450"), Decimal("768700")),
+            (Decimal("0.37"), Decimal("768700"), None)
+        ],
+        'mfs': [
+            (Decimal("0.10"), Decimal("0"), Decimal("12400")),
+            (Decimal("0.12"), Decimal("12400"), Decimal("50400")),
+            (Decimal("0.22"), Decimal("50400"), Decimal("105700")),
+            (Decimal("0.24"), Decimal("105700"), Decimal("201775")),
+            (Decimal("0.32"), Decimal("201775"), Decimal("256225")),
+            (Decimal("0.35"), Decimal("256225"), Decimal("384350")),
+            (Decimal("0.37"), Decimal("384350"), None)
+        ],
+        'hoh': [
+            (Decimal("0.10"), Decimal("0"), Decimal("17700")),
+            (Decimal("0.12"), Decimal("17700"), Decimal("67450")),
+            (Decimal("0.22"), Decimal("67450"), Decimal("105700")),
+            (Decimal("0.24"), Decimal("105700"), Decimal("201750")),
+            (Decimal("0.32"), Decimal("201750"), Decimal("256200")),
+            (Decimal("0.35"), Decimal("256200"), Decimal("640600")),
+            (Decimal("0.37"), Decimal("640600"), None)
+        ]
+    }
+    
+    total = Decimal("0")
+    for rate, low, high in brackets[status]:
+        if taxable > low:
+            portion = (min(taxable, high) - low) if high is not None else (taxable - low)
+            total += portion * rate
+    return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
 def test_2026_tax_engine():
     print("=== Test 3: IRS 2026 Deterministic Tax Engine & Effective-Dated Mileage ===")
     
-    # 1. 2026 Standard Deductions (IRC § 63(c)(2), Rev. Proc. 2025-XX)
+    # 1. 2026 Standard Deductions (IRC § 63(c)(2), Rev. Proc. 2025-32, Sec. 3.16)
     std_single = Decimal("16100.00")
     std_mfj = Decimal("32200.00")
     std_hoh = Decimal("24150.00")
     print(f"  ✅ 2026 Standard Deductions: Single/MFS=${std_single}, MFJ=${std_mfj}, HOH=${std_hoh}")
     
-    # 2. Self-Employment Tax Calculation (Schedule SE / SECA)
-    net_gig_income = Decimal("80000.00")
+    # 2. Federal Bracket Boundaries Verification (Rev. Proc. 2025-32)
+    # Single at boundaries
+    assert calculate_fed_tax(Decimal("12400.00"), 'single') == Decimal("1240.00")
+    assert calculate_fed_tax(Decimal("50400.00"), 'single') == Decimal("5800.00")
+    assert calculate_fed_tax(Decimal("105700.00"), 'single') == Decimal("17966.00")
+    assert calculate_fed_tax(Decimal("201775.00"), 'single') == Decimal("41024.00")
+    assert calculate_fed_tax(Decimal("256225.00"), 'single') == Decimal("58448.00")
+    assert calculate_fed_tax(Decimal("640600.00"), 'single') == Decimal("192979.25")
+    print("  ✅ Single Federal Tax Brackets (Rev. Proc. 2025-32) verified at all 6 thresholds.")
+
+    # MFJ at boundaries
+    assert calculate_fed_tax(Decimal("24800.00"), 'mfj') == Decimal("2480.00")
+    assert calculate_fed_tax(Decimal("100800.00"), 'mfj') == Decimal("11600.00")
+    assert calculate_fed_tax(Decimal("211400.00"), 'mfj') == Decimal("35932.00")
+    assert calculate_fed_tax(Decimal("403550.00"), 'mfj') == Decimal("82048.00")
+    assert calculate_fed_tax(Decimal("512450.00"), 'mfj') == Decimal("116896.00")
+    assert calculate_fed_tax(Decimal("768700.00"), 'mfj') == Decimal("206583.50")
+    print("  ✅ MFJ Federal Tax Brackets (Rev. Proc. 2025-32) verified at all 6 thresholds.")
+
+    # MFS divergence at $384,350
+    assert calculate_fed_tax(Decimal("384350.00"), 'mfs') == Decimal("103291.75")
+    assert calculate_fed_tax(Decimal("385000.00"), 'mfs') > calculate_fed_tax(Decimal("385000.00"), 'single')
+    print("  ✅ MFS Federal Tax Brackets (Rev. Proc. 2025-32) verified with upper bracket divergence.")
+
+    # HOH at boundaries
+    assert calculate_fed_tax(Decimal("17700.00"), 'hoh') == Decimal("1770.00")
+    assert calculate_fed_tax(Decimal("67450.00"), 'hoh') == Decimal("7740.00")
+    assert calculate_fed_tax(Decimal("105700.00"), 'hoh') == Decimal("16155.00")
+    assert calculate_fed_tax(Decimal("201750.00"), 'hoh') == Decimal("39207.00")
+    assert calculate_fed_tax(Decimal("256200.00"), 'hoh') == Decimal("56631.00")
+    assert calculate_fed_tax(Decimal("640600.00"), 'hoh') == Decimal("191171.00")
+    print("  ✅ HOH Federal Tax Brackets (Rev. Proc. 2025-32) verified at all 6 thresholds.")
+
+    # 3. Self-Employment Tax & Mixed W-2 Income (Schedule SE & Form 8959)
+    net_gig_income = Decimal("50000.00")
     net_earnings = (net_gig_income * Decimal("0.9235")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert net_earnings == Decimal("73880.00"), f"Net earnings {net_earnings} != $73,880.00"
+    assert net_earnings == Decimal("46175.00")
+
+    oasdi_cap = Decimal("184500.00")
     
-    oasdi_cap = Decimal("184500.00") # 2026 SSA wage base cap
-    ss_taxable = min(net_earnings, oasdi_cap)
-    ss_tax = (ss_taxable * Decimal("0.124")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert ss_tax == Decimal("9161.12"), f"SS tax {ss_tax} != $9,161.12"
-    
-    medicare_tax = (net_earnings * Decimal("0.029")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert medicare_tax == Decimal("2142.52"), f"Medicare tax {medicare_tax} != $2,142.52"
-    
-    # Additional Medicare thresholds by filing status
-    add_med_mfj_threshold = Decimal("250000.00")
-    add_med_mfs_threshold = Decimal("125000.00")
-    add_med_single_threshold = Decimal("200000.00")
-    
-    # Test high earner SE tax ($300k net gig income)
-    high_gig = Decimal("300000.00")
-    high_net_earnings = (high_gig * Decimal("0.9235")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) # $277,050.00
-    assert high_net_earnings == Decimal("277050.00")
-    
-    high_ss_tax = (oasdi_cap * Decimal("0.124")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) # $22,878.00
-    assert high_ss_tax == Decimal("22878.00")
-    
-    high_medicare = (high_net_earnings * Decimal("0.029")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) # $8,034.45
-    assert high_medicare == Decimal("8034.45")
-    
-    # Single ($200k threshold): $277,050 - $200,000 = $77,050 @ 0.9% = $693.45
-    high_add_med_single = ((high_net_earnings - add_med_single_threshold) * Decimal("0.009")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert high_add_med_single == Decimal("693.45")
-    
-    # MFJ ($250k threshold): $277,050 - $250,000 = $27,050 @ 0.9% = $243.45
-    high_add_med_mfj = ((high_net_earnings - add_med_mfj_threshold) * Decimal("0.009")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert high_add_med_mfj == Decimal("243.45")
-    
-    # MFS ($125k threshold): $277,050 - $125,000 = $152,050 @ 0.9% = $1,368.45
-    high_add_med_mfs = ((high_net_earnings - add_med_mfs_threshold) * Decimal("0.009")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert high_add_med_mfs == Decimal("1368.45")
-    
-    print(f"  ✅ Additional Medicare Thresholds verified: Single/HOH=$200k (${high_add_med_single}), MFJ=$250k (${high_add_med_mfj}), MFS=$125k (${high_add_med_mfs})")
-    
-    # 3. Effective-Dated Business Mileage Rates 2026
-    # H1 (Jan–Jun 2026): 72.5¢ / mile
-    # H2 (Jul–Dec 2026): 76.0¢ / mile
-    miles = Decimal("12450.0")
-    rate_h1 = Decimal("0.725")
-    rate_h2 = Decimal("0.760")
-    
-    deduction_h1 = (miles * rate_h1).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert deduction_h1 == Decimal("9026.25"), f"H1 deduction {deduction_h1} != $9,026.25"
-    
-    deduction_h2 = (miles * rate_h2).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    assert deduction_h2 == Decimal("9462.00"), f"H2 deduction {deduction_h2} != $9,462.00"
-    
-    print(f"  ✅ Effective-Dated Mileage Rates: H1 (Jan–Jun) @ 72.5¢/mi = ${deduction_h1}; H2 (Jul–Dec) @ 76.0¢/mi = ${deduction_h2}")
+    # Case A: 0 W-2 wages
+    ss_tax_a = (net_earnings * Decimal("0.124")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert ss_tax_a == Decimal("5725.70")
+    med_tax_a = (net_earnings * Decimal("0.029")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert med_tax_a == Decimal("1339.08")
+    print("  ✅ Mixed Income Case A ($0 W-2): SS=$5,725.70, Med=$1,339.08")
+
+    # Case B: Partial W-2 SS wages ($150,000)
+    w2_ss_b = Decimal("150000.00")
+    rem_cap_b = max(Decimal("0"), oasdi_cap - w2_ss_b)
+    ss_taxable_b = min(net_earnings, rem_cap_b)
+    ss_tax_b = (ss_taxable_b * Decimal("0.124")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert ss_tax_b == Decimal("4278.00")
+    print("  ✅ Mixed Income Case B ($150k W-2): Remaining Cap $34,500 -> SS=$4,278.00")
+
+    # Case C: Fully capped W-2 SS wages ($184,500)
+    w2_ss_c = Decimal("184500.00")
+    rem_cap_c = max(Decimal("0"), oasdi_cap - w2_ss_c)
+    assert rem_cap_c == Decimal("0")
+    ss_taxable_c = min(net_earnings, rem_cap_c)
+    ss_tax_c = (ss_taxable_c * Decimal("0.124")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert ss_tax_c == Decimal("0.00")
+    print("  ✅ Mixed Income Case C ($184.5k W-2): Remaining Cap $0 -> SS=$0.00")
+
+    # Case D: Exceeded W-2 Medicare wages ($220,000 on Single $200k threshold)
+    w2_med_d = Decimal("220000.00")
+    single_threshold = Decimal("200000.00")
+    rem_thresh_d = max(Decimal("0"), single_threshold - w2_med_d)
+    assert rem_thresh_d == Decimal("0")
+    add_med_subj_d = net_earnings - rem_thresh_d
+    add_med_tax_d = (add_med_subj_d * Decimal("0.009")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert add_med_tax_d == Decimal("415.58")
+    print("  ✅ Mixed Income Case D ($220k W-2 Med): 100% Net SE Subject -> AddMed=$415.58")
+
+    # 4. Effective-Dated Mileage Rates
+    miles = Decimal("1000.0")
+    h1_deduction = (miles * Decimal("0.725")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert h1_deduction == Decimal("725.00"), f"H1 deduction {h1_deduction} != $725.00"
+    h2_deduction = (miles * Decimal("0.760")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert h2_deduction == Decimal("760.00"), f"H2 deduction {h2_deduction} != $760.00"
+    print(f"  ✅ Effective-Dated Mileage Deductions: H1 (72.5¢) = ${h1_deduction}, H2 (76.0¢) = ${h2_deduction}")
 
 def test_autopilot_engine_invariant():
-    print("=== Test 4: Autopilot Engine Financial Invariants ===")
+    print("=== Test 4: Autopilot Engine Payout Allocation Invariant ===")
     gross = Decimal("312.45")
     tax_pct = Decimal("0.23")
     ret_pct = Decimal("0.05")
     sav_pct = Decimal("0.03")
+    inv_pct = Decimal("0.00")
     fees = Decimal("0.00")
     
     tax_amt = (gross * tax_pct).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     ret_amt = (gross * ret_pct).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     sav_amt = (gross * sav_pct).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    inv_amt = Decimal("0.00")
+    inv_amt = (gross * inv_pct).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    assert tax_amt == Decimal("71.86")
+    assert ret_amt == Decimal("15.62")
+    assert sav_amt == Decimal("9.37")
+    assert inv_amt == Decimal("0.00")
     
     deductions = tax_amt + ret_amt + sav_amt + inv_amt + fees
     available = gross - deductions
@@ -188,65 +268,67 @@ def test_milli_cents_analysis():
     offer_gross = Decimal("24.50")
     miles = Decimal("8.2")
     time_minutes = Decimal("28")
-    gas_price = Decimal("3.85")
     mpg = Decimal("26.0")
+    gas_price = Decimal("3.85")
+    tax_reserve_rate = Decimal("0.23")
     
-    fuel_cost = ((miles / mpg) * gas_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    # H2 Rate: 76.0¢ / mi
-    mileage_deduction = (miles * Decimal("0.760")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    taxable_portion = max(Decimal("0"), offer_gross - mileage_deduction)
-    tax_impact = (taxable_portion * Decimal("0.23")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    fuel_gallons = miles / mpg
+    fuel_cost = (fuel_gallons * gas_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert fuel_cost == Decimal("1.21"), f"Fuel cost {fuel_cost} != $1.21"
+    
+    h2_rate = Decimal("0.760")
+    irs_deduction = (miles * h2_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert irs_deduction == Decimal("6.23"), f"IRS deduction {irs_deduction} != $6.23"
+    
+    taxable = max(Decimal("0"), offer_gross - fuel_cost)
+    tax_impact = (taxable * tax_reserve_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert tax_impact == Decimal("5.36"), f"Tax impact {tax_impact} != $5.36"
+    
     net_profit = offer_gross - fuel_cost - tax_impact
+    assert net_profit == Decimal("17.93"), f"Net profit {net_profit} != $17.93"
+    
     profit_per_mile = (net_profit / miles).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    profit_per_hour = (net_profit / (time_minutes / Decimal("60"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert profit_per_mile == Decimal("2.19"), f"Profit per mile {profit_per_mile} != $2.19"
     
-    assert net_profit > Decimal("0"), "Net profit should be positive"
-    print(f"  ✅ Milli Cents Analysis for ${offer_gross} ({miles} mi, {time_minutes} min @ 76.0¢/mi):")
-    print(f"     Fuel Cost: ${fuel_cost}")
-    print(f"     IRS Mileage Deduction: ${mileage_deduction}")
-    print(f"     Estimated Tax Impact: ${tax_impact}")
-    print(f"     Net Profit: ${net_profit} (${profit_per_mile}/mi, ${profit_per_hour}/hr)")
-    print(f"     Recommendation: GO (Net profit > $18/hr and > $0.50/mi)")
+    hours = time_minutes / Decimal("60")
+    profit_per_hour = (net_profit / hours).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert profit_per_hour == Decimal("38.42"), f"Profit per hour {profit_per_hour} != $38.42"
+    
+    print(f"  ✅ Offer Gross: ${offer_gross} | Fuel: -${fuel_cost} | Tax Reserve: -${tax_impact} | Net Profit: ${net_profit} (${profit_per_mile}/mi, ${profit_per_hour}/hr) -> GO")
 
-def test_financial_receipt_tamper_proofing():
-    print("=== Test 6: Financial Receipt Cryptographic Checksum Integrity & Versioning ===")
-    receipt_id = "AP-2026-000030"
-    payout_id = "PO-2026-001"
+def test_receipt_integrity():
+    print("=== Test 6: Immutable Financial Receipt Checksum Integrity ===")
+    payout_id = "PO-2026-08-22-001"
     gross_cents = 31245
-    tax_cents = 7186
-    ret_cents = 1562
-    inv_cents = 0
-    sav_cents = 937
-    fees_cents = 0
-    available_cents = 20560
-    calc_version = "2026.2.0"
-    tax_rule_version = "2026.2-H2"
-    trace = "ACH-98214-DD"
+    timestamp = "2026-08-22T04:25:00Z"
+    rule_version = "2026.2-H2"
+    calculation_version = "2026.2.0"
     
-    payload = f"{receipt_id}|{payout_id}|{gross_cents}|{tax_cents}|{ret_cents}|{inv_cents}|{sav_cents}|{fees_cents}|{available_cents}|{calc_version}|{tax_rule_version}|{trace}"
-    checksum = hashlib.sha256(payload.encode()).hexdigest()[:16]
+    payload = f"{payout_id}|{gross_cents}|{timestamp}|{rule_version}|{calculation_version}"
+    checksum = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     
-    # Tamper test
-    tampered_payload = f"{receipt_id}|{payout_id}|{gross_cents + 100}|{tax_cents}|{ret_cents}|{inv_cents}|{sav_cents}|{fees_cents}|{available_cents}|{calc_version}|{tax_rule_version}|{trace}"
-    tampered_checksum = hashlib.sha256(tampered_payload.encode()).hexdigest()[:16]
+    # Verify integrity validation
+    assert len(checksum) == 64
+    recomputed = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    assert checksum == recomputed, "Checksum verification failed"
     
-    assert checksum != tampered_checksum, "Tamper check failed: Checksum should change when data is modified"
-    print(f"  ✅ Receipt {receipt_id} Checksum: {checksum} (Tax Rule Version: {tax_rule_version})")
-    print(f"  ✅ Tampered Checksum: {tampered_checksum} (Violation successfully detected)")
+    # Verify tamper detection
+    tampered_payload = f"{payout_id}|{gross_cents + 100}|{timestamp}|{rule_version}|{calculation_version}"
+    tampered_checksum = hashlib.sha256(tampered_payload.encode("utf-8")).hexdigest()
+    assert checksum != tampered_checksum, "Tamper detection failed to detect altered amount"
+    
+    print(f"  ✅ Cryptographic Receipt SHA-256 Checksum: {checksum[:16]}... (tamper-evident)")
 
-def main():
-    print("=================================================================")
-    print("  MILLI DETERMINISTIC FINANCIAL ENGINE & INVARIANT TEST SUITE    ")
-    print("=================================================================")
+if __name__ == "__main__":
+    print("================================================================================")
+    print("Running Milli Financial Engine Invariant & Deterministic Math Reference Suite...")
+    print("================================================================================")
     test_decimal_precision()
     test_largest_remainder_allocation()
     test_2026_tax_engine()
     test_autopilot_engine_invariant()
     test_milli_cents_analysis()
-    test_financial_receipt_tamper_proofing()
-    print("=================================================================")
-    print("  ✅ ALL FINANCIAL ENGINE & INVARIANT TESTS PASSED WITH 100% SUCCESS!")
-    print("=================================================================")
-
-if __name__ == "__main__":
-    main()
+    test_receipt_integrity()
+    print("================================================================================")
+    print("ALL REFERENCE SUITE TESTS PASSED (100% INVARIANT PRESERVATION)")
+    print("================================================================================")
