@@ -6,7 +6,7 @@ echo "=== Milli Tax Vault Repository Health & Domain Check ==="
 # Verify essential files exist
 REQUIRED_FILES=(
   "MilliTaxVault.xcodeproj/project.pbxproj"
-  "MilliTaxVault/MilliTaxVaultApp.swift"
+  "MilliTaxVault/MilliApp.swift"
   "MilliTaxVault/ContentView.swift"
   "MilliTaxVault/Domain/Money.swift"
   "MilliTaxVault/Domain/RoundingPolicy.swift"
