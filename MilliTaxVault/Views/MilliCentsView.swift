@@ -33,7 +33,7 @@ struct MilliCentsView: View {
     }
 
     private var irsStandardDeduction: Double {
-        totalMiles * 0.67 // 2026 IRS standard mileage rate
+        totalMiles * TaxEngine.mileageRateDouble(for: Date()) // Versioned 2026 IRS standard mileage rate
     }
 
     private var taxablePortion: Double {
@@ -291,7 +291,7 @@ struct MilliCentsView: View {
             divider
             analysisRow(label: "Fuel Cost (est. @ $3.85/gal)", value: currency(fuelCost))
             divider
-            analysisRow(label: "IRS Mileage Deduction ($0.67/mi)", value: String(format: "$%.2f", irsStandardDeduction))
+            analysisRow(label: "IRS Mileage Deduction (\(TaxEngine.formattedMileageRate(for: Date()))/mi)", value: String(format: "$%.2f", irsStandardDeduction))
             divider
             analysisRow(label: "Tax Impact", value: currency(taxImpact))
         }
