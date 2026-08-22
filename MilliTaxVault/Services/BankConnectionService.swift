@@ -96,23 +96,64 @@ public struct VerifiedPayout: Identifiable, Codable, Equatable {
     public let bankMask: String
     public let achTraceId: String
 
-    public var taxProtected: Double { (grossAmount * 0.30).rounded(to: 2) }
-    public var retirementAllocation: Double { (grossAmount * 0.10).rounded(to: 2) }
-    public var investingAllocation: Double { (grossAmount * 0.10).rounded(to: 2) }
-    public var emergencySavings: Double { (grossAmount * 0.05).rounded(to: 2) }
+    public var grossMoney: Money {
+        Money(double: grossAmount)
+    }
+
+    public var allocationResult: AutopilotAllocationResult {
+        let config = AutopilotAllocationConfig(
+            taxReservePercent: Decimal(string: "0.23")!,
+            retirementEnabled: true,
+            retirementPercent: Decimal(string: "0.05")!,
+            investingEnabled: false,
+            investingPercent: .zero,
+            savingsEnabled: true,
+            savingsPercent: Decimal(string: "0.03")!,
+            explicitFees: .zero
+        )
+        return AutopilotEngine.allocate(grossPayout: grossMoney, config: config, traceId: achTraceId)
+    }
+
+    public var taxProtected: Double {
+        allocationResult.taxReserve.doubleValue
+    }
+
+    public var retirementAllocation: Double {
+        allocationResult.retirement.doubleValue
+    }
+
+    public var investingAllocation: Double {
+        allocationResult.investing.doubleValue
+    }
+
+    public var emergencySavings: Double {
+        allocationResult.savings.doubleValue
+    }
+
     public var availableToSpend: Double {
-        (grossAmount - taxProtected - retirementAllocation - investingAllocation - emergencySavings).rounded(to: 2)
+        allocationResult.availableToSpend.doubleValue
     }
 
     public var platformColor: Color {
         Color(hex: platformColorHex)
     }
-}
 
-private extension Double {
-    func rounded(to places: Int) -> Double {
-        let divisor = pow(10.0, Double(places))
-        return (self * divisor).rounded() / divisor
+    public func toFinancialReceipt() -> FinancialReceipt {
+        FinancialReceipt(
+            id: receiptCode,
+            payoutId: id,
+            timestamp: Date(),
+            platform: platform,
+            grossAmount: grossMoney,
+            taxProtected: allocationResult.taxReserve,
+            retirementAllocation: allocationResult.retirement,
+            investingAllocation: allocationResult.investing,
+            emergencySavings: allocationResult.savings,
+            explicitFees: allocationResult.explicitFees,
+            availableToSpend: allocationResult.availableToSpend,
+            calculationVersion: AutopilotEngine.engineVersion,
+            traceId: achTraceId
+        )
     }
 }
 
@@ -131,49 +172,32 @@ public final class BankConnectionService: ObservableObject {
     @Published public var payouts: [VerifiedPayout] = [] {
         didSet { persist() }
     }
-    @Published public var isConnecting: Bool = false
-    @Published public var isSyncing: Bool = false
+    @Published public var isConnecting = false
+    @Published public var isSyncing = false
     @Published public var syncMessage: String?
+    @Published public var selectedProvider: BankConnectionProvider = .stripeFinancialConnections
 
-    private let storageKeyBank = "milli_connected_bank_v2"
-    private let storageKeyPlatforms = "milli_linked_platforms_v2"
-    private let storageKeyPayouts = "milli_verified_payouts_v2"
+    private let storageKeyBank = "milli_connected_bank"
+    private let storageKeyPlatforms = "milli_linked_platforms"
+    private let storageKeyPayouts = "milli_verified_payouts"
 
-    private init() {
+    public init() {
         loadPersistedData()
-        if connectedBank == nil {
-            // Seed verified initial bank account linked via Stripe Financial Connections
-            connectedBank = ConnectedBankAccount(
-                id: "stripe_fc_acc_4821",
-                institutionName: "Chase Bank",
-                accountName: "Premier Checking",
-                accountMask: "4821",
-                accountType: "Checking",
-                balance: 6842.76,
-                provider: .stripeFinancialConnections,
-                lastSyncedAt: Date(),
-                isLive: true
-            )
-        }
         if payouts.isEmpty {
             seedInitialPayouts()
         }
     }
 
-    public var totalPayoutsAmount: Double {
-        payouts.reduce(0) { $0 + $1.grossAmount }
-    }
-
-    public func connectBank(institution: BankInstitution, provider: BankConnectionProvider, accountMask: String = "4821") {
+    public func connectBank(institution: BankInstitution, provider: BankConnectionProvider) {
         isConnecting = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             guard let self = self else { return }
             self.connectedBank = ConnectedBankAccount(
-                id: "\(provider == .stripeFinancialConnections ? "stripe" : "plaid")_\(institution.id)_\(accountMask)",
+                id: "bank_\(UUID().uuidString.prefix(8))",
                 institutionName: institution.name,
-                accountName: "Primary Checking",
-                accountMask: accountMask,
-                accountType: "Checking",
+                accountName: "Checking",
+                accountMask: "4821",
+                accountType: "Checking Account",
                 balance: 6842.76,
                 provider: provider,
                 lastSyncedAt: Date(),
@@ -193,7 +217,6 @@ public final class BankConnectionService: ObservableObject {
         guard connectedBank != nil else { return }
         isSyncing = true
         syncMessage = "Connecting to \(connectedBank?.provider.rawValue ?? "Financial API")..."
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self = self else { return }
             self.syncMessage = "Pulling live direct deposits from gig platforms..."
