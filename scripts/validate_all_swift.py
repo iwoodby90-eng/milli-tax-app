@@ -71,7 +71,7 @@ def validate_brackets(clean_code: str):
         return f"Unclosed '{top}' from position {top_idx}"
     return None
 
-swift_files = sorted(glob.glob('MilliTaxVault/**/*.swift', recursive=True))
+swift_files = sorted(glob.glob('MilliTaxVault*/**/*.swift', recursive=True))
 print(f"Scanning {len(swift_files)} Swift source files...")
 
 errors = 0
