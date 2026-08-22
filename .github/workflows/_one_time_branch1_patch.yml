@@ -1,0 +1,50 @@
+name: One-time Branch 1 micro-patch apply
+
+on:
+  push:
+    branches:
+      - agent/branch-1-deterministic-financial-engine
+    paths:
+      - .github/workflows/_one_time_branch1_patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/branch-1-deterministic-financial-engine
+          fetch-depth: 0
+
+      - name: Recover exact patch payload from prior workflow commit
+        run: |
+          python3 - <<'PY'
+          import base64, re, subprocess
+          source = subprocess.check_output([
+              "git", "show",
+              "15fe3720d7c5e100bc7a54c0fb88da7e2ade47ce:.github/workflows/_one_time_branch1_patch.yml"
+          ], text=True)
+          match = re.search(r'PATCH_B64: "([A-Za-z0-9+/=]+)"', source)
+          if not match:
+              raise SystemExit("PATCH_B64 not found in prior workflow commit")
+          with open("/tmp/MILLI_Branch1_Final_MicroPatch.patch", "wb") as fh:
+              fh.write(base64.b64decode(match.group(1)))
+          PY
+
+      - name: Apply exact local commit and push immediately
+        run: |
+          set -euo pipefail
+          git reset --hard 3c6b88229b226ed8b7d473e737864d506c2d08eb
+          git config user.name "Sun"
+          git config user.email "worker-172df502-7e11-4386-a621-dcb28dc01a4f@ai.internal"
+          export GIT_COMMITTER_NAME="Sun"
+          export GIT_COMMITTER_EMAIL="worker-172df502-7e11-4386-a621-dcb28dc01a4f@ai.internal"
+          export GIT_COMMITTER_DATE="Sat, 22 Aug 2026 06:49:34 +0000"
+          git am /tmp/MILLI_Branch1_Final_MicroPatch.patch
+          git diff --check HEAD^ HEAD
+          echo "Applied commit: $(git rev-parse HEAD)"
+          git push --force-with-lease origin HEAD:refs/heads/agent/branch-1-deterministic-financial-engine
