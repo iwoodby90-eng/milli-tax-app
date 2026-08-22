@@ -3,20 +3,34 @@ import Foundation
 // MARK: - TaxProfile — Onboarding tax profile data model
 // Persisted via UserDefaults during the native onboarding setup.
 
-struct TaxProfile: Codable {
-    var filingStatus: FilingStatus = .single
-    var estimatedAnnualIncome: String = ""
-    var isSelfEmployed: Bool = true
-    var hasMultipleVehicles: Bool = false
-    var state: String = ""
+public struct TaxProfile: Codable, Equatable {
+    public var filingStatus: FilingStatus = .single
+    public var estimatedAnnualIncome: String = ""
+    public var isSelfEmployed: Bool = true
+    public var hasMultipleVehicles: Bool = false
+    public var state: String = ""
 
-    enum FilingStatus: String, Codable, CaseIterable {
+    public init(
+        filingStatus: FilingStatus = .single,
+        estimatedAnnualIncome: String = "",
+        isSelfEmployed: Bool = true,
+        hasMultipleVehicles: Bool = false,
+        state: String = ""
+    ) {
+        self.filingStatus = filingStatus
+        self.estimatedAnnualIncome = estimatedAnnualIncome
+        self.isSelfEmployed = isSelfEmployed
+        self.hasMultipleVehicles = hasMultipleVehicles
+        self.state = state
+    }
+
+    public enum FilingStatus: String, Codable, CaseIterable {
         case single = "Single"
         case marriedJoint = "Married Filing Jointly"
         case marriedSeparate = "Married Filing Separately"
         case headOfHousehold = "Head of Household"
 
-        var shortLabel: String {
+        public var shortLabel: String {
             switch self {
             case .single: return "Single"
             case .marriedJoint: return "Married (Joint)"
@@ -26,7 +40,7 @@ struct TaxProfile: Codable {
         }
     }
 
-    var annualIncomeAmount: Double? {
+    public var annualIncomeAmount: Double? {
         let cleaned = estimatedAnnualIncome
             .replacingOccurrences(of: "$", with: "")
             .replacingOccurrences(of: ",", with: "")
@@ -35,7 +49,19 @@ struct TaxProfile: Codable {
         return amount
     }
 
-    var isValid: Bool {
+    public var annualIncomeMoney: Money? {
+        annualIncomeAmount.map { Money(double: $0) }
+    }
+
+    public var recommendedTaxReserveRate: Decimal {
+        TaxEngine.calculateRecommendedTaxReserveRate(profile: self)
+    }
+
+    public var recommendedTaxReservePercent: Int {
+        Int(NSDecimalNumber(decimal: recommendedTaxReserveRate * 100).doubleValue.rounded())
+    }
+
+    public var isValid: Bool {
         annualIncomeAmount != nil
             && !state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -46,12 +72,12 @@ struct TaxProfile: Codable {
 // first-time onboarding. Production App Store billing still needs to bind this
 // entitlement state to StoreKit before release.
 
-enum MilliPlan: String, Codable, CaseIterable {
+public enum MilliPlan: String, Codable, CaseIterable {
     case basic = "Basic"
     case pro = "Pro"
     case elite = "Elite"
 
-    var monthlyPrice: String {
+    public var monthlyPrice: String {
         switch self {
         case .basic: return "$19.99/mo"
         case .pro: return "$29.99/mo"
@@ -59,13 +85,13 @@ enum MilliPlan: String, Codable, CaseIterable {
         }
     }
 
-    var trialLabel: String { "3-day free trial" }
+    public var trialLabel: String { "3-day free trial" }
 
-    var onboardingPriceLine: String {
+    public var onboardingPriceLine: String {
         "3 days free • then \(monthlyPrice)"
     }
 
-    var features: [String] {
+    public var features: [String] {
         switch self {
         case .basic:
             return [
@@ -94,24 +120,24 @@ enum MilliPlan: String, Codable, CaseIterable {
         }
     }
 
-    var isPopular: Bool { self == .pro }
+    public var isPopular: Bool { self == .pro }
 }
 
 // MARK: - Trial persistence
 
-struct MilliTrialState {
-    static let hasActivatedKey = "milliTrialHasActivated"
-    static let planKey = "milliTrialPlan"
-    static let startedAtKey = "milliTrialStartedAt"
-    static let endsAtKey = "milliTrialEndsAt"
+public struct MilliTrialState {
+    public static let hasActivatedKey = "milliTrialHasActivated"
+    public static let planKey = "milliTrialPlan"
+    public static let startedAtKey = "milliTrialStartedAt"
+    public static let endsAtKey = "milliTrialEndsAt"
 
-    let plan: MilliPlan
-    let startedAt: Date
-    let endsAt: Date
+    public let plan: MilliPlan
+    public let startedAt: Date
+    public let endsAt: Date
 
-    var isActive: Bool { Date() < endsAt }
+    public var isActive: Bool { Date() < endsAt }
 
-    static func activateIfNeeded(plan: MilliPlan, now: Date = Date()) {
+    public static func activateIfNeeded(plan: MilliPlan, now: Date = Date()) {
         let defaults = UserDefaults.standard
         guard !defaults.bool(forKey: hasActivatedKey) else { return }
 
@@ -124,7 +150,7 @@ struct MilliTrialState {
         defaults.set(endsAt, forKey: endsAtKey)
     }
 
-    static func current() -> MilliTrialState? {
+    public static func current() -> MilliTrialState? {
         let defaults = UserDefaults.standard
         guard defaults.bool(forKey: hasActivatedKey),
               let rawPlan = defaults.string(forKey: planKey),
@@ -138,7 +164,7 @@ struct MilliTrialState {
         return MilliTrialState(plan: plan, startedAt: startedAt, endsAt: endsAt)
     }
 
-    static func resetForNewLocalAccount() {
+    public static func resetForNewLocalAccount() {
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: hasActivatedKey)
         defaults.removeObject(forKey: planKey)
