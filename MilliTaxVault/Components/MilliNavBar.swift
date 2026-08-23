@@ -4,18 +4,18 @@ import UIKit
 // MARK: - MilliTab
 
 enum MilliTab: String, CaseIterable {
-    case payouts = "Payouts"
-    case mileage = "Mileage"
+    case vault = "Vault"
+    case activity = "Activity"
     case wealth = "Wealth"
-    case more = "More"
+    case cockpit = "Cockpit"
     case home = "Home"
 
     var icon: String {
         switch self {
-        case .payouts: return "creditcard.fill"
-        case .mileage: return "location.north.circle.fill"
+        case .vault: return "lock.shield.fill"
+        case .activity: return "waveform.path.ecg"
         case .wealth: return "chart.bar.xaxis"
-        case .more: return "ellipsis.circle.fill"
+        case .cockpit: return "gauge.open.with.lines.needle.33percent"
         case .home: return ""
         }
     }
@@ -130,17 +130,17 @@ struct MilliNavBar: View {
             
             // Tab button destinations
             HStack(spacing: 0) {
-                // Left group: Payouts & Mileage
-                tabButton(.payouts)
-                tabButton(.mileage)
+                // Left group: Vault & Activity
+                tabButton(.vault)
+                tabButton(.activity)
                 
                 // Center clearance for elevated hardware dial
                 Spacer()
                     .frame(width: 80)
                 
-                // Right group: Wealth & More
+                // Right group: Wealth & Cockpit
                 tabButton(.wealth)
-                tabButton(.more)
+                tabButton(.cockpit)
             }
             .padding(.horizontal, 12)
         }

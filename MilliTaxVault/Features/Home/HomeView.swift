@@ -49,18 +49,7 @@ struct HomeView: View {
                 .accessibilityLabel("Notifications")
             }
 
-            Text("MILLI")
-                .font(MilliFont.wordmark)
-                .tracking(1.6)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .shadow(color: MilliColors.cyanGlow.opacity(0.14), radius: 4)
-                .accessibilityAddTraits(.isHeader)
+            MilliWordmark()
         }
         .frame(height: 46)
     }
@@ -131,7 +120,7 @@ struct HomeView: View {
 
     private var latestPayout: some View {
         Button {
-            navigate?(.payouts)
+            navigate?(.vault)
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -285,7 +274,7 @@ struct HomeView: View {
     }
 
     private var mileageTile: some View {
-        Button { navigate?(.mileage) } label: {
+        Button { navigate?(.activity) } label: {
             VStack(alignment: .leading, spacing: 5) {
                 Text("MILEAGE")
                     .font(MilliFont.sectionLabel)

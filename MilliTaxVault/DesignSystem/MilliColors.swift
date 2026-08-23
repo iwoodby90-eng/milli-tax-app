@@ -18,7 +18,7 @@ enum MilliColors {
     static let silver = Color(hex: "C0C0C0")
     static let silverBright = Color(hex: "EEF2F4")
     static let graphite = carbon
-    static let blackGlass = Color(hex: "050808")
+    static let blackGlass = Color(hex: "07090B")
 
     // MARK: Backgrounds and surfaces
     static let background = obsidian

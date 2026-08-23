@@ -284,17 +284,7 @@ struct LoginView: View {
                 ChromeEmblemView(size: 68)
             }
 
-            Text("MILLI")
-                .font(.custom("Sora-Bold", size: 34, relativeTo: .largeTitle))
-                .tracking(6.4)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .shadow(color: MilliColors.cyanGlow.opacity(0.12), radius: 5)
+            MilliWordmark(fontSize: 34, tracking: 6.4)
 
             Text("Money, Made Intelligent.")
                 .font(MilliFont.bodyMedium)

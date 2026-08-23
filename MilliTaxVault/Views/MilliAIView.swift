@@ -285,7 +285,7 @@ private enum MilliAIFallbackEngine {
                 role: .assistant,
                 text: "Your Mileage screen is the source of truth for tracked business miles, route activity, and deduction estimates.",
                 actionTitle: "View Mileage",
-                destination: .mileage
+                destination: .activity
             )
         }
 

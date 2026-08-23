@@ -96,15 +96,7 @@ struct OnboardingFlowView: View {
 
     private var setupHeader: some View {
         HStack {
-            Text("MILLI")
-                .font(.custom("Sora-Bold", size: 17, relativeTo: .headline))
-                .tracking(3.8)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+            MilliWordmark(fontSize: 17, tracking: 3.8)
                 )
 
             Spacer()

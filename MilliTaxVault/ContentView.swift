@@ -19,7 +19,7 @@ struct ContentView: View {
 
         let debugScreen = Self.requestedDebugScreen()
         let initialScreen: ActiveScreen = pendingNavigationRequest.wrappedValue != nil
-            ? .mileage
+            ? .activity
             : (debugScreen ?? .home)
 
         _activeScreen = State(initialValue: initialScreen)
@@ -55,14 +55,14 @@ struct ContentView: View {
                     switch newTab {
                     case .home:
                         activeScreen = .home
-                    case .payouts:
-                        activeScreen = .payouts
-                    case .mileage:
-                        activeScreen = .mileage
+                    case .vault:
+                        activeScreen = .vault
+                    case .activity:
+                        activeScreen = .activity
                     case .wealth:
                         activeScreen = .wealthOverview
-                    case .more:
-                        activeScreen = .more
+                    case .cockpit:
+                        activeScreen = .cockpit
                     }
                 }
             }
@@ -94,24 +94,24 @@ struct ContentView: View {
         switch activeScreen {
         case .home:
             HomeView(navigate: navigateTo)
-        case .payouts:
+        case .vault:
             PayoutsView()
-        case .mileage:
+        case .activity:
             MileageView(onBack: { navigateTo(.home) })
         case .milliCents:
             MilliCentsView(onBack: { navigateTo(.home) })
         case .autopilot:
-            AutopilotSettingsView(onBack: { navigateTo(.more) })
+            AutopilotSettingsView(onBack: { navigateTo(.cockpit) })
         case .expenses:
-            ExpensesView(onBack: { navigateTo(.more) })
+            ExpensesView(onBack: { navigateTo(.cockpit) })
         case .accounts:
-            AccountsView(onBack: { navigateTo(.more) })
+            AccountsView(onBack: { navigateTo(.cockpit) })
         case .savings:
             SavingsView(onBack: { navigateTo(.wealthOverview) })
         case .documents:
-            DocumentsView(onBack: { navigateTo(.more) })
+            DocumentsView(onBack: { navigateTo(.cockpit) })
         case .plans:
-            SubscriptionView(onBack: { navigateTo(.more) })
+            SubscriptionView(onBack: { navigateTo(.cockpit) })
         case .taxVault:
             TaxVaultView(onBack: { navigateTo(.home) })
         case .taxReadyScore:
@@ -135,8 +135,8 @@ struct ContentView: View {
                 navigate: navigateTo
             )
         case .reports:
-            ReportsView(onBack: { navigateTo(.more) })
-        case .more:
+            ReportsView(onBack: { navigateTo(.cockpit) })
+        case .cockpit:
             MoreMenuView(navigate: navigateTo, onLogout: onLogout)
         }
     }
@@ -144,8 +144,8 @@ struct ContentView: View {
     private func routePendingNavigationRequestIfNeeded() {
         guard pendingNavigationRequest != nil else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
-            activeScreen = .mileage
-            selectedTab = .mileage
+            activeScreen = .activity
+            selectedTab = .activity
         }
     }
 
@@ -184,8 +184,8 @@ struct ContentView: View {
 
 enum ActiveScreen: String, CaseIterable {
     case home
-    case payouts
-    case mileage
+    case vault
+    case activity
     case milliCents
     case autopilot
     case expenses
@@ -202,20 +202,20 @@ enum ActiveScreen: String, CaseIterable {
     case treeOfLife
     case milliAI
     case reports
-    case more
+    case cockpit
 
     var primaryTab: MilliTab? {
         switch self {
         case .home:
             return .home
-        case .payouts:
-            return .payouts
-        case .mileage:
-            return .mileage
+        case .vault:
+            return .vault
+        case .activity:
+            return .activity
         case .wealthOverview:
             return .wealth
-        case .more:
-            return .more
+        case .cockpit:
+            return .cockpit
         default:
             return nil
         }
@@ -226,7 +226,7 @@ enum ActiveScreen: String, CaseIterable {
         case .investing, .retirement, .savings, .treeOfLife:
             return .wealth
         default:
-            return primaryTab ?? .more
+            return primaryTab ?? .cockpit
         }
     }
 }

@@ -84,6 +84,12 @@ struct MilliAICharacterView: View {
                 .fill(Color.white.opacity(0.22))
                 .frame(width: 14 * scale, height: 1.2 * scale)
                 .offset(y: 9 * scale)
+
+            // Headphone-style ear pods
+            earPod
+                .offset(x: -21 * scale, y: 0)
+            earPod
+                .offset(x: 21 * scale, y: 0)
         }
     }
 
@@ -95,6 +101,19 @@ struct MilliAICharacterView: View {
                 color: MilliColors.cyanGlow.opacity(eyePulse ? 0.95 : 0.55),
                 radius: (eyePulse ? 4.2 : 2.2) * scale
             )
+    }
+
+    private var earPod: some View {
+        Capsule(style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeDeep],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: 5.5 * scale, height: 14 * scale)
+            .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 2.5 * scale)
     }
 
     private var torso: some View {

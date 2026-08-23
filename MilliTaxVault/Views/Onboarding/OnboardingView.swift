@@ -19,7 +19,7 @@ struct OnboardingView: View {
             body: "See the reserve, annual target, quarterly outlook, and audit trail without rebuilding the math yourself."
         ),
         .init(
-            kind: .mileage,
+            kind: .activity,
             eyebrow: "MILEAGE INTELLIGENCE",
             headline: "Track every\nbusiness mile.",
             body: "Turn driving into organized deduction records with route context, trip history, and mileage totals in one place."
@@ -51,16 +51,7 @@ struct OnboardingView: View {
 
     private var topBar: some View {
         ZStack {
-            Text("MILLI")
-                .font(.custom("Sora-Bold", size: 19, relativeTo: .headline))
-                .tracking(4.3)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+            MilliWordmark(fontSize: 19, tracking: 4.3)
 
             HStack {
                 HStack(spacing: 5) {
@@ -167,7 +158,7 @@ private struct OnboardingSlide {
     enum Kind {
         case autopilot
         case taxVault
-        case mileage
+        case activity
     }
 
     let kind: Kind
@@ -220,7 +211,7 @@ private struct OnboardingSlideView: View {
             AutopilotOnboardingVisual()
         case .taxVault:
             TaxVaultOnboardingVisual()
-        case .mileage:
+        case .activity:
             MileageOnboardingVisual()
         }
     }

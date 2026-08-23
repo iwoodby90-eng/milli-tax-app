@@ -91,7 +91,7 @@ struct WealthOverviewView: View {
                     title: "Payouts",
                     subtitle: "Fund the future",
                     icon: "arrow.down.circle.fill",
-                    destination: .payouts
+                    destination: .vault
                 )
             }
 
