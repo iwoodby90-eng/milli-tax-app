@@ -1,12 +1,15 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - DocumentsView
+// MARK: - DashboardView
 // Native document center for tax documents, receipts and generated reports.
 // File import is real and local to the current session; secure cloud persistence,
 // OCR and tax-filing partner delivery remain explicit production integrations.
+//
+// This file now matches its primary type name. DocumentsView remains as the public
+// compatibility entry point used by the app router.
 
-struct DocumentsView: View {
+struct DashboardView: View {
     var onBack: () -> Void = {}
 
     @State private var selectedCategory: DocumentCategory = .taxDocuments
@@ -347,10 +350,12 @@ private struct MilliDocument: Identifiable {
     }
 }
 
-// Legacy compatibility wrapper while the old duplicate dashboard is retired.
-struct DashboardView: View {
+// Public compatibility entry point used by ContentView.
+struct DocumentsView: View {
+    var onBack: () -> Void = {}
+
     var body: some View {
-        DocumentsView()
+        DashboardView(onBack: onBack)
     }
 }
 
