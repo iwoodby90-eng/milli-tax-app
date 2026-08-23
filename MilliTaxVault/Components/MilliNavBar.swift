@@ -19,6 +19,17 @@ enum MilliTab: String, CaseIterable {
         case .home: return ""
         }
     }
+
+    // Keep internal routing terminology separate from customer-facing navigation copy.
+    var displayName: String {
+        switch self {
+        case .vault: return "Payouts"
+        case .activity: return "Mileage"
+        case .wealth: return "Wealth"
+        case .cockpit: return "More"
+        case .home: return "Home"
+        }
+    }
 }
 
 // MARK: - MilliNavBar
@@ -39,7 +50,6 @@ struct MilliNavBar: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Ambient cyan underglow aura
             Capsule(style: .continuous)
                 .fill(
                     RadialGradient(
@@ -57,10 +67,8 @@ struct MilliNavBar: View {
                 .padding(.horizontal, 24)
                 .offset(y: -4)
             
-            // Cockpit floating bar background
             cockpitBarBody
             
-            // Center M dial button
             centerDialButton
                 .offset(y: -24)
         }
@@ -78,11 +86,8 @@ struct MilliNavBar: View {
         }
     }
     
-    // MARK: - Cockpit Floating Bar Body
-    
     private var cockpitBarBody: some View {
         ZStack {
-            // Recessed obsidian glass chassis
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -97,7 +102,6 @@ struct MilliNavBar: View {
                     )
                 )
             
-            // Subtle internal glass reflection highlight
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -111,7 +115,6 @@ struct MilliNavBar: View {
                     )
                 )
             
-            // High-precision beveled chrome edge stroke
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
@@ -128,17 +131,13 @@ struct MilliNavBar: View {
                     lineWidth: 1.2
                 )
             
-            // Tab button destinations
             HStack(spacing: 0) {
-                // Left group: Vault & Activity
                 tabButton(.vault)
                 tabButton(.activity)
                 
-                // Center clearance for elevated hardware dial
                 Spacer()
                     .frame(width: 80)
                 
-                // Right group: Wealth & Cockpit
                 tabButton(.wealth)
                 tabButton(.cockpit)
             }
@@ -147,8 +146,6 @@ struct MilliNavBar: View {
         .frame(height: 68)
         .shadow(color: Color.black.opacity(0.90), radius: 18, x: 0, y: 10)
     }
-    
-    // MARK: - Tab Item Button
     
     private func tabButton(_ tab: MilliTab) -> some View {
         let isSelected = selectedTab == tab
@@ -160,7 +157,6 @@ struct MilliNavBar: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             VStack(spacing: 3) {
-                // Icon with active glowing pill / tint
                 ZStack {
                     if isSelected {
                         Circle()
@@ -195,8 +191,7 @@ struct MilliNavBar: View {
                 }
                 .frame(height: 24)
                 
-                // Label
-                Text(tab.rawValue)
+                Text(tab.displayName)
                     .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
                     .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "8A939E"))
                     .tracking(0.3)
@@ -207,11 +202,9 @@ struct MilliNavBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.rawValue)
+        .accessibilityLabel(tab.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
-    
-    // MARK: - Center Elevated M Dial (Home)
     
     private var centerDialButton: some View {
         Button {
@@ -222,7 +215,6 @@ struct MilliNavBar: View {
             onHomeTap()
         } label: {
             ZStack {
-                // Outer ambient cyan glow halo
                 Circle()
                     .fill(
                         RadialGradient(
@@ -237,7 +229,6 @@ struct MilliNavBar: View {
                     )
                     .frame(width: 84, height: 84)
                 
-                // Outer chrome hardware bezel
                 Circle()
                     .fill(
                         AngularGradient(
@@ -260,7 +251,6 @@ struct MilliNavBar: View {
                     }
                     .shadow(color: Color.black.opacity(0.95), radius: 10, x: 0, y: 7)
                 
-                // Precision tick marks ring (36 ticks)
                 Circle()
                     .fill(Color(hex: "05080B"))
                     .frame(width: 60, height: 60)
@@ -273,7 +263,6 @@ struct MilliNavBar: View {
                         .rotationEffect(.degrees(Double(index) * 10))
                 }
                 
-                // Cyan illuminated light ring with high-tech energy gradient
                 Circle()
                     .stroke(
                         LinearGradient(
@@ -292,7 +281,6 @@ struct MilliNavBar: View {
                     .frame(width: 51, height: 51)
                     .shadow(color: MilliColors.cyanGlow.opacity(glowPulse ? 0.95 : 0.65), radius: glowPulse ? 8 : 4)
                 
-                // Inner dark face
                 Circle()
                     .fill(
                         RadialGradient(
@@ -308,7 +296,6 @@ struct MilliNavBar: View {
                     )
                     .frame(width: 48, height: 48)
                 
-                // Canonical M metallic logo with cyan blade
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
@@ -328,8 +315,6 @@ struct MilliNavBar: View {
         .accessibilityHint("Navigates to the Milli Home cockpit")
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     ZStack {
