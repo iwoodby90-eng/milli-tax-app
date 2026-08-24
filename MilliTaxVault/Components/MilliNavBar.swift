@@ -12,10 +12,10 @@ enum MilliTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .vault: return "lock.shield.fill"
-        case .activity: return "waveform.path.ecg"
-        case .wealth: return "chart.bar.xaxis"
-        case .cockpit: return "gauge.open.with.lines.needle.33percent"
+        case .vault: return "wallet.fill"
+        case .activity: return "safari"
+        case .wealth: return "chart.bar.fill"
+        case .cockpit: return "ellipsis"
         case .home: return ""
         }
     }
@@ -35,7 +35,7 @@ enum MilliTab: String, CaseIterable {
 // MARK: - MilliNavBar
 // Production cockpit navigation bar exactly matching the approved design references (Image 23):
 // - Sculpted floating pill bar with 34pt continuous corner radius & beveled metallic chrome stroke
-// - Recessed dark obsidian black-glass background with ambient cyan illumination
+// - Restrained dark obsidian black-glass background with ambient cyan illumination
 // - Center elevated M hardware dial with concentric circular chrome bezel, 36 precision tick marks,
 //   and glowing neon cyan light ring
 // - 4 core tab destinations: Payouts, Mileage, Wealth, More, plus center M dial (Home)
@@ -86,6 +86,8 @@ struct MilliNavBar: View {
         }
     }
     
+    // MARK: - Cockpit Floating Bar Body
+    
     private var cockpitBarBody: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 34, style: .continuous)
@@ -132,12 +134,15 @@ struct MilliNavBar: View {
                 )
             
             HStack(spacing: 0) {
+                // Left group: Payouts & Mileage
                 tabButton(.vault)
                 tabButton(.activity)
                 
+                // Center clearance for elevated hardware dial
                 Spacer()
                     .frame(width: 80)
                 
+                // Right group: Wealth & More
                 tabButton(.wealth)
                 tabButton(.cockpit)
             }
@@ -146,6 +151,8 @@ struct MilliNavBar: View {
         .frame(height: 68)
         .shadow(color: Color.black.opacity(0.90), radius: 18, x: 0, y: 10)
     }
+    
+    // MARK: - Tab Item Button
     
     private func tabButton(_ tab: MilliTab) -> some View {
         let isSelected = selectedTab == tab
@@ -191,6 +198,7 @@ struct MilliNavBar: View {
                 }
                 .frame(height: 24)
                 
+                // Label
                 Text(tab.displayName)
                     .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
                     .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "8A939E"))
@@ -206,6 +214,8 @@ struct MilliNavBar: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
     
+    // MARK: - Center Elevated M Dial (Home)
+    
     private var centerDialButton: some View {
         Button {
             withAnimation(.spring(response: 0.36, dampingFraction: 0.72)) {
@@ -215,6 +225,7 @@ struct MilliNavBar: View {
             onHomeTap()
         } label: {
             ZStack {
+                // Outer ambient cyan glow halo
                 Circle()
                     .fill(
                         RadialGradient(
@@ -229,6 +240,7 @@ struct MilliNavBar: View {
                     )
                     .frame(width: 84, height: 84)
                 
+                // Outer chrome hardware bezel
                 Circle()
                     .fill(
                         AngularGradient(
@@ -251,6 +263,7 @@ struct MilliNavBar: View {
                     }
                     .shadow(color: Color.black.opacity(0.95), radius: 10, x: 0, y: 7)
                 
+                // Precision tick marks ring (36 ticks)
                 Circle()
                     .fill(Color(hex: "05080B"))
                     .frame(width: 60, height: 60)
@@ -263,6 +276,7 @@ struct MilliNavBar: View {
                         .rotationEffect(.degrees(Double(index) * 10))
                 }
                 
+                // Cyan illuminated light ring
                 Circle()
                     .stroke(
                         LinearGradient(
@@ -281,6 +295,7 @@ struct MilliNavBar: View {
                     .frame(width: 51, height: 51)
                     .shadow(color: MilliColors.cyanGlow.opacity(glowPulse ? 0.95 : 0.65), radius: glowPulse ? 8 : 4)
                 
+                // Inner dark face
                 Circle()
                     .fill(
                         RadialGradient(
@@ -296,6 +311,7 @@ struct MilliNavBar: View {
                     )
                     .frame(width: 48, height: 48)
                 
+                // Canonical M metallic logo with cyan blade
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
