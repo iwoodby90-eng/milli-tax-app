@@ -1,1 +1,135 @@
-aW1wb3J0IEZvdW5kYXRpb24KCi8vIE1BUks6IC0gUXVhcnRlcmx5VGF4RXN0aW1hdG9yCi8vIEVzdGltYXRlcyBmZWRlcmFsIHF1YXJ0ZXJseSBlc3RpbWF0ZWQgdGF4IHBheW1lbnRzIGZvciBzZWxmLWVtcGxveWVkIGdpZyB3b3JrZXJzLgovLyBUYXggeWVhciAyMDI2LiBTb3VyY2VzIGZvciBhbGwgY29uc3RhbnRzOgovLyAgIC0gSVJTIFJldmVudWUgUHJvY2VkdXJlIDIwMjUtMzIgKDIwMjYgaW5mbGF0aW9uIGFkanVzdG1lbnRzLCBwb3N0LU9CQkJBKQovLyAgIC0gU1NBOiAyMDI2IGNvbnRyaWJ1dGlvbiAmIGJlbmVmaXQgYmFzZSAkMTg0LDUwMAovLyAgIC0gU2NoZWR1bGUgU0UgKEZvcm0gMTA0MCk6IG5ldCBlYXJuaW5ncyA9IDkyLjM1JSBvZiBuZXQgU0UgcHJvZml0OyAkNDAwIGZsb29yCi8vICAgICBhcHBsaWVzIHRvIG5ldCBlYXJuaW5ncyBBRlRFUiB0aGUgOTIuMzUlIGFkanVzdG1lbnQuCi8vCi8vIElNUE9SVEFOVCDigJQgc2NvcGUgb2YgdGhpcyBlc3RpbWF0ZToKLy8gICBUaGUgcXVhcnRlcmx5IGZpZ3VyZSBpcyBhbiAiZXN0aW1hdGVkIGN1cnJlbnQteWVhciBsaWFiaWxpdHkgaW5zdGFsbG1lbnQiCi8vICAgKHRvdGFsIGVzdGltYXRlZCB0YXggLyA0KS4gSXQgaXMgTk9UIGFuIElSUyBzYWZlLWhhcmJvciBjYWxjdWxhdGlvbiwgd2hpY2gKLy8gICByZXF1aXJlcyBwcmlvci15ZWFyIHRvdGFsIHRheCAoMTAwJS8xMTAlIHJ1bGUpIOKAlCBhbiBpbnB1dCB0aGlzIGVzdGltYXRvcgovLyAgIGRvZXMgbm90IHRha2UuIE5vIHNhZmUtaGFyYm9yIGNvbXBsaWFuY2UgaXMgY2xhaW1lZCBvciBpbXBsaWVkLgoKc3RydWN0IFF1YXJ0ZXJseVRheEVzdGltYXRvciB7CgogICAgc3RydWN0IEVzdGltYXRlOiBFcXVhdGFibGUgewogICAgICAgIGxldCB0YXhhYmxlSW5jb21lOiBEb3VibGUgICAgICAgIC8vIHRheGFibGUgaW5jb21lIEFGVEVSIHRoZSBRQkkgZGVkdWN0aW9uCiAgICAgICAgbGV0IGZlZGVyYWxJbmNvbWVUYXg6IERvdWJsZQogICAgICAgIGxldCBzZWxmRW1wbG95bWVudFRheDogRG91YmxlCiAgICAgICAgbGV0IHFiaURlZHVjdGlvbjogRG91YmxlCiAgICAgICAgbGV0IHRvdGFsQW5udWFsVGF4OiBEb3VibGUKICAgICAgICBsZXQgcXVhcnRlcmx5UGF5bWVudDogRG91YmxlICAgICAvLyBlc3RpbWF0ZWQgY3VycmVudC15ZWFyIGxpYWJpbGl0eSAvIDQKICAgICAgICBsZXQgZWZmZWN0aXZlUmF0ZTogRG91YmxlCiAgICB9CgogICAgTUFSSzogLSAyMDI2IGNvbnN0YW50cyAoUmV2LiBQcm9jLiAyMDI1LTMyIC8gU1NBKQoKICAgIC8vLyAyMDI2IG9yZGluYXJ5LWluY29tZSBicmFja2V0IHVwcGVyIGJvdW5kcywgcGVyIGZpbGluZyBzdGF0dXMuCiAgICBwcml2YXRlIHN0YXRpYyBsZXQgYnJhY2tldHM6IFtUYXhQcm9maWxlLkZpbGluZ1N0YXR1czogWyh1cHBlcjogRG91YmxlLCByYXRlOiBEb3VibGUpXV0gPSBbCiAgICAgICAgLnNpbmdsZTogWwogICAgICAgICAgICAoMTJfNDAwLCAwLjEwKSwgKDUwXzQwMCwgMC4xMiksICgxMDVfNzAwLCAwLjIyKSwgKDIwMV83NzUsIDAuMjQpLAogICAgICAgICAgICAoMjU2XzIyNSwgMC4zMiksICg2NDBfNjAwLCAwLjM1KSwgKC5pbmZpbml0eSwgMC4zNykKICAgICAgICBdLAogICAgICAgIC5tYXJyaWVkSm9pbnQ6IFsKICAgICAgICAgICAgKDI0XzgwMCwgMC4xMCksICgxMDBfODAwLCAwLjEyKSwgKDIxMV80MDAsMC4yMiksICg0MDNfNTUwLCAwLjI0KSwKICAgICAgICAgICAgKDUxMl80NTAsIDAuMzIpLCAoNzY4XzcwMCwgMC4zNSksICguaW5maW5pdHksIDAuMzcpCiAgICAgICAgXSwKICAgICAgICAubWFycmllZFNlcGFyYXRlOiBbCiAgICAgICAgICAgICgxMl80MDAsIDAuMTApLCAoNTBfNDAwLCAwLjEyKSwgKDEwNV83MDAsIDAuMjIpLCAoMjAxXzc3NSwgMC4yNCksCiAgICAgICAgICAgICgyNTZfMjI1LCAwLjMyKSwgKDM4NF8zNTAsIDAuMzUpLCAoLmluZmluaXR5LCAwLjM3KQogICAgICAgIF0sCiAgICAgICAgLmhlYWRPZkhvdXNlaG9sZDogWwogICAgICAgICAgICAoMTdfNzAwLCAwLjEwKSwgKDY3XzQ1MCwgMC4xMiksICgxMDVfNzAwLCAwLjIyKSwgKDIwMV83NzUsIDAuMjQpLAogICAgICAgICAgICAoMjU2XzIwMCwgMC4zMiksICg2NDBfNjAwLCAwLjM1KSwgKC5pbmZpbml0eSwgMC4zNykKICAgICAgICBdCiAgICAgIF0KCiAgICAvLy8gMjAyNiBzdGFuZGFyZCBkZWR1Y3Rpb24sIHBlciBmaWxpbmcgc3RhdHVzLgogICAgcHJpdmF0ZSBzdGF0aWMgbGV0IHN0YW5kYXJkRGVkdWN0aW9uczogW1RheFByb2ZpbGUuRmlsaW5nU3RhdHVzOiBEb3VibGVdID0gWwogICAgICAgIC5zaW5nbGU6IDE2XzEwMCwKICAgICAgICAubWFycmllZEpvaW50OiAzMl8yMDAsCiAgICAgICAgLm1hcnJpZWRTZXBhcmF0ZTogMTZfMTAwLAogICAgICAgIC5oZWFkT2ZIb3VzZWhvbGQ6IDI0XzE1MAogICAgXQoKICAgIHByaXZhdGUgc3RhdGljIGxldCBzZVRheFJhdGUgPSAwLjE1MyAgICAgICAgIC8vIDEyLjQlIFNTICsgMi45JSBNZWRpY2FyZQogICAgcHJpdmF0ZSBzdGF0aWMgbGV0IHNlTmV0RWFybmluZ3NGYWN0b3IgPSAwLjkyMzUgLy8gU2NoZWR1bGUgU0UgbGluZSA0YQogICAgcHJpdmF0ZSBzdGF0aWMgbGV0IHNlTmV0RWFybmluZ3NGbG9vciA9IDQwMC4wICAvLyBhcHBsaWVzIHRvIG5ldCBlYXJuaW5ncyBBRlRFUiA5Mi4zJQogICAgcHJpdmF0ZSBzdGF0aWMgbGV0IHNzV2FnZUJhc2UgPSAxODRfNTAwLjAgICAgICAvLyAyMDI2IFNTQSBjb250cmlidXRpb24gJiBiZW5lZml0IGJhc2UKICAgIHByaXZhdGUgc3RhdGljIGxldCBxYmlSYXRlID0gMC4yMAoKICAgIC8vLyAtIFBhcmFtZXRlcnM6CiAgICAvLy8gICAtIGdyb3NzSW5jb21lOiB0b3RhbCBnaWcvc2VsZi1lbXBsb3ltZW50IGluY29tZSBmb3IgdGhlIHllYXIgKGFubnVhbGl6ZWQpLgogICAgLy8vICAgLSBidXNpbmVzc0V4cGVuc2VzOiBkZWR1Y3RpYmxlIGJ1c2luZXNzIGV4cGVuc2VzLgogICAgLy8vICAgLSBmaWxpbmdTdGF0dXM6IGFmZmVjdHMgYnJhY2tldCBzY2hlZHVsZSBhbmQgc3RhbmRhcmQgZGVkdWN0aW9uLgogICAgc3RhdGljIGZ1bmMgZXN0aW1hdGUoCiAgICAgICAgICAgIGdyb3NzSW5jb21lOiBEb3VibGUsCiAgICAgICAgICAgIGJ1c2luZXNzRXhwZW5zZXM6IERvdWJsZSA9IDAsCiAgICAgICAgICAgIGZpbGluZ1N0YXR1czogVGF4UHJvZmlsZS5GaWxpbmdTdGF0dXMgPSAuc2luZ2xlCiAgICApIC0+IEVzdGltYXRlIHsKICAgICAgICBsZXQgbmV0U0VQcm9maXQgPSBtYXgoMCwgZ3Jvc3NJbmNvbWUgLSBidXNpbmVzc0V4cGVuc2VzKQoKICAgICAgICAvLyBTY2hlZHVsZSBTRTogbmV0IGVhcm5pbmdzID0gOTIuMzUlIG9mIG5ldCBTRSBwcm9maXQ7IHRoZSAkNDAwIGZsb29yCiAgICAgICAgLy8gYXBwbGllcyB0byBuZXQgZWFybmluZ3MgKGFmdGVyIHRoZSBhZGp1c3RtZW50KSwgbm90IHRvIHJhdyBwcm9maXQuCiAgICAgICAgbGV0IHNlVGF4ID0gc2VUYXhPbihuZXRTRVByb2ZpdCkKICAgICAgICBsZXQgaGFsZlNFID0gc2VUYXggLyAyCgogICAgICAgIC8vIEFHSSBhcHByb3hpbWF0aW9uOiBuZXQgU0UgcHJvZml0IG1pbnVzIGhhbGYgb2YgU0UgdGF4IChhYm92ZS10aGUtbGluZSkuCiAgICAgICAgbGV0IGFnaSA9IG1heCgwLCBuZXRTRVByb2ZpdCAtIGhhbGZTRSkKCiAgICAgICAgbGV0IGRlZHVjdGlvbiA9IHN0YW5kYXJkRGVkdWN0aW9uc1tmaWxpbmdTdGF0dXNdID8/IDE2XzEwMAogICAgICAgIGxldCB0YXhhYmxlSW5jb21lID0gbWF4KDAsIGFnaSAtIGRlZHVjdGlvbikKCiAgICAgICAgLy8gUUJJIGRlZHVjdGlvbiAoc2ltcGxpZmllZCk6IDIwJSBvZiBRQkksIGNhcHBlZCBhdCAyMCUgb2YgdGF4YWJsZQogICAgICAgIC8vIGluY29tZSBCRUZPUkUgdGhlIFFCSSBkZWR1Y3Rpb24gKMKjMTk5QSkuCiAgICAgICAgbGV0IHFiaSA9IG1pbihuZXRTRVByb2ZpdCAqIHFiaVJhdGUsIHRheGFibGVJbmNvbWUgKiBxYmlSYXRlKQogICAgICAgIGxldCB0YXhhYmxlQWZ0ZXJRQkkgPSBtYXgoMCwgdGF4YWJsZUluY29tZSAtIHFiaSkKCiAgICAgICAgbGV0IGluY29tZVRheCA9IGZlZGVyYWxUYXgob246IHRheGFibGVBZnRlclFCSSwgZmlsaW5nU3RhdHVzOiBmaWxpbmdTdGF0dXMpCgogICAgICAgIGxldCB0b3RhbCA9IGluY29tZVRheCArIHNlVGF4CiAgICAgICAgbGV0IHF1YXJ0ZXJseSA9ICh0b3RhbCAvIDQpLnJvdW5kZWQoKQogICAgICAgIGxldCBlZmZlY3RpdmUgPSBncm9zc0luY29tZSA+IDAgPyB0b3RhbCAvIGdyb3NzSW5jb21lIDogMAoKICAgICAgICByZXR1cm4gRXN0aW1hdGUoCiAgICAgICAgICAgIHRheGFibGVJbmNvbWU6IHRheGFibGVBZnRlclFCSSwKICAgICAgICAgICAgZmVkZXJhbEluY29tZVRheDogaW5jb21lVGF4LAogICAgICAgICAgICBzZWxmRW1wbG95bWVudFRheDogc2VUYXgsCiAgICAgICAgICAgIHFiaURlZHVjdGlvbjogcWJpLAogICAgICAgICAgICB0b3RhbEFubnVhbFRheDogdG90YWwsCiAgICAgICAgICAgIHF1YXJ0ZXJseVBheW1lbnQ6IHF1YXJ0ZXJseSwKICAgICAgICAgICAgZWZmZWN0aXZlUmF0ZTogZWZmZWN0aXZlCiAgICAgICAgKQogICAgfQoKICAgIC8vLyBTRSB0YXggb24gbmV0IFNFICAqcHJvZml0KiAoU2NoZWR1bGUgbGluZSAyLzMpLiBSZXR1cm5zIDAgdW5sZXNzIG5ldAogICAgLy8vIGVhcm5pbmdzICg5Mi4zNSUgb2YgcHJvZml0KSBleGNlZWQgdGhlICQ0MDAgZmxvb3IuIFRoZSBTb2NpYWwgU2VjdXJpdHkKICAgIC8vLyB3YWdlIGJhc2UgY2FwcyB0aGUgMTIuNCUgcG9ydGlvbjsgTWVkaWNhcmUgKDIuOSUpIGhhcyBubyBjYXAuCiAgICBzdGF0aWMgZnVuYyBzZVRheE9uKF8gbmV0U0VQcm9maXQ6IERvdWJsZSkgLT4gRG91YmxlIHsKICAgICAgICBsZXQgbmV0RWFybmluZ3MgPSBtYXgoMCwgbmV0U0VQcm9maXQpICogc2VOZXRFYXJuaW5nc0ZhY3RvcgogICAgICAgIGd1YXJkIG5ldEVhcm5pbmdzID4gc2VOZXRFYXJuaW5nc0Zsb29yIGVsc2UgeyByZXR1cm4gMCB9CiAgICAgICAgbGV0IHNzUG9ydGlvbiA9IG1pbihuZXRFYXJuaW5ncywgc3NXYWdlQmFzZSkgKiAwLjEyNAogICAgICAgIGxldCBtZWRpY2FyZVBvcnRpb24gPSBuZXRFYXJuaW5ncyAqIDAuMDI5CiAgICAgICAgcmV0dXJuIHNzUG9ydGlvbiArIG1lZGljYXJlUG9ydGlvbgogICAgfQoKICAgIC8vLyBGZWRlcmFsIG9yZGluYXJ5LWluY29tZSB0YXggdXNpbmcgdGhlIGV4cGxpY2l0IDIwMjYgc2NoZWR1bGUgZm9yIHRoZQogICAgLy8vIGdpdmVuIGZpbGluZyBzdGF0dXMuCiAgICBzdGF0aWMgZnVuYyBmZWRlcmFsVGF4KG9uIHRheGFibGU6IERvdWJsZSwgZmlsaW5nU3RhdHVzOiBUYXhQcm9maWxlLkZpbGluZ1N0YXR1cykgLT4gRG91YmxlIHsKICAgICAgICBndWFyZCB0YXhhYmxlID4gMCBlbHNlIHsgcmV0dXJuIDAgfQogICAgICAgIGxldCBzY2hlZHVsZSA9IGJyYWNrZXRzW2ZpbGluZ1N0YXR1c10gPy8gYnJhY2tldHNbLnNpbmdsZSFciAgICAgICAgdmFyIHRheCA9IDAuMAogICAgICAgIHZhciBsb3dlciA9IDAuMAogICAgICAgIGZvciBicmFja2V0IGluIHNjaGVkdWxlIHsKICAgICAgICAgICAgbGV0IHRheGVkSW5CcmFja2V0ID0gbWluKHRheGFibGUsIGJyYWNrZXQudXBwZXIpIC0gbG93ZXIKICAgICAgICAgICAgaWYgdGF4ZWRJbkJyYWNrZXQgPiAwIHsgdGF4ICs9IHRheGVkSW5CcmFja2V0ICogYnJhY2tldC5yYXRlIH0KICAgICAgICAgICAgbG93ZXIgPSBicmFja2V0LnVwcGVyCiAgICAgICAgICAgIGlmIHRheGFibGUgPD0gYnJhY2tldC51cHBlciB7IGJyZWFrIH0KICAgICAgICB9CiAgICAgICAgcmV0dXJuIHRheAogICAgfQp9Cg==
+import Foundation
+
+// MARK: - QuarterlyTaxEstimator
+// Estimates federal quarterly estimated tax payments for self-employed gig workers.
+// Tax year 2026. Sources for all constants:
+//   - IRS Revenue Procedure 2025-32 (2026 inflation adjustments, post-TCJA)
+//   - SSA: 2026 contribution & benefit base $184,500
+//   - Schedule SE (Form 1040): net earnings = 92.35% of net SE profit; $400 floor
+//     applies to net earnings AFTER the 92.35% adjustment.
+//
+// IMPORTANT — scope of this estimate:
+//   The quarterly figure is an "estimated current-year liability installment"
+//   (total estimated tax / 4). It is NOT an IRS safe-harbor calculation, which
+//   requires prior-year total tax (100%/110% rule) — an input this estimator
+//   does not take. No safe-harbor compliance is claimed or implied.
+
+struct QuarterlyTaxEstimator {
+
+    struct Estimate: Equatable {
+        let taxableIncome: Double        // taxable income AFTER the QBI deduction
+        let federalIncomeTax: Double
+        let selfEmploymentTax: Double
+        let qbiDeduction: Double
+        let totalAnnualTax: Double
+        let quarterlyPayment: Double     // estimated current-year liability / 4
+        let effectiveRate: Double
+    }
+
+    MARK: - 2026 constants (Rev. Proc. 2025-32 / SSA)
+
+    /// 2026 ordinary-income bracket upper bounds, per filing status.
+    private static let brackets: [TaxProfile.FilingStatus: [(upper: Double, rate: Double)]] = [
+        .single: [
+            (12_400, 0.10), (50_400, 0.12), (105_700, 0.22), (201_775, 0.24),
+            (256_225, 0.32), (640_600, 0.35), (.infinity, 0.37)
+        ],
+        .marriedJoint: [
+            (24_800, 0.10), (100_800, 0.12), (211_400,0.22), (403_550, 0.24),
+            (512_450, 0.32), (768_700, 0.35), (.infinity, 0.37)
+        ],
+        .marriedSeparate: [
+            (12_400, 0.10), (50_400, 0.12), (105_700, 0.22), (201_775, 0.24),
+            (256_225, 0.32), (384_350, 0.35), (.infinity, 0.37)
+        ],
+        .headOfHousehold: [
+            (17_700, 0.10), (67_450, 0.12), (105_700, 0.22), (201_775, 0.24),
+            (256_200, 0.32), (640_600, 0.35), (.infinity, 0.37)
+        ]
+    ]
+
+    /// 2026 standard deduction, per filing status.
+    private static let standardDeductions: [TaxProfile.FilingStatus: Double] = [
+        .single: 16_100,
+        .marriedJoint: 32_200,
+        .marriedSeparate: 16_100,
+        .headOfHousehold: 24_150
+    ]
+
+    private static let seTaxRate = 0.153            // 12.4% SS + 2.9% Medicare
+    private static let seNetEarningsFactor = 0.9235 // Schedule SE line 4a
+    private static let seNetEarningsFloor = 400.0   // applies to net earnings AFTER 92.35%
+    private static let ssWageBase = 184_500.0       // 2026 SSA contribution & benefit base
+    private static let qbiRate = 0.20
+
+    /// - Parameters:
+    ///   - grossIncome: total gig/self-employment income for the year (annualized).
+    ///   - businessExpenses: deductible business expenses.
+    ///   - filingStatus: affects bracket schedule and standard deduction.
+    static func estimate(
+        grossIncome: Double,
+        businessExpenses: Double = 0,
+        filingStatus: TaxProfile.FilingStatus = .single
+    ) -> Estimate {
+        let netSEProfit = max(0, grossIncome - businessExpenses)
+
+        // Schedule SE: net earnings = 92.35% of net SE profit; the $400 floor
+        // applies to net earnings (after the adjustment), not to raw profit.
+        let seTax = seTaxOn(netSEProfit)
+        let halfSE = seTax / 2
+
+        // AGI approximation: net SE profit minus half of SE tax (above-the-line).
+        let agi = max(0, netSEProfit - halfSE)
+
+        let deduction = standardDeductions[filingStatus] ?? 16_100
+        let taxableIncome = max(0, agi - deduction)
+
+        // QBI deduction (simplified): 20% of QBI, capped at 20% of taxable
+        // income BEFORE the QBI deduction (§199A).
+        let qbi = min(netSEProfit * qbiRate, taxableIncome * qbiRate)
+        let taxableAfterQBI = max(0, taxableIncome - qbi)
+
+        let incomeTax = federalTax(on: taxableAfterQBI, filingStatus: filingStatus)
+
+        let total = incomeTax + seTax
+        let quarterly = (total / 4).rounded()
+        let effective = grossIncome > 0 ? total / grossIncome : 0
+
+        return Estimate(
+            taxableIncome: taxableAfterQBI,
+            federalIncomeTax: incomeTax,
+            selfEmploymentTax: seTax,
+            qbiDeduction: qbi,
+            totalAnnualTax: total,
+            quarterlyPayment: quarterly,
+            effectiveRate: effective
+        )
+    }
+
+    /// SE tax on net SE *profit* (Schedule line 2/3). Returns 0 unless net
+    /// earnings (92.35% of profit) exceed the $400 floor. The Social Security
+    /// wage base caps the 12.4% portion; Medicare (2.9%) has no cap.
+    static func seTaxOn(_ netSEProfit: Double) -> Double {
+        let netEarnings = max(0, netSEProfit) * seNetEarningsFactor
+        guard netEarnings > seNetEarningsFloor else { return 0 }
+        let ssPortion = min(netEarnings, ssWageBase) * 0.124
+        let medicarePortion = netEarnings * 0.029
+        return ssPortion + medicarePortion
+    }
+
+    /// Federal ordinary-income tax using the explicit 2026 schedule for the
+    /// given filing status.
+    static func federalTax(on taxable: Double, filingStatus: TaxProfile.FilingStatus) -> Double {
+        guard taxable > 0 else { return 0 }
+        let schedule = brackets[filingStatus] ?? brackets[.single]!
+        var tax = 0.0
+        var lower = 0.0
+        for bracket in schedule {
+            let taxedInBracket = min(taxable, bracket.upper) - lower
+            if taxedInBracket > 0 { tax += taxedInBracket * bracket.rate }
+            lower = bracket.upper
+            if taxable <= bracket.upper { break }
+        }
+        return tax
+    }
+}
