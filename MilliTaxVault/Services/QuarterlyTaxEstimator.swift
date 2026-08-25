@@ -26,7 +26,7 @@ struct QuarterlyTaxEstimator {
         let effectiveRate: Double
     }
 
-    MARK: - 2026 constants (Rev. Proc. 2025-32 / SSA)
+    // MARK: - 2026 constants (Rev. Proc. 2025-32 / SSA)
 
     /// 2026 ordinary-income bracket upper bounds, per filing status.
     private static let brackets: [TaxProfile.FilingStatus: [(upper: Double, rate: Double)]] = [
@@ -35,7 +35,7 @@ struct QuarterlyTaxEstimator {
             (256_225, 0.32), (640_600, 0.35), (.infinity, 0.37)
         ],
         .marriedJoint: [
-            (24_800, 0.10), (100_800, 0.12), (211_400,0.22), (403_550, 0.24),
+            (24_800, 0.10), (100_800, 0.12), (211_400, 0.22), (403_550, 0.24),
             (512_450, 0.32), (768_700, 0.35), (.infinity, 0.37)
         ],
         .marriedSeparate: [
