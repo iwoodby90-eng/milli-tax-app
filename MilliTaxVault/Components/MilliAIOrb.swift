@@ -9,6 +9,7 @@ import SwiftUI
 struct MilliAICharacterView: View {
     var size: CGFloat = 70
     var animated: Bool = false
+    var state: MilliAIState? = nil
 
     @State private var eyePulse = false
     @State private var bodyTilt: Double = -1
@@ -24,8 +25,8 @@ struct MilliAICharacterView: View {
                 .blur(radius: 8 * scale)
                 .offset(y: 29 * scale)
 
-            // Canonical 3D robot render (approved asset, no redraws)
-            Image("milli-ai-robot")
+            // Canonical 3D robot render (state family when available, canonical fallback)
+            Image(uiImage: MilliAIState.resolvedImage(for: state))
                 .resizable()
                 .scaledToFit()
                 .frame(width: size, height: size)
@@ -58,12 +59,13 @@ struct MilliAIOrb: View {
     @State private var tilt: Double = -1.0
 
     var onTap: () -> Void = {}
+    var state: MilliAIState? = nil
 
     private let characterSize: CGFloat = 72
 
     var body: some View {
         Button(action: onTap) {
-            MilliAICharacterView(size: characterSize, animated: true)
+            MilliAICharacterView(size: characterSize, animated: true, state: state)
                 .offset(x: floatX, y: floatY)
                 .rotationEffect(.degrees(tilt))
                 .contentShape(Rectangle())
