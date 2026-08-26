@@ -75,6 +75,18 @@ struct HomeView: View {
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
 
+            // Provenance: seeded preview values until the authenticated
+            // dashboard snapshot lands. Never presented as live production data.
+            Text("DEMO PREVIEW")
+                .font(MilliFont.label)
+                .tracking(1.1)
+                .foregroundStyle(MilliColors.warning)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule().fill(MilliColors.warning.opacity(0.12))
+                )
+
             ZStack(alignment: .trailing) {
                 MilliSparkline(
                     data: viewModel.sparklineData,
@@ -331,9 +343,7 @@ struct HomeView: View {
     private var aiInsight: some View {
         Button { navigate?(.milliAI) } label: {
             HStack(spacing: 10) {
-                Image("MilliAIOrb")
-                    .resizable()
-                    .scaledToFill()
+                MilliAICharacterView(size: 36, state: .front)
                     .frame(width: 36, height: 36)
                     .clipShape(Circle())
                     .overlay {
