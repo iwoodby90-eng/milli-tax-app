@@ -12,6 +12,7 @@ struct MilliAIView: View {
     @State private var messageText = ""
     @State private var messages: [MilliAIMessage] = MilliAIMessage.seedConversation
     @State private var companionFloat: CGFloat = 1
+    @State private var assistantState: MilliAIState = .front
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -85,7 +86,7 @@ struct MilliAIView: View {
 
     private var intro: some View {
         HStack(alignment: .center, spacing: 8) {
-            aiPortrait(size: 78, animated: true)
+            aiPortrait(size: 78, animated: true, state: assistantState)
                 .offset(y: companionFloat)
 
             VStack(alignment: .leading, spacing: 5) {
@@ -171,8 +172,8 @@ struct MilliAIView: View {
         }
     }
 
-    private func aiPortrait(size: CGFloat, animated: Bool) -> some View {
-        MilliAICharacterView(size: size, animated: animated)
+    private func aiPortrait(size: CGFloat, animated: Bool, state: MilliAIState? = nil) -> some View {
+        MilliAICharacterView(size: size, animated: animated, state: state)
     }
 
     private var composer: some View {
@@ -226,9 +227,19 @@ struct MilliAIView: View {
         messageText = ""
         isInputFocused = false
 
+        // Assistant state flow: processing -> responding.
+        // The visual state never asserts a financial outcome; success/alert are
+        // reserved for confirmed transaction states elsewhere in the app.
+        assistantState = .thinking
         let response = MilliAIFallbackEngine.response(to: text)
         withAnimation(.easeOut(duration: 0.2)) {
             messages.append(response)
+        }
+        withAnimation(.easeOut(duration: 0.45).delay(0.55)) {
+            assistantState = .speaking
+        }
+        withAnimation(.easeOut(duration: 0.3).delay(2.4)) {
+            assistantState = .front
         }
     }
 }
