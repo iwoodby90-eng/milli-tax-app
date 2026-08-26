@@ -41,3 +41,33 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
           build
+
+  unit-tests:
+    name: Unit tests (MilliTaxVault scheme)
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Run unit tests (shared MilliTaxVault scheme)
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MilliTaxVault.xcodeproj \
+            -scheme MilliTaxVault \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+        env:
+          NSUnbufferedIO: YES
+
+      - name: Test summary
+        if: always()
+        run: echo "Unit tests executed via xcodebuild test on the shared MilliTaxVault scheme."

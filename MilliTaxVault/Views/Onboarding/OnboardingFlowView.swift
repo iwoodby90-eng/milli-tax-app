@@ -97,8 +97,6 @@ struct OnboardingFlowView: View {
     private var setupHeader: some View {
         HStack {
             MilliWordmark(fontSize: 17, tracking: 3.8)
-                )
-
             Spacer()
 
             Text("SETUP \(currentStep + 1) OF \(stepCount)")
