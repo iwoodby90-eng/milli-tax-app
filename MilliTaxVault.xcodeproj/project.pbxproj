@@ -14,6 +14,7 @@
 		A10020 /* ChromeEmblemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
 		A10021 /* MilliNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
 		A10022 /* MilliAIOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
+		A10520 /* MilliAIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10520; };
 		A10024 /* TaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024; };
 		A10030 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
 		A10031 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
@@ -95,6 +96,7 @@
 		B10020 /* ChromeEmblemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeEmblemView.swift; sourceTree = "<group>"; };
 		B10021 /* MilliNavBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliNavBar.swift; sourceTree = "<group>"; };
 		B10022 /* MilliAIOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIOrb.swift; sourceTree = "<group>"; };
+		B10520 /* MilliAIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIState.swift; sourceTree = "<group>"; };
 		B10024 /* TaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxVaultView.swift; sourceTree = "<group>"; };
 		B10030 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		B10031 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -149,15 +151,6 @@
 		B10208 /* PayoutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutsView.swift; sourceTree = "<group>"; };
 		B10209 /* QuarterlyTaxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxesView.swift; sourceTree = "<group>"; };
 		B10210 /* TaxReadyScoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxReadyScoreView.swift; sourceTree = "<group>"; };
-		BF0001 /* Sora-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Regular.ttf"; sourceTree = "<group>"; };
-		BF0002 /* Sora-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Medium.ttf"; sourceTree = "<group>"; };
-		BF0003 /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-SemiBold.ttf"; sourceTree = "<group>"; };
-		BF0004 /* Sora-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Bold.ttf"; sourceTree = "<group>"; };
-		BF0005 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
-		BF0006 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
-		BF0007 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
-		BF0008 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
-		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
 		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
 		B10304 /* BankConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankConnectionService.swift; sourceTree = "<group>"; };
@@ -168,6 +161,15 @@
 		B10081 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
 		B10119 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
+		BF0001 /* Sora-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Regular.ttf"; sourceTree = "<group>"; };
+		BF0002 /* Sora-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Medium.ttf"; sourceTree = "<group>"; };
+		BF0003 /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-SemiBold.ttf"; sourceTree = "<group>"; };
+		BF0004 /* Sora-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Bold.ttf"; sourceTree = "<group>"; };
+		BF0005 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
+		BF0006 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
+		BF0007 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
+		BF0008 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
+		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -242,7 +244,6 @@
 				B10209 /* QuarterlyTaxesView.swift */,
 				B10210 /* TaxReadyScoreView.swift */,
 			);
-			path = Views;
 			sourceTree = "<group>";
 		};
 		C10006 /* Theme */ = {
@@ -259,6 +260,7 @@
 				B10020 /* ChromeEmblemView.swift */,
 				B10021 /* MilliNavBar.swift */,
 				B10022 /* MilliAIOrb.swift */,
+				B10520 /* MilliAIState.swift */,
 				B10119 /* MilliDetailSheet.swift */,
 				B10046 /* MilliMetalCard.swift */,
 				B10047 /* MilliAICompanion.swift */,
@@ -427,6 +429,7 @@
 				A10020,
 				A10021,
 				A10022,
+				A10520,
 				A10024,
 				A10030,
 				A10031,
