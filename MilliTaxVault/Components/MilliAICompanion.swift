@@ -11,7 +11,7 @@ struct MilliAICompanion: View {
 
     var body: some View {
         Button(action: { showAssistant = true }) {
-            MilliAICharacterView(size: 58, animated: true)
+            MilliAICharacterView(size: 58, animated: true, state: .front)
         }
         .buttonStyle(.plain)
         .offset(y: floating ? -3 : 0)
