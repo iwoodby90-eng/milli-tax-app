@@ -1,7 +1,10 @@
 import SwiftUI
 
 // MARK: - HomeView
-// Primary financial cockpit. Layout and density follow the approved production reference.
+// Primary financial cockpit. Layout and density follow the approved
+// production reference: Available to Spend → Latest Payout (financial
+// receipt) → Milli Tax Vault → Tax Ready Score → Financial Timeline →
+// Quarterly Taxes / Mileage / Retirement / Investing → Milli AI.
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
@@ -11,15 +14,18 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
+            VStack(spacing: MilliSpacing.lg) {
                 headerSection
                 availableHero
                 latestPayout
-                metricGrid
+                taxVaultSection
+                taxReadyScore
+                financialTimeline
+                moduleGrid
                 aiInsight
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, 8)
+            .padding(.top, MilliSpacing.sm)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
         .background(MilliColors.background.ignoresSafeArea())
@@ -41,12 +47,13 @@ struct HomeView: View {
                 } label: {
                     Image(systemName: "bell")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(MilliColors.silverBright)
+                        .foregroundColor(MilliColors.silverBright)
                         .frame(width: 34, height: 34)
                         .background(Circle().fill(Color.white.opacity(0.035)))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Notifications")
+                .accessibilityIdentifier("home.notifications")
             }
 
             MilliWordmark()
@@ -57,23 +64,24 @@ struct HomeView: View {
     // MARK: Available to Spend
 
     private var availableHero: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
             Text("AVAILABLE TO SPEND")
                 .font(MilliFont.sectionLabel)
                 .tracking(0.9)
-                .foregroundStyle(MilliColors.textSecondary)
+                .foregroundColor(MilliColors.textSecondary)
 
             Text(viewModel.availableToSpend)
                 .font(MilliFont.heroBalance)
                 .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
+                .foregroundColor(MilliColors.textPrimary)
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
+                .accessibilityIdentifier("home.availableToSpend")
 
             Text("Updated just now")
                 .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textTertiary)
+                .foregroundColor(MilliColors.textTertiary)
 
             ZStack(alignment: .trailing) {
                 MilliSparkline(
@@ -88,224 +96,459 @@ struct HomeView: View {
                 } label: {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(MilliColors.blackGlass)
+                        .foregroundColor(MilliColors.blackGlass)
                         .frame(width: 32, height: 32)
                         .background(Circle().fill(MilliColors.cyanGlow))
                         .shadow(color: MilliColors.cyanGlow.opacity(0.34), radius: 7)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open accounts")
+                .accessibilityIdentifier("home.openAccounts")
                 .padding(.trailing, 2)
             }
         }
-        .padding(14)
+        .padding(MilliSpacing.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "101923"), Color(hex: "091116")],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            ZStack {
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .fill(MilliColors.blackGlassSurface)
+                // Cyan ambient illumination behind the balance.
+                RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                    .fill(
+                        RadialGradient(
+                            colors: [MilliColors.cyanGlow.opacity(0.14), Color.clear],
+                            center: .topLeading,
+                            startRadius: 0,
+                            endRadius: 240
+                        )
                     )
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
-                        .stroke(MilliColors.focusedBorder, lineWidth: 0.8)
-                }
-                .shadow(color: .black.opacity(0.38), radius: 12, y: 5)
+            }
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .stroke(MilliColors.focusedBorder, lineWidth: 0.8)
+        )
+        .shadow(color: .black.opacity(0.38), radius: 12, y: 5)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Available to spend \(viewModel.availableToSpend)")
     }
 
-    // MARK: Latest payout
+    // MARK: Latest Payout — financial receipt
 
     private var latestPayout: some View {
         Button {
             navigate?(.vault)
         } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+                HStack {
                     Text("LATEST PAYOUT")
                         .font(MilliFont.sectionLabel)
                         .tracking(0.8)
-                        .foregroundStyle(MilliColors.textSecondary)
+                        .foregroundColor(MilliColors.textSecondary)
 
-                    Text(viewModel.latestPayout.amount)
-                        .font(MilliFont.numericMedium)
-                        .monospacedDigit()
-                        .foregroundStyle(MilliColors.textPrimary)
-                        .lineLimit(1)
+                    Spacer()
 
-                    Text("\(viewModel.latestPayout.dateTime)  •  \(viewModel.latestPayout.platformName)")
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
-                        .lineLimit(1)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(MilliColors.textTertiary)
                 }
 
-                Spacer(minLength: 8)
+                HStack(spacing: MilliSpacing.sm) {
+                    Image(viewModel.latestPayout.platformAssetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
+                        )
+                        .accessibilityHidden(true)
 
-                Image(viewModel.latestPayout.platformAssetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 42, height: 42)
-                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
-                    }
-            }
-            .milliCard()
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: Metric grid
-
-    private var metricGrid: some View {
-        VStack(spacing: MilliSpacing.gridGap) {
-            HStack(spacing: MilliSpacing.gridGap) {
-                taxVaultTile
-                taxReadyTile
-            }
-            HStack(spacing: MilliSpacing.gridGap) {
-                quarterlyTile
-                mileageTile
-            }
-        }
-    }
-
-    private var taxVaultTile: some View {
-        Button { navigate?(.taxVault) } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("MILLI TAX VAULT™")
-                    .font(MilliFont.sectionLabel)
-                    .tracking(0.55)
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-
-                HStack(alignment: .center, spacing: 7) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(viewModel.taxVaultBalance)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(viewModel.latestPayout.amount)
                             .font(MilliFont.numericMedium)
                             .monospacedDigit()
-                            .foregroundStyle(MilliColors.textPrimary)
+                            .foregroundColor(MilliColors.textPrimary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.66)
-                            .allowsTightening(true)
-                        Text("23% of annual target")
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.textTertiary)
-                            .lineLimit(2)
-                    }
-                    .layoutPriority(1)
 
-                    Spacer(minLength: 0)
-                    progressRing(progress: 0.23, value: nil, size: 34)
-                        .fixedSize()
+                        Text("\(viewModel.latestPayout.dateTime)  ·  \(viewModel.latestPayout.platformName)")
+                            .font(MilliFont.caption)
+                            .foregroundColor(MilliColors.textTertiary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    // Receipt-style posted confirmation. Seeded preview data
+                    // is marked as such; production replaces the source.
+                    VStack(alignment: .trailing, spacing: 3) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 11))
+                                .foregroundColor(MilliColors.positive)
+                            Text("POSTED")
+                                .font(MilliFont.label)
+                                .tracking(0.6)
+                                .foregroundColor(MilliColors.positive)
+                        }
+                        Text("PREVIEW")
+                            .font(MilliFont.label)
+                            .tracking(0.6)
+                            .foregroundColor(MilliColors.textTertiary)
+                    }
                 }
+
+                // Receipt perforation divider.
+                HStack(spacing: 5) {
+                    ForEach(0..<24, id: \.self) { _ in
+                        Circle()
+                            .fill(Color.white.opacity(0.07))
+                            .frame(width: 3, height: 3)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
             }
-            .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
-            .milliCard()
+            .padding(MilliSpacing.cardPadding)
+            .milliSurface()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("home.latestPayout")
+        .accessibilityLabel("Latest payout \(viewModel.latestPayout.amount) from \(viewModel.latestPayout.platformName)")
     }
 
-    private var taxReadyTile: some View {
-        Button { navigate?(.taxReadyScore) } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("TAX READY SCORE™")
+    // MARK: Milli Tax Vault
+
+    private var taxVaultSection: some View {
+        Button {
+            navigate?(.taxVault)
+        } label: {
+            HStack(spacing: MilliSpacing.md) {
+                VStack(alignment: .leading, spacing: MilliSpacing.xs) {
+                    Text("MILLI TAX VAULT")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(0.55)
+                        .foregroundColor(MilliColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    Text(viewModel.taxVaultBalance)
+                        .font(MilliFont.numericMedium)
+                        .monospacedDigit()
+                        .foregroundColor(MilliColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.66)
+                        .allowsTightening(true)
+
+                    Text("Set aside automatically from every payout")
+                        .font(MilliFont.caption)
+                        .foregroundColor(MilliColors.textTertiary)
+                        .lineLimit(2)
+                }
+                .layoutPriority(1)
+
+                Spacer(minLength: MilliSpacing.xs)
+
+                progressRing(progress: 0.23, value: nil, size: 44)
+                    .fixedSize()
+            }
+            .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+            .padding(MilliSpacing.cardPadding)
+            .milliSurface(hasCyanBorder: true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("home.taxVault")
+        .accessibilityLabel("Milli Tax Vault balance \(viewModel.taxVaultBalance)")
+    }
+
+    // MARK: Tax Ready Score
+
+    private var taxReadyScore: some View {
+        Button {
+            navigate?(.taxReadyScore)
+        } label: {
+            VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+                Text("TAX READY SCORE")
                     .font(MilliFont.sectionLabel)
                     .tracking(0.55)
-                    .foregroundStyle(MilliColors.textSecondary)
+                    .foregroundColor(MilliColors.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
 
-                HStack(spacing: 8) {
+                HStack(spacing: MilliSpacing.sm) {
                     progressRing(
-                        progress: CGFloat(viewModel.taxReadyScore) / 100,
+                        progress: CGFloat(viewModel.taxReadyScore) / 100.0,
                         value: "\(viewModel.taxReadyScore)",
-                        size: 44
+                        size: 52
                     )
+                    .fixedSize()
+
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Great")
+                        Text(taxReadyLabel)
                             .font(MilliFont.labelLarge)
-                            .foregroundStyle(MilliColors.positive)
-                        Text("You're on track\nfor tax season")
+                            .foregroundColor(MilliColors.positive)
+                        Text(taxReadyCaption)
                             .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.textSecondary)
+                            .foregroundColor(MilliColors.textSecondary)
                             .lineLimit(2)
                     }
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
-            .milliCard()
+            .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
+            .padding(MilliSpacing.cardPadding)
+            .milliSurface()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("home.taxReadyScore")
+        .accessibilityLabel("Tax ready score \(viewModel.taxReadyScore), \(taxReadyLabel)")
     }
 
-    private var quarterlyTile: some View {
-        Button { navigate?(.quarterlyTaxes) } label: {
+    private var taxReadyLabel: String {
+        switch viewModel.taxReadyScore {
+        case 90...: return "Excellent"
+        case 75..<90: return "Great"
+        case 50..<75: return "Building"
+        default: return "Needs attention"
+        }
+    }
+
+    private var taxReadyCaption: String {
+        switch viewModel.taxReadyScore {
+        case 75...: return "You're on track for tax season"
+        case 50..<75: return "A few items left to secure"
+        default: return "Complete your tax profile to improve"
+        }
+    }
+
+    // MARK: Financial Timeline
+
+    private var financialTimeline: some View {
+        VStack(alignment: .leading, spacing: MilliSpacing.sm) {
+            Text("FINANCIAL TIMELINE")
+                .font(MilliFont.sectionLabel)
+                .tracking(0.55)
+                .foregroundColor(MilliColors.textSecondary)
+
+            HStack(alignment: .top, spacing: 0) {
+                timelineNode(
+                    title: "Payout received",
+                    detail: viewModel.latestPayout.dateTime,
+                    symbol: "arrow.down.circle.fill",
+                    active: true
+                )
+
+                timelineConnector
+
+                timelineNode(
+                    title: "Vault set-aside",
+                    detail: viewModel.taxVaultBalance,
+                    symbol: "lock.shield.fill",
+                    active: true
+                )
+
+                timelineConnector
+
+                timelineNode(
+                    title: "Quarterly due",
+                    detail: viewModel.quarterlyDueLabel,
+                    symbol: "calendar.badge.clock",
+                    active: false
+                )
+            }
+        }
+        .padding(MilliSpacing.cardPadding)
+        .milliSurface()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Financial timeline: payout received, vault set-aside \(viewModel.taxVaultBalance), quarterly payment due \(viewModel.quarterlyDueLabel)")
+        .accessibilityIdentifier("home.financialTimeline")
+    }
+
+    private var timelineConnector: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.45), Color.white.opacity(0.08)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(height: 1.5)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 11)
+            .accessibilityHidden(true)
+    }
+
+    private func timelineNode(title: String, detail: String, symbol: String, active: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(active ? MilliColors.cyanGlow : MilliColors.textTertiary)
+                .frame(width: 24, height: 24)
+                .background(
+                    Circle().fill(active ? MilliColors.cyanGlow.opacity(0.14) : Color.white.opacity(0.05))
+                )
+
+            Text(title)
+                .font(MilliFont.labelLarge)
+                .foregroundColor(MilliColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(detail)
+                .font(MilliFont.caption)
+                .foregroundColor(MilliColors.textTertiary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: Module grid — Quarterly Taxes / Mileage / Retirement / Investing
+
+    private var moduleGrid: some View {
+        VStack(spacing: MilliSpacing.gridGap) {
+            HStack(spacing: MilliSpacing.gridGap) {
+                moduleTile(
+                    title: "QUARTERLY TAXES",
+                    value: viewModel.quarterlyTaxes,
+                    caption: viewModel.quarterlyDueLabel,
+                    symbol: "calendar.badge.clock",
+                    screen: .quarterlyTaxes,
+                    identifier: "home.quarterlyTaxes"
+                )
+
+                moduleTile(
+                    title: "MILEAGE",
+                    value: viewModel.mileage,
+                    caption: "This quarter",
+                    symbol: "car.fill",
+                    screen: .activity,
+                    identifier: "home.mileage"
+                )
+            }
+
+            HStack(spacing: MilliSpacing.gridGap) {
+                // Navigation tiles only — no invented balances for
+                // retirement or investing until authoritative data lands.
+                navigationTile(
+                    title: "RETIREMENT",
+                    caption: "Open retirement plan",
+                    symbol: "leaf.fill",
+                    screen: .retirement,
+                    identifier: "home.retirement"
+                )
+
+                navigationTile(
+                    title: "INVESTING",
+                    caption: "Open investing",
+                    symbol: "chart.line.uptrend.xyaxis",
+                    screen: .investing,
+                    identifier: "home.investing"
+                )
+            }
+        }
+    }
+
+    private func moduleTile(
+        title: String,
+        value: String,
+        caption: String,
+        symbol: String,
+        screen: ActiveScreen,
+        identifier: String
+    ) -> some View {
+        Button {
+            navigate?(screen)
+        } label: {
             VStack(alignment: .leading, spacing: 5) {
-                Text("QUARTERLY TAXES")
+                Text(title)
                     .font(MilliFont.sectionLabel)
                     .tracking(0.55)
-                    .foregroundStyle(MilliColors.textSecondary)
-                Text(viewModel.quarterlyTaxes)
+                    .foregroundColor(MilliColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                Text(value)
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                    .foregroundColor(MilliColors.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
-                HStack(spacing: 5) {
-                    Text(viewModel.quarterlyDueLabel)
+
+                HStack(spacing: 4) {
+                    Text(caption)
                         .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
+                        .foregroundColor(MilliColors.textTertiary)
                         .lineLimit(1)
+
                     Spacer(minLength: 4)
-                    Image(systemName: "calendar.badge.clock")
+
+                    Image(systemName: symbol)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(MilliColors.cyanGlow)
+                        .foregroundColor(MilliColors.cyanGlow)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 78, alignment: .topLeading)
-            .milliCard()
+            .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
+            .padding(MilliSpacing.cardPadding)
+            .milliSurface()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel("\(title) \(value)")
     }
 
-    private var mileageTile: some View {
-        Button { navigate?(.activity) } label: {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("MILEAGE")
-                    .font(MilliFont.sectionLabel)
-                    .tracking(0.55)
-                    .foregroundStyle(MilliColors.textSecondary)
-                Text(viewModel.mileage)
-                    .font(MilliFont.numericMedium)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-                HStack {
-                    Text("This quarter")
+    private func navigationTile(
+        title: String,
+        caption: String,
+        symbol: String,
+        screen: ActiveScreen,
+        identifier: String
+    ) -> some View {
+        Button {
+            navigate?(screen)
+        } label: {
+            HStack(spacing: MilliSpacing.sm) {
+                Image(systemName: symbol)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(MilliColors.cyanGlow)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(MilliColors.cyanGlow.opacity(0.12)))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(MilliFont.labelLarge)
+                        .foregroundColor(MilliColors.textPrimary)
+                        .lineLimit(1)
+
+                    Text(caption)
                         .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
-                    Spacer()
-                    Image(systemName: "car.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(MilliColors.cyanGlow)
+                        .foregroundColor(MilliColors.textTertiary)
+                        .lineLimit(1)
                 }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(MilliColors.textTertiary)
             }
-            .frame(maxWidth: .infinity, minHeight: 78, alignment: .topLeading)
-            .milliCard()
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .center)
+            .padding(MilliSpacing.cardPadding)
+            .milliSurface()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(title)
     }
+
+    // MARK: Shared progress ring
 
     private func progressRing(progress: CGFloat, value: String?, size: CGFloat) -> some View {
         ZStack {
             Circle()
                 .stroke(Color.white.opacity(0.09), lineWidth: 4)
+
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
@@ -317,20 +560,23 @@ struct HomeView: View {
                     style: StrokeStyle(lineWidth: 4, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
+
             if let value {
                 Text(value)
                     .font(.custom("Sora-SemiBold", size: 12))
-                    .foregroundStyle(MilliColors.textPrimary)
+                    .foregroundColor(MilliColors.textPrimary)
             }
         }
         .frame(width: size, height: size)
     }
 
-    // MARK: AI Insight
+    // MARK: Milli AI insight
 
     private var aiInsight: some View {
-        Button { navigate?(.milliAI) } label: {
-            HStack(spacing: 10) {
+        Button {
+            navigate?(.milliAI)
+        } label: {
+            HStack(spacing: MilliSpacing.sm) {
                 Image("MilliAIOrb")
                     .resizable()
                     .scaledToFill()
@@ -345,10 +591,11 @@ struct HomeView: View {
                     Text("MILLI AI INSIGHT")
                         .font(MilliFont.sectionLabel)
                         .tracking(0.7)
-                        .foregroundStyle(MilliColors.cyanGlow)
+                        .foregroundColor(MilliColors.cyanGlow)
+
                     Text(viewModel.aiInsight)
-                        .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.textPrimary)
+                        .font(MilliFont.bodyMedium)
+                        .foregroundColor(MilliColors.textPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
@@ -357,10 +604,13 @@ struct HomeView: View {
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(MilliColors.cyanGlow)
+                    .foregroundColor(MilliColors.cyanGlow)
             }
-            .milliCard(padding: 12)
+            .padding(MilliSpacing.cardPadding)
+            .milliSurface()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("home.aiInsight")
+        .accessibilityLabel("Milli AI insight: \(viewModel.aiInsight)")
     }
 }
