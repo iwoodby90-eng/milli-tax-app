@@ -88,6 +88,7 @@
 		A10400 /* QuarterlyTaxEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10400; };
 		A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10500; };
 		A10510 /* MilliWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10510; };
+		A10520 /* MilliAIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10520; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -174,6 +175,7 @@
 		B10400 /* QuarterlyTaxEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimator.swift; sourceTree = "<group>"; };
 		B10500 /* QuarterlyTaxEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimatorTests.swift; sourceTree = "<group>"; };
 		B10510 /* MilliWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliWordmark.swift; sourceTree = "<group>"; };
+		B10520 /* MilliAIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIState.swift; sourceTree = "<group>"; };
 		B10501 /* MilliTaxVaultTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MilliTaxVaultTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -280,6 +282,7 @@
 				B10075 /* MilliMetricCard.swift */,
 				B10076 /* MilliInsightCard.swift */,
 				B10510 /* MilliWordmark.swift */,
+				B10520 /* MilliAIState.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -530,6 +533,7 @@
 				A10304,
 				A10400,
 				A10510,
+				A10520,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

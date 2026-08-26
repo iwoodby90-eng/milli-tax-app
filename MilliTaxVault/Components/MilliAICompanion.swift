@@ -1,57 +1,36 @@
 import SwiftUI
 
+// MARK: - Legacy Milli AI Companion
+// Kept as a compatibility surface for any older call sites. The production app shell uses
+// MilliAIOrb in ContentView, which routes directly to MilliAIView. This wrapper now opens
+// the same canonical assistant experience instead of presenting placeholder content.
+
 struct MilliAICompanion: View {
     @State private var floating = false
-    @State private var showSheet = false
-    
+    @State private var showAssistant = false
+
     var body: some View {
-        Button(action: { showSheet = true }) {
-            ZStack {
-                // Ambient glow — soft radial, no hard border
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                MilliColors.cyan.opacity(0.18),
-                                MilliColors.cyan.opacity(0.0)
-                            ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 36
-                        )
-                    )
-                    .frame(width: 68, height: 68)
-                
-                // Brand AI robot asset — no ring, no label
-                Image("MilliAIOrb")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 42, height: 42)
-            }
+        Button(action: { showAssistant = true }) {
+            MilliAICharacterView(size: 58, animated: true, state: .front)
         }
         .buttonStyle(.plain)
         .offset(y: floating ? -3 : 0)
         .animation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: floating)
         .padding(.bottom, 80)
         .padding(.trailing, 16)
+        .accessibilityLabel("Open Milli AI")
         .onAppear { floating = true }
-        .sheet(isPresented: $showSheet) {
-            ZStack {
-                MilliColors.obsidian.ignoresSafeArea()
-                VStack(spacing: 16) {
-                    Text("Milli AI")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("Your financial AI assistant")
-                        .foregroundStyle(MilliColors.textSecondary)
-                }
-            }
-            .presentationDetents([.medium])
+        .fullScreenCover(isPresented: $showAssistant) {
+            MilliAIView(
+                onBack: { showAssistant = false },
+                navigate: nil
+            )
+            .preferredColorScheme(.dark)
         }
     }
 }
 
-// Extension to apply Milli AI companion as overlay
+// Compatibility modifier retained for any legacy screens that still apply it.
 extension View {
     func withMilliAI() -> some View {
         self.overlay(alignment: .bottomTrailing) {

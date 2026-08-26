@@ -12,11 +12,22 @@ enum MilliTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .vault: return "lock.shield.fill"
-        case .activity: return "waveform.path.ecg"
-        case .wealth: return "chart.bar.xaxis"
-        case .cockpit: return "gauge.open.with.lines.needle.33percent"
+        case .vault: return "wallet.fill"
+        case .activity: return "safari"
+        case .wealth: return "chart.bar.fill"
+        case .cockpit: return "ellipsis"
         case .home: return ""
+        }
+    }
+
+    // Keep internal routing terminology separate from customer-facing navigation copy.
+    var displayName: String {
+        switch self {
+        case .vault: return "Payouts"
+        case .activity: return "Mileage"
+        case .wealth: return "Wealth"
+        case .cockpit: return "More"
+        case .home: return "Home"
         }
     }
 }
@@ -24,7 +35,7 @@ enum MilliTab: String, CaseIterable {
 // MARK: - MilliNavBar
 // Production cockpit navigation bar exactly matching the approved design references (Image 23):
 // - Sculpted floating pill bar with 34pt continuous corner radius & beveled metallic chrome stroke
-// - Recessed dark obsidian black-glass background with ambient cyan illumination
+// - Restrained dark obsidian black-glass background with ambient cyan illumination
 // - Center elevated M hardware dial with concentric circular chrome bezel, 36 precision tick marks,
 //   and glowing neon cyan light ring
 // - 4 core tab destinations: Payouts, Mileage, Wealth, More, plus center M dial (Home)
@@ -39,7 +50,6 @@ struct MilliNavBar: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Ambient cyan underglow aura
             Capsule(style: .continuous)
                 .fill(
                     RadialGradient(
@@ -57,10 +67,8 @@ struct MilliNavBar: View {
                 .padding(.horizontal, 24)
                 .offset(y: -4)
             
-            // Cockpit floating bar background
             cockpitBarBody
             
-            // Center M dial button
             centerDialButton
                 .offset(y: -24)
         }
@@ -82,7 +90,6 @@ struct MilliNavBar: View {
     
     private var cockpitBarBody: some View {
         ZStack {
-            // Recessed obsidian glass chassis
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -97,7 +104,6 @@ struct MilliNavBar: View {
                     )
                 )
             
-            // Subtle internal glass reflection highlight
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -111,7 +117,6 @@ struct MilliNavBar: View {
                     )
                 )
             
-            // High-precision beveled chrome edge stroke
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
@@ -128,9 +133,8 @@ struct MilliNavBar: View {
                     lineWidth: 1.2
                 )
             
-            // Tab button destinations
             HStack(spacing: 0) {
-                // Left group: Vault & Activity
+                // Left group: Payouts & Mileage
                 tabButton(.vault)
                 tabButton(.activity)
                 
@@ -138,7 +142,7 @@ struct MilliNavBar: View {
                 Spacer()
                     .frame(width: 80)
                 
-                // Right group: Wealth & Cockpit
+                // Right group: Wealth & More
                 tabButton(.wealth)
                 tabButton(.cockpit)
             }
@@ -160,7 +164,6 @@ struct MilliNavBar: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             VStack(spacing: 3) {
-                // Icon with active glowing pill / tint
                 ZStack {
                     if isSelected {
                         Circle()
@@ -196,7 +199,7 @@ struct MilliNavBar: View {
                 .frame(height: 24)
                 
                 // Label
-                Text(tab.rawValue)
+                Text(tab.displayName)
                     .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
                     .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "8A939E"))
                     .tracking(0.3)
@@ -207,7 +210,7 @@ struct MilliNavBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.rawValue)
+        .accessibilityLabel(tab.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
     
@@ -273,7 +276,7 @@ struct MilliNavBar: View {
                         .rotationEffect(.degrees(Double(index) * 10))
                 }
                 
-                // Cyan illuminated light ring with high-tech energy gradient
+                // Cyan illuminated light ring
                 Circle()
                     .stroke(
                         LinearGradient(
@@ -328,8 +331,6 @@ struct MilliNavBar: View {
         .accessibilityHint("Navigates to the Milli Home cockpit")
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     ZStack {
