@@ -56,13 +56,15 @@ jobs:
         run: xcrun simctl list devices available
 
       - name: Run unit tests (shared MilliTaxVault scheme)
-        run: >
-          xcodebuild test
-          -project MilliTaxVault.xcodeproj
-          -scheme MilliTaxVault
-          -destination 'platform=iOS Simulator,name=iPhone 16'
-          CODE_SIGNING_ALLOWED=NO
-          | xcbeautify
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MilliTaxVault.xcodeproj \
+            -scheme MilliTaxVault \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
         env:
           NSUnbufferedIO: YES
 
