@@ -253,6 +253,7 @@
 				B10209 /* QuarterlyTaxesView.swift */,
 				B10210 /* TaxReadyScoreView.swift */,
 			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		C10006 /* Theme */ = {
@@ -650,7 +651,6 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
