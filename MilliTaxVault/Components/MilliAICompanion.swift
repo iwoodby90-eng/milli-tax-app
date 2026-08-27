@@ -8,6 +8,7 @@ import SwiftUI
 struct MilliAICompanion: View {
     @State private var floating = false
     @State private var showAssistant = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: { showAssistant = true }) {
@@ -19,7 +20,10 @@ struct MilliAICompanion: View {
         .padding(.bottom, 80)
         .padding(.trailing, 16)
         .accessibilityLabel("Open Milli AI")
-        .onAppear { floating = true }
+        .onAppear {
+            guard !reduceMotion else { return }
+            floating = true
+        }
         .fullScreenCover(isPresented: $showAssistant) {
             MilliAIView(
                 onBack: { showAssistant = false },
