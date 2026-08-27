@@ -12,7 +12,9 @@ set -euo pipefail
 #   compact : smallest iPhone (16e/17e-class, then SE, then Mini)
 #   standard: iPhone 17/17 Pro-class, then any non-Max iPhone
 #   promax  : iPhone Pro Max-class
-# If SIMULATOR_DEVICE is set explicitly, it is used verbatim.
+# If SIMULATOR_DEVICE is set explicitly, it must resolve to the EXACT
+# simulator name (e.g. "iPhone 17", never a substring match like
+# "iPhone 17 Pro").
 
 PROJECT="${PROJECT:-MilliTaxVault.xcodeproj}"
 SCHEME="${SCHEME:-MilliTaxVault}"
@@ -57,7 +59,13 @@ for runtime, devices in payload.get("devices", {}).items():
 if not candidates:
     raise SystemExit("No available iPhone simulator found")
 
-def pick(cands, must_any, must_none):
+def pick_exact(cands, names):
+    for d in cands:
+        if d["name"] in names:
+            return d
+    return None
+
+def pick_sub(cands, must_any, must_none):
     for d in cands:
         n = d["name"]
         if any(m in n for m in must_any) and not any(m in n for m in must_none):
@@ -66,11 +74,17 @@ def pick(cands, must_any, must_none):
 
 cls = sys.argv[1]
 if cls == "compact":
-    d = pick(candidates, ["16e", "17e"], []) or pick(candidates, ["SE"], []) or pick(candidates, ["mini", "Mini"], [])
+    d = (pick_sub(cands, ["16e", "17e"], [])
+         or pick_sub(cands, ["SE"], [])
+         or pick_sub(cands, ["mini", "Mini"], []))
 elif cls == "promax":
-    d = pick(candidates, ["Pro Max"], [])
+    d = pick_sub(cands, ["Pro Max"], [])
 else:
-    d = pick(candidates, ["iPhone 17"], ["Max"]) or pick(candidates, ["iPhone 16"], ["Max"]) or pick(candidates, ["iPhone 15"], ["Max"])
+    # standard: prefer the EXACT "iPhone 17" (never "iPhone 17 Pro"),
+    # then any non-Max iPhone 17/16, then any non-Max iPhone.
+    d = (pick_exact(cands, ["iPhone 17"])
+         or pick_sub(cands, ["iPhone 17", "iPhone 16"], ["Max"])
+         or pick_sub(cands, ["iPhone"], ["Max"]))
 if d is None:
     d = candidates[0]
 print(d["uid"])
@@ -78,9 +92,23 @@ print(d["uid"])
 }
 
 if [[ -n "${SIMULATOR_DEVICE:-}" ]]; then
-  SIMULATOR_UID="$(xcrun simctl list devices available | grep -F "$SIMULATOR_DEVICE" | head -1 | grep -oE '[0-9A-Fa-f-]{36}' | head -1 || true)"
+  # Resolve by EXACT simulator name only — a substring grep would let
+  # "iPhone 17" silently match "iPhone 17 Pro".
+  SIMULATOR_UID="$(xcrun simctl list devices available -j | python3 -c '
+import json, sys
+payload = json.load(sys.stdin)
+wanted = sys.argv[1]
+for runtime, devices in payload.get("devices", {}).items():
+    if "iOS" not in runtime:
+        continue
+    for device in devices:
+        if device.get("isAvailable") and device.get("name") == wanted:
+            print(device["uid"])
+            raise SystemExit(0)
+raise SystemExit(1)
+' "$SIMULATOR_DEVICE" || true)"
   if [[ -z "$SIMULATOR_UID" ]]; then
-    echo "Requested simulator '$SIMULATOR_DEVICE' not found; falling back to class selection ($DEVICE_CLASS)." >&2
+    echo "Requested simulator '$SIMULATOR_DEVICE' not found by exact name; falling back to class selection ($DEVICE_CLASS)." >&2
     SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
   fi
 else
