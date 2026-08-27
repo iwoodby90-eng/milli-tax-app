@@ -25,13 +25,14 @@ MAP_SETTLE_SECONDS="${MAP_SETTLE_SECONDS:-7}"
 DEVICE_CLASS="${DEVICE_CLASS:-standard}"
 
 # PR #66 gate screens: five nav states + full MILLI AI screen.
+# The production capture router names the Wealth destination "wealthOverview".
 # The floating MILLI AI companion appears in the normal app shell, so it is
 # captured as part of each nav-state screenshot.
 GATE_SCREENS=(
   home
   payouts
   mileage
-  wealth
+  wealthOverview
   more
   milliAI
 )
@@ -67,25 +68,25 @@ else:
     d = pick(candidates, ["iPhone 17"], ["Max"]) or pick(candidates, ["iPhone 16"], ["Max", "e"]) or pick(candidates, ["iPhone 15"], ["Max"])
 if d is None:
     d = candidates[0]
-print(d["uid"])
+print(d["udid"])
 ' "$class"
 }
 
 if [[ -n "${SIMULATOR_DEVICE:-}" ]]; then
-  SIMULATOR_UID="$(xcrun simctl list devices available | grep "$SIMULATOR_DEVICE" | head -1 | grep -oE '[0-9A-Fa-f-]{36}' | head -1)"
-  if [[ -z "$SIMULATOR_UID" ]]; then
+  SIMULATOR_UDID="$(xcrun simctl list devices available | grep -F "$SIMULATOR_DEVICE" | head -1 | grep -oE '[0-9A-Fa-f-]{36}' | head -1 || true)"
+  if [[ -z "$SIMULATOR_UDID" ]]; then
     echo "Requested simulator '$SIMULATOR_DEVICE' not found; falling back to class selection ($DEVICE_CLASS)." >&2
-    SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
+    SIMULATOR_UDID="$(select_simulator_for_class "$DEVICE_CLASS")"
   fi
 else
-  SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
+  SIMULATOR_UDID="$(select_simulator_for_class "$DEVICE_CLASS")"
 fi
-export SIMULATOR_UID
+export SIMULATOR_UDID
 
-echo "Using simulator: $SIMULATOR_UID (class: $DEVICE_CLASS)"
+echo "Using simulator: $SIMULATOR_UDID (class: $DEVICE_CLASS, requested: ${SIMULATOR_DEVICE:-auto})"
 
 # Delegate the actual build/capture to the existing, proven script.
-# It honors SIMULATOR_UID, OUTPUT_DIR, PROJECT, SCHEME, BUNDLE_ID,
+# It honors SIMULATOR_UDID, OUTPUT_DIR, PROJECT, SCHEME, BUNDLE_ID,
 # DERIVED_DATA and the settle-time variables.
 export OUTPUT_DIR PROJECT SCHEME BUNDLE_ID DERIVED_DATA
 export SCREEN_SETTLE_SECONDS MAP_SETTLE_SECONDS
