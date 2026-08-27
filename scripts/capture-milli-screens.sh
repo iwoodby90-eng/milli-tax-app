@@ -172,6 +172,18 @@ capture_screen() {
   local output="$OUTPUT_DIR/${screen}.png"
   local launch_output
   local settle_seconds="$SCREEN_SETTLE_SECONDS"
+  local route="$screen"
+
+  # Map display-name outputs to the raw ActiveScreen values accepted by the
+  # app's -milliScreen launch-argument router (ContentView). Production routes:
+  #   Payouts -> vault, Mileage -> activity, More -> cockpit.
+  # Output filenames are preserved so downstream evidence naming is stable.
+  case "$screen" in
+    payouts) route="vault" ;;
+    mileage) route="activity" ;;
+    more)    route="cockpit" ;;
+    *)       route="$screen" ;;
+  esac
 
   if [[ "$screen" == "mileage" ]]; then
     settle_seconds="$MAP_SETTLE_SECONDS"
@@ -184,10 +196,11 @@ capture_screen() {
   # and routes directly to the requested native screen.
   launch_output="$(
     SIMCTL_CHILD_MILLI_SCREENSHOT_MODE=1 \
-    SIMCTL_CHILD_MILLI_SCREEN="$screen" \
+    SIMCTL_CHILD_MILLI_SCREEN="$route" \
     xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
   )"
 
+  echo "Capture route: ${screen}.png -> raw ActiveScreen route '${route}'"
   wait_and_capture "$screen" "$output" "$launch_output" "$settle_seconds"
 }
 
