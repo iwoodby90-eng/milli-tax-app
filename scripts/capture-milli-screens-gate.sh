@@ -26,21 +26,21 @@ MAP_SETTLE_SECONDS="${MAP_SETTLE_SECONDS:-7}"
 
 DEVICE_CLASS="${DEVICE_CLASS:-standard}"
 
-# PR #66 gate screens: five nav states + full MILLI AI screen.
-# IMPORTANT: these must be raw ActiveScreen values accepted by the app's
-# -milliScreen launch-argument router (ContentView). The production routes are:
+# PR #66 gate evidence set: five nav states + full MILLI AI screen.
+# Output filenames use the display names (payouts/mileage/more) for stable
+# evidence naming; capture-milli-screens.sh maps them to the raw
+# ActiveScreen values accepted by the app's -milliScreen launch-argument
+# router (ContentView). The production routes are:
 #   Payouts -> vault, Mileage -> activity, Home -> home,
 #   Wealth -> wealthOverview, More -> cockpit, MILLI AI -> milliAI.
-# The previous list (payouts/mileage/more) used display names that are NOT
-# valid raw values, so those launches silently fell back to Home.
 # The floating MILLI AI companion appears in the normal app shell, so it is
 # captured as part of each nav-state screenshot.
 GATE_SCREENS=(
   home
-  vault
-  activity
+  payouts
+  mileage
   wealthOverview
-  cockpit
+  more
   milliAI
 )
 
@@ -59,14 +59,14 @@ for runtime, devices in payload.get("devices", {}).items():
 if not candidates:
     raise SystemExit("No available iPhone simulator found")
 
-def pick_exact(cands, names):
-    for d in cands:
+def pick_exact(candidates, names):
+    for d in candidates:
         if d["name"] in names:
             return d
     return None
 
-def pick_sub(cands, must_any, must_none):
-    for d in cands:
+def pick_sub(candidates, must_any, must_none):
+    for d in candidates:
         n = d["name"]
         if any(m in n for m in must_any) and not any(m in n for m in must_none):
             return d
@@ -74,27 +74,27 @@ def pick_sub(cands, must_any, must_none):
 
 cls = sys.argv[1]
 if cls == "compact":
-    d = (pick_sub(cands, ["16e", "17e"], [])
-         or pick_sub(cands, ["SE"], [])
-         or pick_sub(cands, ["mini", "Mini"], []))
+    d = (pick_sub(candidates, ["16e", "17e"], [])
+         or pick_sub(candidates, ["SE"], [])
+         or pick_sub(candidates, ["mini", "Mini"], []))
 elif cls == "promax":
-    d = pick_sub(cands, ["Pro Max"], [])
+    d = pick_sub(candidates, ["Pro Max"], [])
 else:
     # standard: prefer the EXACT "iPhone 17" (never "iPhone 17 Pro"),
     # then any non-Max iPhone 17/16, then any non-Max iPhone.
-    d = (pick_exact(cands, ["iPhone 17"])
-         or pick_sub(cands, ["iPhone 17", "iPhone 16"], ["Max"])
-         or pick_sub(cands, ["iPhone"], ["Max"]))
+    d = (pick_exact(candidates, ["iPhone 17"])
+         or pick_sub(candidates, ["iPhone 17", "iPhone 16"], ["Max"])
+         or pick_sub(candidates, ["iPhone"], ["Max"]))
 if d is None:
     d = candidates[0]
-print(d["uid"])
+print(d["udid"])
 ' "$class"
 }
 
 if [[ -n "${SIMULATOR_DEVICE:-}" ]]; then
   # Resolve by EXACT simulator name only — a substring grep would let
   # "iPhone 17" silently match "iPhone 17 Pro".
-  SIMULATOR_UID="$(xcrun simctl list devices available -j | python3 -c '
+  SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
 import json, sys
 payload = json.load(sys.stdin)
 wanted = sys.argv[1]
@@ -103,23 +103,23 @@ for runtime, devices in payload.get("devices", {}).items():
         continue
     for device in devices:
         if device.get("isAvailable") and device.get("name") == wanted:
-            print(device["uid"])
+            print(device["udid"])
             raise SystemExit(0)
 raise SystemExit(1)
 ' "$SIMULATOR_DEVICE" || true)"
-  if [[ -z "$SIMULATOR_UID" ]]; then
+  if [[ -z "$SIMULATOR_UDID" ]]; then
     echo "Requested simulator '$SIMULATOR_DEVICE' not found by exact name; falling back to class selection ($DEVICE_CLASS)." >&2
-    SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
+    SIMULATOR_UDID="$(select_simulator_for_class "$DEVICE_CLASS")"
   fi
 else
-  SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
+  SIMULATOR_UDID="$(select_simulator_for_class "$DEVICE_CLASS")"
 fi
-export SIMULATOR_UID
+export SIMULATOR_UDID
 
-echo "Using simulator: $SIMULATOR_UID (class: $DEVICE_CLASS, requested: ${SIMULATOR_DEVICE:-auto})"
+echo "Using simulator: $SIMULATOR_UDID (class: $DEVICE_CLASS, requested: ${SIMULATOR_DEVICE:-auto})"
 
 # Delegate the actual build/capture to the existing, proven script.
-# It honors SIMULATOR_UID, OUTPUT_DIR, PROJECT, SCHEME, BUNDLE_ID,
+# It honors SIMULATOR_UDID, OUTPUT_DIR, PROJECT, SCHEME, BUNDLE_ID,
 # DERIVED_DATA and the settle-time variables.
 export OUTPUT_DIR PROJECT SCHEME BUNDLE_ID DERIVED_DATA
 export SCREEN_SETTLE_SECONDS MAP_SETTLE_SECONDS
