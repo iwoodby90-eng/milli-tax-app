@@ -85,8 +85,11 @@ struct MilliAIView: View {
     }
 
     private var intro: some View {
-        HStack(alignment: .center, spacing: 8) {
-            aiPortrait(size: 78, animated: true, state: assistantState)
+        VStack(spacing: 14) {
+            // Spec section 5: full AI hero 200-240pt with soft cyan glow,
+            // centered above the greeting card.
+            aiPortrait(size: 220, animated: true, state: assistantState)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.40), radius: 18)
                 .offset(y: companionFloat)
 
             VStack(alignment: .leading, spacing: 5) {
@@ -101,6 +104,7 @@ struct MilliAIView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .milliCard(padding: 12)
         }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
