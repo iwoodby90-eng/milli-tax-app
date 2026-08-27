@@ -13,6 +13,7 @@ struct MilliAICharacterView: View {
 
     @State private var eyePulse = false
     @State private var bodyTilt: Double = -1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var scale: CGFloat { size / 70 }
 
@@ -37,7 +38,7 @@ struct MilliAICharacterView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Milli AI")
         .onAppear {
-            guard animated else { return }
+            guard animated, !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
                 eyePulse = true
             }
@@ -57,6 +58,7 @@ struct MilliAIOrb: View {
     @State private var floatY: CGFloat = 2
     @State private var floatX: CGFloat = -1
     @State private var tilt: Double = -1.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var onTap: () -> Void = {}
     var state: MilliAIState? = nil
@@ -74,6 +76,7 @@ struct MilliAIOrb: View {
         .frame(width: characterSize + 14, height: characterSize + 14)
         .accessibilityLabel("Open Milli AI")
         .onAppear {
+            guard !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 2.7).repeatForever(autoreverses: true)) {
                 floatY = -4
                 floatX = 2
