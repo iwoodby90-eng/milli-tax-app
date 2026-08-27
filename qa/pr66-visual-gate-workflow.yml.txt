@@ -1,0 +1,80 @@
+# QA-only: PR #66 runtime visual gate workflow.
+# This file is the EXACT content to commit as .github/workflows/swiftui-visual-qa.yml
+# on branch qa/pr66-runtime-visual-gate (replacing the current version, blob 280be99).
+# It could not be committed via the API because the available tokens lack the
+# `workflow` scope (HTTP 404 on .github/workflows/* writes).
+# Commit it with a workflow-scoped token or a local push, then the capture jobs
+# run automatically on push to this branch (or via workflow_dispatch).
+
+name: SwiftUI Visual QA (PR66 gate)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - qa/pr66-runtime-visual-gate
+    paths:
+      - 'MilliTaxVault/**'
+      - 'MilliTaxVault.xcodeproj/**'
+      - 'scripts/capture-milli-screens.sh'
+      - 'scripts/capture-milli-screens-gate.sh'
+      - 'scripts/verify-milli-screen-captures.sh'
+      - '.github/workflows/swiftui-visual-qa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiftui-visual-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Capture native Milli screens (${{ matrix.class }})
+    runs-on: macos-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - class: compact
+            # Smallest available iPhone simulator (16e/17e-class)
+            device: "iPhone 16e"
+          - class: standard
+            # Standard iPhone (17/17 Pro-class)
+            device: "iPhone 17"
+          - class: promax
+            # Largest class (17 Pro Max-class)
+            device: "iPhone 17 Pro Max"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List available iPhone simulators
+        run: xcrun simctl list devices available
+
+      - name: Capture PR #66 gate screens (${{ matrix.class }})
+        shell: bash
+        env:
+          DEVICE_CLASS: ${{ matrix.class }}
+          SIMULATOR_DEVICE: ${{ matrix.device }}
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/milli-screen-qa" bash scripts/capture-milli-screens-gate.sh
+
+      - name: Verify capture routing and image sanity (${{ matrix.class }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-milli-screen-captures.sh "$RUNNER_TEMP/milli-screen-qa"
+
+      - name: Upload PR #66 gate screenshots (${{ matrix.class }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr66-${{ matrix.class }}
+          path: ${{ runner.temp }}/milli-screen-qa-gate/*.png
+          if-no-files-found: error
+          retention-days: 14
