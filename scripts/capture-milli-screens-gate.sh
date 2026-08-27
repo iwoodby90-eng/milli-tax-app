@@ -25,15 +25,20 @@ MAP_SETTLE_SECONDS="${MAP_SETTLE_SECONDS:-7}"
 DEVICE_CLASS="${DEVICE_CLASS:-standard}"
 
 # PR #66 gate screens: five nav states + full MILLI AI screen.
-# The production capture router names the Wealth destination "wealthOverview".
+# IMPORTANT: these must be raw ActiveScreen values accepted by the app's
+# -milliScreen launch-argument router (ContentView). The production routes are:
+#   Payouts -> vault, Mileage -> activity, Home -> home,
+#   Wealth -> wealthOverview, More -> cockpit, MILLI AI -> milliAI.
+# The previous list (payouts/mileage/more) used display names that are NOT
+# valid raw values, so those launches silently fell back to Home.
 # The floating MILLI AI companion appears in the normal app shell, so it is
 # captured as part of each nav-state screenshot.
 GATE_SCREENS=(
   home
-  payouts
-  mileage
+  vault
+  activity
   wealthOverview
-  more
+  cockpit
   milliAI
 )
 
@@ -65,28 +70,28 @@ if cls == "compact":
 elif cls == "promax":
     d = pick(candidates, ["Pro Max"], [])
 else:
-    d = pick(candidates, ["iPhone 17"], ["Max"]) or pick(candidates, ["iPhone 16"], ["Max", "e"]) or pick(candidates, ["iPhone 15"], ["Max"])
+    d = pick(candidates, ["iPhone 17"], ["Max"]) or pick(candidates, ["iPhone 16"], ["Max"]) or pick(candidates, ["iPhone 15"], ["Max"])
 if d is None:
     d = candidates[0]
-print(d["udid"])
+print(d["uid"])
 ' "$class"
 }
 
 if [[ -n "${SIMULATOR_DEVICE:-}" ]]; then
-  SIMULATOR_UDID="$(xcrun simctl list devices available | grep -F "$SIMULATOR_DEVICE" | head -1 | grep -oE '[0-9A-Fa-f-]{36}' | head -1 || true)"
-  if [[ -z "$SIMULATOR_UDID" ]]; then
+  SIMULATOR_UID="$(xcrun simctl list devices available | grep -F "$SIMULATOR_DEVICE" | head -1 | grep -oE '[0-9A-Fa-f-]{36}' | head -1 || true)"
+  if [[ -z "$SIMULATOR_UID" ]]; then
     echo "Requested simulator '$SIMULATOR_DEVICE' not found; falling back to class selection ($DEVICE_CLASS)." >&2
-    SIMULATOR_UDID="$(select_simulator_for_class "$DEVICE_CLASS")"
+    SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
   fi
 else
-  SIMULATOR_UDID="$(select_simulator_for_class "$DEVICE_CLASS")"
+  SIMULATOR_UID="$(select_simulator_for_class "$DEVICE_CLASS")"
 fi
-export SIMULATOR_UDID
+export SIMULATOR_UID
 
-echo "Using simulator: $SIMULATOR_UDID (class: $DEVICE_CLASS, requested: ${SIMULATOR_DEVICE:-auto})"
+echo "Using simulator: $SIMULATOR_UID (class: $DEVICE_CLASS, requested: ${SIMULATOR_DEVICE:-auto})"
 
 # Delegate the actual build/capture to the existing, proven script.
-# It honors SIMULATOR_UDID, OUTPUT_DIR, PROJECT, SCHEME, BUNDLE_ID,
+# It honors SIMULATOR_UID, OUTPUT_DIR, PROJECT, SCHEME, BUNDLE_ID,
 # DERIVED_DATA and the settle-time variables.
 export OUTPUT_DIR PROJECT SCHEME BUNDLE_ID DERIVED_DATA
 export SCREEN_SETTLE_SECONDS MAP_SETTLE_SECONDS
