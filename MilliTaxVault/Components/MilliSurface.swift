@@ -17,7 +17,7 @@ struct MilliSurface: ViewModifier {
                             stops: [
                                 .init(color: Color.white.opacity(0.035), location: 0.0),
                                 .init(color: Color(hex: "12191F").opacity(0.98), location: 0.18),
-                                .init(color: Color(hex: "0E1114"))
+                                .init(color: Color(hex: "0E1114"), location: 1.0)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
