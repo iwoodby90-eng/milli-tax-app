@@ -50,6 +50,11 @@ struct ContentView: View {
                 selectedTab = .home
                 navigateTo(.home)
             }
+            .overlay {
+                // MILLI AI ambient character — guest layer on the nav chrome deck.
+                // Non-hit-testable (spec §7); discrete scheduled events (spec §10).
+                MilliAINavAmbientCharacter()
+            }
             .onChange(of: selectedTab) { _, newTab in
                 withAnimation(.easeInOut(duration: 0.2)) {
                     switch newTab {
