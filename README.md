@@ -10,29 +10,40 @@ Pure SwiftUI, iOS 17+, Swift Charts.
 
 ```
 MilliTaxVault/
-├── MilliApp.swift                  # App entry point
-├── ContentView.swift               # Root view & custom navigation coordinator
+├── MilliApp.swift                    # App entry point
+├── ContentView.swift                 # Root view & custom navigation coordinator
+├── DesignSystem/                     # MilliColors, MilliTypography, MilliSpacing, MilliBlueprint
+├── Features/
+│   └── Home/                         # Home dashboard (HomeView, HomeViewModel, HomeModels)
+├── Components/                       # Blueprint v2 visual layer
+│   ├── MilliNavBar.swift             # Canonical bottom nav + center M dial
+│   ├── MilliVaultHeader.swift        # Tax Vault screen header
+│   ├── MilliLedger.swift             # Ledger rows & transaction state badges
+│   ├── MilliDetailAndStates.swift    # Detail sheet & six ledger state views
+│   ├── MilliHeroBalanceCard.swift    # Hero balance card
+│   └── ...                           # Cards, rings, sparklines, surfaces, wordmark
 ├── Views/
-│   ├── VaultView.swift             # Tax vault balance & transfers
-│   ├── WealthView.swift            # Net worth & spending overview
-│   ├── ActivityView.swift          # Income sources & payouts
-│   ├── CockpitView.swift           # Settings & profile
-│   ├── TaxVaultView.swift          # Tax reserve and breakdown
-│   ├── OnboardingFlowView.swift    # Multi-step setup flow
-│   ├── TreeOfLifeView.swift        # Financial health visualizer
-│   └── Components/
-│       ├── MilliCard.swift         # Reusable card component
-│       ├── CircularProgressView.swift # Animated progress ring
-│       ├── MilliChart.swift        # Area chart & sparklines
-│       └── MilliNavBar.swift       # Canonical custom bottom navigation bar
+│   ├── VaultView.swift               # Tax vault balance & transfers
+│   ├── WealthView.swift              # Net worth & spending overview
+│   ├── ActivityView.swift            # Income sources & payouts
+│   ├── CockpitView.swift             # Settings & profile
+│   ├── TaxVaultView.swift            # Tax reserve and breakdown
+│   ├── MilliTaxVaultScreen.swift     # Full Tax Vault screen assembly (Blueprint v2)
+│   ├── PayoutsView.swift             # Payouts & receipts
+│   ├── MileageView.swift             # Mileage tracking
+│   ├── Onboarding/                   # Login, onboarding flow, plan selection, setup
+│   └── ...
 ├── Models/
-│   ├── AppModels.swift             # Core financial and transaction models
-│   ├── TaxProfile.swift            # Tax filing status and subscription tiers
-│   └── VehicleProfile.swift        # Vehicle mileage deduction tracking
-├── Theme/
-│   ├── MilliTheme.swift            # Colors, typography, spacing tokens
-│   └── DesignSystem/               # MilliColors, MilliTypography, MilliSpacing
-└── Assets.xcassets/                # App icon, accent colors, and design tokens
+│   ├── AppModels.swift               # Core financial and transaction models
+│   ├── TaxProfile.swift              # Tax filing status and subscription tiers
+│   └── VehicleProfile.swift          # Vehicle mileage deduction tracking
+├── Services/                         # AppleAuthManager, BankConnectionService, QuarterlyTaxEstimator, StoreKitService
+├── Theme/MilliTheme.swift            # Colors, typography, spacing tokens
+└── Assets.xcassets/                  # App icon, brand assets, platform icons, hero images
+
+MilliTaxVaultTests/                   # QuarterlyTaxEstimator XCTest suite (21 tests)
+backend/migrations/                   # SQL migrations (mileage logs, brokerage trading)
+scripts/                              # Screen capture, Swift validation, repo health checks
 ```
 
 ## Design System
@@ -40,14 +51,15 @@ MilliTaxVault/
 - Background: `#080B12` with subtle radial gradients
 - Accent: `#00B4FF` (Electric Cyan) & Emerald Green (`#00E599`)
 - Cards: Frosted glass with subtle stroke glow and chrome finishes
-- Typography: SF Pro Rounded for financial metrics, SF Pro / Inter for UI text
+- Typography: Sora for financial metrics, Inter for UI text
 - Charts: Swift Charts with cyan/emerald gradient fill
-- Navigation: Custom brushed-chrome center `M` button with custom tab routing (`MilliNavBar.swift`)
+- Navigation: Custom brush-chrome center `M` button with custom tab routing (`MilliNavBar.swift`)
 
 ## Validation & Quality Assurance
 
 - **Native Build CI**: Automated Xcode build validation on macOS runners (`.github/workflows/validate.yml`)
-- **Visual QA**: Comprehensive UI screen capture and integrity verification suite (`scripts/verify-milli-screen-captures.sh`)
+- **Visual QA**: SwiftUI visual QA workflow (`.github/workflows/swiftui-visual-qa.yml`) plus comprehensive UI screen capture and integrity verification suite (`scripts/verify-milli-screen-captures.sh`)
+- **Unit Tests**: QuarterlyTaxEstimator XCTest suite (`MilliTaxVaultTests/`)
 - **Repository Health**: Architecture and reference verification script (`scripts/verify-repo-health.sh`)
 
 ## Requirements
