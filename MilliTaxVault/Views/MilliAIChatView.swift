@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct MilliAIChatView: View {
+    var onBack: (() -> Void)?
+
     @State private var messageText = ""
 
     struct ChatMessage: Identifiable {
@@ -20,13 +22,15 @@ struct MilliAIChatView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "0A0A0C").ignoresSafeArea()
+            MilliColors.obsidian.ignoresSafeArea()
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.white)
+                    Button(action: { onBack?() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
                     Spacer()
                     Text("MILLI AI")
                         .font(.system(size: 16, weight: .bold))
@@ -41,7 +45,7 @@ struct MilliAIChatView: View {
                 .padding(.top, 60)
                 .padding(.bottom, 16)
 
-                // Messages — bottom-aligned with ScrollViewReader
+                // Messages - bottom-aligned with ScrollViewReader
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 12) {
@@ -51,7 +55,7 @@ struct MilliAIChatView: View {
                                     if msg.isAI {
                                         Image(systemName: "brain.head.profile")
                                             .font(.system(size: 20))
-                                            .foregroundColor(Color(hex: "00E5FF"))
+                                            .foregroundColor(MilliColors.cyanGlow)
                                             .frame(width: 32)
                                     }
                                     VStack(alignment: msg.isAI ? .leading : .trailing, spacing: 8) {
@@ -60,17 +64,17 @@ struct MilliAIChatView: View {
                                             .foregroundColor(.white)
                                             .padding(14)
                                             .background(
-                                                msg.isAI ? Color(hex: "1A1C20") : Color(hex: "00E5FF").opacity(0.15),
-                                                in: RoundedRectangle(cornerRadius: 16)
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .fill(msg.isAI ? MilliColors.elevated : MilliColors.cyanGlow.opacity(0.15))
                                             )
                                         if let btn = msg.buttonLabel {
                                             Button(action: {}) {
                                                 Text(btn)
                                                     .font(.system(size: 13, weight: .semibold))
-                                                    .foregroundColor(Color(hex: "00E5FF"))
+                                                    .foregroundColor(MilliColors.cyanGlow)
                                                     .padding(.horizontal, 16)
                                                     .padding(.vertical, 8)
-                                                    .overlay(Capsule().stroke(Color(hex: "00E5FF"), lineWidth: 1))
+                                                    .overlay(Capsule().stroke(MilliColors.cyanGlow, lineWidth: 1))
                                             }
                                         }
                                     }
@@ -94,18 +98,18 @@ struct MilliAIChatView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 24))
+                        .background(RoundedRectangle(cornerRadius: 24).fill(MilliColors.carbon))
                     Button(action: {}) {
                         Image(systemName: "arrow.up")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.black)
                             .frame(width: 44, height: 44)
-                            .background(Color(hex: "00E5FF"), in: Circle())
+                            .background(Circle().fill(MilliColors.cyanGlow))
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
-                .background(Color(hex: "0F1012"))
+                .background(MilliColors.carbon)
             }
         }
     }

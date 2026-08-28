@@ -19,6 +19,16 @@ enum MilliTab: String, CaseIterable {
         case .home: return ""
         }
     }
+
+    var displayName: String {
+        switch self {
+        case .vault: return "Payouts"
+        case .activity: return "Mileage"
+        case .wealth: return "Wealth"
+        case .cockpit: return "More"
+        case .home: return "Home"
+        }
+    }
 }
 
 // MARK: - MilliNavBar
@@ -196,7 +206,7 @@ struct MilliNavBar: View {
                 .frame(height: 24)
                 
                 // Label
-                Text(tab.rawValue)
+                Text(tab.displayName)
                     .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
                     .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "8A939E"))
                     .tracking(0.3)
@@ -207,7 +217,7 @@ struct MilliNavBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.rawValue)
+        .accessibilityLabel(tab.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
     

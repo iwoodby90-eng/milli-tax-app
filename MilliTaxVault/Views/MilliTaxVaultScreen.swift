@@ -3,7 +3,7 @@ import SwiftUI
 struct MilliTaxVaultScreen: View {
     var body: some View {
         ZStack {
-            Color(hex: "0A0A0C").ignoresSafeArea()
+            MilliColors.obsidian.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 20) {
                     // MILLI wordmark
@@ -13,7 +13,7 @@ struct MilliTaxVaultScreen: View {
                         .tracking(6)
                         .opacity(0.5)
 
-                    Text("MILLI TAX VAULT™")
+                    Text("MILLI TAX VAULT\u2122")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
 
@@ -39,12 +39,12 @@ struct MilliTaxVaultScreen: View {
                                     .frame(width: 64, height: 64)
                                 Circle()
                                     .trim(from: 0, to: 0.234)
-                                    .stroke(Color(hex: "00E5FF"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                    .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                                     .rotationEffect(.degrees(-90))
                                     .frame(width: 64, height: 64)
                                 Text("23%")
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(Color(hex: "00E5FF"))
+                                    .foregroundColor(MilliColors.cyanGlow)
                             }
                         }
                         HStack {
@@ -72,11 +72,11 @@ struct MilliTaxVaultScreen: View {
                                 .foregroundColor(.black)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
-                                .background(Color(hex: "00E5FF"), in: RoundedRectangle(cornerRadius: 12))
+                                .background(RoundedRectangle(cornerRadius: 12).fill(MilliColors.cyanGlow))
                         }
                     }
                     .padding(20)
-                    .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 12))
+                    .background(RoundedRectangle(cornerRadius: 12).fill(MilliColors.carbon))
 
                     // Transactions
                     VStack(spacing: 0) {
@@ -88,7 +88,7 @@ struct MilliTaxVaultScreen: View {
                             Spacer()
                             Text("View All")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(Color(hex: "00E5FF"))
+                                .foregroundColor(MilliColors.cyanGlow)
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 14)
@@ -112,14 +112,14 @@ struct MilliTaxVaultScreen: View {
                                 Spacer()
                                 Text(t.2)
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color(hex: "00E5FF"))
+                                    .foregroundColor(MilliColors.cyanGlow)
                             }
                             .padding(.horizontal, 20)
                             .frame(height: 44)
                             Divider().background(Color.white.opacity(0.08))
                         }
                     }
-                    .background(Color(hex: "111214"), in: RoundedRectangle(cornerRadius: 12))
+                    .background(RoundedRectangle(cornerRadius: 12).fill(MilliColors.carbon))
                     .padding(.bottom, 100)
                 }
                 .padding(.horizontal, 20)
