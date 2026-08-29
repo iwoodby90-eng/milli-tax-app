@@ -7,6 +7,11 @@ on:
         description: 'Commit proof artifacts into the repo (visual-proof/)'
         type: boolean
         default: true
+  push:
+    branches:
+      - qa/ambient-character-proof
+    paths-ignore:
+      - 'visual-proof/**'
 
 permissions:
   contents: write
@@ -82,7 +87,7 @@ jobs:
           retention-days: 14
 
       - name: Publish proof into repo (visual-proof/)
-        if: ${{ github.event.inputs.publish == 'true' }}
+        if: ${{ github.event_name != 'push' || github.event.inputs.publish != 'false' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
