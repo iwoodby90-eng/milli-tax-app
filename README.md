@@ -1,6 +1,6 @@
 # Milli Tax Vault
 
-A premium iOS fintech app for freelancers and gig workers to automatically set aside taxes from their earnings.
+A premium iOS finance app for freelancers and gig workers to automatically set aside taxes from their earnings.
 
 ## Architecture
 
@@ -11,17 +11,17 @@ Pure SwiftUI, iOS 17+, Swift Charts.
 ```
 MilliTaxVault/
 ├── MilliApp.swift                    # App entry point
-├── ContentView.swift                 # Root view & custom navigation coordinator
+├── ContentView.swift                 # Root view & custom navigation coordination
 ├── DesignSystem/                     # MilliColors, MilliTypography, MilliSpacing, MilliBlueprint
 ├── Features/
-│   └── Home/                         # Home dashboard (HomeView, HomeViewModel, HomeModels)
-├── Components/                       # Blueprint v2 visual layer
-│   ├── MilliNavBar.swift             # Canonical bottom nav + center M dial
-│   ├── MilliVaultHeader.swift        # Tax Vault screen header
-│   ├── MilliLedger.swift             # Ledger rows & transaction state badges
-│   ├── MilliDetailAndStates.swift    # Detail sheet & six ledger state views
-│   ├── MilliHeroBalanceCard.swift    # Hero balance card
-│   └── ...                           # Cards, rings, sparklines, surfaces, wordmark
+│   ├── Home/                         # Home dashboard (HomeView, HomeViewModel, HomeModels)
+│   └── Components/                   # Blueprint v2 visual layer
+│       ├── MilliNavBar.swift         # Canonical bottom nav + center M dial (tab labels: Payouts, Mileage, Wealth, More, Home)
+│       ├── MilliVaultHeader.swift    # Tax Vault screen header
+│       ├── MilliLedger.swift         # Ledger rows & transaction state badges
+│       ├── MilliDetailAndStates.swift# Detail sheet & six ledger state views
+│       ├── MilliHeroBalanceCard.swift# Hero balance card
+│       └── ...                       # Cards, rings, sparklines, surfaces, wordmark
 ├── Views/
 │   ├── VaultView.swift               # Tax vault balance & transfers
 │   ├── WealthView.swift              # Net worth & spending overview
@@ -29,21 +29,21 @@ MilliTaxVault/
 │   ├── CockpitView.swift             # Settings & profile
 │   ├── TaxVaultView.swift            # Tax reserve and breakdown
 │   ├── MilliTaxVaultScreen.swift     # Full Tax Vault screen assembly (Blueprint v2)
+│   ├── MilliAIChatView.swift         # MILLI AI chat view (design-token based, back action)
 │   ├── PayoutsView.swift             # Payouts & receipts
 │   ├── MileageView.swift             # Mileage tracking
-│   ├── Onboarding/                   # Login, onboarding flow, plan selection, setup
-│   └── ...
+│   └── Onboarding/                   # Login, onboarding flow, plan selection, setup
+│       └── ...
 ├── Models/
 │   ├── AppModels.swift               # Core financial and transaction models
-│   ├── TaxProfile.swift              # Tax filing status and subscription tiers
-│   └── VehicleProfile.swift          # Vehicle mileage deduction tracking
-├── Services/                         # AppleAuthManager, BankConnectionService, QuarterlyTaxEstimator, StoreKitService
+│   └── TaxProfile.swift              # Tax filing status and subscription tiers
+├── Services/                         # AppleAuthManager, BankConnectionService, QuarterlyTaxEstimator, StoneKitService
 ├── Theme/MilliTheme.swift            # Colors, typography, spacing tokens
-└── Assets.xcassets/                  # App icon, brand assets, platform icons, hero images
+├── Assets.xcassets/                  # App icon, brand assets, platform icons, hero images
 
-MilliTaxVaultTests/                   # QuarterlyTaxEstimator XCTest suite (21 tests)
+MilliTaxVaultTests/                  # QuarterlyTaxEstimator XCTest suite (21 tests)
 backend/migrations/                   # SQL migrations (mileage logs, brokerage trading)
-scripts/                              # Screen capture, Swift validation, repo health checks
+scripts/                             # Screen capture, Swift validation, repo health checks
 ```
 
 ## Design System
