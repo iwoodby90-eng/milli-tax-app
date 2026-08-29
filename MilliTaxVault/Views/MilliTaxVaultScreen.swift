@@ -13,7 +13,7 @@ struct MilliTaxVaultScreen: View {
                         .tracking(6)
                         .opacity(0.5)
 
-                    Text("MILLI TAX VAULT\u2122")
+                    Text("MILLI TAX VAULT™")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
 
