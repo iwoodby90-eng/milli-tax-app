@@ -24,12 +24,11 @@
 		A10043 /* VaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10043; };
 		A10044 /* WealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10044; };
 		A10045 /* CockpitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045; };
-		A10046 /* MilliMetalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046; };
+		A10046 /* MilliMetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046; };
 		A10047 /* MilliAICompanion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10047; };
 		A10120 /* MilliAINavAmbientCharacter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10120; };
 		A10048 /* MilliCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048; };
 		A10049 /* MilliChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049; };
-		A10050 /* NavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10050; };
 		A10051 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051; };
 		A10060 /* MilliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060; };
 		A10061 /* MilliTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061; };
@@ -61,7 +60,7 @@
 		A10114 /* InvestingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10114; };
 		A10115 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10115; };
 		A10116 /* AddRetirementAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10116; };
-		A10117 /* AddLifeEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10117; };
+		A10117 /* AddLifeEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118; };
 		A10118 /* MileageTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118; };
 		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200; };
 		A10201 /* MilliAIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10201; };
@@ -109,12 +108,11 @@
 		B10043 /* VaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultView.swift; sourceTree = "<group>"; };
 		B10044 /* WealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WealthView.swift; sourceTree = "<group>"; };
 		B10045 /* CockpitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CockpitView.swift; sourceTree = "<group>"; };
-		B10046 /* MilliMetalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetalCard.swift; sourceTree = "<group>"; };
+		B10046 /* MilliMetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetCard.swift; sourceTree = "<group>"; };
 		B10047 /* MilliAICompanion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAICompanion.swift; sourceTree = "<group>"; };
 		B10120 /* MilliAINavAmbientCharacter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAINavAmbientCharacter.swift; sourceTree = "<group>"; };
 		B10048 /* MilliCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCard.swift; sourceTree = "<group>"; };
 		B10049 /* MilliChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliChart.swift; sourceTree = "<group>"; };
-		B10050 /* NavBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavBar.swift; sourceTree = "<group>"; };
 		B10051 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B10060 /* MilliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliColors.swift; sourceTree = "<group>"; };
 		B10061 /* MilliTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTypography.swift; sourceTree = "<group>"; };
@@ -230,6 +228,8 @@
 				B10043 /* VaultView.swift */,
 				B10044 /* WealthView.swift */,
 				B10045 /* CockpitView.swift */,
+				B10046 /* MilliMetCard.swift */,
+				B10047 /* MilliAICompanion.swift */,
 				B10107 /* MilliTaxVaultView.swift */,
 				B10110 /* LiveMarketChartView.swift */,
 				B10111 /* MarketDataViewModel.swift */,
@@ -271,7 +271,7 @@
 				B10021 /* MilliNavBar.swift */,
 				B10022 /* MilliAIOrb.swift */,
 				B10119 /* MilliDetailSheet.swift */,
-				B10046 /* MilliMetalCard.swift */,
+				B10046 /* MilliMetCard.swift */,
 				B10047 /* MilliAICompanion.swift */,
 				B10120 /* MilliAINavAmbientCharacter.swift */,
 				B10070 /* MilliSurface.swift */,
@@ -334,7 +334,6 @@
 			children = (
 				B10048 /* MilliCard.swift */,
 				B10049 /* MilliChart.swift */,
-				B10050 /* NavBar.swift */,
 				B10051 /* CircularProgressView.swift */,
 			);
 			path = Components;
@@ -484,7 +483,6 @@
 				A10120,
 				A10048,
 				A10049,
-				A10050,
 				A10051,
 				A10060,
 				A10061,
@@ -622,7 +620,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -640,10 +638,22 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Milli Tax Vault";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location to automatically track mileage deductions.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli tracks mileage in the background for automatic deduction logging.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli tracks mileage in the background for automatic deduction logging.";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault;
+				CODE_SIGN_STYLE = Automatic;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -653,7 +663,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -668,6 +678,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -676,12 +687,16 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_SELECTOR_MATCH = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_NS_ASSERTIONS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -692,16 +707,25 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MilliTaxVault.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MilliTaxVault";
 			};
 			name = Debug;
 		};
@@ -713,6 +737,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -721,24 +746,43 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_SELECTOR_MATCH = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MilliTaxVault.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MilliTaxVault";
 			};
 			name = Release;
 		};
@@ -755,7 +799,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -776,7 +820,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.milli.taxvault.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
