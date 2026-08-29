@@ -1,0 +1,4 @@
+Commit SHA tested: a800eb18fb32ec68f155ba796192c23e238e2179
+Branch: refs/heads/qa/ambient-character-proof
+Simulator: iPhone 16e (UDID E7BD0281-5697-422C-B0CB-659D99F51028)
+Captured: Sat Aug 29 22:30:27 UTC 2026

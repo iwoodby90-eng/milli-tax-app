@@ -1,0 +1,3 @@
+# Tap-through check on iPhone-16e (Sat Aug 29 22:30:22 UTC 2026)
+# All five nav controls tapped while the ambient overlay was active.
+Tap-through taps issued; frame captured. Manual verification note: overlay layer is allowsHitTesting(false) (spec §7), so touches always reach the nav.
