@@ -26,9 +26,9 @@
 		A10045 /* CockpitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045; };
 		A10046 /* MilliMetalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046; };
 		A10047 /* MilliAICompanion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10047; };
+		A10120 /* MilliAINavAmbientCharacter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10120; };
 		A10048 /* MilliCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048; };
 		A10049 /* MilliChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049; };
-		A10050 /* NavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10050; };
 		A10051 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051; };
 		A10060 /* MilliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060; };
 		A10061 /* MilliTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061; };
@@ -110,9 +110,9 @@
 		B10045 /* CockpitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CockpitView.swift; sourceTree = "<group>"; };
 		B10046 /* MilliMetalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetalCard.swift; sourceTree = "<group>"; };
 		B10047 /* MilliAICompanion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAICompanion.swift; sourceTree = "<group>"; };
+		B10120 /* MilliAINavAmbientCharacter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAINavAmbientCharacter.swift; sourceTree = "<group>"; };
 		B10048 /* MilliCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCard.swift; sourceTree = "<group>"; };
 		B10049 /* MilliChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliChart.swift; sourceTree = "<group>"; };
-		B10050 /* NavBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavBar.swift; sourceTree = "<group>"; };
 		B10051 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B10060 /* MilliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliColors.swift; sourceTree = "<group>"; };
 		B10061 /* MilliTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTypography.swift; sourceTree = "<group>"; };
@@ -271,6 +271,7 @@
 				B10119 /* MilliDetailSheet.swift */,
 				B10046 /* MilliMetalCard.swift */,
 				B10047 /* MilliAICompanion.swift */,
+				B10120 /* MilliAINavAmbientCharacter.swift */,
 				B10070 /* MilliSurface.swift */,
 				B10071 /* MilliSparkline.swift */,
 				B10072 /* MilliProgressRing.swift */,
@@ -331,7 +332,6 @@
 			children = (
 				B10048 /* MilliCard.swift */,
 				B10049 /* MilliChart.swift */,
-				B10050 /* NavBar.swift */,
 				B10051 /* CircularProgressView.swift */,
 			);
 			path = Components;
@@ -478,9 +478,9 @@
 				A10045,
 				A10046,
 				A10047,
+				A10120,
 				A10048,
 				A10049,
-				A10050,
 				A10051,
 				A10060,
 				A10061,
