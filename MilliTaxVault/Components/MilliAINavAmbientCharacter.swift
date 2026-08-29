@@ -19,6 +19,9 @@ import SwiftUI
 struct MilliAINavAmbientCharacter: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// §9: system Reduce Motion OR the DEBUG-only QA override.
+    private var effectiveReduceMotion: Bool { reduceMotion || debugForceReduceMotion }
+
     // Character presentation
     private let characterSize: CGFloat = 34
     private let deckYOffset: CGFloat = -46 // stands on the upper chrome deck of the nav bar
@@ -55,6 +58,36 @@ struct MilliAINavAmbientCharacter: View {
 
     /// QA hook: fire one appearance ~1 s after appear (then normal schedule).
     var debugImmediate: Bool = false
+    /// QA hooks (DEBUG-only, driven by launch environment; see MilliAINavAmbientCharacter.debugHooks).
+    var debugForceCenterStop: Bool = false
+    var debugForceDance: Bool = false
+    var debugForceReduceMotion: Bool = false
+
+    /// DEBUG-only QA hooks read from the launch environment so hosted simulator
+    /// runs can trigger deterministic appearances without waiting minutes.
+    init(
+        debugImmediate: Bool = false,
+        debugForceCenterStop: Bool = false,
+        debugForceDance: Bool = false,
+        debugForceReduceMotion: Bool = false
+    ) {
+        #if DEBUG
+        let env = ProcessInfo.processInfo.environment
+        self.debugImmediate = debugImmediate
+            || (env["MILLI_AMBIENT_IMMEDIATE"] == "1")
+        self.debugForceCenterStop = debugForceCenterStop
+            || (env["MILLI_AMBIENT_CENTER_STOP"] == "1")
+        self.debugForceDance = debugForceDance
+            || (env["MILLI_AMBIENT_DANCE"] == "1")
+        self.debugForceReduceMotion = debugForceReduceMotion
+            || (env["MILLI_AMBIENT_REDUCE_MOTION"] == "1")
+        #else
+        self.debugImmediate = debugImmediate
+        self.debugForceCenterStop = debugForceCenterStop
+        self.debugForceDance = debugForceDance
+        self.debugForceReduceMotion = debugForceReduceMotion
+        #endif
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -164,8 +197,8 @@ struct MilliAINavAmbientCharacter: View {
 
     private func runAppearance() async {
         let direction: WalkDirection = Bool.random() ? .leftToRight : .rightToLeft
-        let stopsAtCenter = Bool.random() && !reduceMotion // §4: optional momentary stop
-        let dances = !reduceMotion && Double.random(in: 0...1) < miniDanceProbability // §5: rare
+        let stopsAtCenter = (debugForceCenterStop || Bool.random()) && !effectiveReduceMotion // §4: optional momentary stop
+        let dances = !effectiveReduceMotion && (debugForceDance || Double.random(in: 0...1) < miniDanceProbability) // §5: rare
 
         await MainActor.run {
             phase = .walking(direction: direction, stopAtCenter: stopsAtCenter)
@@ -173,7 +206,7 @@ struct MilliAINavAmbientCharacter: View {
             visible = true
         }
 
-        if reduceMotion {
+        if effectiveReduceMotion {
             // §9: no translation-heavy animation. Brief static appearance + small head turn.
             await MainActor.run {
                 withAnimation(.easeIn(duration: 0.4)) { visible = true }
