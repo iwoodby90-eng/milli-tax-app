@@ -1,1 +1,170 @@
-aW1wb3J0IEZvdW5kYXRpb24KCi8vIE1BUks6IC0gUXVhcnRlcmx5VGF4RXN0aW1hdG9yCi8vIEVzdGltYXRlcyBmZWRlcmFsIHF1YXJ0ZXJseSBlc3RpbWF0ZWQgdGF4IHBheW1lbnRzIGZvciBzZWxmLWVtcGxveWVkIGdpZyB3b3JrZXJzLgovLyBUYXggeWVhciAyMDI2LiBTb3VyY2VzIGZvciBhbGwgY29uc3RhbnRzOgovLyAgIC0gSVJTIFJldmVudWUgUHJvY2VkdXJlIDIwMjUtMzIgKDIwMjYgaW5mbGF0aW9uIGFkanVzdG1lbnRzLCBwb3N0LVRDSkEpCi8vICAgLSBTU0E6IDIwMjYgY29udHJpYnV0aW9uICYgYmVuZWZpdCBiYXNlICQxODQsNTAwCi8vICAgLSBTY2hlZHVsZSBTRSAoRm9ybSAxMDQwKTogbmV0IGVhcm5pbmdzID0gOTIuMzUlIG9mIG5ldCBTRSBwcm9maXQ7ICQ0MDAgZmxvb3IKLy8gICAgIGFwcGxpZXMgdG8gbmV0IGVhcm5pbmdzIEFGVEVSIHRoZSA5Mi4zNSUgYWRqdXN0bWVudC4KLy8KLy8gSU1QT1JUQU5UIOKAlCBzY29wZSBvZiB0aGlzIGVzdGltYXRlOgovLyAgIFRoZSBxdWFydGVybHkgZmlndXJlIGlzIGFuICJlc3RpbWF0ZWQgY3VycmVudC15ZWFyIGxpYWJpbGl0eSBpbnN0YWxsbWVudCIKLy8gICAodG90YWwgZXN0aW1hdGVkIHRheCAvIDQpLiBJdCBpcyBOT1QgYW4gSVJTIHNhZmUtaGFyYm9yIGNhbGN1bGF0aW9uLCB3aGljaAovLyAgIHJlcXVpcmVzIHByaW9yLXllYXIgdG90YWwgdGF4ICgxMDAlLzExMCUgcnVsZSkg4oCUIGFuIGlucHV0IHRoaXMgZXN0aW1hdG9yCi8vICAgZG9lcyBub3QgdGFrZS4gTm8gc2FmZS1oYXJib3IgY29tcGxpYW5jZSBpcyBjbGFpbWVkIG9yIGltcGxpZWQuCi8vCi8vIE1PTkVUQVJZIFRZUEVTIChpc3N1ZSAjNjksIGZpbmFuY2lhbCBhY2N1cmFjeSk6Ci8vICAgQWxsIG1vbmV0YXJ5IHZhbHVlcyBhbmQgcmF0ZXMgYXJlIGBEZWNpbWFsYC4gSW50ZXJtZWRpYXRlcyBhcmUgTkVWRVIKLy8gICByb3VuZGVkOyB0aGUgc2luZ2xlIGV4cGxpY2l0IHJvdW5kaW5nIGJvdW5kYXJ5IGlzCi8vICAgYEVzdGltYXRlLnF1YXJ0ZXJseVBheW1lbnRgLCByb3VuZGVkIHRvIGV4YWN0IGNlbnRzLCBoYWxmIGF3YXkgZnJvbSB6ZXJvCi8vICAgKHNlZSBgcm91bmRUb0NlbnRzYCkuIFJhdGUgY29uc3RhbnRzIGFyZSBidWlsdCBmcm9tIGRlY2ltYWwgc3RyaW5ncywgbmV2ZXIKLy8gICBmcm9tIGBEb3VibGVgIGxpdGVyYWxzLCBzbyBubyBiaW5hcnktdG8tZGVjaW1hbCBjb252ZXJzaW9uIGVycm9yIGNhbiBlbnRlcgovLyAgIHRoZSBjYWxjdWxhdGlvbi4KCi8vLyBFeGFjdCBgRGVjaW1hbGAgZnJvbSBhIGRlY2ltYWwgc3RyaW5nLiBOZXZlciBjb25zdHJ1Y3QgbW9uZXRhcnkgb3IgcmF0ZQovLy8gY29uc3RhbnRzIGZyb20gYERvdWJsZWAgbGl0ZXJhbHMg4oCUIHRoYXQgY29udmVyc2lvbiBpcyBpbmV4YWN0Lgpwcml2YXRlIGZ1bmMgZChfIHN0cmluZzogU3RyaW5nKSAtPiBEZWNpbWFsIHsKICAgIGd1YXJkIGxldCB2YWx1ZSA9IERlY2ltYWwoc3RyaW5nOiBzdHJpbmcpIGVsc2UgewogICAgICAgIHByZWNvbmRpdGlvbmZhaWx1cmUoIkludmFsaWQgZGVjaW1hbCBjb25zdGFudDogXChzdHJpbmcpIikKICAgIH0KICAgIHJldHVybiB2YWx1ZQp9CgpzdHJ1Y3QgUXVhcnRlcmx5VGF4RXN0aW1hdG9yIHsKCiAgICBzdHJ1Y3QgRXN0aW1hdGU6IEVxdWF0YWJsZSB7CiAgICAgICAgbGV0IHRheGFibGVJbmNvbWU6IERlY2ltYWwgICAgICAgIC8vIHRheGFibGUgaW5jb21lIEFGVEVSIHRoZSBRQkkgZGVkdWN0aW9uCiAgICAgICAgbGV0IGZlZGVyYWxJbmNvbWVUYXg6IERlY2ltYWwKICAgICAgICBsZXQgc2VsZkVtcGxveW1lbnRUYXg6IERlY2ltYWwKICAgICAgICBsZXQgcWJpRGVkdWN0aW9uOiBEZWNpbWFsCiAgICAgICAgbGV0IHRvdGFsQW5udWFsVGF4OiBEZWNpbWFsCiAgICAgICAgbGV0IHF1YXJ0ZXJseVBheW1lbnQ6IERlY2ltYWwgICAgIC8vIGVzdGltYXRlZCBjdXJyZW50LXllYXIgbGlhYmlsaXR5IC8gNCwgZXhhY3QgY2VudHMKICAgICAgICBsZXQgZWZmZWN0aXZlUmF0ZTogRGVjaW1hbAogICAgfQoKICAgIC8vIE1BUks6IC0gMjAyNiBjb25zdGFudHMgKFJldi4gUHJvYy4gMjAyNS0zMiAvIFNTQSkKCiAgICAvLy8gU2VudGluZWwgdXBwZXIgYm91bmQgZm9yIHRoZSB0b3AgKHVuYm91bmRlZCkgYnJhY2tldC4KICAgIHByaXZhdGUgc3RhdGljIGxldCB1bmJvdW5kZWQgPSBEZWNpbWFsLmdyZWF0ZXN0RmluaXRlTWFnbml0dWRlCgogICAgLy8vIDIwMjYgb3JkaW5hcnktaW5jb21lIGJyYWNrZXQgdXBwZXIgYm91bmRzLCBwZXIgZmlsaW5nIHN0YXR1cy4KICAgIHByaXZhdGUgc3RhdGljIGxldCBicmFja2V0czogW1RheFByb2ZpbGUuRmlsaW5nU3RhdHVzOiBbKHVwcGVyOiBEZWNpbWFsLCByYXRlOiBEZWNpbWFsKV1dID0gWwogICAgICAgIC5zaW5nbGU6IFsKICAgICAgICAgICAgKDEyXzQwMCwgZCgiMC4xMCIpKSwgKDUwXzQwMCwgZCgiMC4xMiIpKSwgKDEwNV83MDAsIGQoIjAuMjIiKSksICgyMDFfNzc1LCBkKCIwLjI0IikpLAogICAgICAgICAgICAoMjU2XzIyNSwgZCgiMC4zMiIpKSwgKDY0MF82MDAsIGQoIjAuMzUiKSksICh1bmJvdW5kZWQsIGQoIjAuMzciKSkKICAgICAgICBdLAogICAgICAgIC5tYXJyaWVkSm9pbnQ6IFsKICAgICAgICAgICAgKDI0XzgwMCwgZCgiMC4xMCIpKSwgKDEwMF84MDAsIGQoIjAuMTIiKSksICgyMTFfNDAwLCBkKCIwLjIyIikpLCAoNDAzXzU1MCwgZCgiMC4yNCIpKSwKICAgICAgICAgICAgKDUxMl80NTAsIGQoIjAuMzIiKSksICg3NjhfNzAwLCBkKCIwLjM1IikpLCAodW5ib3VuZGVkLCBkKCIwLjM3IikpCiAgICAgICAgXSwKICAgICAgICAubWFycmllZFNlcGFyYXRlOiBbCiAgICAgICAgICAgICgxMl80MDAsIGQoIjAuMTAiKSksICg1MF80MDAsIGQoIjAuMTIiKSksICgxMDVfNzAwLCBkKCIwLjIyIikpLCAoMjAxXzc3NSwgZCgiMC4yNCIpKSwKICAgICAgICAgICAgKDI1Nl8yMjUsIGQoIjAuMzIiKSksICgzODRfMzUwLCBkKCIwLjM1IikpLCAodW5ib3VuZGVkLCBkKCIwLjM3IikpCiAgICAgICAgXSwKICAgICAgICAuaGVhZE9mSG91c2Vob2xkOiBbCiAgICAgICAgICAgICgxN183MDAsIGQoIjAuMTAiKSksICg2N180NTAsIGQoIjAuMTIiKSksICgxMDVfNzAwLCBkKCIwLjIyIikpLCAoMjAxXzc3NSwgZCgiMC4yNCIpKSwKICAgICAgICAgICAgKDI1Nl8yMDAsIGQoIjAuMzIiKSksICg2NDBfNjAwLCBkKCIwLjM1IikpLCAodW5ib3VuZGVkLCBkKCIwLjM3IikpCiAgICAgICAgXQogICAgXQoKICAgIC8vLyAyMDI2IHN0YW5kYXJkIGRlZHVjdGlvbiwgcGVyIGZpbGluZyBzdGF0dXMuCiAgICBwcml2YXRlIHN0YXRpYyBsZXQgc3RhbmRhcmREZWR1Y3Rpb25zOiBbVGF4UHJvZmlsZS5GaWxpbmdTdGF0dXM6IERlY2ltYWxdID0gWwogICAgICAgIC5zaW5nbGU6IDE2XzEwMCwKICAgICAgICAubWFycmllZEpvaW50OiAzMl8yMDAsCiAgICAgICAgLm1hcnJpZWRTZXBhcmF0ZTogMTZfMTAwLAogICAgICAgIC5oZWFkT2ZIb3VzZWhvbGQ6IDI0XzE1MAogICAgXQoKICAgIHByaXZhdGUgc3RhdGljIGxldCBzZVRheFJhdGUgPSBkKCIwLjE1MyIpICAgICAgICAgICAgLy8gMTIuNCUgU1MgKyAyLjklIE1lZGljYXJlCiAgICBwcml2YXRlIHN0YXRpYyBsZXQgc2VOZXRFYXJuaW5nc0ZhY3RvciA9IGQoIjAuOTIzNSIpIC8vIFNjaGVkdWxlIFNFIGxpbmUgNGEKICAgIHByaXZhdGUgc3RhdGljIGxldCBzZU5ldEVhcm5pbmdzRmxvb3IgPSA0MDAgICAgICAgICAvLyBhcHBsaWVzIHRvIG5ldCBlYXJuaW5ncyBBRlRFUiA5Mi4zNSUKICAgIHByaXZhdGUgc3RhdGljIGxldCBzc1dhZ2VCYXNlID0gMTg0XzUwMCAgICAgICAgICAgICAgICAvLyAyMDI2IFNTQSBjb250cmlidXRpb24gJiBiZW5lZml0IGJhc2UKICAgIHByaXZhdGUgc3RhdGljIGxldCBzc1JhdGUgPSBkKCIwLjEyNCIpICAgICAgICAgICAgICAgLy8gU29jaWFsIFNlY3VyaXR5IHBvcnRpb24KICAgIHByaXZhdGUgc3RhdGljIGxldCBtZWRpY2FyZVJhdGUgPSBkKCIwLjAyOSIpICAgICAgICAgLy8gTWVkaWNhcmUgcG9ydGlvbiAobm8gd2FnZSBjYXApCiAgICBwcml2YXRlIHN0YXRpYyBsZXQgcWJpUmF0ZSA9IGQoIjAuMjAiKQoKICAgIC8vLyAtIFBhcmFtZXRlcnM6CiAgICAvLy8gICAtIGdyb3NzSW5jb21lOiB0b3RhbCBnaWcvc2VsZi1lbXBsb3ltZW50IGluY29tZSBmb3IgdGhlIHllYXIgKGFubnVhbGl6ZWQpLgovLy8gICAtIGJ1c2luZXNzRXhwZW5zZXM6IGRlZHVjdGlibGUgYnVzaW5lc3MgZXhwZW5zZXMuCi8vLyAgIC0gZmlsaW5nU3RhdHVzOiBhZmZlY3RzIGJyYWNrZXQgc2NoZWR1bGUgYW5kIHN0YW5kYXJkIGRlZHVjdGlvbi4KICAgIHN0YXRpYyBmdW5jIGVzdGltYXRlKAogICAgICAgIGdyb3NzSW5jb21lOiBEZWNpbWFsLAogICAgICAgIGJ1c2luZXNzRXhwZW5zZXM6IERlY2ltYWwgPSAwLAogICAgICAgIGZpbGluZ1N0YXR1czogVGF4UHJvZmlsZS5GaWxpbmdTdGF0dXMgPSAuc2luZ2xlCiAgICApIC0+IEVzdGltYXRlIHsKICAgICAgICBsZXQgbmV0U0VQcm9maXQgPSBtYXgoMCwgZ3Jvc3NJbmNvbWUgLSBidXNpbmVzc0V4cGVuc2VzKQoKICAgICAgICAvLyBTY2hlZHVsZSBTRTogbmV0IGVhcm5pbmdzID0gOTIuMzUlIG9mIG5ldCBTRSBwcm9maXQ7IHRoZSAkNDAwIGZsb29yCiAgICAgICAgLy8gYXBwbGllcyB0byBuZXQgZWFybmluZ3MgKGFmdGVyIHRoZSBhZGp1c3RtZW50KSwgbm90IHRvIHJhdyBwcm9maXQuCiAgICAgICAgbGV0IHNlVGF4ID0gc2VUYXhPbihuZXRTRVByb2ZpdCkKICAgICAgICBsZXQgaGFsZlNFID0gc2VUYXggLyAyCgogICAgICAgIC8vIEFHSSBhcHByb3hpbWF0aW9uOiBuZXQgU0UgcHJvZml0IG1pbnVzIGhhbGYgb2YgU0UgdGF4IChhYm92ZS10aGUtbGluZSkuCiAgICAgICAgbGV0IGFnaSA9IG1heCgwLCBuZXRTRVByb2ZpdCAtIGhhbGZTRSkKCiAgICAgICAgbGV0IGRlZHVjdGlvbiA9IHN0YW5kYXJkRGVkdWN0aW9uc1tmaWxpbmdTdGF0dXNdID8/IDE2XzEwMAogICAgICAgIGxldCB0YXhhYmxlSW5jb21lID0gbWF4KDAsIGFnaSAtIGRlZHVjdGlvbikKCiAgICAgICAgLy8gUUJJIGRlZHVjdGlvbiAoc2ltcGxpZmllZCk6IDIwJSBvZiBRQkksIGNhcHBlZCBhdCAyMCUgb2YgdGF4YWJsZQogICAgICAgIC8vIGluY29tZSBCRUZPUkUgdGhlIFFCSSBkZWR1Y3Rpb24gKMKbMTk5QikuCiAgICAgICAgbGV0IHFiaSA9IG1pbihuZXRTRVByb2ZpdCAqIHFiaVJhdGUsIHRheGFibGVJbmNvbWUgKiBxYmlSYXRlKQogICAgICAgIGxldCB0YXhhYmxlQWZ0ZXJRQkkgPSBtYXgoMCwgdGF4YWJsZUluY29tZSAtIHFiaSkKCiAgICAgICAgbGV0IGluY29tZVRheCA9IGZlZGVyYWxUYXgob246IHRheGFibGVBZnRlUlFJSSwgZmlsaW5nU3RhdHVzOiBmaWxpbmdTdGF0dXMpCgogICAgICAgIGxldCB0b3RhbCA9IGluY29tZVRheCArIHNlVGF4CiAgICAgICAgLy8gVGhlIE9OTFkgcm91bmRpbmcgYm91bmRhcnkgaW4gdGhlIGVzdGltYXRvcjogdGhlIHVzZXItZmFjaW5nIHF1YXJ0ZXJseQogICAgICAgIC8vIHBheW1lbnQgaXMgZXhhY3QgY2VudHMuIEV2ZXJ5IGludGVybWVkaWF0ZSBhYm92ZSBzdGF5cyBleGFjdC4KICAgICAgICBsZXQgcXVhcnRlcmx5ID0gcm91bmRUb0NlbnRzKHRvdGFsIC8gNCkKICAgICAgICBsZXQgZWZmZWN0aXZlID0gZ3Jvc3NJbmNvbWUgPiAwID8gdG90YWwgLyBncm9zc0luY29tZSA6IDAKCiAgICAgICAgcmV0dXJuIEVzdGltYXRlKAogICAgICAgICAgICB0YXhhYmxlSW5jb21lOiB0YXhhYmxlQWZ0ZXJRQkksCiAgICAgICAgICAgIGZlZGVyYWxJbmNvbWVUYXg6IGluY29tZVRheCwKICAgICAgICAgICAgc2VsZkVtcGxveW1lbnRUYXg6IHNlVGF4LAogICAgICAgICAgICBxYmlEZWR1Y3Rpb246IHFiaSwKICAgICAgICAgICAgdG90YWxBbm51YWxUYXg6IHRvdGFsLAogICAgICAgICAgICBxdWFydGVybHlQYXltZW50OiBxdWFydGVybHksCiAgICAgICAgICAgIGVmZmVjdGl2ZVJhdGU6IGVmZmVjdGl2ZQogICAgICAgICkKICAgIH0KCiAgICAvLy8gU0UgdGF4IG9uIG5ldCBTRSAqcHJvZml0KiAoU2NoZWR1bGUgbGluZSAyLzMpLiBSZXR1cm5zIDAgdW5sZXNzIG5ldAogICAgLy8gZWFybmluZ3MgKDkyLjM1JSBvZiBwcm9maXQpIGV4Y2VlZCB0aGUgJDQwMCBmbG9vci4gVGhlIFNvY2lhbCBTZWN1cml0eQogICAgLy8gd2FnZSBiYXNlIGNhcHMgdGhlIDEyLjQlIHBvcnRpb247IE1lZGljYXJlICgyLjklKSBoYXMgbm8gY2FwLgogICAgc3RhdGljIGZ1bmMgc2VUYXhPbihfIG5ldFNFUHJvZml0OiBEZWNpbWFsKSAtPiBEZWNpbWFsIHsKICAgICAgICBsZXQgbmV0RWFybmluZ3MgPSBtYXgoMCwgbmV0U0VQcm9maXQpICogc2VOZXRFYXJuaW5nc0ZhY3RvcgogICAgICAgIGd1YXJkIG5ldEVhcm5pbmdzID4gc2VOZXRFYXJuaW5nc0Zsb29yIGVsc2UgeyByZXR1cm4gMCB9CiAgICAgICAgbGV0IHNzUG9ydGlvbiA9IG1pbihuZXRFYXJuaW5ncywgc3NXYWdlQmFzZSkgKiBzc1JhdGUKICAgICAgICBsZXQgbWVkaWNhcmVQb3J0aW9uID0gbmV0RWFybmluZ3MgKiBtZWRpY2FyZVJhdGUKICAgICAgICByZXR1cm4gc3NQb3J0aW9uICsgbWVkaWNhcmVQb3J0aW9uCiAgICB9CgogICAgLy8vIEZlZGVyYWwgb3JkaW5hcnktaW5jb21lIHRheCB1c2luZyB0aGUgZXhwbGljaXQgMjAyNiBzY2hlZHVsZSBmb3IgdGhlCiAgICAvLy8gZ2l2ZW4gZmlsaW5nIHN0YXR1cy4KICAgIHN0YXRpYyBmdW5jIGZlZGVyYWxUYXgob24gdGF4YWJsZTogRGVjaW1hbCwgZmlsaW5nU3RhdHVzOiBUYXhQcm9maWxlLkZpbGluZ1N0YXR1cykgLT4gRGVjaW1hbCB7CiAgICAgICAgZ3VhcmQgdGF4YWJsZSA+IDAgZWxzZSB7IHJldHVybiAwIH0KICAgICAgICBsZXQgc2NoZWR1bGUgPSBicmFja2V0c1tmaWxpbmdTdGF0dXNdID8/IGJyYWNrZXRzWy5zaW5nbGVdIQogICAgICAgIHZhciB0YXggPSBEZWNpbWFsKDApCiAgICAgICAgdmFyIGxvd2VyID0gRGVjaW1hbCgwKQogICAgICAgIGZvciBicmFja2V0IGluIHNjaGVkdWxlIHsKICAgICAgICAgICAgbGV0IHRheGVkSW5CcmFja2V0ID0gbWluKHRheGFibGUsIGJyYWNrZXQudXBwZXIpIC0gbG93ZXIKICAgICAgICAgICAgaWYgdGF4ZWRJbkJyYWNrZXQgPiAwIHsgdGF4ICs9IHRheGVkSW5CcmFja2V0ICogYnJhY2tldC5yYXRlIH0KICAgICAgICAgICAgbG93ZXIgPSBicmFja2V0LnVwcGVyCiAgICAgICAgICAgIGlmIHRheGFibGUgPD0gYnJhY2tldC51cHBlciB7IGJyZWFrIH0KICAgICAgICB9CiAgICAgICAgcmV0dXJuIHRheAogICAgfQoKICAgIC8vLyBSb3VuZHMgYSBtb25ldGFyeSB2YWx1ZSB0byBleGFjdCBjZW50cywgaGFsZiBhd2F5IGZyb20gemVyby4KICAgIC8vLyBUaGlzIGlzIHRoZSBzaW5nbGUgZXhwbGljaXQgcm91bmRpbmcgYm91bmRhcnkgZm9yIHVzZXItdmlzaWJsZSBwYXltZW50CiAgICAvLy8gdmFsdWVzLiBCYW5rZXIncyByb3VuZGluZyAoYC5iYW5rZXJzYCkgaXMgZGVsaWJlcmF0ZWx5IE5PVCB1c2VkOiB0YXgKICAgIC8vLyBwYXltZW50IGFtb3VudHMgcm91bmQgaGFsZiBhd2F5IGZyb20gemVyby4KICAgIHN0YXRpYyBmdW5jIHJvdW5kVG9DZW50cyhfIHZhbHVlOiBEZWNpbWFsKSAtPiBEZWNpbWFsIHsKICAgICAgICB2YXIgaW5wdXQgPSB2YWx1ZQogICAgICAgIHZhciBvdXRwdXQgPSBEZWNpbWFsKCkKICAgICAgICBOU0RlY2ltYWxSb3VuZCgmb3V0cHV0LCAmaW5wdXQsIDIsIC5wbGFpbikKICAgICAgICByZXR1cm4gb3V0cHV0CiAgICB9Qo==
+import Foundation
+
+// MARK: - QuarterlyTaxEstimator
+// Estimates federal quarterly estimated tax payments for self-employed gig workers.
+// Tax year 2026. Sources for all constants:
+//   - IRS Revenue Procedure 2025-32 (2026 inflation adjustments, post-TCJA)
+//   - SSA: 2026 contribution & benefit base $184,500
+//   - Schedule SE (Form 1040): net earnings = 92.35% of net SE profit; $400 floor
+//     applies to net earnings AFTER the 92.35% adjustment.
+//
+// IMPORTANT — scope of this estimate:
+//   The quarterly figure is an "estimated current-year liability installment"
+//   (total estimated tax / 4). It is NOT an IRS safe-harbor calculation, which
+//   requires prior-year total tax (100%/110% rule) — an input this estimator
+//   does not take. No safe-harbor compliance is claimed or implied.
+//
+// MONETARY TYPES (issue #69, financial accuracy):
+//   All monetary values and rates are `Decimal`. Intermediates are NEVER
+//   rounded; the single explicit rounding boundary is
+//   `Estimate.quarterlyPayment`, rounded to exact cents, half away from zero
+//   (see `roundToCents`). Rate constants are built from decimal strings, never
+//   from `Double` literals, so no binary-to-decimal conversion error can enter
+//   the calculation.
+
+/// Exact `Decimal` from a decimal string. Never construct monetary or rate
+/// constants from `Double` literals — that conversion is inexact.
+private func d(_ string: String) -> Decimal {
+    guard let value = Decimal(string: string) else {
+        preconditionFailure("Invalid decimal constant: \(string)")
+    }
+    return value
+}
+
+struct QuarterlyTaxEstimator {
+
+    struct Estimate: Equatable {
+        let taxableIncome: Decimal        // taxable income AFTER the QBI deduction
+        let federalIncomeTax: Decimal
+        let selfEmploymentTax: Decimal
+        let qbiDeduction: Decimal
+        let totalAnnualTax: Decimal
+        let quarterlyPayment: Decimal     // estimated current-year liability / 4, exact cents
+        let effectiveRate: Decimal
+    }
+
+    // MARK: - 2026 constants (Rev. Proc. 2025-32 / SSA)
+
+    /// Sentinel upper bound for the top (unbounded) bracket.
+    private static let unbounded = Decimal.greatestFiniteMagnitude
+
+    /// 2026 ordinary-income bracket upper bounds, per filing status.
+    private static let brackets: [TaxProfile.FilingStatus: [(upper: Decimal, rate: Decimal)]] = [
+        .single: [
+            (12_400, d("0.10")), (50_400, d("0.12")), (105_700, d("0.22")), (201_775, d("0.24")),
+            (256_225, d("0.32")), (640_600, d("0.35")), (unbounded, d("0.37"))
+        ],
+        .marriedJoint: [
+            (24_800, d("0.10")), (100_800, d("0.12")), (211_400, d("0.22")), (403_550, d("0.24")),
+            (512_450, d("0.32")), (768_700, d("0.35")), (unbounded, d("0.37"))
+        ],
+        .marriedSeparate: [
+            (12_400, d("0.10")), (50_400, d("0.12")), (105_700, d("0.22")), (201_775, d("0.24")),
+            (256_225, d("0.32")), (384_350, d("0.35")), (unbounded, d("0.37"))
+        ],
+        .headOfHousehold: [
+            (17_700, d("0.10")), (67_450, d("0.12")), (105_700, d("0.22")), (201_775, d("0.24")),
+            (256_200, d("0.32")), (640_600, d("0.35")), (unbounded, d("0.37"))
+        ]
+    ]
+
+    /// 2026 standard deduction, per filing status.
+    private static let standardDeductions: [TaxProfile.FilingStatus: Decimal] = [
+        .single: 16_100,
+        .marriedJoint: 32_200,
+        .marriedSeparate: 16_100,
+        .headOfHousehold: 24_150
+    ]
+
+    private static let seTaxRate = d("0.153")            // 12.4% SS + 2.9% Medicare
+    private static let seNetEarningsFactor = d("0.9235") // Schedule SE line 4a
+    private static let seNetEarningsFloor = 400          // applies to net earnings AFTER 92.35%
+    private static let ssWageBase = 184_500              // 2026 SSA contribution & benefit base
+    private static let ssRate = d("0.124")               // Social Security portion
+    private static let medicareRate = d("0.029")         // Medicare portion (no wage cap)
+    private static let qbiRate = d("0.20")
+
+    /// - Parameters:
+    ///   - grossIncome: total gig/self-employment income for the year (annualized).
+    ///   - businessExpenses: deductible business expenses.
+    ///   - filingStatus: affects bracket schedule and standard deduction.
+    static func estimate(
+        grossIncome: Decimal,
+        businessExpenses: Decimal = 0,
+        filingStatus: TaxProfile.FilingStatus = .single
+    ) -> Estimate {
+        let netSEProfit = max(0, grossIncome - businessExpenses)
+
+        // Schedule SE: net earnings = 92.35% of net SE profit; the $400 floor
+        // applies to net earnings (after the adjustment), not to raw profit.
+        let seTax = seTaxOn(netSEProfit)
+        let halfSE = seTax / 2
+
+        // AGI approximation: net SE profit minus half of SE tax (above-the-line).
+        let agi = max(0, netSEProfit - halfSE)
+
+        let deduction = standardDeductions[filingStatus] ?? 16_100
+        let taxableIncome = max(0, agi - deduction)
+
+        // QBI deduction (simplified): 20% of QBI, capped at 20% of taxable
+        // income BEFORE the QBI deduction (§199A).
+        let qbi = min(netSEProfit * qbiRate, taxableIncome * qbiRate)
+        let taxableAfterQBI = max(0, taxableIncome - qbi)
+
+        let incomeTax = federalTax(on: taxableAfterQBI, filingStatus: filingStatus)
+
+        let total = incomeTax + seTax
+        // The ONLY rounding boundary in the estimator: the user-facing quarterly
+        // payment is exact cents. Every intermediate above stays exact.
+        let quarterly = roundToCents(total / 4)
+        let effective = grossIncome > 0 ? total / grossIncome : 0
+
+        return Estimate(
+            taxableIncome: taxableAfterQBI,
+            federalIncomeTax: incomeTax,
+            selfEmploymentTax: seTax,
+            qbiDeduction: qbi,
+            totalAnnualTax: total,
+            quarterlyPayment: quarterly,
+            effectiveRate: effective
+        )
+    }
+
+    /// SE tax on net SE *profit* (Schedule line 2/3). Returns 0 unless net
+    /// earnings (92.35% of profit) exceed the $400 floor. The Social Security
+    /// wage base caps the 12.4% portion; Medicare (2.9%) has no cap.
+    static func seTaxOn(_ netSEProfit: Decimal) -> Decimal {
+        let netEarnings = max(0, netSEProfit) * seNetEarningsFactor
+        guard netEarnings > seNetEarningsFloor else { return 0 }
+        let ssPortion = min(netEarnings, ssWageBase) * ssRate
+        let medicarePortion = netEarnings * medicareRate
+        return ssPortion + medicarePortion
+    }
+
+    /// Federal ordinary-income tax using the explicit 2026 schedule for the
+    /// given filing status.
+    static func federalTax(on taxable: Decimal, filingStatus: TaxProfile.FilingStatus) -> Decimal {
+        guard taxable > 0 else { return 0 }
+        let schedule = brackets[filingStatus] ?? brackets[.single]!
+        var tax = Decimal(0)
+        var lower = Decimal(0)
+        for bracket in schedule {
+            let taxedInBracket = min(taxable, bracket.upper) - lower
+            if taxedInBracket > 0 { tax += taxedInBracket * bracket.rate }
+            lower = bracket.upper
+            if taxable <= bracket.upper { break }
+        }
+        return tax
+    }
+
+    /// Rounds a monetary value to exact cents, half away from zero.
+    /// This is the single explicit rounding boundary for user-visible payment
+    /// values. Banker's rounding (`.bankers`) is deliberately NOT used: tax
+    /// payment amounts round half away from zero.
+    static func roundToCents(_ value: Decimal) -> Decimal {
+        var input = value
+        var output = Decimal()
+        NSDecimalRound(&output, &input, 2, .plain)
+        return output
+    }
+}
