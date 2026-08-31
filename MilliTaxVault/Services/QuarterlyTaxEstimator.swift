@@ -78,8 +78,8 @@ struct QuarterlyTaxEstimator {
 
     private static let seTaxRate = d("0.153")            // 12.4% SS + 2.9% Medicare
     private static let seNetEarningsFactor = d("0.9235") // Schedule SE line 4a
-    private static let seNetEarningsFloor = 400          // applies to net earnings AFTER 92.35%
-    private static let ssWageBase = 184_500              // 2026 SSA contribution & benefit base
+    private static let seNetEarningsFloor: Decimal = d("400")     // applies to net earnings AFTER 92.35%
+    private static let ssWageBase: Decimal = d("184500")          // 2026 SSA contribution & benefit base
     private static let ssRate = d("0.124")               // Social Security portion
     private static let medicareRate = d("0.029")         // Medicare portion (no wage cap)
     private static let qbiRate = d("0.20")
