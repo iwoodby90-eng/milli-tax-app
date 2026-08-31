@@ -16,7 +16,7 @@ MilliTaxVault/
 ├── MilliSubscriptions.storekit       # StoreKit subscription configuration
 │
 ├── Components/                       # Reusable UI building blocks
-│   ├── MilliNavBar.swift             # Canonical bottom nav + center M dial (Payouts, Mileage, Wealth, More, Home)
+│   ├── MilliNavBar.swift             # Canonical bottom nav + center M dial (Payouts, Mileage, Home, Wealth, More)
 │   ├── MilliVaultHeader.swift        # Tax Vault screen header
 │   ├── MilliLedger.swift             # Ledger rows & transaction state badges
 │   ├── MilliDetailAndStates.swift    # Detail sheet & six ledger state views
