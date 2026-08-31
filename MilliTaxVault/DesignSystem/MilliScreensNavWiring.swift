@@ -1,52 +1,79 @@
 import SwiftUI
 
-// MARK: - Canonical nav wiring (production)
+// MARK: - Canonical nav wiring (production) — SEAM ONLY, NOT YET BOUND
 //
-// The canonical bottom navigation is MilliTaxVault/Components/MilliNavBar.swift
-// (approved implementation, Image 40). MilliScreens v3.1 renders navigation only
-// through the MilliScreensNavBar seam; this file injects the canonical renderer
-// once at app start so every applicable screen uses the approved nav.
+// ⚠️ STATUS (Ian, Aug 31, 2026): MilliTaxVault/Components/MilliNavBar.swift on
+// main @ db94a253 is the OLD REJECTED floating-pill implementation (elevated
+// center M, capsule chassis). It is NOT the approved canonical navigation.
 //
-// Tab mapping (MilliScreensTab -> MilliTab):
-//   .payouts -> .activity (Payouts)   .mileage -> .activity? no — see map below.
-//   Canonical MilliTab cases: vault(Payouts), activity(Mileage), wealth, cockpit(More), home.
+// The only allowed final nav is the approved sculpted chrome chassis reference
+// supplied by Ian: Payouts | Mileage | center M/Home | Wealth | More.
+// No screenshot-derived substitute and no alternate design.
 //
-// NOTE: MilliScreensTab has 4 cases (payouts, mileage, wealth, more) and no center
-// home case; the canonical MilliTab has 5 including home (center M dial).
-// The mapping below keeps the 4 side tabs aligned; the center M dial (home) is
-// owned by the canonical bar itself.
+// MilliScreens v3.1 renders navigation ONLY through the
+// MilliScreensNavBar.canonicalRenderer seam. Until the canonical nav
+// reconstruction (full-width sculpted metallic chassis, integrated center M,
+// four recessed upper details, segmented cyan illumination ring) passes its
+// own runtime gate, the seam stays UNBOUND in production builds.
+//
+// INTEGRATION (Julian): once the reconstructed canonical nav lands as a view
+// (e.g. MilliCanonicalNavBar), bind it here — and ONLY here:
+//
+//   enum MilliScreensNavWiring {
+//       static func install() {
+//           MilliScreensNavBar.canonicalRenderer = { $tab in
+//               AnyView(MilliCanonicalNavBar(selectedTab: $tab.canonical))
+//           }
+//       }
+//   }
+//
+// Do NOT bind the current MilliNavBar.swift. Do NOT render nav from
+// MilliNavReferencePreview (quarantined, design-preview only, DO NOT SHIP).
 
 enum MilliScreensNavWiring {
-    /// Call once at app launch (e.g. in App.init) before any MilliScreens view renders.
+    /// Intentionally a no-op until the canonical nav reconstruction passes its
+    /// runtime gate. Kept so the call site in the app root never changes.
     static func install() {
-        MilliScreensNavBar.canonicalRenderer = { $tab in
-            AnyView(MilliNavBar(selectedTab: $tab.canonical, onHomeTap: {}))
-        }
+        // Seam deliberately left unbound: no approved canonical renderer exists
+        // on main yet. See header note above before binding anything here.
     }
 }
 
 extension Binding where Value == MilliScreensTab {
-    /// Bridges the screens-layer tab binding to the canonical MilliTab binding.
-    /// The canonical bar owns the center M (home) dial; side tabs map 1:1.
-    var canonical: Binding<MilliTab> {
-        Binding<MilliTab>(
+    /// Bridges the screens-layer tab binding to the future canonical tab model.
+    /// Side tabs map 1:1; the center M (Home) dial is owned by the canonical bar
+    /// itself and does not round-trip through the screens layer.
+    var canonical: Binding<MilliCanonicalTabPlaceholder> {
+        Binding<MilliCanonicalTabPlaceholder>(
             get: {
                 switch wrappedValue {
-                case .payouts: return .vault       // canonical "vault" displays as Payouts
-                case .mileage: return .activity    // canonical "activity" displays as Mileage
+                case .payouts: return .payouts
+                case .mileage: return .mileage
                 case .wealth:  return .wealth
-                case .more:    return .cockpit     // canonical "cockpit" displays as More
+                case .more:    return .more
                 }
             },
             set: { newValue in
                 switch newValue {
-                case .vault:    wrappedValue = .payouts
-                case .activity:  wrappedValue = .mileage
-                case .wealth:   wrappedValue = .wealth
-                case .cockpit:  wrappedValue = .more
-                case .home:     break             // center M dial: canonical bar handles Home
+                case .payouts: wrappedValue = .payouts
+                case .mileage: wrappedValue = .mileage
+                case .wealth:  wrappedValue = .wealth
+                case .more:    wrappedValue = .more
+                case .home:    break // center M dial: canonical bar handles Home
                 }
             }
         )
     }
+}
+
+/// Placeholder tab model for the future canonical nav. Mirrors the approved
+/// reference: Payouts | Mileage | center M/Home | Wealth | More. The canonical
+/// nav reconstruction owns the real type; this keeps the bridge compiling
+/// without referencing the rejected MilliTab.
+enum MilliCanonicalTabPlaceholder: String, CaseIterable {
+    case payouts = "Payouts"
+    case mileage = "Mileage"
+    case home    = "Home"
+    case wealth  = "Wealth"
+    case more    = "More"
 }
