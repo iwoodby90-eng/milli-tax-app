@@ -107,6 +107,19 @@ public struct VerifiedPayout: Identifiable, Codable, Equatable {
     public var platformColor: Color {
         Color(hex: platformColorHex)
     }
+
+    /// LAUNCH P0: honest projection of a legacy cached record into the state
+    /// contract. A locally cached payout has no backend authority, so it is
+    /// rendered as CACHED LIVE in .detected state — never POSTED/PROTECTED.
+    public var stateContractProjection: AutopilotPayout {
+        AutopilotPayout(
+            id: id,
+            platform: platform,
+            grossAmountCents: Int64((grossAmount * 100).rounded()),
+            state: .detected,
+            provenance: .cachedLive
+        )
+    }
 }
 
 private extension Double {
@@ -141,23 +154,10 @@ public final class BankConnectionService: ObservableObject {
 
     private init() {
         loadPersistedData()
-        if connectedBank == nil {
-            // Seed verified initial bank account linked via Stripe Financial Connections
-            connectedBank = ConnectedBankAccount(
-                id: "stripe_fc_acc_4821",
-                institutionName: "Chase Bank",
-                accountName: "Premier Checking",
-                accountMask: "4821",
-                accountType: "Checking",
-                balance: 6842.76,
-                provider: .stripeFinancialConnections,
-                lastSyncedAt: Date(),
-                isLive: true
-            )
-        }
-        if payouts.isEmpty {
-            seedInitialPayouts()
-        }
+        // LAUNCH P0 CLEANUP: no seeded bank account, no fake balances, no
+        // simulated payouts in the production experience. The service starts
+        // empty and honest; content arrives only from a real provider or the
+        // explicit demo provider (visibly labeled).
     }
 
     public var totalPayoutsAmount: Double {
@@ -174,13 +174,12 @@ public final class BankConnectionService: ObservableObject {
                 accountName: "Primary Checking",
                 accountMask: accountMask,
                 accountType: "Checking",
-                balance: 6842.76,
+                balance: 0,
                 provider: provider,
                 lastSyncedAt: Date(),
-                isLive: true
+                isLive: false
             )
             self.isConnecting = false
-            self.syncTransactions()
         }
     }
 
@@ -190,19 +189,14 @@ public final class BankConnectionService: ObservableObject {
     }
 
     public func syncTransactions() {
+        // LAUNCH P0 CLEANUP: no simulated sync theater and no seeded payouts.
+        // Real sync happens when a production provider is connected.
         guard connectedBank != nil else { return }
         isSyncing = true
-        syncMessage = "Connecting to \(connectedBank?.provider.rawValue ?? "Financial API")..."
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            guard let self = self else { return }
-            self.syncMessage = "Pulling live direct deposits from gig platforms..."
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                self.connectedBank?.lastSyncedAt = Date()
-                self.seedInitialPayouts()
-                self.isSyncing = false
-                self.syncMessage = nil
-            }
+            self?.connectedBank?.lastSyncedAt = Date()
+            self?.isSyncing = false
+            self?.syncMessage = nil
         }
     }
 
@@ -212,150 +206,10 @@ public final class BankConnectionService: ObservableObject {
         }
     }
 
-    private func seedInitialPayouts() {
-        payouts = [
-            VerifiedPayout(
-                id: "PO-2026-001",
-                receiptCode: "AP-2026-000030",
-                platform: "DoorDash",
-                platformInitial: "D",
-                assetName: "doordash-icon",
-                platformColorHex: "FF3008",
-                dateLabel: "Today, 2:14 PM",
-                grossAmount: 312.45,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-98214-DD"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-002",
-                receiptCode: "AP-2026-000029",
-                platform: "Spark Driver",
-                platformInitial: "S",
-                assetName: "spark-driver-icon",
-                platformColorHex: "0071DC",
-                dateLabel: "Today, 11:30 AM",
-                grossAmount: 184.20,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-47109-SPK"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-003",
-                receiptCode: "AP-2026-000028",
-                platform: "Uber",
-                platformInitial: "U",
-                assetName: "uber-icon",
-                platformColorHex: "000000",
-                dateLabel: "Aug 10, 6:45 PM",
-                grossAmount: 212.64,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-33819-UBR"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-004",
-                receiptCode: "AP-2026-000027",
-                platform: "Instacart",
-                platformInitial: "I",
-                assetName: "instacart-icon",
-                platformColorHex: "16844A",
-                dateLabel: "Aug 10, 2:18 PM",
-                grossAmount: 78.20,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-11029-INST"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-005",
-                receiptCode: "AP-2026-000026",
-                platform: "Grubhub",
-                platformInitial: "G",
-                assetName: nil,
-                platformColorHex: "C44724",
-                dateLabel: "Aug 9, 8:32 PM",
-                grossAmount: 103.51,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-55291-GHB"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-006",
-                receiptCode: "AP-2026-000025",
-                platform: "Amazon Flex",
-                platformInitial: "A",
-                assetName: "amazon-flex-icon",
-                platformColorHex: "FF9900",
-                dateLabel: "Aug 8, 4:15 PM",
-                grossAmount: 168.00,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-77812-FLX"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-007",
-                receiptCode: "AP-2026-000024",
-                platform: "DoorDash",
-                platformInitial: "D",
-                assetName: "doordash-icon",
-                platformColorHex: "FF3008",
-                dateLabel: "Aug 7, 9:20 PM",
-                grossAmount: 245.80,
-                isPending: false,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-99120-DD"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-008",
-                receiptCode: "AP-2026-000023",
-                platform: "Uber",
-                platformInitial: "U",
-                assetName: "uber-icon",
-                platformColorHex: "000000",
-                dateLabel: "Aug 6, 7:10 PM",
-                grossAmount: 195.40,
-                isPending: false,
-                isThisWeek: false,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-22910-UBR"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-009",
-                receiptCode: "AP-2026-000022",
-                platform: "Spark Driver",
-                platformInitial: "S",
-                assetName: "spark-driver-icon",
-                platformColorHex: "0071DC",
-                dateLabel: "Aug 5, 1:40 PM",
-                grossAmount: 156.30,
-                isPending: false,
-                isThisWeek: false,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-66102-SPK"
-            ),
-            VerifiedPayout(
-                id: "PO-2026-010",
-                receiptCode: "AP-2026-000021",
-                platform: "DoorDash",
-                platformInitial: "D",
-                assetName: "doordash-icon",
-                platformColorHex: "FF3008",
-                dateLabel: "Processing",
-                grossAmount: 142.50,
-                isPending: true,
-                isThisWeek: true,
-                bankMask: connectedBank?.accountMask ?? "4821",
-                achTraceId: "ACH-PENDING-01"
-            )
-        ]
-    }
+    /// LAUNCH P0 CLEANUP: removed. Seeded/simulated payouts are no longer
+    /// part of the production experience; demo content lives only behind the
+    /// explicit demo provider (TreasuryAutopilotStore.loadDemoData) and is
+    /// visibly labeled DEMO.
 
     private func persist() {
         let encoder = JSONEncoder()

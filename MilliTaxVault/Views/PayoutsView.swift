@@ -25,7 +25,9 @@ struct PayoutsView: View {
         }
         .background(MilliColors.background.ignoresSafeArea())
         .sheet(item: $selectedPayout) { payout in
-            FinancialReceiptSheet(payout: payout)
+            // LAUNCH P0: legacy cached records render through the state
+            // contract as CACHED LIVE with no authority claimed.
+            FinancialReceiptSheet(payout: payout.stateContractProjection)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
@@ -87,13 +89,15 @@ struct PayoutsView: View {
                         }
 
                         HStack(spacing: 6) {
-                            Text(bank.provider.badgeTitle)
+                            // LAUNCH P0: no "STRIPE SECURED" claim without a
+                            // live provider connection; show CACHED instead.
+                            Text(bank.isLive ? bank.provider.badgeTitle : "CACHED LIVE")
                                 .font(.custom("Inter-Bold", size: 9))
                                 .tracking(0.4)
-                                .foregroundStyle(MilliColors.positive)
+                                .foregroundStyle(bank.isLive ? MilliColors.positive : MilliColors.textTertiary)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
-                                .background(Capsule().fill(MilliColors.positive.opacity(0.12)))
+                                .background(Capsule().fill(bank.isLive ? MilliColors.positive.opacity(0.12) : MilliColors.textTertiary.opacity(0.10)))
 
                             if bankService.isSyncing {
                                 HStack(spacing: 4) {
@@ -333,11 +337,12 @@ struct PayoutsView: View {
                 Text("+\(currency(payout.grossAmount))")
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
-                    .foregroundStyle(payout.isPending ? MilliColors.textPrimary : MilliColors.positive)
+                    .foregroundStyle(MilliColors.textPrimary)
 
-                Text("$\(String(format: "%.2f", payout.taxProtected)) protected")
+                // LAUNCH P0: no "protected" claim without backend authority.
+                Text("CACHED LIVE")
                     .font(.custom("Inter-Medium", size: 10))
-                    .foregroundStyle(MilliColors.cyanGlow.opacity(0.85))
+                    .foregroundStyle(MilliColors.textTertiary)
             }
         }
         .padding(.horizontal, 14)
@@ -391,23 +396,52 @@ struct PayoutsView: View {
 
 // MARK: - Financial Receipt Sheet
 
-private struct FinancialReceiptSheet: View {
-    let payout: VerifiedPayout
+// MARK: - FinancialReceiptSheet (state-contract receipt)
+// LAUNCH P0: the legacy receipt celebrated unconfirmed transactions
+// ("Taxes Protected", "Settled via Autopilot") from client-side data with no
+// backend authority. It now renders through the state contract: a locally
+// cached payout record without backend confirmation is CACHED, never
+// POSTED/PROTECTED/SETTLED. Production payouts are empty until a real
+// provider is connected, so this path is effectively dormant.
+
+struct FinancialReceiptSheet: View {
+    let payout: AutopilotPayout
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
-                    receiptHero
-                    splitsBreakdown
-                    auditDetails
+                VStack(alignment: .leading, spacing: 16) {
+                    // Receipt state must match actual authority.
+                    HStack {
+                        PayoutStateBadge(state: payout.state)
+                        Spacer()
+                        ProvenanceTag(label: payout.provenance)
+                    }
+
+                    receiptCard
+
+                    if payout.state.isFailureBranch {
+                        failureGuidance
+                    }
+
+                    // Tax Vault rule: no "Tax Protected" treatment until
+                    // authoritative allocation succeeds.
+                    if payout.state == .allocated {
+                        Text("Tax Vault allocation confirmed by the backend. Funds are protected.")
+                            .font(.custom("Inter-Regular", size: 11))
+                            .foregroundStyle(MilliColors.positive)
+                    } else {
+                        Text("Funds remain part of the operating balance until the Tax Vault allocation is confirmed.")
+                            .font(.custom("Inter-Regular", size: 11))
+                            .foregroundStyle(MilliColors.textSecondary)
+                    }
                 }
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
             .background(MilliColors.background.ignoresSafeArea())
-            .navigationTitle("Autopilot Receipt™")
+            .navigationTitle("Financial Receipt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -418,95 +452,73 @@ private struct FinancialReceiptSheet: View {
         }
     }
 
-    private var receiptHero: some View {
-        VStack(spacing: 6) {
-            Text(payout.platform)
-                .font(MilliFont.headlineMedium)
-                .foregroundStyle(MilliColors.textPrimary)
-
-            Text("+\(payout.grossAmount.formatted(.currency(code: "USD").precision(.fractionLength(2))))")
-                .font(.custom("Sora-Bold", size: 36))
-                .foregroundStyle(MilliColors.positive)
-
-            Text(payout.dateLabel)
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .milliCard(showGlow: true)
-    }
-
-    private var splitsBreakdown: some View {
+    private var receiptCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("AUTOMATED ALLOCATIONS")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.7)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            VStack(spacing: 8) {
-                splitRow(label: "Taxes Protected (30%)", amount: payout.taxProtected, color: MilliColors.cyanGlow, icon: "shield.fill")
-                splitRow(label: "Retirement Vault (10%)", amount: payout.retirementAllocation, color: MilliColors.positive, icon: "tree.fill")
-                splitRow(label: "Wealth Investing (10%)", amount: payout.investingAllocation, color: Color(hex: "00B4D8"), icon: "chart.bar.fill")
-                splitRow(label: "Emergency Savings (5%)", amount: payout.emergencySavings, color: MilliColors.warning, icon: "cross.case.fill")
-                Divider().overlay(Color.white.opacity(0.1))
-                splitRow(label: "Available to Spend (45%)", amount: payout.availableToSpend, color: MilliColors.textPrimary, icon: "wallet.pass.fill", isTotal: true)
+            receiptLine("Payout ID", payout.id)
+            receiptLine("Platform", payout.platform)
+            receiptLine("Gross amount", centsString(payout.grossAmountCents))
+            receiptLine("State", payout.state.receiptHeadline)
+            if let date = payout.detectedAt {
+                receiptLine("Detected", date.formatted(date: .abbreviated, time: .shortened))
             }
-            .padding(14)
-            .background(MilliColors.graphiteSurface)
-            .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
-        }
-    }
-
-    private func splitRow(label: String, amount: Double, color: Color, icon: String, isTotal: Bool = false) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(color)
-                .frame(width: 20)
-
-            Text(label)
-                .font(isTotal ? MilliFont.headlineSmall : MilliFont.bodyMedium)
-                .foregroundStyle(isTotal ? MilliColors.textPrimary : MilliColors.textSecondary)
-
-            Spacer()
-
-            Text("$\(String(format: "%.2f", amount))")
-                .font(isTotal ? MilliFont.numericMedium : MilliFont.bodyMedium)
-                .monospacedDigit()
-                .foregroundStyle(isTotal ? MilliColors.positive : color)
-        }
-    }
-
-    private var auditDetails: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("AUDIT RECORD")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.7)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            VStack(spacing: 6) {
-                detailRow("Receipt Code", payout.receiptCode)
-                detailRow("ACH Trace ID", payout.achTraceId)
-                detailRow("Destination Bank", "•••• •••• •••• \(payout.bankMask)")
-                detailRow("Status", payout.isPending ? "Pending Direct Deposit" : "Settled via Autopilot")
+            if let date = payout.allocatedAt {
+                receiptLine("Allocated", date.formatted(date: .abbreviated, time: .shortened))
             }
-            .padding(14)
-            .background(MilliColors.graphiteSurface)
-            .clipShape(RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous))
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .fill(Color(hex: "0C1A22"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.25), lineWidth: 0.8)
+                )
+        )
+    }
+
+    private var failureGuidance: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("This payout needs attention", systemImage: "exclamationmark.circle")
+                .font(.custom("Sora-SemiBold", size: 13))
+                .foregroundStyle(MilliColors.warning)
+            Text(failureMessage)
+                .font(.custom("Inter-Regular", size: 12))
+                .foregroundStyle(MilliColors.textSecondary)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .fill(MilliColors.warning.opacity(0.08))
+        )
+    }
+
+    private var failureMessage: String {
+        switch payout.state {
+        case .failed: return "The automatic tax allocation failed. The funds stay in the operating balance; nothing was moved."
+        case .returned: return "The payout was returned by the provider. No funds were allocated."
+        case .reversed: return "A previously posted allocation was reversed by the backend."
+        case .actionRequired: return "The provider requires additional information before this payout can be processed."
+        case .unavailable: return "Payout details are temporarily unavailable from the provider."
+        default: return ""
         }
     }
 
-    private func detailRow(_ label: String, _ value: String) -> some View {
+    private func receiptLine(_ label: String, _ value: String) -> some View {
         HStack {
-            Text(label)
-                .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textSecondary)
+            Text(label.uppercased())
+                .font(.custom("Inter-Medium", size: 10))
+                .tracking(0.5)
+                .foregroundStyle(MilliColors.textTertiary)
             Spacer()
             Text(value)
-                .font(.custom("Inter-Medium", size: 12))
+                .font(.custom("Inter-SemiBold", size: 12))
+                .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
         }
+    }
+
+    private func centsString(_ cents: Int64) -> String {
+        String(format: "$%.2f", Double(cents) / 100)
     }
 }
 

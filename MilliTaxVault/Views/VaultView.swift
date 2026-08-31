@@ -2,15 +2,16 @@ import SwiftUI
 
 // MARK: - AccountsView
 // Consolidated account connection surface. This view is intentionally honest:
-// balances are seed/demo state until a production account aggregator/banking rail
-// is connected; the Connect Account flow never pretends an external account was linked.
+// with no production banking rail connected it shows an empty, labeled state —
+// no seeded balances, no fake "live" accounts (Launch P0 cleanup).
 
 struct AccountsView: View {
     var onBack: () -> Void = {}
 
     @State private var showConnectionSetup = false
 
-    private let accounts = ConnectedAccount.seeded
+    // LAUNCH P0 CLEANUP: removed ConnectedAccount.seeded (fake balances).
+    private let accounts: [ConnectedAccount] = []
 
     private var totalBalance: Double {
         accounts.reduce(0) { $0 + $1.balance }
@@ -71,7 +72,7 @@ struct AccountsView: View {
                 .font(MilliFont.heroNumber)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
-            Text("Demo/local account state")
+            Text("No accounts connected")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
         }
@@ -209,36 +210,6 @@ private struct ConnectedAccount: Identifiable {
     let color: Color
     let status: String
     let statusColor: Color
-
-    static let seeded: [ConnectedAccount] = [
-        ConnectedAccount(
-            name: "Available to Spend",
-            subtitle: "Milli operating balance",
-            balance: 1_365.42,
-            icon: "wallet.pass.fill",
-            color: MilliColors.cyanGlow,
-            status: "Demo",
-            statusColor: MilliColors.warning
-        ),
-        ConnectedAccount(
-            name: "Milli Tax Vault™",
-            subtitle: "Protected tax reserve",
-            balance: 5_284.17,
-            icon: "lock.shield.fill",
-            color: MilliColors.deepCyan,
-            status: "Demo",
-            statusColor: MilliColors.warning
-        ),
-        ConnectedAccount(
-            name: "External Checking",
-            subtitle: "Connection placeholder",
-            balance: 2_840.66,
-            icon: "building.columns.fill",
-            color: MilliColors.silver,
-            status: "Not live",
-            statusColor: MilliColors.textTertiary
-        )
-    ]
 }
 
 // Legacy compatibility wrapper while the old architecture is retired.
