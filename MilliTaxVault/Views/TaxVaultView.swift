@@ -82,7 +82,7 @@ struct TaxVaultView: View {
                         .font(MilliFont.heroNumber)
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
-                    MilliProvenanceBadge(state: provenanceBadgeState)
+                    MilliProvenanceBadge(state: vault.provenanceBadgeState)
                         .accessibilityLabel("Data provenance: \(vault.provenance.rawValue.lowercased())")
                 }
                 Text("\(progressPercentText) of annual target")
