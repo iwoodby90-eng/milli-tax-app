@@ -16,7 +16,7 @@ struct MilliDetailSheet: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "0A0A0C").ignoresSafeArea())
+        .background(MilliColors.cardBackground.ignoresSafeArea())
     }
 }
 

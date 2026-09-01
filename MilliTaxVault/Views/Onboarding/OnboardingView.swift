@@ -106,7 +106,7 @@ struct OnboardingView: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cyanGlow, Color(hex: "0CB9D7")],
+                                colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -273,7 +273,7 @@ private struct AutopilotOnboardingVisual: View {
         RoundedRectangle(cornerRadius: 28, style: .continuous)
             .fill(
                 LinearGradient(
-                    colors: [Color(hex: "111A21"), Color(hex: "060A0D")],
+                    colors: [MilliColors.cardBackground, MilliColors.navBarBackground],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -315,7 +315,7 @@ private struct TaxVaultOnboardingVisual: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "0E1820"), Color(hex: "050A0D")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -392,7 +392,7 @@ private struct MileageOnboardingVisual: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "08151D"), Color(hex: "050B0F")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -412,7 +412,7 @@ private struct MileageOnboardingVisual: View {
                         control1: CGPoint(x: size.width * 0.28, y: y - 16),
                         control2: CGPoint(x: size.width * 0.65, y: y + 13)
                     )
-                    context.stroke(street, with: .color(Color(hex: "173044").opacity(0.55)), lineWidth: 0.7)
+                    context.stroke(street, with: .color(MilliColors.cardBackground.opacity(0.55)), lineWidth: 0.7)
                 }
 
                 var route = Path()

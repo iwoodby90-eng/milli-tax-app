@@ -22,13 +22,13 @@ struct MoreMenuView: View {
 
                 sectionTitle("GIG & TAX TOOLS")
                 menuTile(icon: "gauge.with.dots.needle.67percent", title: "Milli Cents™", subtitle: "Analyze a gig offer before you accept it", color: MilliColors.cyanGlow) { navigate?(.milliCents) }
-                menuTile(icon: "creditcard.fill", title: "Expenses & Receipts", subtitle: "Track deductible spending and receipt capture", color: Color(hex: "7C8CFF")) { navigate?(.expenses) }
+                menuTile(icon: "creditcard.fill", title: "Expenses & Receipts", subtitle: "Track deductible spending and receipt capture", color: MilliColors.deepCyan) { navigate?(.expenses) }
                 menuTile(icon: "lock.shield.fill", title: "Milli Tax Vault™", subtitle: "Protected tax reserve and ledger", color: MilliColors.deepCyan) { navigate?(.taxVault) }
                 menuTile(icon: "checkmark.seal.fill", title: "Tax Ready Score™", subtitle: "See how prepared you are for tax season", color: MilliColors.positive) { navigate?(.taxReadyScore) }
                 menuTile(icon: "calendar.badge.clock", title: "Quarterly Taxes", subtitle: "Estimate, prepare, and track payments", color: MilliColors.warning) { navigate?(.quarterlyTaxes) }
 
                 sectionTitle("INSIGHTS & RECORDS")
-                menuTile(icon: "doc.text.fill", title: "Reports", subtitle: "Deductions, trips, exports, and summaries", color: Color(hex: "7C8CFF")) { navigate?(.reports) }
+                menuTile(icon: "doc.text.fill", title: "Reports", subtitle: "Deductions, trips, exports, and summaries", color: MilliColors.deepCyan) { navigate?(.reports) }
                 menuTile(icon: "folder.fill", title: "Documents", subtitle: "Tax documents, receipts, reports, and native file import", color: MilliColors.silverBright) { navigate?(.documents) }
                 menuTile(icon: "sparkles", title: "Milli AI", subtitle: "Personalized intelligence across your money", color: MilliColors.cyanGlow) { navigate?(.milliAI) }
 

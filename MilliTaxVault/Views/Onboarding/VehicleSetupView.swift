@@ -54,7 +54,7 @@ struct VehicleSetupView: View {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "15212A"), Color(hex: "080D11")],
+                            colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

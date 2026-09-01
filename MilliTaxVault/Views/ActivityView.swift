@@ -255,7 +255,7 @@ struct AutopilotSettingsView: View {
                 title: "Investing",
                 subtitle: "Direct a portion toward your portfolio",
                 icon: "chart.line.uptrend.xyaxis",
-                color: Color(hex: "7C8CFF"),
+                color: MilliColors.deepCyan,
                 enabled: $investingEnabled,
                 percent: $investingPercent
             )
@@ -347,7 +347,7 @@ struct AutopilotSettingsView: View {
 
             previewRow("Milli Tax Vault™", allocation.taxReserve, MilliColors.cyanGlow)
             previewRow("Retirement", allocation.retirement, MilliColors.positive)
-            previewRow("Investing", allocation.investing, Color(hex: "7C8CFF"))
+            previewRow("Investing", allocation.investing, MilliColors.deepCyan)
             previewRow("Savings", allocation.savings, MilliColors.deepCyan)
 
             Divider().overlay(Color.white.opacity(0.07))

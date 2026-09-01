@@ -95,7 +95,7 @@ struct SavingsView: View {
                     .trim(from: 0, to: overallProgress)
                     .stroke(
                         LinearGradient(
-                            colors: [MilliColors.cyanGlow, Color(hex: "8C70FF")],
+                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -419,7 +419,7 @@ private enum SavingsGoalType: String, CaseIterable, Identifiable {
         switch self {
         case .emergency: return MilliColors.positive
         case .home: return MilliColors.cyanGlow
-        case .travel: return Color(hex: "8C70FF")
+        case .travel: return MilliColors.deepCyan
         case .vehicle: return MilliColors.warning
         case .custom: return MilliColors.silver
         }

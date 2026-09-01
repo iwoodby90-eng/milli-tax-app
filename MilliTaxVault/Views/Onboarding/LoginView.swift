@@ -199,7 +199,7 @@ struct LoginView: View {
                             .fill(
                                 canSubmit
                                 ? LinearGradient(
-                                    colors: [MilliColors.cyanGlow, Color(hex: "0CBBD8")],
+                                    colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -327,7 +327,7 @@ struct LoginView: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "111920"), Color(hex: "0B1015")],
+                            colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

@@ -222,7 +222,7 @@ struct OnboardingFlowView: View {
                     title: "Investing",
                     subtitle: "Direct part of each payout toward investing",
                     icon: "chart.line.uptrend.xyaxis",
-                    color: Color(hex: "7C8CFF"),
+                    color: MilliColors.deepCyan,
                     enabled: $investingEnabled,
                     percent: $investingPercent
                 )
@@ -358,7 +358,7 @@ struct OnboardingFlowView: View {
                 HStack(spacing: 2) {
                     allocationBar(width: geo.size.width * result.taxReserve / total, color: MilliColors.cyanGlow)
                     allocationBar(width: geo.size.width * result.retirement / total, color: MilliColors.positive)
-                    allocationBar(width: geo.size.width * result.investing / total, color: Color(hex: "7C8CFF"))
+                    allocationBar(width: geo.size.width * result.investing / total, color: MilliColors.deepCyan)
                     allocationBar(width: geo.size.width * result.savings / total, color: MilliColors.deepCyan)
                     allocationBar(width: geo.size.width * result.availableToSpend / total, color: Color.white.opacity(0.18))
                 }
@@ -661,7 +661,7 @@ struct OnboardingPrimaryButton: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [MilliColors.cyanGlow, Color(hex: "0BB8D6")],
+                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

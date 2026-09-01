@@ -79,12 +79,10 @@ struct MilliNavBar: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
-                glowPulse = true
-            }
-            withAnimation(.linear(duration: 8.0).repeatForever(autoreverses: false)) {
-                pulseStreaks = true
-            }
+            // R-3 (Sept 1 visual release audit): perpetual glow/shimmer cycling removed.
+            // Static active-state illumination only; geometry unchanged.
+            glowPulse = true
+            pulseStreaks = true
         }
     }
     
@@ -208,7 +206,7 @@ struct MilliNavBar: View {
                 // Label
                 Text(tab.displayName)
                     .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "8A939E"))
+                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : MilliColors.textSecondary)
                     .tracking(0.3)
                     .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.40) : .clear, radius: 3)
             }
@@ -290,7 +288,7 @@ struct MilliNavBar: View {
                             colors: [
                                 Color.white,
                                 MilliColors.cyanGlow,
-                                Color(hex: "00B4D8"),
+                                MilliColors.deepCyan,
                                 Color(hex: "0077B6"),
                                 MilliColors.cyanGlow.opacity(0.85)
                             ],

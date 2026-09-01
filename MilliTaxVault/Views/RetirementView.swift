@@ -147,7 +147,7 @@ struct RetirementView: View {
                         .foregroundStyle(MilliColors.cyanGlow)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(Color(hex: "0C252E")))
+                        .background(Capsule().fill(MilliColors.cardBackground))
                 }
             }
 
@@ -217,7 +217,7 @@ struct RetirementView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "0C1A22"), Color(hex: "060D10")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -291,7 +291,7 @@ struct RetirementView: View {
                         HStack(spacing: 12) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: "0C2028"))
+                                    .fill(MilliColors.cardBackground)
                                     .frame(width: 36, height: 36)
                                 Image(systemName: "building.columns.fill")
                                     .font(.system(size: 14))
@@ -439,7 +439,7 @@ struct RetirementView: View {
                         x: .value("Year", point.year),
                         y: .value("Contributions", point.totalContributions)
                     )
-                    .foregroundStyle(Color(hex: "8A939E").opacity(0.5))
+                    .foregroundStyle(MilliColors.textSecondary.opacity(0.5))
                     .lineStyle(StrokeStyle(lineWidth: 1.2, dash: [4, 4]))
                     .interpolationMethod(.catmullRom)
                 }
@@ -472,7 +472,7 @@ struct RetirementView: View {
 
             HStack(spacing: 16) {
                 legendItem(color: MilliColors.cyanGlow, label: "Total Projected Value")
-                legendItem(color: Color(hex: "8A939E"), label: "Your Contributions", isDashed: true)
+                legendItem(color: MilliColors.textSecondary, label: "Your Contributions", isDashed: true)
             }
             .padding(.top, 4)
         }
@@ -655,7 +655,7 @@ private struct MilliRetirementOnboardingSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "07090B").ignoresSafeArea()
+                MilliColors.obsidian.ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -753,7 +753,7 @@ private struct MilliRetirementOnboardingSheet: View {
                             .foregroundStyle(planType == type ? MilliColors.blackGlass : MilliColors.cyanGlow)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Capsule().fill(planType == type ? MilliColors.cyanGlow : Color(hex: "0C252E")))
+                            .background(Capsule().fill(planType == type ? MilliColors.cyanGlow : MilliColors.cardBackground))
                     }
 
                     Text(subtitle)
@@ -773,7 +773,7 @@ private struct MilliRetirementOnboardingSheet: View {
                 Group {
                     if planType == type {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(hex: "0C1A22"))
+                            .fill(MilliColors.cardBackground)
                     } else {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(MilliColors.graphiteSurface)
@@ -839,7 +839,7 @@ private struct MilliRetirementOnboardingSheet: View {
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(hex: "0C1015"))
+                        .fill(MilliColors.cardBackground)
                         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 )
         }

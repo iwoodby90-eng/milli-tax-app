@@ -22,8 +22,8 @@ public struct ConnectedExternalRetirementAccount: Identifiable, Codable, Equatab
 
         public var badgeColor: Color {
             switch self {
-            case .connected: return Color(hex: "00E5FF")
-            case .transferInitiated: return Color(hex: "FFB800")
+            case .connected: return MilliColors.cyanGlow
+            case .transferInitiated: return MilliColors.warning
             case .completed: return Color(hex: "34C759")
             }
         }
@@ -70,7 +70,7 @@ struct AddRetirementAccountSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "07090B").ignoresSafeArea()
+                MilliColors.obsidian.ignoresSafeArea()
                 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
@@ -257,7 +257,7 @@ private struct FieldStyleModifier: ViewModifier {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(hex: "0C1015"))
+                    .fill(MilliColors.cardBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(Color.white.opacity(0.08), lineWidth: 1)

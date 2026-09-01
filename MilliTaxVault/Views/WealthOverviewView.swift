@@ -415,7 +415,7 @@ private struct WealthOverviewModel {
         allocations: [
             .init(name: "Investments", value: 42_685, color: MilliColors.cyanGlow),
             .init(name: "Retirement", value: 148_320, color: Color(hex: "3276D9")),
-            .init(name: "Savings", value: 18_765, color: Color(hex: "8C70FF")),
+            .init(name: "Savings", value: 18_765, color: MilliColors.deepCyan),
             .init(name: "Cash", value: 14_790, color: MilliColors.silver)
         ],
         monthlyChange: 7_250,

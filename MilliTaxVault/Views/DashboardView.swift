@@ -105,7 +105,7 @@ struct DocumentsView: View {
         .padding(3)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(hex: "0C252E"))
+                .fill(MilliColors.cardBackground)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 0.7)
@@ -314,7 +314,7 @@ private enum DocumentCategory: String, CaseIterable, Identifiable {
         switch self {
         case .taxDocuments: return MilliColors.cyanGlow
         case .receipts: return MilliColors.warning
-        case .reports: return Color(hex: "7C8CFF")
+        case .reports: return MilliColors.deepCyan
         }
     }
 }

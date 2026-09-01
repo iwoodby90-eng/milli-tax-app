@@ -75,7 +75,7 @@ struct AutopilotPayoutRow: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color(hex: "0C252E"))
+                    .fill(MilliColors.cardBackground)
                     .frame(width: 38, height: 38)
                 Text(String(payout.platform.prefix(1)))
                     .font(.custom("Sora-Bold", size: 14))

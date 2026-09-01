@@ -154,7 +154,7 @@ struct PlanSelectionView: View {
                     .fill(
                         LinearGradient(
                             colors: isSelected
-                                ? [MilliColors.cyanGlow.opacity(0.075), Color(hex: "0A1116")]
+                                ? [MilliColors.cyanGlow.opacity(0.075), MilliColors.cardBackground]
                                 : [Color.white.opacity(0.028), Color.white.opacity(0.016)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - MilliAIView
 // Dedicated assistant surface using Milli's transparent vector companion.
@@ -46,8 +47,10 @@ struct MilliAIView: View {
         }
         .background(MilliColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
-                companionFloat = -3
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+                    companionFloat = -3
+                }
             }
         }
     }
@@ -124,7 +127,7 @@ struct MilliAIView: View {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cyanGlow, Color(hex: "19B7D7")],
+                                colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
