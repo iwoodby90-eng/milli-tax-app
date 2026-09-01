@@ -1,0 +1,78 @@
+name: Runtime Visual Capture — main
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: runtime-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Capture native Milli screens (main)
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Capture screen-by-screen references
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/milli-screen-qa" bash scripts/capture-milli-screens.sh
+
+      - name: Verify capture routing and image sanity
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-milli-screen-captures.sh "$RUNNER_TEMP/milli-screen-qa"
+
+      - name: Write capture manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          CAPTURE_DIR="$RUNNER_TEMP/milli-screen-qa"
+          MANIFEST="$CAPTURE_DIR/MANIFEST.txt"
+          {
+            echo "MILLI runtime capture manifest"
+            echo "commit_sha: $GITHUB_SHA"
+            echo "workflow_run_id: $GITHUB_RUN_ID"
+            echo "branch: $GITHUB_REF_NAME"
+            echo "generated_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo ""
+            echo "item | device | file | status"
+            echo "--- | --- | --- | ---"
+            for f in "$CAPTURE_DIR"/*.png; do
+              name=$(basename "$f" .png)
+              echo "$name | iphone-simulator | $(basename "$f") | captured"
+            done
+          } > "$MANIFEST"
+          cat "$MANIFEST"
+
+      - name: Publish captures to repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          CAPTURE_DIR="$RUNNER_TEMP/milli-screen-qa"
+          DEST="captures/$(date -u +%Y%m%d)-main-a16ed36"
+          mkdir -p "$DEST"
+          cp "$CAPTURE_DIR"/*.png "$CAPTURE_DIR"/MANIFEST.txt "$DEST/"
+          git config user.name "milli-qa-bot"
+          git config user.email "qa-bot@users.noreply.github.com"
+          git add "$DEST"
+          git commit -m "chore(qa): runtime visual captures — main @ $GITHUB_SHA (run $GITHUB_RUN_ID)"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - name: Upload visual QA screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: milli-swiftui-screens
+          path: ${{ runner.temp }}/milli-screen-qa/*.png
+          if-no-files-found: error
+          retention-days: 14
