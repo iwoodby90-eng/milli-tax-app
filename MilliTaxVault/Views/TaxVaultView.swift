@@ -77,10 +77,14 @@ struct TaxVaultView: View {
                     .font(MilliFont.sectionLabel)
                     .tracking(0.8)
                     .foregroundStyle(MilliColors.textSecondary)
-                Text(currency(vault.balance))
-                    .font(MilliFont.heroNumber)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                HStack(spacing: 6) {
+                    Text(currency(vault.balance))
+                        .font(MilliFont.heroNumber)
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
+                    MilliProvenanceBadge(state: provenanceBadgeState)
+                        .accessibilityLabel("Data provenance: \(vault.provenance.rawValue.lowercased())")
+                }
                 Text("\(progressPercentText) of annual target")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
@@ -278,6 +282,9 @@ private struct TaxVaultDisplayModel {
     let annualTarget: Double
     let reserveRate: Double
     let activity: [VaultActivity]
+    /// Canonical data-origin label. Defaults to .unavailable — the view never
+    /// infers LIVE. Only the backend contract may promote this to .live.
+    let provenance: ProvenanceLabel
 
     var progress: CGFloat {
         guard annualTarget > 0 else { return 0 }
@@ -294,8 +301,23 @@ private struct TaxVaultDisplayModel {
                 VaultActivity(title: "Spark Driver", dateLabel: "Today, 10:12 AM", amount: 36.06, icon: "sparkles", iconColor: Color(hex: "4E8CFF")),
                 VaultActivity(title: "DoorDash", dateLabel: "Yesterday", amount: 21.70, icon: "bag.fill", iconColor: MilliColors.negative),
                 VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Previous quarter", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
-            ]
+            ],
+            provenance: .unavailable
         )
+    }
+
+    /// Maps the canonical ProvenanceLabel onto the badge component state.
+    /// The view never infers LIVE; it only renders what the model carries.
+    var provenanceBadgeState: MilliProvenanceBadge.State {
+        switch provenance {
+        case .live: return .live
+        case .cachedLive: return .cachedLive
+        case .estimated: return .estimated
+        case .userEntered: return .userEntered
+        case .demo: return .demo
+        case .preview: return .preview
+        case .unavailable: return .unavailable
+        }
     }
 }
 

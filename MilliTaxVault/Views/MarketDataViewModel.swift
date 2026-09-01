@@ -2,9 +2,11 @@ import Foundation
 import SwiftUI
 
 // MARK: - MarketDataViewModel
-// Pulls real OHLC market observations from the existing Yahoo Finance chart
-// transport. There is deliberately no synthetic/random fallback: if the external
-// feed is unavailable the UI says so instead of drawing invented prices.
+// Pulls real OHLC market observations through the approved MILLI backend
+// contract (MILLI_API_BASE_URL → /api/market/chart). There is deliberately no
+// synthetic/random fallback and no direct third-party feed access: if the
+// backend endpoint is not configured or unavailable, the UI says so instead
+// of drawing invented prices.
 
 @MainActor
 final class MarketDataViewModel: ObservableObject {
@@ -290,9 +292,20 @@ final class MarketDataViewModel: ObservableObject {
         feedStatus = .unavailable
     }
 
+    /// Market data is routed exclusively through the approved MILLI backend
+    /// contract (MILLI_API_BASE_URL). The client never talks to third-party
+    /// market-data providers. If the backend endpoint is not configured, the
+    /// request fails honestly as unavailable — no silent fallback.
     private func marketChartURL(symbol: String, interval: String, range: String) -> URL? {
+        guard let base = backendBaseURL else { return nil }
         let encodedSymbol = symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
-        return URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(encodedSymbol)?interval=\(interval)&range=\(range)&includePrePost=true&events=div%2Csplits")
+        return URL(string: "\(base.absoluteString.hasSuffix("/") ? base.absoluteString : base.absoluteString + "/")api/market/chart/\(encodedSymbol)?interval=\(interval)&range=\(range)")
+    }
+
+    private var backendBaseURL: URL? {
+        guard let raw = Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String,
+              !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return URL(string: raw)
     }
 
     private func numberArray(_ value: Any?) -> [Double?] {

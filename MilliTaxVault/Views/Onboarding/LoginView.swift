@@ -146,14 +146,6 @@ struct LoginView: View {
                 }
 
                 HStack {
-                    #if DEBUG
-                    if mode == .signIn {
-                        Button("Use Demo Account", action: fillDemoCredentials)
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.cyanGlow)
-                    }
-                    #endif
-
                     Spacer()
 
                     if mode == .signIn, let onForgotPassword {
@@ -449,13 +441,6 @@ struct LoginView: View {
     }
 
     private func signIn() {
-        #if DEBUG
-        if normalizedEmail == "ian@milli.local", password == "MilliDemo2026!" {
-            onSignIn(normalizedEmail)
-            return
-        }
-        #endif
-
         guard let storedEmail = UserDefaults.standard.string(forKey: "milliProfileEmail")?.lowercased(),
               storedEmail == normalizedEmail
         else {
@@ -491,16 +476,6 @@ struct LoginView: View {
 
         onCreateAccount(normalizedEmail)
     }
-
-    #if DEBUG
-    private func fillDemoCredentials() {
-        email = "ian@milli.local"
-        password = "MilliDemo2026!"
-        authenticationMessage = nil
-        focusedField = nil
-    }
-    #endif
-}
 
 private enum MilliLocalCredentialStore {
     private static let service = "com.milli.taxvault.local-auth"
