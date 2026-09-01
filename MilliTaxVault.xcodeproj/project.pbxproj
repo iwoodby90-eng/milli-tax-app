@@ -90,6 +90,14 @@
 		A10601 /* TreasuryAutopilotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10601; };
 		A10602 /* TreasuryAutopilotViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10602; };
 		A10700 /* TreasuryAutopilotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10700; };
+		A10800 /* MilliCentsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10800; };
+		A10801 /* MilliCentsAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10801; };
+		A10802 /* MilliMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10802; };
+		A10803 /* MilliMoneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10803; };
+		A10804 /* MilliLedgerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10804; };
+		A10805 /* MilliLedgerEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10805; };
+		A10806 /* TreasuryExecutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10806; };
+		A10807 /* TreasuryExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10807; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -173,6 +181,14 @@
 		B10119 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
 		B10400 /* QuarterlyTaxEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimator.swift; sourceTree = "<group>"; };
 		B10500 /* QuarterlyTaxEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimatorTests.swift; sourceTree = "<group>"; };
+		B10800 /* MilliCentsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsAnalyzer.swift; sourceTree = "<group>"; };
+		B10801 /* MilliCentsAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsAnalyzerTests.swift; sourceTree = "<group>"; };
+		B10802 /* MilliMoney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMoney.swift; sourceTree = "<group>"; };
+		B10803 /* MilliMoneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMoneyTests.swift; sourceTree = "<group>"; };
+		B10804 /* MilliLedgerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliLedgerEngine.swift; sourceTree = "<group>"; };
+		B10805 /* MilliLedgerEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliLedgerEngineTests.swift; sourceTree = "<group>"; };
+		B10806 /* TreasuryExecutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryExecutionService.swift; sourceTree = "<group>"; };
+		B10807 /* TreasuryExecutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryExecutionTests.swift; sourceTree = "<group>"; };
 		B10510 /* MilliWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliWordmark.swift; sourceTree = "<group>"; };
 		B10600 /* PayoutStateContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutStateContract.swift; sourceTree = "<group>"; };
 		B10601 /* TreasuryAutopilotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotStore.swift; sourceTree = "<group>"; };
@@ -218,6 +234,10 @@
 				B10304 /* BankConnectionService.swift */,
 				B10601 /* TreasuryAutopilotStore.swift */,
 				B10400 /* QuarterlyTaxEstimator.swift */,
+				B10800 /* MilliCentsAnalyzer.swift */,
+				B10802 /* MilliMoney.swift */,
+				B10804 /* MilliLedgerEngine.swift */,
+				B10806 /* TreasuryExecutionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -390,6 +410,10 @@
 			children = (
 				B10500 /* QuarterlyTaxEstimatorTests.swift */,
 				B10700 /* TreasuryAutopilotTests.swift */,
+				B10801 /* MilliCentsAnalyzerTests.swift */,
+				B10803 /* MilliMoneyTests.swift */,
+				B10805 /* MilliLedgerEngineTests.swift */,
+				B10807 /* TreasuryExecutionTests.swift */,
 			);
 			path = MilliTaxVaultTests;
 			sourceTree = "<group>";
@@ -537,6 +561,10 @@
 				A10600,
 				A10601,
 				A10602,
+				A10800,
+				A10802,
+				A10804,
+				A10806,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -546,6 +574,10 @@
 			files = (
 				A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */,
 				A10700 /* TreasuryAutopilotTests.swift in Sources */,
+				A10801 /* MilliCentsAnalyzerTests.swift in Sources */,
+				A10803 /* MilliMoneyTests.swift in Sources */,
+				A10805 /* MilliLedgerEngineTests.swift in Sources */,
+				A10807 /* TreasuryExecutionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
