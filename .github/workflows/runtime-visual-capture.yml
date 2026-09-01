@@ -1,7 +1,9 @@
 name: Runtime Visual Capture — main
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - qa/runtime-capture-main-a16ed36
 
 permissions:
   contents: write
