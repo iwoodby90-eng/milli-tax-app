@@ -88,7 +88,7 @@ struct MilliProvenanceBadge: View {
             case .cachedLive: return MilliBlueprint.Palette.electricCyan.opacity(0.5)
             case .estimated: return MilliBlueprint.Palette.polishedSilver
             case .userEntered: return MilliBlueprint.Palette.polishedSilver
-            case .demo: return MilliBlueprint.Palette.warning
+            case .demo: return MilliBlueprint.Palette.polishedSilver
             case .preview: return MilliBlueprint.Palette.warning
             case .unavailable: return MilliBlueprint.Palette.negative
             }
