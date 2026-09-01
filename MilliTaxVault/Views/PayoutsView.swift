@@ -99,6 +99,17 @@ struct PayoutsView: View {
                                 .padding(.vertical, 2)
                                 .background(Capsule().fill(bank.isLive ? MilliColors.positive.opacity(0.12) : MilliColors.textTertiary.opacity(0.10)))
 
+                            if bankService.isDemoData {
+                                Text("DEMO")
+                                    .font(.custom("Inter-Bold", size: 9))
+                                    .tracking(0.4)
+                                    .foregroundStyle(MilliColors.warning)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(Capsule().fill(MilliColors.warning.opacity(0.12)))
+                                    .accessibilityLabel("Demo data, not provider-backed")
+                            }
+
                             if bankService.isSyncing {
                                 HStack(spacing: 4) {
                                     ProgressView()
@@ -317,6 +328,17 @@ struct PayoutsView: View {
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
                             .background(Capsule().fill(MilliColors.warning.opacity(0.12)))
+                    }
+
+                    if payout.isDemo {
+                        Text("DEMO")
+                            .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
+                            .tracking(0.5)
+                            .foregroundStyle(MilliColors.warning)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(MilliColors.warning.opacity(0.12)))
+                            .accessibilityLabel("Demo payout, not provider-backed")
                     }
                 }
 

@@ -66,6 +66,7 @@ struct MilliProvenanceBadge: View {
         case cachedLive
         case estimated
         case userEntered
+        case demo
         case preview
         case unavailable
 
@@ -75,6 +76,7 @@ struct MilliProvenanceBadge: View {
             case .cachedLive: return "CACHED LIVE"
             case .estimated: return "ESTIMATED"
             case .userEntered: return "USER ENTERED"
+            case .demo: return "DEMO"
             case .preview: return "PREVIEW"
             case .unavailable: return "UNAVAILABLE"
             }
@@ -86,6 +88,7 @@ struct MilliProvenanceBadge: View {
             case .cachedLive: return MilliBlueprint.Palette.electricCyan.opacity(0.5)
             case .estimated: return MilliBlueprint.Palette.polishedSilver
             case .userEntered: return MilliBlueprint.Palette.polishedSilver
+            case .demo: return MilliBlueprint.Palette.warning
             case .preview: return MilliBlueprint.Palette.warning
             case .unavailable: return MilliBlueprint.Palette.negative
             }

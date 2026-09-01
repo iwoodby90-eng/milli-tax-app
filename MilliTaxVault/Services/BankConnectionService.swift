@@ -95,6 +95,8 @@ public struct VerifiedPayout: Identifiable, Codable, Equatable {
     public let isThisWeek: Bool
     public let bankMask: String
     public let achTraceId: String
+    /// True when this record is seeded demo data, not provider-backed activity.
+    public var isDemo: Bool = false
 
     public var taxProtected: Double { (grossAmount * 0.30).rounded(to: 2) }
     public var retirementAllocation: Double { (grossAmount * 0.10).rounded(to: 2) }
@@ -158,6 +160,13 @@ public final class BankConnectionService: ObservableObject {
         // simulated payouts in the production experience. The service starts
         // empty and honest; content arrives only from a real provider or the
         // explicit demo provider (visibly labeled).
+    }
+
+    /// True when the current account/payout data is demo state rather than
+    /// provider-backed live data. Drives DEMO provenance presentation.
+    public var isDemoData: Bool {
+        guard let bank = connectedBank else { return false }
+        return !bank.isLive
     }
 
     public var totalPayoutsAmount: Double {
