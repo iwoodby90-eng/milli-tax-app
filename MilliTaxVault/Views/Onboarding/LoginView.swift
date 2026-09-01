@@ -477,6 +477,8 @@ struct LoginView: View {
         onCreateAccount(normalizedEmail)
     }
 
+} // struct LoginView
+
 private enum MilliLocalCredentialStore {
     private static let service = "com.milli.taxvault.local-auth"
 
