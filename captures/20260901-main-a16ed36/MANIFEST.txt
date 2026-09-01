@@ -1,0 +1,31 @@
+MILLI runtime capture manifest
+commit_sha: 24fe672e0e6686c96a95eded7a68a4fdd643eac9
+workflow_run_id: 33507559334
+branch: qa/runtime-capture-main-a16ed36
+generated_at: 2026-09-01T12:39:52Z
+
+item | device | file | status
+--- | --- | --- | ---
+accounts | iphone-simulator | accounts.png | captured
+auth-login | iphone-simulator | auth-login.png | captured
+auth-onboarding | iphone-simulator | auth-onboarding.png | captured
+auth-setup | iphone-simulator | auth-setup.png | captured
+autopilot | iphone-simulator | autopilot.png | captured
+documents | iphone-simulator | documents.png | captured
+expenses | iphone-simulator | expenses.png | captured
+home | iphone-simulator | home.png | captured
+investing | iphone-simulator | investing.png | captured
+mileage | iphone-simulator | mileage.png | captured
+milliAI | iphone-simulator | milliAI.png | captured
+milliCents | iphone-simulator | milliCents.png | captured
+more | iphone-simulator | more.png | captured
+payouts | iphone-simulator | payouts.png | captured
+plans | iphone-simulator | plans.png | captured
+quarterlyTaxes | iphone-simulator | quarterlyTaxes.png | captured
+reports | iphone-simulator | reports.png | captured
+retirement | iphone-simulator | retirement.png | captured
+savings | iphone-simulator | savings.png | captured
+taxReadyScore | iphone-simulator | taxReadyScore.png | captured
+taxVault | iphone-simulator | taxVault.png | captured
+treeOfLife | iphone-simulator | treeOfLife.png | captured
+wealthOverview | iphone-simulator | wealthOverview.png | captured
