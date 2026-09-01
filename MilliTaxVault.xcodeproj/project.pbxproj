@@ -87,6 +87,10 @@
 		A10400 /* QuarterlyTaxEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10400; };
 		A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10500; };
 		A10510 /* MilliWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10510; };
+		A10600 /* PayoutStateContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10600; };
+		A10601 /* TreasuryAutopilotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10601; };
+		A10602 /* TreasuryAutopilotViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10602; };
+		A10700 /* TreasuryAutopilotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10700; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -172,6 +176,10 @@
 		B10400 /* QuarterlyTaxEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimator.swift; sourceTree = "<group>"; };
 		B10500 /* QuarterlyTaxEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimatorTests.swift; sourceTree = "<group>"; };
 		B10510 /* MilliWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliWordmark.swift; sourceTree = "<group>"; };
+		B10600 /* PayoutStateContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutStateContract.swift; sourceTree = "<group>"; };
+		B10601 /* TreasuryAutopilotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotStore.swift; sourceTree = "<group>"; };
+		B10602 /* TreasuryAutopilotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotViews.swift; sourceTree = "<group>"; };
+		B10700 /* TreasuryAutopilotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotTests.swift; sourceTree = "<group>"; };
 		B10501 /* MilliTaxVaultTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MilliTaxVaultTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -210,6 +218,7 @@
 				B10301 /* StoreKitService.swift */,
 				B10302 /* AppleAuthManager.swift */,
 				B10304 /* BankConnectionService.swift */,
+				B10601 /* TreasuryAutopilotStore.swift */,
 				B10400 /* QuarterlyTaxEstimator.swift */,
 			);
 			path = Services;
@@ -248,6 +257,7 @@
 				B10208 /* PayoutsView.swift */,
 				B10209 /* QuarterlyTaxesView.swift */,
 				B10210 /* TaxReadyScoreView.swift */,
+				B10602 /* TreasuryAutopilotViews.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -300,6 +310,7 @@
 			isa = PBXGroup;
 			children = (
 				B10040 /* AppModels.swift */,
+				B10600 /* PayoutStateContract.swift */,
 				B10101 /* VehicleProfile.swift */,
 				B10102 /* TaxProfile.swift */,
 			);
@@ -381,6 +392,7 @@
 			isa = PBXGroup;
 			children = (
 				B10500 /* QuarterlyTaxEstimatorTests.swift */,
+				B10700 /* TreasuryAutopilotTests.swift */,
 			);
 			path = MilliTaxVaultTests;
 			sourceTree = "<group>";
@@ -526,6 +538,9 @@
 				A10304,
 				A10400,
 				A10510,
+				A10600,
+				A10601,
+				A10602,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,6 +549,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */,
+				A10700 /* TreasuryAutopilotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
