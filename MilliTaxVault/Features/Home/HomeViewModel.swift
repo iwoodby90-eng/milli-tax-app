@@ -5,7 +5,8 @@ import Combine
 
 final class HomeViewModel: ObservableObject {
     // Seeded presentation values mirror the approved Milli visual reference.
-    // Production data should replace these through the authenticated dashboard snapshot.
+    // Production data should replace these through the authenticated
+    // dashboard snapshot without changing HomeView.
     @Published var availableToSpend: String = "$3,428.65"
     @Published var sparklineData: [CGFloat] = [0.28, 0.42, 0.36, 0.51, 0.47, 0.63, 0.58, 0.72, 0.67, 0.82]
     @Published var latestPayout: PayoutEntry = .placeholder
