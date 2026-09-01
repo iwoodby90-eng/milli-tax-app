@@ -30,7 +30,7 @@ MilliTaxVault/
 │   ├── MilliSurface.swift           # Glass card surface
 │   ├── MilliWordmark.swift          # Brand wordmark
 │   ├── MilliCenterMButton.swift     # Center M button
-│   ├── MilliBottomBar.swift         # Bottom bar support
+│   ├── MilliProtectionInstruments.swift # Protection instruments UI
 │   ├── BelAirNavBarShape.swift      # Nav bar custom shape
 │   ├── ChromeEmblemView.swift       # Chrome emblem
 │   ├── MilliAIOrb.swift             # AI orb
@@ -72,10 +72,13 @@ MilliTaxVault/
 │   ├── WealthOverviewView.swift      # Wealth overview
 │   ├── MilliCentsView.swift          # Milli Cents
 │   ├── QuarterlyTaxesView.swift      # Quarterly taxes
+│   ├── TreasuryAutopilotViews.swift  # Stripe Treasury Autopilot UI (connect, routing, payout rows, receipts)
+│   ├── Components/                   # Screen-level components (MilliCard, MilliChart, CircularProgressView)
 │   └── Onboarding/                   # Login, onboarding flow, plan selection, setup
 │
 ├── Models/
 │   ├── AppModels.swift               # Core financial and transaction models
+│   ├── PayoutStateContract.swift     # Canonical payout state machine & provenance labels (Money-Movement State Contract v2.1)
 │   ├── TaxProfile.swift              # Tax filing status and subscription tiers
 │   └── VehicleProfile.swift          # Vehicle profile
 │
@@ -83,13 +86,15 @@ MilliTaxVault/
 │   ├── AppleAuthManager.swift        # Sign in with Apple
 │   ├── BankConnectionService.swift   # Bank connection
 │   ├── QuarterlyTaxEstimator.swift   # Quarterly tax estimator
+│   ├── TreasuryAutopilotStore.swift  # Read-only backend projection for Autopilot (demo only via loadDemoData)
 │   └── StoreKitService.swift         # StoreKit subscriptions
 │
+├── Resources/                        # Fonts
 └── Assets.xcassets/                   # App icon, brand assets, template icons, hero images
 
-MilliTaxVaultTests/                   # QuarterlyTaxEstimator XCTest suite (21 tests)
+MilliTaxVaultTests/                   # XCTest suites: QuarterlyTaxEstimator (21 tests) + TreasuryAutopilot (10 tests)
 backend/migrations/                    # SQL migrations (mileage logs, brokerage tradings)
-scripts/                              # Screen capture, Swift validation, repo health checks
+scripts/                              # Screen capture, Swift validation (incl. brand hex-literal lint), repo health checks
 ```
 
 ## Design System
@@ -107,7 +112,8 @@ scripts/                              # Screen capture, Swift validation, repo h
 
 - **Native Build CI**: Automated Xcode build validation on macOS runners (`.github/workflows/validate.yml`)
 - **Visual QA**: SwiftUI visual QA workflow (`.github/workflows/swiftui-visual-qa.yml`) plus comprehensive UI screen capture and integrity verification suite (`scripts/capture-milli-screens.sh`, `scripts/verify-milli-screen-captures.sh`)
-- **Unit Tests**: QuarterlyTaxEstimator XCTest suite (`MilliTaxVaultTests/`)
+- **Unit Tests**: QuarterlyTaxEstimator (21 tests) and TreasuryAutopilot (10 tests) XCTest suites (`MilliTaxVaultTests/`)
+- **Brand Lint**: `scripts/validate_all_swift.py` enforces the MilliColors token rule (off-token `Color(hex:)` literals rejected outside DesignSystem and locked nav components)
 - **Repository Health**: Architecture and reference verification script (`scripts/verify-repo-health.sh`)
 
 ## Requirements
