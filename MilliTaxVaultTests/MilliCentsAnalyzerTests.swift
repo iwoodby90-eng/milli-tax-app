@@ -75,7 +75,8 @@ final class MilliCentsAnalyzerTests: XCTestCase {
 
     func testHighProfitLowPerMileIsNotGO() {
         // Long block: plenty of profit, poor $/mi.
-        let a = MilliCentsAnalyzer(input: input(amount: 92.0, estimated: 42.0, dead: 8.5, ret: 10.0, gas: 0, mpg: 1000, taxRate: 0))
+        // 92 net over 200 total miles = $0.46/mi: plenty of profit, poor $/mi.
+        let a = MilliCentsAnalyzer(input: input(amount: 92.0, estimated: 180.0, dead: 10.0, ret: 10.0, gas: 0, mpg: 1000, taxRate: 0))
         XCTAssertGreaterThanOrEqual(a.netProfit, 18.0)
         XCTAssertLessThan(a.profitPerMile, 0.50)
         XCTAssertEqual(a.verdict, .maybe)
