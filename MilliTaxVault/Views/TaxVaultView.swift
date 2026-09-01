@@ -162,7 +162,7 @@ struct TaxVaultView: View {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [MilliColors.cyanGlow, Color(hex: "03B8DC")],
+                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .top,
                             endPoint: .bottom
                         )

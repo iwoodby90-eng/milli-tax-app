@@ -306,7 +306,7 @@ struct ExpensesView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cyanGlow, Color(hex: "07B6D7")],
+                                colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
@@ -662,7 +662,7 @@ private enum ExpenseCategory: String, CaseIterable, Identifiable {
         case .maintenance: return Color(hex: "4285F4")
         case .parking: return MilliColors.deepCyan
         case .supplies: return MilliColors.positive
-        case .insurance: return Color(hex: "FF6170")
+        case .insurance: return MilliColors.negative
         case .professional: return MilliColors.cyanGlow
         case .other: return MilliColors.textSecondary
         }

@@ -11,7 +11,7 @@ struct MilliMetalCard: View {
             // Dark titanium base
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(LinearGradient(
-                    colors: [Color(hex: "1C2028"), Color(hex: "252B38")],
+                    colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ))
@@ -69,7 +69,7 @@ struct MilliMetalCard: View {
         ZStack {
             RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .fill(LinearGradient(
-                    colors: [Color(hex: "A0A8B4"), Color(hex: "707880")],
+                    colors: [MilliColors.textSecondary, MilliColors.textSecondary],
                     startPoint: .top,
                     endPoint: .bottom
                 ))
@@ -102,7 +102,7 @@ struct MilliMetalCard: View {
 
 #Preview {
     ZStack {
-        Color(hex: "07090B").ignoresSafeArea()
+        MilliColors.obsidian.ignoresSafeArea()
         MilliMetalCard()
     }
 }

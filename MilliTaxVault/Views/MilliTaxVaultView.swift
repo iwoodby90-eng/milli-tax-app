@@ -104,7 +104,7 @@ struct MilliTaxVaultView: View {
                 .ignoresSafeArea()
             
             RadialGradient(
-                colors: [Color(hex: "001F3F").opacity(0.6), .clear],
+                colors: [MilliColors.cardBackground.opacity(0.6), .clear],
                 center: .top,
                 startRadius: 0,
                 endRadius: 400

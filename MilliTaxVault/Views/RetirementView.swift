@@ -217,7 +217,7 @@ struct RetirementView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [MilliColors.cardBackground, Color(hex: "060D10")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -291,7 +291,7 @@ struct RetirementView: View {
                         HStack(spacing: 12) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: "0C2028"))
+                                    .fill(MilliColors.cardBackground)
                                     .frame(width: 36, height: 36)
                                 Image(systemName: "building.columns.fill")
                                     .font(.system(size: 14))
@@ -655,7 +655,7 @@ private struct MilliRetirementOnboardingSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "07090B").ignoresSafeArea()
+                MilliColors.obsidian.ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -839,7 +839,7 @@ private struct MilliRetirementOnboardingSheet: View {
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(hex: "0C1015"))
+                        .fill(MilliColors.cardBackground)
                         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 )
         }

@@ -9,7 +9,7 @@ struct SplashView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(hex: "05080B"), Color(hex: "07090B"), Color(hex: "020405")],
+                colors: [MilliColors.cardBackground, MilliColors.obsidian, MilliColors.cardBackground],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

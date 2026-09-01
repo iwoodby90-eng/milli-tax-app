@@ -127,7 +127,7 @@ struct MilliAIView: View {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cyanGlow, Color(hex: "19B7D7")],
+                                colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )

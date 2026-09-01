@@ -16,8 +16,8 @@ struct MilliSurface: ViewModifier {
                         LinearGradient(
                             colors: [
                                 Color.white.opacity(0.035),
-                                Color(hex: "12191F").opacity(0.98),
-                                Color(hex: "0E1114")
+                                MilliColors.elevated.opacity(0.98),
+                                MilliColors.carbon
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -27,7 +27,7 @@ struct MilliSurface: ViewModifier {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .stroke(
                                 hasCyanBorder
-                                    ? Color(hex: "00E5FF").opacity(0.16)
+                                    ? MilliColors.cyanGlow.opacity(0.16)
                                     : Color.white.opacity(0.07),
                                 lineWidth: 0.8
                             )

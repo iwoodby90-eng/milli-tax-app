@@ -24,7 +24,7 @@ struct MileageTrackerView: View {
                     Spacer().frame(height: 100)
                 }
             }
-        .background(Color(hex: "07090B").ignoresSafeArea())
+        .background(MilliColors.obsidian.ignoresSafeArea())
     }
     
     // MARK: - Header
@@ -34,14 +34,14 @@ struct MileageTrackerView: View {
                 Text("milli")
                     .font(.system(size: 22, weight: .bold))
                     .italic()
-                    .foregroundStyle(Color(hex: "00E5FF"))
+                    .foregroundStyle(MilliColors.cyanGlow)
                     .tracking(1)
                 Spacer()
                 
                 // Auto-tracking badge
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(Color(hex: "00E5FF"))
+                        .fill(MilliColors.cyanGlow)
                         .frame(width: 8, height: 8)
                     Text("Auto-Tracking ON")
                         .font(.system(size: 12, weight: .medium))
@@ -78,7 +78,7 @@ struct MileageTrackerView: View {
                     .foregroundStyle(.black)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color(hex: "00E5FF")))
+                    .background(Capsule().fill(MilliColors.cyanGlow))
                 
                 Spacer()
             }
@@ -89,7 +89,7 @@ struct MileageTrackerView: View {
                     .foregroundStyle(.white)
                 Text("Uber · Passenger")
                     .font(.system(size: 14))
-                    .foregroundStyle(Color(hex: "00E5FF"))
+                    .foregroundStyle(MilliColors.cyanGlow)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -122,7 +122,7 @@ struct MileageTrackerView: View {
                 .background(
                     RoundedRectangle(cornerRadius: MilliRadius.medium)
                         .fill(MilliColors.cardBackground)
-                        .overlay(RoundedRectangle(cornerRadius: MilliRadius.medium).stroke(Color(hex: "00E5FF"), lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: MilliRadius.medium).stroke(MilliColors.cyanGlow, lineWidth: 1))
                 )
             }
         }
@@ -132,9 +132,9 @@ struct MileageTrackerView: View {
                 .fill(MilliColors.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: MilliRadius.card)
-                        .stroke(Color(hex: "00E5FF").opacity(0.4), lineWidth: 1)
+                        .stroke(MilliColors.cyanGlow.opacity(0.4), lineWidth: 1)
                 )
-                .shadow(color: Color(hex: "00E5FF").opacity(0.1), radius: 12)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.1), radius: 12)
         )
         .padding(.horizontal, MilliSpacing.xl)
     }
@@ -156,7 +156,7 @@ struct MileageTrackerView: View {
         ZStack(alignment: .bottomLeading) {
             // Dark map background
             RoundedRectangle(cornerRadius: MilliRadius.card)
-                .fill(Color(hex: "0D1117"))
+                .fill(MilliColors.cardBackground)
                 .frame(height: 240)
                 .overlay(
                     // Grid lines
@@ -217,7 +217,7 @@ struct MileageTrackerView: View {
                                 control2: CGPoint(x: w * 0.82, y: h * 0.28)
                             )
                         }
-                        .stroke(Color(hex: "00E5FF"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                         
                         // Start point
                         Circle()
@@ -227,7 +227,7 @@ struct MileageTrackerView: View {
                         
                         // End point
                         Circle()
-                            .fill(Color(hex: "00E5FF"))
+                            .fill(MilliColors.cyanGlow)
                             .frame(width: 12, height: 12)
                             .position(x: w * 0.85, y: h * 0.25)
                     }
@@ -242,7 +242,7 @@ struct MileageTrackerView: View {
                     .foregroundStyle(MilliColors.textSecondary)
                 Text("45.7")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color(hex: "00E5FF"))
+                    .foregroundStyle(MilliColors.cyanGlow)
                 Text("EST. DEDUCTION")
                     .font(.system(size: 9, weight: .semibold))
                     .tracking(1)
@@ -272,7 +272,7 @@ struct MileageTrackerView: View {
                 Spacer()
                 Text("View all")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(hex: "00E5FF"))
+                    .foregroundStyle(MilliColors.cyanGlow)
             }
             
             tripRow(initial: "U", bgColor: .black, platform: "Uber", type: "Passenger", time: "8:42 AM", miles: "12.4 mi", duration: "27m", deduction: "$8.05")
@@ -343,7 +343,7 @@ struct MileageTrackerView: View {
                 Spacer()
                 Text("View all")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(hex: "00E5FF"))
+                    .foregroundStyle(MilliColors.cyanGlow)
             }
             
             HStack(spacing: 0) {

@@ -348,7 +348,7 @@ struct MileageView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "07131A"), Color(hex: "050B10")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -510,7 +510,7 @@ struct MileageView: View {
                 colors: [
                     Color.black.opacity(0.16),
                     Color.clear,
-                    Color(hex: "001A22").opacity(0.10)
+                    MilliColors.cardBackground.opacity(0.10)
                 ],
                 startPoint: .top,
                 endPoint: .bottom

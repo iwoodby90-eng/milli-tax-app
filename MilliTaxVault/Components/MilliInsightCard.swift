@@ -15,7 +15,7 @@ struct MilliInsightCard: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [MilliColors.cyanGlow.opacity(0.18), Color(hex: "0D1318")],
+                                colors: [MilliColors.cyanGlow.opacity(0.18), MilliColors.cardBackground],
                                 center: .center,
                                 startRadius: 2,
                                 endRadius: 16

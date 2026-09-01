@@ -103,7 +103,7 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "101923"), Color(hex: "091116")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )

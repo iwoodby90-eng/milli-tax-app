@@ -155,7 +155,7 @@ struct PayoutsView: View {
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cardBackground, Color(hex: "060E12")],
+                                colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -636,7 +636,7 @@ private struct BankConnectionSheet: View {
                             Group {
                                 if selectedInstitution == inst {
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(Color(hex: "0C2028"))
+                                        .fill(MilliColors.cardBackground)
                                 } else {
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                                         .fill(MilliColors.graphiteSurface)

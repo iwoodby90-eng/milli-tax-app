@@ -661,7 +661,7 @@ struct OnboardingPrimaryButton: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [MilliColors.cyanGlow, Color(hex: "0BB8D6")],
+                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

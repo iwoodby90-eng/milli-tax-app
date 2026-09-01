@@ -356,7 +356,7 @@ struct InvestingView: View {
                     )
                     .foregroundStyle(
                         candle.isUp
-                            ? AnyShapeStyle(LinearGradient(colors: [Color(hex: "6CF5FF"), MilliColors.cyanGlow, MilliColors.deepCyan], startPoint: .top, endPoint: .bottom))
+                            ? AnyShapeStyle(LinearGradient(colors: [MilliColors.cyanGlow, MilliColors.cyanGlow, MilliColors.deepCyan], startPoint: .top, endPoint: .bottom))
                             : AnyShapeStyle(LinearGradient(colors: [Color.white, MilliColors.silverBright, MilliColors.silver], startPoint: .top, endPoint: .bottom))
                     )
                     .cornerRadius(1.8)
@@ -378,7 +378,7 @@ struct InvestingView: View {
             .chartYScale(domain: chartYDomain)
             .chartPlotStyle { plotArea in
                 plotArea
-                    .background(LinearGradient(colors: [Color(hex: "071116"), Color.black.opacity(0.32)], startPoint: .top, endPoint: .bottom))
+                    .background(LinearGradient(colors: [MilliColors.cardBackground, Color.black.opacity(0.32)], startPoint: .top, endPoint: .bottom))
                     .overlay {
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
                             .stroke(MilliColors.cyanGlow.opacity(0.12), lineWidth: 0.7)

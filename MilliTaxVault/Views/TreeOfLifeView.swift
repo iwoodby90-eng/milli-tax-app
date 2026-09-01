@@ -146,7 +146,7 @@ struct TreeOfLifeView: View {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "061016"), Color(hex: "030709")],
+                            colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                             startPoint: .top,
                             endPoint: .bottom
                         )

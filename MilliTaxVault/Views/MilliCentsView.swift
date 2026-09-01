@@ -299,7 +299,7 @@ struct MilliCentsView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "0C1720"), Color(hex: "071014")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -389,7 +389,7 @@ struct MilliCentsView: View {
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [recommendation.cardBackground, Color(hex: "070B0E")],
+                        colors: [recommendation.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -584,7 +584,7 @@ public enum OfferRecommendation {
 
     public var pillBackground: Color {
         switch self {
-        case .go: return Color(hex: "00E5FF")
+        case .go: return MilliColors.cyanGlow
         case .maybe: return MilliColors.warning
         case .skip: return MilliColors.negative
         }
@@ -592,7 +592,7 @@ public enum OfferRecommendation {
 
     public var glowColor: Color {
         switch self {
-        case .go: return Color(hex: "00E5FF").opacity(0.4)
+        case .go: return MilliColors.cyanGlow.opacity(0.4)
         case .maybe: return MilliColors.warning.opacity(0.3)
         case .skip: return MilliColors.negative.opacity(0.3)
         }
@@ -601,14 +601,14 @@ public enum OfferRecommendation {
     public var cardBackground: Color {
         switch self {
         case .go: return MilliColors.cardBackground
-        case .maybe: return Color(hex: "25200C")
-        case .skip: return Color(hex: "250C0C")
+        case .maybe: return MilliColors.cardBackground
+        case .skip: return MilliColors.cardBackground
         }
     }
 
     public var borderColor: Color {
         switch self {
-        case .go: return Color(hex: "00E5FF").opacity(0.4)
+        case .go: return MilliColors.cyanGlow.opacity(0.4)
         case .maybe: return MilliColors.warning.opacity(0.4)
         case .skip: return MilliColors.negative.opacity(0.4)
         }
@@ -631,10 +631,10 @@ public struct LiveGigOffer: Identifiable {
     public var totalMiles: Double { estimatedMiles + deadMiles + returnMiles }
 
     public static let sampleLiveOffers: [LiveGigOffer] = [
-        .init(id: "LGO-1", platform: "DoorDash", colorHex: "FF3008", amount: 32.64, estimatedMiles: 24.8, deadMiles: 6.4, returnMiles: 7.2, destinationZone: "Lincoln Park → River North", timeLabel: "Just now", recommendationTag: "GO (HIGH PROFIT)", recommendationColor: Color(hex: "00E5FF")),
-        .init(id: "LGO-2", platform: "Spark Driver", colorHex: "0071DC", amount: 48.50, estimatedMiles: 18.2, deadMiles: 3.1, returnMiles: 4.5, destinationZone: "Walmart Supercenter Batch", timeLabel: "2m ago", recommendationTag: "GO (OPTIMAL)", recommendationColor: Color(hex: "00E5FF")),
+        .init(id: "LGO-1", platform: "DoorDash", colorHex: "FF3008", amount: 32.64, estimatedMiles: 24.8, deadMiles: 6.4, returnMiles: 7.2, destinationZone: "Lincoln Park → River North", timeLabel: "Just now", recommendationTag: "GO (HIGH PROFIT)", recommendationColor: MilliColors.cyanGlow),
+        .init(id: "LGO-2", platform: "Spark Driver", colorHex: "0071DC", amount: 48.50, estimatedMiles: 18.2, deadMiles: 3.1, returnMiles: 4.5, destinationZone: "Walmart Supercenter Batch", timeLabel: "2m ago", recommendationTag: "GO (OPTIMAL)", recommendationColor: MilliColors.cyanGlow),
         .init(id: "LGO-3", platform: "Uber Eats", colorHex: "000000", amount: 11.25, estimatedMiles: 14.2, deadMiles: 5.0, returnMiles: 8.0, destinationZone: "Suburbs Delivery", timeLabel: "5m ago", recommendationTag: "SKIP (LOW $/MI)", recommendationColor: MilliColors.negative),
-        .init(id: "LGO-4", platform: "Amazon Flex", colorHex: "FF9900", amount: 92.00, estimatedMiles: 42.0, deadMiles: 8.5, returnMiles: 10.0, destinationZone: "3-Hour Logistics Block", timeLabel: "8m ago", recommendationTag: "GO (STRONG BLOCK)", recommendationColor: Color(hex: "00E5FF")),
+        .init(id: "LGO-4", platform: "Amazon Flex", colorHex: "FF9900", amount: 92.00, estimatedMiles: 42.0, deadMiles: 8.5, returnMiles: 10.0, destinationZone: "3-Hour Logistics Block", timeLabel: "8m ago", recommendationTag: "GO (STRONG BLOCK)", recommendationColor: MilliColors.cyanGlow),
         .init(id: "LGO-5", platform: "Instacart", colorHex: "16844A", amount: 24.00, estimatedMiles: 16.5, deadMiles: 4.0, returnMiles: 6.0, destinationZone: "Costco Heavy Batch", timeLabel: "11m ago", recommendationTag: "MAYBE", recommendationColor: MilliColors.warning)
     ]
 }

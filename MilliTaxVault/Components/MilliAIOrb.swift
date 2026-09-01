@@ -54,7 +54,7 @@ struct MilliAICharacterView: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color(hex: "13232C"), Color(hex: "05090C"), Color.black],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground, Color.black],
                         center: UnitPoint(x: 0.48, y: 0.38),
                         startRadius: 1,
                         endRadius: 25 * scale
@@ -140,7 +140,7 @@ struct MilliAICharacterView: View {
             RoundedRectangle(cornerRadius: 10 * scale, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "27333A"), Color(hex: "0B1014"), Color(hex: "171E23")],
+                        colors: [MilliColors.cardBackground, MilliColors.cardBackground, MilliColors.cardBackground],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
