@@ -125,7 +125,7 @@ struct ExpensesView: View {
         .padding(3)
         .background(
             Capsule(style: .continuous)
-                .fill(Color(hex: "0C252E"))
+                .fill(MilliColors.cardBackground)
                 .overlay(Capsule().stroke(Color.white.opacity(0.05), lineWidth: 0.7))
         )
     }
@@ -660,7 +660,7 @@ private enum ExpenseCategory: String, CaseIterable, Identifiable {
         switch self {
         case .fuel: return MilliColors.warning
         case .maintenance: return Color(hex: "4285F4")
-        case .parking: return Color(hex: "8C70FF")
+        case .parking: return MilliColors.deepCyan
         case .supplies: return MilliColors.positive
         case .insurance: return Color(hex: "FF6170")
         case .professional: return MilliColors.cyanGlow

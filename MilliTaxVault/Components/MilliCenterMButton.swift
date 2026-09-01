@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - MilliCenterMButton — 3D Chrome Hardware Dial with Segmented Cyan Ring
 // Visual spec: 1954 Bel Air dashboard gauge / hardware dial
@@ -62,11 +63,11 @@ struct MilliCenterMButton: View {
                             .stroke(
                                 AngularGradient(
                                     colors: [
-                                        Color(hex: "4A4F55").opacity(0.66),
+                                        MilliColors.chromeDark.opacity(0.66),
                                         Color(hex: "A8AFB4").opacity(0.34),
-                                        Color(hex: "4A4F55").opacity(0.62),
+                                        MilliColors.chromeDark.opacity(0.62),
                                         Color(hex: "8D9397").opacity(0.32),
-                                        Color(hex: "4A4F55").opacity(0.66)
+                                        MilliColors.chromeDark.opacity(0.66)
                                     ],
                                     center: .center
                                 ),
@@ -121,8 +122,10 @@ struct MilliCenterMButton: View {
         }
         .buttonStyle(MDialPressStyle(isPressed: $isPressed))
         .onAppear {
-            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                glowPulse = true
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                    glowPulse = true
+                }
             }
         }
     }

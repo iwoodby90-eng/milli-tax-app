@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - TreeOfLifeView
 // Milli's signature life-planning visualization. The tree contains only goals
@@ -49,8 +50,10 @@ struct TreeOfLifeView: View {
             withAnimation(.easeOut(duration: 1.1)) {
                 reveal = 1
             }
-            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
-                pulse = true
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
+                    pulse = true
+                }
             }
         }
     }

@@ -477,7 +477,7 @@ private struct ReportDataModel {
         categories: [
             .init(name: "Fuel", amount: 1_286.45, share: 0.452, color: MilliColors.cyanGlow, icon: "fuelpump.fill"),
             .init(name: "Car Maintenance", amount: 642.17, share: 0.226, color: MilliColors.deepCyan, icon: "wrench.and.screwdriver.fill"),
-            .init(name: "Insurance", amount: 389.45, share: 0.137, color: Color(hex: "7C8CFF"), icon: "shield.fill"),
+            .init(name: "Insurance", amount: 389.45, share: 0.137, color: MilliColors.deepCyan, icon: "shield.fill"),
             .init(name: "Tolls & Parking", amount: 246.30, share: 0.086, color: MilliColors.warning, icon: "parkingsign.circle.fill"),
             .init(name: "Other", amount: 278.80, share: 0.099, color: MilliColors.textSecondary, icon: "ellipsis.circle.fill")
         ],

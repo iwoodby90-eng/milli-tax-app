@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Charts
 
 // MARK: - LiveMarketChartView
@@ -23,8 +24,10 @@ struct LiveMarketChartView: View {
         .padding(.vertical, MilliLayout.cardPaddingV)
         .milliSurface(hasCyanBorder: true)
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                livePulse = true
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                    livePulse = true
+                }
             }
         }
     }

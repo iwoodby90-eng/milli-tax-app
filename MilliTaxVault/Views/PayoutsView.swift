@@ -68,7 +68,7 @@ struct PayoutsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "0C252E"))
+                            .fill(MilliColors.cardBackground)
                             .frame(width: 42, height: 42)
                             .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.35), lineWidth: 1))
 
@@ -155,7 +155,7 @@ struct PayoutsView: View {
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "0C1A22"), Color(hex: "060E12")],
+                                colors: [MilliColors.cardBackground, Color(hex: "060E12")],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -246,7 +246,7 @@ struct PayoutsView: View {
         .padding(3)
         .background(
             Capsule()
-                .fill(Color(hex: "0C252E"))
+                .fill(MilliColors.cardBackground)
                 .overlay(Capsule().stroke(Color.white.opacity(0.05), lineWidth: 0.7))
         )
     }
@@ -468,7 +468,7 @@ struct FinancialReceiptSheet: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
-                .fill(Color(hex: "0C1A22"))
+                .fill(MilliColors.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
                         .stroke(MilliColors.cyanGlow.opacity(0.25), lineWidth: 0.8)
@@ -583,7 +583,7 @@ private struct BankConnectionSheet: View {
                             Group {
                                 if selectedProvider == provider {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Color(hex: "0C252E"))
+                                        .fill(MilliColors.cardBackground)
                                 } else {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .fill(MilliColors.graphiteSurface)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Milli AI Character
 // Vector-built transparent companion. No bitmap plate or opaque background is used.
@@ -35,11 +36,15 @@ struct MilliAICharacterView: View {
         .accessibilityLabel("Milli AI")
         .onAppear {
             guard animated else { return }
-            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
-                eyePulse = true
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+                    eyePulse = true
+                }
             }
-            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
-                bodyTilt = 1.2
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
+                    bodyTilt = 1.2
+                }
             }
         }
     }
@@ -209,10 +214,12 @@ struct MilliAIOrb: View {
         .frame(width: characterSize + 14, height: characterSize + 14)
         .accessibilityLabel("Open Milli AI")
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.7).repeatForever(autoreverses: true)) {
-                floatY = -4
-                floatX = 2
-                tilt = 1.1
+            if !UIAccessibility.isReduceMotionEnabled {
+                withAnimation(.easeInOut(duration: 2.7).repeatForever(autoreverses: true)) {
+                    floatY = -4
+                    floatX = 2
+                    tilt = 1.1
+                }
             }
         }
     }

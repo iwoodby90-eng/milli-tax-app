@@ -23,7 +23,7 @@ public struct ConnectedExternalRetirementAccount: Identifiable, Codable, Equatab
         public var badgeColor: Color {
             switch self {
             case .connected: return Color(hex: "00E5FF")
-            case .transferInitiated: return Color(hex: "FFB800")
+            case .transferInitiated: return MilliColors.warning
             case .completed: return Color(hex: "34C759")
             }
         }

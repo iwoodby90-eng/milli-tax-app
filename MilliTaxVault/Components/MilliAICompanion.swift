@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct MilliAICompanion: View {
     @State private var floating = false
@@ -31,7 +32,7 @@ struct MilliAICompanion: View {
         }
         .buttonStyle(.plain)
         .offset(y: floating ? -3 : 0)
-        .animation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: floating)
+        .animation(UIAccessibility.isReduceMotionEnabled ? nil : .easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: floating)
         .padding(.bottom, 80)
         .padding(.trailing, 16)
         .onAppear { floating = true }
