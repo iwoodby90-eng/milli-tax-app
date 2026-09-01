@@ -82,7 +82,7 @@ struct TaxVaultView: View {
                         .font(MilliFont.heroNumber)
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
-                    MilliProvenanceBadge(state: vault.provenanceBadgeState)
+                    taxVaultProvenanceBadge(vault.provenance)
                         .accessibilityLabel("Data provenance: \(vault.provenance.rawValue.lowercased())")
                 }
                 Text("\(progressPercentText) of annual target")
@@ -115,6 +115,40 @@ struct TaxVaultView: View {
             .frame(width: 78, height: 78)
         }
         .milliCard(padding: 14)
+    }
+
+    /// Canonical provenance badge rendered inline for the reserve hero.
+    /// Mirrors the MilliProvenanceBadge treatment (dot + label) using the
+    /// canonical ProvenanceLabel contract. The view never infers LIVE.
+    private func taxVaultProvenanceBadge(_ provenance: ProvenanceLabel) -> some View {
+        HStack(spacing: 5) {
+            Circle()
+                .strokeBorder(provenance == .unavailable ? MilliColors.negative : .clear, lineWidth: 1)
+                .background(Circle().fill(provenance == .unavailable ? Color.clear : badgeDotColor(provenance)))
+                .frame(width: 6, height: 6)
+            Text(provenance.rawValue)
+                .font(MilliFont.caption)
+                .tracking(0.6)
+                .foregroundStyle(MilliColors.textTertiary)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(
+            Capsule().fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            Capsule().strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+        )
+    }
+
+    private func badgeDotColor(_ provenance: ProvenanceLabel) -> Color {
+        switch provenance {
+        case .live: return MilliColors.cyanGlow
+        case .cachedLive: return MilliColors.cyanGlow.opacity(0.5)
+        case .estimated, .userEntered, .demo: return MilliColors.textSecondary
+        case .preview: return MilliColors.warning
+        case .unavailable: return MilliColors.negative
+        }
     }
 
     private var targetRow: some View {
@@ -304,20 +338,6 @@ private struct TaxVaultDisplayModel {
             ],
             provenance: .unavailable
         )
-    }
-
-    /// Maps the canonical ProvenanceLabel onto the badge component state.
-    /// The view never infers LIVE; it only renders what the model carries.
-    var provenanceBadgeState: MilliProvenanceBadge.State {
-        switch provenance {
-        case .live: return .live
-        case .cachedLive: return .cachedLive
-        case .estimated: return .estimated
-        case .userEntered: return .userEntered
-        case .demo: return .demo
-        case .preview: return .preview
-        case .unavailable: return .unavailable
-        }
     }
 }
 
