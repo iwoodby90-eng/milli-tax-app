@@ -1,8 +1,10 @@
 import SwiftUI
 
 // MARK: - PayoutsView
-// Banking-grade payout history powered by live Stripe Financial Connections & Plaid Link bank aggregation.
-// Automatically pulls real-time direct deposits and gig payouts with verified financial receipts.
+// Payout history surface. Honest-data rule (matches VaultView):
+// until a production banking rail is connected, all payout data is seed/demo
+// state and every financial figure is gated behind a DEMO provenance label.
+// When a live provider is wired, the same gate flips to LIVE without layout change.
 
 struct PayoutsView: View {
     @StateObject private var bankService = BankConnectionService.shared
@@ -15,6 +17,7 @@ struct PayoutsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 12) {
                 header
+                provenanceBanner
                 bankConnectionCard
                 filterControl
                 payoutList
@@ -56,6 +59,40 @@ struct PayoutsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .background(MilliCardBackground(showGlow: true))
+    }
+
+    // MARK: - Provenance Gate
+    // DEMO/LIVE gating matching VaultView's honest pattern. The service currently
+    // seeds demo data (no production banking rail connected), so the app must say so.
+    private var payoutsAreLive: Bool {
+        bankService.connectedBank?.isLive == true && !bankService.payouts.isEmpty
+    }
+
+    private var provenanceBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: payoutsAreLive ? "checkmark.seal.fill" : "eye.slash.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(payoutsAreLive ? MilliColors.positive : MilliColors.warning)
+
+            Text(payoutsAreLive
+                 ? "LIVE — connected to your financial institution"
+                 : "DEMO — sample payout data. Connect a bank to see live deposits.")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusSm, style: .continuous)
+                .fill((payoutsAreLive ? MilliColors.positive : MilliColors.warning).opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusSm, style: .continuous)
+                        .stroke((payoutsAreLive ? MilliColors.positive : MilliColors.warning).opacity(0.25), lineWidth: 0.7)
+                }
+        )
     }
 
     // MARK: - Bank Connection Card
