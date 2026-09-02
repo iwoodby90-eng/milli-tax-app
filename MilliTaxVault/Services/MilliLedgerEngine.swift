@@ -52,7 +52,7 @@ public enum MilliLedgerError: Error, Equatable {
 
 /// Discrepancy between local authoritative state and provider-side state.
 public struct MilliReconciliationFinding: Equatable, Sendable {
-    public enum Severity: Equatable, Sendable {
+    public enum Severity: Equatable, Hashable, Sendable {
         case missingLocally   // provider knows a movement we do not
         case missingAtProvider // we recorded a movement the provider does not confirm
         case amountMismatch(local: Int64, provider: Int64)
