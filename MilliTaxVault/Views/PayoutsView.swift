@@ -119,7 +119,7 @@ struct PayoutsView: View {
 
                     Menu {
                         Button {
-                            bankService.syncTransactions()
+                            Task { await bankService.syncTransactions() }
                         } label: {
                             Label("Sync Payouts Now", systemImage: "arrow.triangle.2.circlepath")
                         }
@@ -676,8 +676,18 @@ private struct BankConnectionSheet: View {
 
     private var connectButton: some View {
         Button {
-            service.connectBank(institution: selectedInstitution, provider: selectedProvider, accountMask: accountMask.isEmpty ? "4821" : accountMask)
-            dismiss()
+            // REAL PATH: hosted Stripe Financial Connections flow — bank search,
+            // secure login, data-share consent. Falls back to the local demo
+            // stub only when the backend is not configured.
+            if MilliBackendClient.shared.isConfigured {
+                Task {
+                    await service.connectBankViaHostedFlow()
+                    dismiss()
+                }
+            } else {
+                service.connectBank(institution: selectedInstitution, provider: selectedProvider, accountMask: accountMask.isEmpty ? "4821" : accountMask)
+                dismiss()
+            }
         } label: {
             HStack(spacing: 8) {
                 if service.isConnecting {
