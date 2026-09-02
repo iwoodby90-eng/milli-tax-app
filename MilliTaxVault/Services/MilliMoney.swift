@@ -37,10 +37,10 @@ public struct MilliMoney: Equatable, Hashable, Sendable {
     public init(decimal: Decimal) {
         var value = decimal * 100
         var rounded = Decimal()
-        _ = NSDecimalRound(&rounded, &value, 0, .plain)
+        NSDecimalRound(&rounded, &value, 0, .plain)
         // half-away-from-zero for negatives:
         if rounded < 0 && (value < rounded) { rounded -= 1 }
-        self.cents = Int64(rounded as NSDecimalNumber).int64Value
+        self.cents = Int64(truncatingIfNeeded: rounded as NSDecimalNumber)
     }
 
     public static let zero = MilliMoney(cents: 0)
@@ -97,7 +97,7 @@ extension Decimal {
     public static func milliRoundedToCents(_ value: Decimal) -> Decimal {
         var scaled = value * 100
         var rounded = Decimal()
-        _ = NSDecimalRound(&rounded, &scaled, 0, .plain)
+        NSDecimalRound(&rounded, &scaled, 0, .plain)
         if rounded > 0 && scaled > rounded { rounded += 1 }
         if rounded < 0 && scaled < rounded { rounded -= 1 }
         return rounded / 100
@@ -126,8 +126,8 @@ public enum MilliAllocation {
             let exact = total.decimal * (weight / weightSum)
             var scaled = exact * 100
             var floored = Decimal()
-            _ = NSDecimalRound(&floored, &scaled, 0, .down)
-            floors.append(Int64(floored as NSDecimalNumber).int64Value)
+            NSDecimalRound(&floored, &scaled, 0, .down)
+            floors.append(Int64(truncatingIfNeeded: floored as NSDecimalNumber))
             remainders.append((floors.count - 1, scaled - floored))
         }
         var remainderCents = total.cents - floors.reduce(0, +)

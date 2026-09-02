@@ -108,14 +108,16 @@ public actor TreasuryExecutionService {
         do {
             _ = try await provider.initiateAllocation(reference: reference,
                                                       amountCents: record.amountCents)
-            record.state = .processing
-            record.updatedAt = Date()
-            records[reference] = record
-            return record
+            records[reference] = TreasuryMovementRecord(reference: reference,
+                                                         amountCents: record.amountCents,
+                                                         state: .processing,
+                                                         updatedAt: Date())
+            return records[reference]!
         } catch {
-            record.state = .unavailable
-            record.updatedAt = Date()
-            records[reference] = record
+            records[reference] = TreasuryMovementRecord(reference: reference,
+                                                         amountCents: record.amountCents,
+                                                         state: .unavailable,
+                                                         updatedAt: Date())
             throw TreasuryExecutionError.providerUnavailable(String(describing: error))
         }
     }
@@ -129,10 +131,11 @@ public actor TreasuryExecutionService {
         guard TreasuryStateMachine.canTransition(record.state, to: state) else {
             throw TreasuryExecutionError.invalidTransition(from: record.state, to: state)
         }
-        record.state = state
-        record.updatedAt = Date()
-        records[reference] = record
-        return record
+        records[reference] = TreasuryMovementRecord(reference: reference,
+                                                     amountCents: record.amountCents,
+                                                     state: state,
+                                                     updatedAt: Date())
+        return records[reference]!
     }
 
     public func currentState(reference: String) -> TreasuryMovementRecord? {
