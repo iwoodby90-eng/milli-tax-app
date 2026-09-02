@@ -234,7 +234,6 @@
 				B10304 /* BankConnectionService.swift */,
 				B10601 /* TreasuryAutopilotStore.swift */,
 				B10400 /* QuarterlyTaxEstimator.swift */,
-				B10800 /* MilliCentsAnalyzer.swift */,
 				B10802 /* MilliMoney.swift */,
 				B10804 /* MilliLedgerEngine.swift */,
 				B10806 /* TreasuryExecutionService.swift */,
@@ -330,6 +329,7 @@
 				B10600 /* PayoutStateContract.swift */,
 				B10101 /* VehicleProfile.swift */,
 				B10102 /* TaxProfile.swift */,
+				B10800 /* MilliCentsAnalyzer.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
