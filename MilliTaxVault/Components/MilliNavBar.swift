@@ -32,150 +32,129 @@ enum MilliTab: String, CaseIterable {
 }
 
 // MARK: - MilliNavBar
-// Production cockpit navigation bar exactly matching the approved design references (Image 23):
-// - Sculpted floating pill bar with 34pt continuous corner radius & beveled metallic chrome stroke
-// - Recessed dark obsidian black-glass background with ambient cyan illumination
-// - Center elevated M hardware dial with concentric circular chrome bezel, 36 precision tick marks,
-//   and glowing neon cyan light ring
-// - 4 core tab destinations: Payouts, Mileage, Wealth, More, plus center M dial (Home)
+// Canonical MILLI navigation (locked reference, Image 40):
+// - Full-width sculpted metallic chassis integrated into the screen edge (NOT a floating capsule)
+// - Signature silhouette: flat deck -> upward sweeping shoulder -> center M crest -> downward shoulder -> flat deck
+// - Broad polished silver/chrome upper deck with visible depth; deep obsidian black-glass lower face
+// - Four circular recessed details across the upper deck: two left, two right
+// - Center M physically integrated into the chassis crest (never a floating FAB)
+// - Segmented cyan illumination arcs with dark spacers (never a continuous ring)
+// - Active tab: restrained cyan illumination. Inactive tabs: silver/graphite.
+// - Motion: static active-state illumination only; no glow cycling or pulsing.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
     var onHomeTap: () -> Void = {}
-    
+
     @State private var isDialPressed = false
-    @State private var glowPulse = false
-    @State private var pulseStreaks = false
-    
+
+    private let deckHeight: CGFloat = 58
+    private let lowerFaceHeight: CGFloat = 30
+    private let crestHeight: CGFloat = 34
+
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Ambient cyan underglow aura
-            Capsule(style: .continuous)
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            MilliColors.cyanGlow.opacity(glowPulse ? 0.32 : 0.18),
-                            Color.clear
-                        ],
-                        center: .center,
-                        startRadius: 8,
-                        endRadius: 110
-                    )
-                )
-                .frame(height: 54)
-                .blur(radius: 20)
-                .padding(.horizontal, 24)
-                .offset(y: -4)
-            
-            // Cockpit floating bar background
-            cockpitBarBody
-            
-            // Center M dial button
-            centerDialButton
-                .offset(y: -24)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 94)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .onAppear {
-            // R-3 (Sept 1 visual release audit): perpetual glow/shimmer cycling removed.
-            // Static active-state illumination only; geometry unchanged.
-            glowPulse = true
-            pulseStreaks = true
-        }
-    }
-    
-    // MARK: - Cockpit Floating Bar Body
-    
-    private var cockpitBarBody: some View {
-        ZStack {
-            // Recessed obsidian glass chassis
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
+            // Full-width chassis: lower obsidian face + upper chrome deck + shoulder silhouette
+            ChassisShape(crestHeight: crestHeight)
                 .fill(
                     LinearGradient(
                         stops: [
-                            .init(color: Color(hex: "13181F"), location: 0.0),
-                            .init(color: Color(hex: "080B0E"), location: 0.35),
-                            .init(color: Color(hex: "030507"), location: 0.85),
-                            .init(color: Color.black, location: 1.0)
+                            .init(color: Color(hex: "E8EAED"), location: 0.0),
+                            .init(color: Color(hex: "9BA1A8"), location: 0.35),
+                            .init(color: Color(hex: "C6CAD0"), location: 0.65),
+                            .init(color: Color(hex: "6E747B"), location: 1.0)
                         ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                        startPoint: .top, endPoint: .bottom
                     )
                 )
-            
-            // Subtle internal glass reflection highlight
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color.white.opacity(0.09), location: 0.0),
-                            .init(color: Color.white.opacity(0.02), location: 0.25),
-                            .init(color: Color.clear, location: 0.50)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                .overlay(
+                    // Upper-deck machined seam
+                    ChassisShape(crestHeight: crestHeight)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.85),
+                                    Color(hex: "A0AAB2").opacity(0.55),
+                                    Color.white.opacity(0.35)
+                                ],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.0
+                        )
                 )
-            
-            // High-precision beveled chrome edge stroke
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color.white.opacity(0.85), location: 0.0),
-                            .init(color: Color(hex: "A0AAB6").opacity(0.60), location: 0.20),
-                            .init(color: MilliColors.cyanGlow.opacity(0.40), location: 0.50),
-                            .init(color: Color(hex: "252B34").opacity(0.80), location: 0.80),
-                            .init(color: Color.white.opacity(0.45), location: 1.0)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.2
-                )
-            
-            // Tab button destinations
+                .overlay(alignment: .bottom) {
+                    // Deep obsidian black-glass lower face
+                    RoundedRectangle(cornerRadius: 0)
+                        .fill(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color(hex: "14181D"), location: 0.0),
+                                    .init(color: Color(hex: "07090B"), location: 0.6),
+                                    .init(color: Color.black, location: 1.0)
+                                ],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+                        .frame(height: lowerFaceHeight)
+                        .overlay(
+                            Rectangle()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        )
+                }
+                .shadow(color: Color.black.opacity(0.85), radius: 14, x: 0, y: -6)
+                .frame(height: deckHeight + lowerFaceHeight)
+
+            // Four recessed circular details across the upper deck: two left, two right
+            recessedDetails
+                .allowsHitTesting(false)
+                .frame(height: deckHeight + lowerFaceHeight, alignment: .top)
+                .padding(.top, 10)
+                .padding(.horizontal, 34)
+
+            // Tab destinations + recessed details + center M crest
             HStack(spacing: 0) {
-                // Left group: Vault & Activity
+                // Left group: Payouts & Mileage
                 tabButton(.vault)
                 tabButton(.activity)
-                
-                // Center clearance for elevated hardware dial
+
                 Spacer()
-                    .frame(width: 80)
-                
-                // Right group: Wealth & Cockpit
+                    .frame(width: 96)
+
+                // Right group: Wealth & More
                 tabButton(.wealth)
                 tabButton(.cockpit)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
+            .frame(height: deckHeight + lowerFaceHeight, alignment: .top)
+            .padding(.top, 4)
+
+            // Center M crest, integrated into the chassis (no floating elevation)
+            centerDialButton
+                .offset(y: -crestHeight + 6)
         }
-        .frame(height: 68)
-        .shadow(color: Color.black.opacity(0.90), radius: 18, x: 0, y: 10)
+        .frame(maxWidth: .infinity)
+        .frame(height: deckHeight + lowerFaceHeight + 12)
+        .padding(.bottom, 0)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Milli navigation")
     }
-    
+
     // MARK: - Tab Item Button
-    
+
     private func tabButton(_ tab: MilliTab) -> some View {
         let isSelected = selectedTab == tab
-        
         return Button {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
-                selectedTab = tab
-            }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            selectedTab = tab
         } label: {
             VStack(spacing: 3) {
-                // Icon with active glowing pill / tint
                 ZStack {
                     if isSelected {
+                        // Restrained embedded cyan illumination (static, no cycling)
                         Circle()
                             .fill(
                                 RadialGradient(
                                     colors: [
-                                        MilliColors.cyanGlow.opacity(0.35),
+                                        MilliColors.cyanGlow.opacity(0.28),
                                         MilliColors.cyanGlow.opacity(0.0)
                                     ],
                                     center: .center,
@@ -183,32 +162,30 @@ struct MilliNavBar: View {
                                     endRadius: 20
                                 )
                             )
-                            .frame(width: 34, height: 34)
+                            .frame(width: 36, height: 36)
                     }
-                    
+
                     Image(systemName: tab.icon)
                         .font(.system(size: 19, weight: isSelected ? .bold : .medium))
                         .foregroundStyle(
-                            isSelected ?
-                            AnyShapeStyle(
-                                LinearGradient(
-                                    colors: [Color.white, MilliColors.cyanGlow],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                            isSelected
+                                ? AnyShapeStyle(
+                                    LinearGradient(
+                                        colors: [Color.white, MilliColors.cyanGlow],
+                                        startPoint: .top, endPoint: .bottom
+                                    )
                                 )
-                            ) :
-                            AnyShapeStyle(Color(hex: "959EA9"))
+                                : AnyShapeStyle(Color(hex: "959E9F"))
                         )
-                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.75) : .clear, radius: 5)
+                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.45) : .clear, radius: 4)
+                        .frame(height: 24)
                 }
-                .frame(height: 24)
-                
-                // Label
+
                 Text(tab.displayName)
                     .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
                     .foregroundStyle(isSelected ? MilliColors.cyanGlow : MilliColors.textSecondary)
                     .tracking(0.3)
-                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.40) : .clear, radius: 3)
+                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.35) : .clear, radius: 3)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 56)
@@ -218,34 +195,44 @@ struct MilliNavBar: View {
         .accessibilityLabel(tab.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
-    
-    // MARK: - Center Elevated M Dial (Home)
-    
+
+    // MARK: - Recessed deck details (two left, two right)
+
+    private var recessedDetails: some View {
+        HStack(spacing: 26) {
+            ForEach(0..<2, id: \.self) { _ in recessedDot }
+            Spacer().frame(width: 150)
+            ForEach(0..<2, id: \.self) { _ in recessedDot }
+        }
+    }
+
+    private var recessedDot: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(hex: "2A2F35"),
+                        Color(hex: "0C0F12")
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+            .frame(width: 7, height: 7)
+            .overlay(
+                Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+            )
+            .shadow(color: Color.black.opacity(0.6), radius: 1, x: 0, y: 1)
+    }
+
+    // MARK: - Center M Crest Dial (Home), integrated into the chassis
+
     private var centerDialButton: some View {
         Button {
-            withAnimation(.spring(response: 0.36, dampingFraction: 0.72)) {
-                selectedTab = .home
-            }
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            selectedTab = .home
             onHomeTap()
         } label: {
             ZStack {
-                // Outer ambient cyan glow halo
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                MilliColors.cyanGlow.opacity(glowPulse ? 0.45 : 0.25),
-                                Color.clear
-                            ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 46
-                        )
-                    )
-                    .frame(width: 84, height: 84)
-                
-                // Outer chrome hardware bezel
+                // Sculpted chrome outer housing
                 Circle()
                     .fill(
                         AngularGradient(
@@ -254,53 +241,38 @@ struct MilliNavBar: View {
                                 Color(hex: "757D87"),
                                 Color(hex: "DFE4EA"),
                                 Color(hex: "2F353F"),
-                                Color(hex: "CBD2DA"),
+                                Color(hex: "CBD2D9"),
                                 Color(hex: "666E78"),
-                                Color(hex: "F8FAFC"),
-                                Color(hex: "F4F7FA")
+                                Color(hex: "F8FAFC")
                             ],
                             center: .center
                         )
                     )
-                    .frame(width: 68, height: 68)
-                    .overlay {
-                        Circle().stroke(Color.white.opacity(0.90), lineWidth: 0.9)
-                    }
-                    .shadow(color: Color.black.opacity(0.95), radius: 10, x: 0, y: 7)
-                
-                // Precision tick marks ring (36 ticks)
+                    .frame(width: 78, height: 78)
+                    .shadow(color: Color.black.opacity(0.9), radius: 8, x: 0, y: 5)
+
+                // Dark mechanical groove
                 Circle()
                     .fill(Color(hex: "05080B"))
-                    .frame(width: 60, height: 60)
-                
-                ForEach(0..<36, id: \.self) { index in
-                    Capsule()
-                        .fill(index % 6 == 0 ? Color.white.opacity(0.90) : MilliColors.cyanGlow.opacity(0.65))
-                        .frame(width: index % 6 == 0 ? 1.2 : 0.9, height: index % 6 == 0 ? 4.8 : 3.2)
-                        .offset(y: -27)
-                        .rotationEffect(.degrees(Double(index) * 10))
-                }
-                
-                // Cyan illuminated light ring with high-tech energy gradient
+                    .frame(width: 70, height: 70)
+
+                // Segmented cyan illumination arcs (4 arcs with dark spacers, never continuous)
+                SegmentedArcRing(segments: 4, gapDegrees: 14)
+                    .stroke(MilliColors.cyanGlow.opacity(0.85), lineWidth: 2.2)
+                    .frame(width: 62, height: 62)
+
+                // Secondary metallic ring
                 Circle()
                     .stroke(
                         LinearGradient(
-                            colors: [
-                                Color.white,
-                                MilliColors.cyanGlow,
-                                MilliColors.deepCyan,
-                                Color(hex: "0077B6"),
-                                MilliColors.cyanGlow.opacity(0.85)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            colors: [Color.white.opacity(0.75), Color(hex: "8A929B").opacity(0.5)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
                         ),
-                        lineWidth: 2.0
+                        lineWidth: 1.0
                     )
-                    .frame(width: 51, height: 51)
-                    .shadow(color: MilliColors.cyanGlow.opacity(glowPulse ? 0.95 : 0.65), radius: glowPulse ? 8 : 4)
-                
-                // Inner dark face
+                    .frame(width: 55, height: 55)
+
+                // Black-glass face
                 Circle()
                     .fill(
                         RadialGradient(
@@ -314,17 +286,17 @@ struct MilliNavBar: View {
                             endRadius: 25
                         )
                     )
-                    .frame(width: 48, height: 48)
-                
-                // Canonical M metallic logo with cyan blade
+                    .frame(width: 50, height: 50)
+
+                // Dimensional metallic/cyan M emblem
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 32, height: 32)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.60), radius: 6)
+                    .frame(width: 30, height: 30)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.55), radius: 5)
             }
-            .scaleEffect(isDialPressed ? 0.94 : 1.0)
-            .animation(.spring(response: 0.24, dampingFraction: 0.65), value: isDialPressed)
+            .scaleEffect(isDialPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.24, dampingFraction: 0.7), value: isDialPressed)
         }
         .buttonStyle(.plain)
         .simultaneousGesture(
@@ -337,12 +309,77 @@ struct MilliNavBar: View {
     }
 }
 
+// MARK: - Chassis silhouette
+// Flat deck -> upward sweeping shoulder -> center M crest -> downward sweeping shoulder -> flat deck.
+
+struct ChassisShape: Shape {
+    var crestHeight: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        let crestWidth: CGFloat = 96
+        let crestCenter = w / 2
+        let shoulderStart = crestCenter - crestWidth / 2
+        let shoulderEnd = crestCenter + crestWidth / 2
+        let deckY: CGFloat = 0
+
+        path.move(to: CGPoint(x: 0, y: deckY))
+        path.addLine(to: CGPoint(x: shoulderStart, y: deckY))
+        // Upward sweeping shoulder (smooth curve into the crest)
+        path.addCurve(
+            to: CGPoint(x: crestCenter, y: deckY - crestHeight),
+            control1: CGPoint(x: shoulderStart + crestWidth * 0.35, y: deckY),
+            control2: CGPoint(x: shoulderStart + crestWidth * 0.35, y: deckY - crestHeight)
+        )
+        path.addCurve(
+            to: CGPoint(x: shoulderEnd, y: deckY),
+            control1: CGPoint(x: shoulderEnd - crestWidth * 0.35, y: deckY - crestHeight),
+            control2: CGPoint(x: shoulderEnd - crestWidth * 0.35, y: deckY)
+        )
+        // Flat deck to the right edge, then down and around
+        path.addLine(to: CGPoint(x: w, y: deckY))
+        path.addLine(to: CGPoint(x: w, y: h))
+        path.addLine(to: CGPoint(x: 0, y: h))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Segmented arc ring (cyan illumination with dark spacers)
+
+struct SegmentedArcRing: Shape {
+    var segments: Int
+    var gapDegrees: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        let segmentAngle = 360.0 / CGFloat(segments)
+        let arcAngle = segmentAngle - gapDegrees
+        for i in 0..<segments {
+            let start = Angle.degrees(Double(i) * Double(segmentAngle) - 90 - Double(gapDegrees) / 2)
+            let end = start + .degrees(Double(arcAngle))
+            path.addArc(
+                center: center,
+                radius: radius,
+                startAngle: start,
+                endAngle: end,
+                clockwise: false
+            )
+        }
+        return path
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
     ZStack {
         Color(hex: "07090B").ignoresSafeArea()
-        
+
         VStack {
             Spacer()
             MilliNavBar(selectedTab: .constant(.home))
