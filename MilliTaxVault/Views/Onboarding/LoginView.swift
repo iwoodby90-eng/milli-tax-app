@@ -286,10 +286,7 @@ struct LoginView: View {
 
             MilliWordmark(fontSize: 34, tracking: 6.4)
 
-            Text("Money, Made Intelligent.")
-                .font(MilliFont.bodyMedium)
-                .foregroundStyle(MilliColors.textSecondary)
-
+            // Brand rule: tagline is not screen copy (30-screen spec, conflict #3).
             Text(mode == .signIn ? "Welcome back" : "Build your Milli profile")
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)

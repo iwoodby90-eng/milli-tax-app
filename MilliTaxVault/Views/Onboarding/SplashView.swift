@@ -28,11 +28,8 @@ struct SplashView: View {
                         .frame(maxWidth: 290)
                         .accessibilityHidden(true)
 
-                    Text("Money, Made Intelligent.")
-                        .font(.custom("Inter-Medium", size: 15, relativeTo: .subheadline))
-                        .tracking(0.5)
-                        .foregroundStyle(MilliColors.silver)
-
+                    // Brand rule: the tagline is not screen copy (30-screen spec,
+                    // conflict #3). The cyan light seam below remains the brand moment.
                     Capsule(style: .continuous)
                         .fill(
                             LinearGradient(

@@ -423,6 +423,10 @@ struct MileageView: View {
                     Text("Est. Deduction")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
+                    Text("ESTIMATED")
+                        .font(.custom("Inter-Bold", size: 7))
+                        .tracking(0.5)
+                        .foregroundStyle(MilliColors.textTertiary.opacity(0.8))
                 }
                 .frame(maxWidth: .infinity)
             }

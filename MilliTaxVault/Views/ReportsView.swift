@@ -559,7 +559,7 @@ private enum ReportExporter {
 
             NSString(string: "MILLI — \(selectedTab.title) Report")
                 .draw(at: CGPoint(x: 42, y: 42), withAttributes: titleAttributes)
-            NSString(string: "Money, Made Intelligent. • \(report.periodLabel)")
+            NSString(string: "MILLI — \(selectedTab.title) Report • \(report.periodLabel)")
                 .draw(at: CGPoint(x: 42, y: 76), withAttributes: subtitleAttributes)
 
             let lines = pdfLines(report: report, selectedTab: selectedTab)

@@ -135,6 +135,8 @@ struct ExpensesView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("TOTAL DEDUCTIONS")
                     .sectionHeaderStyle()
+                // Seeded session data until expense sync is wired — labeled DEMO.
+                ProvenanceTag(label: .demo)
                 Text(totalDeductions.formatted(.currency(code: "USD")))
                     .font(MilliFont.numericLarge)
                     .monospacedDigit()

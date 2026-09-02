@@ -169,6 +169,10 @@ struct WealthOverviewView: View {
             Text("TOTAL NET WORTH")
                 .sectionHeaderStyle()
 
+            // Reference-board values are DEMO placeholders (30-screen spec,
+            // data-truth rule) — labeled, never presented as authoritative.
+            ProvenanceTag(label: .demo)
+
             Text(model.totalNetWorth.formatted(.currency(code: "USD").precision(.fractionLength(0))))
                 .font(MilliFont.heroNumber)
                 .monospacedDigit()
@@ -281,8 +285,8 @@ struct WealthOverviewView: View {
             }
 
             HStack(spacing: 8) {
-                projectionMetric("Retirement Value", compactCurrency(model.retirementProjection), MilliColors.positive)
-                projectionMetric("Future Net Worth", compactCurrency(model.futureNetWorth), MilliColors.cyanGlow)
+                projectionMetric("Retirement Value (Projection)", compactCurrency(model.retirementProjection), MilliColors.positive)
+                projectionMetric("Future Net Worth (Projection)", compactCurrency(model.futureNetWorth), MilliColors.cyanGlow)
             }
 
             HStack {

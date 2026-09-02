@@ -58,10 +58,15 @@ struct HomeView: View {
 
     private var availableHero: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("AVAILABLE TO SPEND")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.9)
-                .foregroundStyle(MilliColors.textSecondary)
+            HStack(spacing: 6) {
+                Text("AVAILABLE TO SPEND")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.9)
+                    .foregroundStyle(MilliColors.textSecondary)
+                // Seeded presentation values until the authenticated dashboard
+                // snapshot lands — labeled DEMO per the data-truth rule.
+                ProvenanceTag(label: .demo)
+            }
 
             Text(viewModel.availableToSpend)
                 .font(MilliFont.heroBalance)
@@ -182,6 +187,8 @@ struct HomeView: View {
                     .foregroundStyle(MilliColors.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
+                // Seeded presentation balance until Treasury is wired — labeled DEMO.
+                ProvenanceTag(label: .demo)
 
                 HStack(alignment: .center, spacing: 7) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -219,6 +226,8 @@ struct HomeView: View {
                     .foregroundStyle(MilliColors.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
+                // Seeded presentation score until the readiness service is wired — labeled DEMO.
+                ProvenanceTag(label: .demo)
 
                 HStack(spacing: 8) {
                     progressRing(
@@ -250,6 +259,8 @@ struct HomeView: View {
                     .font(MilliFont.sectionLabel)
                     .tracking(0.55)
                     .foregroundStyle(MilliColors.textSecondary)
+                // Seeded estimate until the estimator service is wired — labeled ESTIMATED.
+                ProvenanceTag(label: .estimated)
                 Text(viewModel.quarterlyTaxes)
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
