@@ -147,6 +147,8 @@ public final class BankConnectionService: ObservableObject {
     @Published public var isConnecting: Bool = false
     @Published public var isSyncing: Bool = false
     @Published public var syncMessage: String?
+    @Published public private(set) var taxVaultReserveBalance: Double = 0
+    @Published public private(set) var lastPayoutSyncAt: Date?
 
     private let storageKeyBank = "milli_connected_bank_v2"
     private let storageKeyPlatforms = "milli_linked_platforms_v2"
@@ -164,6 +166,44 @@ public final class BankConnectionService: ObservableObject {
         payouts.reduce(0) { $0 + $1.grossAmount }
     }
 
+    /// REAL PROVIDER PATH (Stripe Financial Connections hosted flow):
+    /// opens the hosted page where the user searches their bank, selects it,
+    /// logs in securely, and consents to sharing data with Milli. The account
+    /// is only marked connected (isLive: true) once the backend confirms the
+    /// session and returns the live account + balance.
+    public func connectBankViaHostedFlow() async {
+        guard !isConnecting else { return }
+        isConnecting = true
+        defer { isConnecting = false }
+
+        let accounts: ConnectedAccountsResponse? = await withCheckedContinuation { continuation in
+            BankLinkCoordinator.shared.startLink(presentationContext: ASPresentationAnchor()) { result in
+                continuation.resume(returning: result)
+            }
+        }
+
+        guard let accounts, let primary = accounts.accounts.first else {
+            // Cancelled or failed — previous state untouched.
+            return
+        }
+
+        connectedBank = ConnectedBankAccount(
+            id: primary.id,
+            institutionName: primary.institutionName,
+            accountName: primary.accountName,
+            accountMask: primary.accountMask,
+            accountType: primary.accountType,
+            balance: primary.balance,
+            provider: .stripeFinancialConnections,
+            lastSyncedAt: primary.lastSyncedAt,
+            isLive: true
+        )
+
+        // Immediately pull detected payouts + Tax Vault reserve state.
+        await syncTransactions()
+    }
+
+    /// Legacy local stub retained for the demo provider only — never marks live.
     public func connectBank(institution: BankInstitution, provider: BankConnectionProvider, accountMask: String = "4821") {
         isConnecting = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
@@ -188,15 +228,45 @@ public final class BankConnectionService: ObservableObject {
         payouts.removeAll()
     }
 
-    public func syncTransactions() {
-        // LAUNCH P0 CLEANUP: no simulated sync theater and no seeded payouts.
-        // Real sync happens when a production provider is connected.
+    /// REAL SYNC PATH: pulls gig-platform payouts the backend detected from
+    /// the connected account, plus the authoritative Tax Vault reserve balance.
+    /// Each detected payout carries the tax amount held for the user; the
+    /// reserve accumulates until quarterly/annual filing.
+    public func syncTransactions() async {
         guard connectedBank != nil else { return }
+        guard MilliBackendClient.shared.isConfigured else {
+            syncMessage = "Milli backend not configured."
+            return
+        }
         isSyncing = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            self?.connectedBank?.lastSyncedAt = Date()
-            self?.isSyncing = false
-            self?.syncMessage = nil
+        defer { isSyncing = false }
+        do {
+            let sync = try await MilliBackendClient.shared.syncPayouts()
+            payouts = sync.payouts.map { payload in
+                let platformMatch = GigPlatformLink.standardPlatforms.first {
+                    $0.name.lowercased().contains(payload.platform.lowercased())
+                }
+                return VerifiedPayout(
+                    id: payload.id,
+                    receiptCode: "FC-\(payload.id.suffix(6))",
+                    platform: payload.platform,
+                    platformInitial: String(payload.platform.prefix(1)),
+                    assetName: platformMatch?.assetName,
+                    platformColorHex: platformMatch?.primaryColorHex ?? "00E5FF",
+                    dateLabel: payload.detectedAt.formatted(date: .abbreviated, time: .omitted),
+                    grossAmount: payload.grossAmount,
+                    isPending: payload.taxHoldState != "confirmed",
+                    isThisWeek: Calendar.current.isDateInWeek(payload.detectedAt),
+                    bankMask: connectedBank?.accountMask ?? "0000",
+                    achTraceId: payload.id
+                )
+            }
+            taxVaultReserveBalance = sync.taxVaultReserveBalance
+            lastPayoutSyncAt = sync.syncedAt
+            connectedBank?.lastSyncedAt = sync.syncedAt
+            syncMessage = nil
+        } catch {
+            syncMessage = error.localizedDescription
         }
     }
 

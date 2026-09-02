@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+"""
+Milli backend — bank link + payout sync + Tax Vault reserve.
+
+Holds the Stripe secret key (env: STRIPE_SECRET_KEY) so the iOS app never
+sees provider credentials. Implements exactly the three endpoints the app uses:
+
+  POST /api/bank-link/session   -> create Stripe Financial Connections session, return hosted URL
+  POST /api/bank-link/complete  -> retrieve connected accounts + live balances
+  POST /api/payouts/sync        -> detect gig-platform payouts in transactions,
+                                   compute/hold tax into the Milli Tax Vault reserve
+
+Run: STRIPE_SECRET_KEY=sk_... python3 server.py
+"""
+
+import os
+import re
+import time
+import uuid
+from decimal import Decimal, ROUND_HALF_UP
+
+from flask import Flask, request, jsonify
+import stripe
+
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+if not stripe.api_key:
+    print("WARNING: STRIPE_SECRET_KEY not set — bank link will fail until it is provided.")
+
+app = Flask(__name__)
+
+# In-memory session store (swap for Postgres using backend/migrations in prod).
+LINK_SESSIONS = {}
+TAX_VAULT_RESERVE = Decimal("0")  # authoritative reserve balance (cents in prod)
+RESERVE_LEDGER = []
+
+# Gig platform payout detection: match counterparty/descriptor patterns.
+GIG_PATTERNS = [
+    ("DoorDash", re.compile(r"doordash", re.I)),
+    ("Uber", re.compile(r"uber", re.I)),
+    ("Lyft", re.compile(r"lyft", re.I)),
+    ("Instacart", re.compile(r"instacart|shipt", re.I)),
+    ("Grubhub", re.compile(r"grubhub|seamless", re.I)),
+    ("Amazon Flex", re.compile(r"amazon\s*flex|amzn\s*flex", re.I)),
+    ("Spark Driver", re.compile(r"spark\s*driver|walmart\s*spark", re.I)),
+]
+
+DEFAULT_TAX_RATE_BPS = 3000  # 30% default reserve rate; per-user tax profile in prod
+
+
+def money(value) -> float:
+    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+@app.post("/api/bank-link/session")
+def create_link_session():
+    """Create a Stripe Financial Connections session. The hosted page lets the
+    user search their bank, select it, log in securely, and consent to sharing
+    account data with Milli."""
+    session_id = f"fc_{uuid.uuid4().hex}"
+    try:
+        session = stripe.financial_connections.Session.create(
+            account_holder={"type": "customer"},
+            components={"account_linking": {
+                "enabled": True,
+                "permissions": ["balances", "ownership", "transactions"],
+            }},
+            # return_url receives the redirect after the hosted flow completes.
+            return_url=f"https://app.drivemilli.com/bank-link/callback?session_id={session_id}",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": f"Stripe session creation failed: {exc}"}), 502
+
+    LINK_SESSIONS[session_id] = {"stripe_session_id": session.id, "created": time.time()}
+    return jsonify({
+        "sessionId": session_id,
+        "hostedUrl": session.url if hasattr(session, "url") else (
+            f"https://connect.stripe.com/financial_connections/sessions/{session.id}"
+        ),
+        "returnUrl": f"https://app.drivemilli.com/bank-link/callback?session_id={session_id}",
+    })
+
+
+@app.post("/api/bank-link/complete")
+def complete_link():
+    session_id = request.json.get("sessionId", "")
+    record = LINK_SESSIONS.pop(session_id, None)
+    if not record:
+        return jsonify({"error": "Unknown or expired link session."}), 404
+
+    try:
+        session = stripe.financial_connections.Session.retrieve(record["stripe_session_id"])
+        accounts = []
+        for acc in session.accounts or []:
+            full = stripe.financial_connections.Account.retrieve(
+                acc.id, expand=["balances", "display"]
+            )
+            balance = 0.0
+            for bal in (getattr(full, "balances", None) or []):
+                if getattr(bal, "status", "") == "active" and getattr(bal, "type", "") == "cash":
+                    balance = money(bal.current.amount / 100)
+                    break
+            display = getattr(full, "display", None)
+            accounts.append({
+                "id": full.id,
+                "institutionName": getattr(display, "bank_name", "Connected Bank") if display else "Connected Bank",
+                "accountName": getattr(display, "account_name", "Primary Checking") if display else "Primary Checking",
+                "accountMask": getattr(display, "account_number_last4", "0000") if display else "0000",
+                "accountType": "Checking",
+                "balance": balance,
+                "lastSyncedAt": int(time.time()),
+            })
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": f"Stripe retrieval failed: {exc}"}), 502
+
+    return jsonify({"accounts": accounts})
+
+
+@app.post("/api/payouts/sync")
+def sync_payouts():
+    """Detect gig-platform payouts in the connected account's transactions and
+    hold the correct tax amount from each into the Milli Tax Vault reserve."""
+    account_id = request.json.get("accountId")
+    if not account_id:
+        return jsonify({"error": "accountId required"}), 400
+
+    payouts = []
+    try:
+        txns = stripe.financial_connections.Transaction.list(
+            account=account_id, limit=100
+        )
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": f"Stripe transaction fetch failed: {exc}"}), 502
+
+    for txn in getattr(txns, "data", []):
+        amount = getattr(txn, "amount", 0)
+        if amount <= 0:
+            continue  # credits only
+        descriptor = " ".join(filter(None, [
+            getattr(txn, "description", "") or "",
+            getattr(txn, "merchant_name", "") or "",
+            getattr(txn, "statement_descriptor", "") or "",
+        ]))
+        platform = next((name for name, rx in GIG_PATTERNS if rx.search(descriptor)), None)
+        if not platform:
+            continue
+
+        gross = money(amount / 100)
+        tax_hold = money(gross * DEFAULT_TAX_RATE_BPS / 10000)
+        entry_id = getattr(txn, "id", uuid.uuid4().hex)
+        detected_at = int(getattr(txn, "created", time.time()))
+
+        # Idempotent: never double-hold the same transaction.
+        if any(e["id"] == entry_id for e in RESERVE_LEDGER):
+            continue
+        RESERVE_LEDGER.append({"id": entry_id, "platform": platform, "taxHold": tax_hold})
+
+        payouts.append({
+            "id": entry_id,
+            "platform": platform,
+            "grossAmount": gross,
+            "detectedAt": detected_at,
+            "taxHoldAmount": tax_hold,
+            # In production this becomes "confirmed" once the reserve transfer
+            # to the Milli Tax Vault account settles; "processing" until then.
+            "taxHoldState": "processing",
+        })
+
+    global TAX_VAULT_RESERVE
+    TAX_VAULT_RESERVE = sum((Decimal(str(e["taxHold"])) for e in RESERVE_LEDGER), Decimal("0"))
+
+    return jsonify({
+        "payouts": payouts,
+        "taxVaultReserveBalance": money(TAX_VAULT_RESERVE),
+        "syncedAt": int(time.time()),
+    })
+
+
+if __name__ == "__main__":
+    app.run(port=int(os.environ.get("PORT", "8080")))
