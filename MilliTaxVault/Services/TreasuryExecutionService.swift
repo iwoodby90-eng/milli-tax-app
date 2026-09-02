@@ -99,7 +99,7 @@ public actor TreasuryExecutionService {
     /// movement goes UNAVAILABLE (it never started — not FAILED). On success it
     /// moves PROCESSING and the provider reference is authoritative.
     public func executeAllocation(reference: String) async throws -> TreasuryMovementRecord {
-        guard var record = records[reference] else {
+        guard let record = records[reference] else {
             throw TreasuryExecutionError.unknownMovement(reference)
         }
         guard TreasuryStateMachine.canTransition(record.state, to: .processing) else {
@@ -125,7 +125,7 @@ public actor TreasuryExecutionService {
     /// Apply an authoritative provider state update (webhook / poll).
     /// Rejects illegal transitions instead of guessing.
     public func applyProviderState(reference: String, state: TreasuryMovementState) throws -> TreasuryMovementRecord {
-        guard var record = records[reference] else {
+        guard let record = records[reference] else {
             throw TreasuryExecutionError.unknownMovement(reference)
         }
         guard TreasuryStateMachine.canTransition(record.state, to: state) else {
