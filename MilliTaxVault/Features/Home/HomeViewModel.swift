@@ -15,6 +15,9 @@ final class HomeViewModel: ObservableObject {
     @Published var quarterlyDueLabel: String = "Due Sep 16"
     @Published var mileage: String = "2,847.6 mi"
     @Published var aiInsight: String = "$621 potential deduction increase if you drive 200 more business miles this month."
+    // Seeded values are presentation placeholders — they must read as DEMO until
+    // the authenticated dashboard snapshot replaces them (data truth, Section 07).
+    @Published var availableToSpendProvenance: ProvenanceState = .demo
     @Published var isLoading: Bool = false
 
     init() {

@@ -58,10 +58,14 @@ struct HomeView: View {
 
     private var availableHero: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("AVAILABLE TO SPEND")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.9)
-                .foregroundStyle(MilliColors.textSecondary)
+            HStack(spacing: 8) {
+                Text("AVAILABLE TO SPEND")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.9)
+                    .foregroundStyle(MilliColors.textSecondary)
+                Spacer(minLength: 0)
+                ProvenanceTag(state: viewModel.availableToSpendProvenance)
+            }
 
             Text(viewModel.availableToSpend)
                 .font(MilliFont.heroBalance)
@@ -98,22 +102,8 @@ struct HomeView: View {
                 .padding(.trailing, 2)
             }
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [MilliColors.cardBackground, MilliColors.cardBackground],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: MilliSpacing.radiusXl, style: .continuous)
-                        .stroke(MilliColors.focusedBorder, lineWidth: 0.8)
-                }
-                .shadow(color: .black.opacity(0.38), radius: 12, y: 5)
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .chromeHeroCard()
     }
 
     // MARK: Latest payout

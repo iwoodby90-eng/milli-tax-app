@@ -30,6 +30,24 @@
 		A10049 /* MilliChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049; };
 		A10051 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051; };
 		A10060 /* MilliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060; };
+		A2001 /* MilliMaterials.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2001; };
+		A2002 /* HeroMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2002; };
+		A2003 /* ProvenanceTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2003; };
+		A2004 /* StatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2004; };
+		A2005 /* MilliProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2005; };
+		A2006 /* FilterChipRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2006; };
+		A2007 /* MilliButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2007; };
+		A2008 /* VerdictBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2008; };
+		A2009 /* TimelineRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2009; };
+		A2010 /* ChecklistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2010; };
+		A2011 /* AIInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2011; };
+		A2012 /* SecurityPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2012; };
+		A2013 /* NavSeam.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2013; };
+		A2014 /* CapturePreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2014; };
+		A2015 /* ChartPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2015; };
+		A2016 /* FormField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2016; };
+		A2017 /* DeviceListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2017; };
+		A2018 /* MapPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2018; };
 		A10061 /* MilliTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061; };
 		A10062 /* MilliSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10062; };
 		A10070 /* MilliSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10070; };
@@ -116,6 +134,24 @@
 		B10049 /* MilliChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliChart.swift; sourceTree = "<group>"; };
 		B10051 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B10060 /* MilliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliColors.swift; sourceTree = "<group>"; };
+		B2001 /* MilliMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMaterials.swift; sourceTree = "<group>"; };
+		B2002 /* HeroMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroMetricCard.swift; sourceTree = "<group>"; };
+		B2003 /* ProvenanceTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvenanceTag.swift; sourceTree = "<group>"; };
+		B2004 /* StatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusRow.swift; sourceTree = "<group>"; };
+		B2005 /* MilliProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliProgressRing.swift; sourceTree = "<group>"; };
+		B2006 /* FilterChipRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterChipRow.swift; sourceTree = "<group>"; };
+		B2007 /* MilliButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliButtons.swift; sourceTree = "<group>"; };
+		B2008 /* VerdictBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerdictBanner.swift; sourceTree = "<group>"; };
+		B2009 /* TimelineRail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRail.swift; sourceTree = "<group>"; };
+		B2010 /* ChecklistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistItem.swift; sourceTree = "<group>"; };
+		B2011 /* AIInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIInsightCard.swift; sourceTree = "<group>"; };
+		B2012 /* SecurityPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityPanel.swift; sourceTree = "<group>"; };
+		B2013 /* NavSeam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavSeam.swift; sourceTree = "<group>"; };
+		B2014 /* CapturePreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturePreviewCard.swift; sourceTree = "<group>"; };
+		B2015 /* ChartPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartPanel.swift; sourceTree = "<group>"; };
+		B2016 /* FormField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormField.swift; sourceTree = "<group>"; };
+		B2017 /* DeviceListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListRow.swift; sourceTree = "<group>"; };
+		B2018 /* MapPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPanel.swift; sourceTree = "<group>"; };
 		B10061 /* MilliTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTypography.swift; sourceTree = "<group>"; };
 		B10062 /* MilliSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliSpacing.swift; sourceTree = "<group>"; };
 		B10070 /* MilliSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliSurface.swift; sourceTree = "<group>"; };
@@ -314,12 +350,38 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		C20001 /* V12Kit */ = {
+			isa = PBXGroup;
+			children = (
+				B2001 /* MilliMaterials.swift */,
+				B2002 /* HeroMetricCard.swift */,
+				B2003 /* ProvenanceTag.swift */,
+				B2004 /* StatusRow.swift */,
+				B2005 /* MilliProgressRing.swift */,
+				B2006 /* FilterChipRow.swift */,
+				B2007 /* MilliButtons.swift */,
+				B2008 /* VerdictBanner.swift */,
+				B2009 /* TimelineRail.swift */,
+				B2010 /* ChecklistItem.swift */,
+				B2011 /* AIInsightCard.swift */,
+				B2012 /* SecurityPanel.swift */,
+				B2013 /* NavSeam.swift */,
+				B2014 /* CapturePreviewCard.swift */,
+				B2015 /* ChartPanel.swift */,
+				B2016 /* FormField.swift */,
+				B2017 /* DeviceListRow.swift */,
+				B2018 /* MapPanel.swift */,
+			);
+			path = V12Kit;
+			sourceTree = "<group>";
+		};
 		C10010 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
 				B10060 /* MilliColors.swift */,
 				B10061 /* MilliTypography.swift */,
 				B10062 /* MilliSpacing.swift */,
+				C20001 /* V12Kit */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -488,6 +550,24 @@
 				A10049,
 				A10051,
 				A10060,
+				A2001,
+				A2002,
+				A2003,
+				A2004,
+				A2005,
+				A2006,
+				A2007,
+				A2008,
+				A2009,
+				A2010,
+				A2011,
+				A2012,
+				A2013,
+				A2014,
+				A2015,
+				A2016,
+				A2017,
+				A2018,
 				A10061,
 				A10062,
 				A10070,
