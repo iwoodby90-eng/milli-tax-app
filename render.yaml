@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: milli-tax-vault-api
+    runtime: python
+    rootDir: backend
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: sandbox
+      - key: PLAID_ENV
+        value: sandbox
+      # Secrets are set in the Render dashboard, never committed.
+      - key: PLAID_CLIENT_ID
+        sync: false
+      - key: PLAID_SECRET
+        sync: false
+      - key: PLAID_WEBHOOK_URL
+        sync: false
+      - key: CLIENT_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
