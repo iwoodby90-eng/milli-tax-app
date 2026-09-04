@@ -22,44 +22,41 @@ struct MilliCentsView: View {
     @State private var showPlatformConnectSheet = false
     @State private var liveIncomingOffers: [LiveGigOffer] = LiveGigOffer.sampleLiveOffers
 
-    // Computed Economics
-    private var totalMiles: Double {
-        estimatedMiles + deadMiles + returnMiles
+    // Domain model — the view renders this; it never re-implements the math.
+    private var analyzer: MilliCentsAnalyzer {
+        MilliCentsAnalyzer(
+            input: MilliCentsOfferInput(
+                offerAmount: offerAmount,
+                estimatedMiles: estimatedMiles,
+                deadMiles: deadMiles,
+                returnMiles: returnMiles,
+                gasPricePerGallon: gasPrice,
+                vehicleMpg: vehicleMpg,
+                effectiveTaxRate: effectiveTaxRate
+            )
+        )
     }
 
-    private var fuelCost: Double {
-        guard vehicleMpg > 0 else { return 0 }
-        return (totalMiles / vehicleMpg) * gasPrice
-    }
+    // Computed Economics (delegated to MilliCentsAnalyzer)
+    private var totalMiles: Double { analyzer.totalMiles }
 
-    private var irsStandardDeduction: Double {
-        totalMiles * 0.67 // 2026 IRS standard mileage rate
-    }
+    private var fuelCost: Double { analyzer.fuelCost }
 
-    private var taxablePortion: Double {
-        max(0, offerAmount - (totalMiles * 0.35))
-    }
+    private var irsStandardDeduction: Double { analyzer.irsStandardDeduction }
 
-    private var taxImpact: Double {
-        taxablePortion * effectiveTaxRate
-    }
+    private var taxablePortion: Double { analyzer.taxablePortion }
 
-    private var netProfit: Double {
-        max(0, offerAmount - fuelCost - taxImpact)
-    }
+    private var taxImpact: Double { analyzer.taxImpact }
 
-    private var profitPerMile: Double {
-        guard totalMiles > 0 else { return 0 }
-        return netProfit / totalMiles
-    }
+    private var netProfit: Double { analyzer.netProfit }
+
+    private var profitPerMile: Double { analyzer.profitPerMile }
 
     private var recommendation: OfferRecommendation {
-        if netProfit >= 18.0 && profitPerMile >= 0.50 {
-            return .go
-        } else if netProfit >= 8.0 && profitPerMile >= 0.30 {
-            return .maybe
-        } else {
-            return .skip
+        switch analyzer.verdict {
+        case .go: return .go
+        case .maybe: return .maybe
+        case .skip: return .skip
         }
     }
 

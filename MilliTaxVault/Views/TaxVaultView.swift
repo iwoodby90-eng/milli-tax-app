@@ -77,10 +77,14 @@ struct TaxVaultView: View {
                     .font(MilliFont.sectionLabel)
                     .tracking(0.8)
                     .foregroundStyle(MilliColors.textSecondary)
-                Text(currency(vault.balance))
-                    .font(MilliFont.heroNumber)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                HStack(spacing: 6) {
+                    Text(currency(vault.balance))
+                        .font(MilliFont.heroNumber)
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
+                    taxVaultProvenanceBadge(vault.provenance)
+                        .accessibilityLabel("Data provenance: \(vault.provenance.rawValue.lowercased())")
+                }
                 Text("\(progressPercentText) of annual target")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
@@ -111,6 +115,40 @@ struct TaxVaultView: View {
             .frame(width: 78, height: 78)
         }
         .milliCard(padding: 14)
+    }
+
+    /// Canonical provenance badge rendered inline for the reserve hero.
+    /// Mirrors the MilliProvenanceBadge treatment (dot + label) using the
+    /// canonical ProvenanceLabel contract. The view never infers LIVE.
+    private func taxVaultProvenanceBadge(_ provenance: ProvenanceLabel) -> some View {
+        HStack(spacing: 5) {
+            Circle()
+                .strokeBorder(provenance == .unavailable ? MilliColors.negative : .clear, lineWidth: 1)
+                .background(Circle().fill(provenance == .unavailable ? Color.clear : badgeDotColor(provenance)))
+                .frame(width: 6, height: 6)
+            Text(provenance.rawValue)
+                .font(MilliFont.caption)
+                .tracking(0.6)
+                .foregroundStyle(MilliColors.textTertiary)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(
+            Capsule().fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            Capsule().strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+        )
+    }
+
+    private func badgeDotColor(_ provenance: ProvenanceLabel) -> Color {
+        switch provenance {
+        case .live: return MilliColors.cyanGlow
+        case .cachedLive: return MilliColors.cyanGlow.opacity(0.5)
+        case .estimated, .userEntered, .demo: return MilliColors.textSecondary
+        case .preview: return MilliColors.warning
+        case .unavailable: return MilliColors.negative
+        }
     }
 
     private var targetRow: some View {
@@ -278,6 +316,9 @@ private struct TaxVaultDisplayModel {
     let annualTarget: Double
     let reserveRate: Double
     let activity: [VaultActivity]
+    /// Canonical data-origin label. Defaults to .unavailable — the view never
+    /// infers LIVE. Only the backend contract may promote this to .live.
+    let provenance: ProvenanceLabel
 
     var progress: CGFloat {
         guard annualTarget > 0 else { return 0 }
@@ -294,7 +335,8 @@ private struct TaxVaultDisplayModel {
                 VaultActivity(title: "Spark Driver", dateLabel: "Today, 10:12 AM", amount: 36.06, icon: "sparkles", iconColor: Color(hex: "4E8CFF")),
                 VaultActivity(title: "DoorDash", dateLabel: "Yesterday", amount: 21.70, icon: "bag.fill", iconColor: MilliColors.negative),
                 VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Previous quarter", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
-            ]
+            ],
+            provenance: .unavailable
         )
     }
 }
