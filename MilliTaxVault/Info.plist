@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.drivemilli.navigation</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>milli</string>
+				<string>geo-navigation</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Sora-Regular.ttf</string>
@@ -18,8 +32,8 @@
 		<string>location</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location while a mileage trip is active to record deductible business miles.</string>
+	<string>Milli uses your location while a mileage trip is active to record deductible business miles and provide live route guidance.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
+	<string>Milli can continue an active mileage trip and route guidance in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
 </dict>
 </plist>
