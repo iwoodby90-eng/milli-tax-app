@@ -66,11 +66,11 @@ final class TreasuryExecutionTests: XCTestCase {
 
         let firstResult = try await first
         let retryResult = try await retry
+        let callCount = await provider.initiateCallCount()
 
         XCTAssertEqual(firstResult.state, .processing)
         XCTAssertEqual(retryResult.state, .processing)
-        XCTAssertEqual(await provider.initiateCallCount(), 1,
-                       "concurrent retries must not duplicate money movement")
+        XCTAssertEqual(callCount, 1, "concurrent retries must not duplicate money movement")
     }
 
     func testRepeatedAuthoritativeProviderStateIsIdempotent() async throws {
