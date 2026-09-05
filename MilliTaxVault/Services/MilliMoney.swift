@@ -27,9 +27,19 @@ public struct MilliMoney: Equatable, Hashable, Sendable {
 
     public init(cents: Int64) { self.cents = cents }
 
-    /// Parse from a decimal string such as "5284.17". Returns nil on malformed input.
+    /// Parse a complete canonical decimal amount such as "5284.17" or "-12.40".
+    /// Grouping separators, exponents, partial parses, and malformed input are
+    /// rejected rather than allowing `Decimal(string:)` to silently accept a
+    /// numeric prefix (for example "-1,247.00" becoming -1).
     public init?(string: String) {
-        guard let value = Decimal(string: string) else { return nil }
+        let input = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty,
+              input.range(
+                of: #"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$"#,
+                options: .regularExpression
+              ) != nil,
+              let value = Decimal(string: input, locale: Locale(identifier: "en_US_POSIX"))
+        else { return nil }
         self.init(decimal: value)
     }
 
