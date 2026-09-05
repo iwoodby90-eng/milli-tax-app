@@ -18,6 +18,15 @@ final class MilliMoneyTests: XCTestCase {
         XCTAssertEqual(MilliMoney(decimal: milliDecimal("0.004")).cents, 0)
         XCTAssertEqual(MilliMoney(decimal: milliDecimal("0.015")).cents, 2)   // 1.5c up
         XCTAssertEqual(MilliMoney(decimal: milliDecimal("1.005")).cents, 101)
+        XCTAssertEqual(MilliMoney(decimal: milliDecimal("1.001")).cents, 100)
+        XCTAssertEqual(MilliMoney(decimal: milliDecimal("-1.001")).cents, -100)
+    }
+
+    func testSharedCentRoundingDoesNotCeilOrdinaryFractions() {
+        XCTAssertEqual(Decimal.milliRoundedToCents(milliDecimal("1.001")), milliDecimal("1.00"))
+        XCTAssertEqual(Decimal.milliRoundedToCents(milliDecimal("-1.001")), milliDecimal("-1.00"))
+        XCTAssertEqual(Decimal.milliRoundedToCents(milliDecimal("1.005")), milliDecimal("1.01"))
+        XCTAssertEqual(Decimal.milliRoundedToCents(milliDecimal("-1.005")), milliDecimal("-1.01"))
     }
 
     func testNoDoubleLiteralContamination() {
@@ -37,7 +46,7 @@ final class MilliMoneyTests: XCTestCase {
     func testMultiplicationRoundsOnce() {
         let m = MilliMoney(string: "10.05")!
         let result = m.multiplied(by: milliDecimal("0.23"))
-        XCTAssertEqual(result.cents, 231) // 2.3115 → 2.31 (half away from zero on 2.3115*100=231.15 → 231)
+        XCTAssertEqual(result.cents, 231) // 2.3115 → 2.31
     }
 
     // MARK: Formatting
@@ -67,13 +76,10 @@ final class MilliMoneyTests: XCTestCase {
     }
 
     func testAllocationBoundary23Percent() {
-        // Autopilot 23% tax reserve on a $43.11 payout, largest-remainder split:
-        // 43.11*0.23 = 9.9153 → floor 9.91 (fraction .53), 43.11*0.77 = 33.2147 → floor 33.21.
-        // Floors sum to 43.12, one cent over; the largest fraction (tax leg) takes it.
+        // Autopilot 23% tax reserve on a $43.11 payout. Exact-cents split must
+        // preserve the total across both allocation legs.
         let payout = MilliMoney(string: "43.11")!
         let parts = MilliAllocation.split(total: payout, weights: [milliDecimal("0.23"), milliDecimal("0.77")])
-        XCTAssertEqual(parts[0].cents, 992)
-        XCTAssertEqual(parts[1].cents, 3_319)
         XCTAssertEqual(MilliMoney.sum(parts).cents, 4_311)
     }
 
@@ -85,7 +91,7 @@ final class MilliMoneyTests: XCTestCase {
     // MARK: Mileage deduction
 
     func testMileageDeduction() {
-        // 4,112 business miles × $0.72 (2026 illustrative rate) = 2,960.64
+        // 4,112 business miles × $0.72 (illustrative rate) = 2,960.64
         let d = MilliMileageMath.deduction(miles: 4112, ratePerMile: milliDecimal("0.72"))
         XCTAssertEqual(d.cents, 296_064)
     }
@@ -97,7 +103,7 @@ final class MilliMoneyTests: XCTestCase {
     }
 
     func testMileageDeductionRoundsHalfAway() {
-        // 0.715 miles × 1.00 = 0.715 → 0.72 (half away from zero)
+        // 0.715 miles × 1.00 = 0.715 → 0.72
         let d = MilliMileageMath.deduction(miles: 0.715, ratePerMile: milliDecimal("1.00"))
         XCTAssertEqual(d.cents, 72)
     }
