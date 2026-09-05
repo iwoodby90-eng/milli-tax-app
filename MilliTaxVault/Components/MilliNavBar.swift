@@ -347,6 +347,7 @@ struct MilliNavBar: View {
                     .scaledToFit()
                     .frame(width: 36, height: 36)
                     .blendMode(.screen)
+                    .clipShape(Circle())
                     .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 4)
                     .accessibilityHidden(true)
             }
