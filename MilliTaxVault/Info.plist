@@ -13,13 +13,25 @@
 		<string>Inter-SemiBold.ttf</string>
 		<string>Inter-Bold.ttf</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.milli.taxvault.navigation</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>milli</string>
+				<string>geo-navigation</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location while a mileage trip is active to record deductible business miles.</string>
+	<string>Milli uses your location while a mileage trip is active to record deductible business miles and provide navigation.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
+	<string>Milli can continue an active mileage trip and navigation session in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
 </dict>
 </plist>
