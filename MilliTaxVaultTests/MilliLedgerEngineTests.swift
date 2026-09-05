@@ -39,7 +39,7 @@ final class MilliLedgerEngineTests: XCTestCase {
         XCTAssertEqual(engine.balance().operatingAccountCents, 100)
     }
 
-    // MARK: Reversal rules (validate before mutate)
+    // MARK: Reversal rules
 
     func testReversalMustReferenceExistingMovement() {
         let engine = MilliLedgerEngine()
@@ -75,6 +75,31 @@ final class MilliLedgerEngineTests: XCTestCase {
         }
     }
 
+    func testReversalMustStayInOriginalBucket() throws {
+        let engine = MilliLedgerEngine()
+        try engine.ingest(payout("a", 500, ref: "pmt_a", bucket: .operatingAccount))
+
+        let wrongBucket = MilliLedgerEntry(
+            id: "r1",
+            kind: .reversal(of: "a"),
+            amountCents: -500,
+            bucket: .taxVault,
+            occurredAt: Date(),
+            providerReference: nil,
+            memo: nil
+        )
+
+        XCTAssertThrowsError(try engine.ingest(wrongBucket)) { error in
+            XCTAssertEqual(
+                error as? MilliLedgerError,
+                .reversalBucketMismatch(original: .operatingAccount, attempted: .taxVault)
+            )
+        }
+        XCTAssertEqual(engine.balance().operatingAccountCents, 500)
+        XCTAssertEqual(engine.balance().taxVaultCents, 0)
+        XCTAssertEqual(engine.entries.count, 1)
+    }
+
     // MARK: Reconciliation
 
     func testCleanReconciliation() throws {
@@ -85,6 +110,7 @@ final class MilliLedgerEngineTests: XCTestCase {
         ])
         XCTAssertTrue(report.isClean)
         XCTAssertEqual(report.providerBalanceCents, 100)
+        XCTAssertEqual(report.localBalance.operatingAccountCents, 100)
     }
 
     func testDiscrepanciesDetected() throws {
@@ -92,14 +118,15 @@ final class MilliLedgerEngineTests: XCTestCase {
         try engine.ingest(payout("a", 100, ref: "pmt_a"))
         try engine.ingest(payout("b", 200, ref: "pmt_b"))
         let report = engine.reconcile(providerMovements: [
-            .init(reference: "pmt_a", amountCents: 150),          // amount mismatch
-            .init(reference: "pmt_c", amountCents: 300),          // missing locally
+            .init(reference: "pmt_a", amountCents: 150),
+            .init(reference: "pmt_c", amountCents: 300),
         ])
-        XCTAssertEqual(report.findings.count, 3) // + pmt_b missing at provider
+        XCTAssertEqual(report.findings.count, 3)
         let severities = Set(report.findings.map { $0.severity })
         XCTAssertTrue(severities.contains(.amountMismatch(local: 100, provider: 150)))
         XCTAssertTrue(severities.contains { if case .missingLocally = $0 { return true }; return false })
         XCTAssertTrue(severities.contains { if case .missingAtProvider = $0 { return true }; return false })
+        XCTAssertEqual(report.localBalance.operatingAccountCents, 300)
     }
 
     func testProviderSilenceDoesNotClaimZeroBalance() throws {
@@ -108,5 +135,6 @@ final class MilliLedgerEngineTests: XCTestCase {
         let report = engine.reconcile(providerMovements: [])
         XCTAssertNil(report.providerBalanceCents, "must not fabricate a zero provider balance")
         XCTAssertEqual(report.findings.count, 1)
+        XCTAssertEqual(report.localBalance.operatingAccountCents, 100)
     }
 }
