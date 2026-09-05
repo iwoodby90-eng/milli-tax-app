@@ -20,11 +20,22 @@ public enum MilliBackendError: LocalizedError {
 }
 
 public struct MilliBackendConfig {
-    /// Base URL of the Milli backend, e.g. https://api.drivemilli.com
-    /// Left nil in dev builds so the app stays honest (UNAVAILABLE) instead of
-    /// pointing at a fake server.
+    /// Production builds should provision MILLI_API_BASE_URL through the app's
+    /// Info.plist/build configuration. A UserDefaults override remains available
+    /// for local QA without baking development hosts into Release builds.
     public static var baseURL: URL? {
-        get { UserDefaults.standard.string(forKey: "milli_backend_base_url").flatMap(URL.init(string:)) }
+        get {
+            if let override = UserDefaults.standard.string(forKey: "milli_backend_base_url"),
+               let url = URL(string: override),
+               !override.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return url
+            }
+            guard let configured = Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String,
+                  !configured.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return nil
+            }
+            return URL(string: configured)
+        }
         set { UserDefaults.standard.set(newValue?.absoluteString, forKey: "milli_backend_base_url") }
     }
 }
@@ -47,31 +58,32 @@ public final class MilliBackendClient {
         let (data, response) = try await URLSession.shared.data(for: req)
         guard let http = response as? HTTPURLResponse else { throw MilliBackendError.badResponse }
         guard (200..<300).contains(http.statusCode) else { throw MilliBackendError.http(http.statusCode) }
-        return try JSONDecoder().decode(T.self, from: data)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return try decoder.decode(T.self, from: data)
     }
 
     // MARK: Bank link (Stripe Financial Connections hosted flow)
 
-    /// Step 1: ask the backend to create a Stripe Financial Connections session.
-    /// Returns the hosted URL where the user searches their bank, logs in
-    /// securely, and consents to sharing account data with Milli.
     public func createBankLinkSession() async throws -> BankLinkSessionResponse {
         try await request("api/bank-link/session", method: "POST")
     }
 
-    /// Step 2: after the hosted flow redirects back, finalize the link.
-    /// The backend retrieves the connected accounts and their live balances.
     public func completeBankLink(sessionId: String) async throws -> ConnectedAccountsResponse {
         try await request("api/bank-link/complete", method: "POST", body: ["sessionId": sessionId])
     }
 
     // MARK: Payout sync + Tax Vault reserve
 
-    /// Pull gig-platform payouts the backend detected from the connected
-    /// account's transactions, each with the tax amount the backend moved
-    /// (or recommends moving) into the Milli Tax Vault reserve.
-    public func syncPayouts() async throws -> PayoutSyncResponse {
-        try await request("api/payouts/sync", method: "POST")
+    /// Synchronize one specific connected account. The account identifier is
+    /// required by the backend so a sync can never silently operate on global state.
+    public func syncPayouts(accountId: String) async throws -> PayoutSyncResponse {
+        try await request(
+            "api/payouts/sync",
+            method: "POST",
+            body: ["accountId": accountId]
+        )
     }
 }
 
@@ -79,9 +91,7 @@ public final class MilliBackendClient {
 
 public struct BankLinkSessionResponse: Decodable {
     public let sessionId: String
-    /// Hosted Stripe page: bank search, secure login, data-sharing consent.
     public let hostedUrl: URL
-    /// Where ASWebAuthenticationSession should expect the redirect back.
     public let returnUrl: URL
 }
 
@@ -105,7 +115,6 @@ public struct PayoutSyncPayload: Decodable {
     public let grossAmount: Double
     public let detectedAt: Date
     public let taxHoldAmount: Double
-    /// Whether the backend confirmed the reserve transfer (Tax Vault) or it is still processing.
     public let taxHoldState: String
 }
 
