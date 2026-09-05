@@ -51,10 +51,22 @@ struct MilliNavBar: View {
     private let deckHeight: CGFloat = 58
     private let lowerFaceHeight: CGFloat = 30
     private let crestHeight: CGFloat = 34
+    private let safeAreaExtension: CGFloat = 44
+
+    private var lowerFaceGradient: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: Color(hex: "14181D"), location: 0.0),
+                .init(color: Color(hex: "07090B"), location: 0.6),
+                .init(color: Color.black, location: 1.0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Full-width chassis: lower obsidian face + upper chrome deck + shoulder silhouette
             ChassisShape(crestHeight: crestHeight)
                 .fill(
                     LinearGradient(
@@ -64,11 +76,11 @@ struct MilliNavBar: View {
                             .init(color: Color(hex: "C6CAD0"), location: 0.65),
                             .init(color: Color(hex: "6E747B"), location: 1.0)
                         ],
-                        startPoint: .top, endPoint: .bottom
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 )
                 .overlay(
-                    // Upper-deck machined seam
                     ChassisShape(crestHeight: crestHeight)
                         .stroke(
                             LinearGradient(
@@ -77,50 +89,38 @@ struct MilliNavBar: View {
                                     Color(hex: "A0AAB2").opacity(0.55),
                                     Color.white.opacity(0.35)
                                 ],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             ),
                             lineWidth: 1.0
                         )
                 )
                 .overlay(alignment: .bottom) {
-                    // Deep obsidian black-glass lower face
-                    RoundedRectangle(cornerRadius: 0)
-                        .fill(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color(hex: "14181D"), location: 0.0),
-                                    .init(color: Color(hex: "07090B"), location: 0.6),
-                                    .init(color: Color.black, location: 1.0)
-                                ],
-                                startPoint: .top, endPoint: .bottom
-                            )
-                        )
+                    Rectangle()
+                        .fill(lowerFaceGradient)
                         .frame(height: lowerFaceHeight)
-                        .overlay(
+                        .overlay(alignment: .top) {
                             Rectangle()
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
-                        )
+                                .fill(Color.white.opacity(0.10))
+                                .frame(height: 0.5)
+                        }
                 }
                 .shadow(color: Color.black.opacity(0.85), radius: 14, x: 0, y: -6)
                 .frame(height: deckHeight + lowerFaceHeight)
 
-            // Four recessed circular details across the upper deck: two left, two right
             recessedDetails
                 .allowsHitTesting(false)
                 .frame(height: deckHeight + lowerFaceHeight, alignment: .top)
                 .padding(.top, 10)
                 .padding(.horizontal, 34)
 
-            // Tab destinations + recessed details + center M crest
             HStack(spacing: 0) {
-                // Left group: Payouts & Mileage
                 tabButton(.vault)
                 tabButton(.activity)
 
                 Spacer()
                     .frame(width: 96)
 
-                // Right group: Wealth & More
                 tabButton(.wealth)
                 tabButton(.cockpit)
             }
@@ -128,13 +128,21 @@ struct MilliNavBar: View {
             .frame(height: deckHeight + lowerFaceHeight, alignment: .top)
             .padding(.top, 4)
 
-            // Center M crest, integrated into the chassis (no floating elevation)
             centerDialButton
                 .offset(y: -crestHeight + 6)
         }
         .frame(maxWidth: .infinity)
         .frame(height: deckHeight + lowerFaceHeight + 12)
-        .padding(.bottom, 0)
+        .background(alignment: .bottom) {
+            // The controls stay inside the safe region while the black-glass chassis
+            // physically continues beneath the home indicator to the screen edge.
+            Rectangle()
+                .fill(lowerFaceGradient)
+                .frame(height: safeAreaExtension)
+                .offset(y: safeAreaExtension)
+                .ignoresSafeArea(edges: .bottom)
+                .allowsHitTesting(false)
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Milli navigation")
     }
@@ -145,11 +153,11 @@ struct MilliNavBar: View {
         let isSelected = selectedTab == tab
         return Button {
             selectedTab = tab
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             VStack(spacing: 3) {
                 ZStack {
                     if isSelected {
-                        // Restrained embedded cyan illumination (static, no cycling)
                         Circle()
                             .fill(
                                 RadialGradient(
@@ -172,7 +180,8 @@ struct MilliNavBar: View {
                                 ? AnyShapeStyle(
                                     LinearGradient(
                                         colors: [Color.white, MilliColors.cyanGlow],
-                                        startPoint: .top, endPoint: .bottom
+                                        startPoint: .top,
+                                        endPoint: .bottom
                                     )
                                 )
                                 : AnyShapeStyle(Color(hex: "959E9F"))
@@ -196,7 +205,7 @@ struct MilliNavBar: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    // MARK: - Recessed deck details (two left, two right)
+    // MARK: - Recessed deck details
 
     private var recessedDetails: some View {
         HStack(spacing: 26) {
@@ -214,7 +223,8 @@ struct MilliNavBar: View {
                         Color(hex: "2A2F35"),
                         Color(hex: "0C0F12")
                     ],
-                    startPoint: .top, endPoint: .bottom
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
             )
             .frame(width: 7, height: 7)
@@ -224,15 +234,15 @@ struct MilliNavBar: View {
             .shadow(color: Color.black.opacity(0.6), radius: 1, x: 0, y: 1)
     }
 
-    // MARK: - Center M Crest Dial (Home), integrated into the chassis
+    // MARK: - Center M Crest Dial
 
     private var centerDialButton: some View {
         Button {
             selectedTab = .home
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             onHomeTap()
         } label: {
             ZStack {
-                // Sculpted chrome outer housing
                 Circle()
                     .fill(
                         AngularGradient(
@@ -251,28 +261,25 @@ struct MilliNavBar: View {
                     .frame(width: 78, height: 78)
                     .shadow(color: Color.black.opacity(0.9), radius: 8, x: 0, y: 5)
 
-                // Dark mechanical groove
                 Circle()
                     .fill(Color(hex: "05080B"))
                     .frame(width: 70, height: 70)
 
-                // Segmented cyan illumination arcs (4 arcs with dark spacers, never continuous)
                 SegmentedArcRing(segments: 4, gapDegrees: 14)
                     .stroke(MilliColors.cyanGlow.opacity(0.85), lineWidth: 2.2)
                     .frame(width: 62, height: 62)
 
-                // Secondary metallic ring
                 Circle()
                     .stroke(
                         LinearGradient(
                             colors: [Color.white.opacity(0.75), Color(hex: "8A929B").opacity(0.5)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         ),
                         lineWidth: 1.0
                     )
                     .frame(width: 55, height: 55)
 
-                // Black-glass face
                 Circle()
                     .fill(
                         RadialGradient(
@@ -288,7 +295,6 @@ struct MilliNavBar: View {
                     )
                     .frame(width: 50, height: 50)
 
-                // Dimensional metallic/cyan M emblem
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
@@ -310,7 +316,6 @@ struct MilliNavBar: View {
 }
 
 // MARK: - Chassis silhouette
-// Flat deck -> upward sweeping shoulder -> center M crest -> downward sweeping shoulder -> flat deck.
 
 struct ChassisShape: Shape {
     var crestHeight: CGFloat
@@ -327,7 +332,6 @@ struct ChassisShape: Shape {
 
         path.move(to: CGPoint(x: 0, y: deckY))
         path.addLine(to: CGPoint(x: shoulderStart, y: deckY))
-        // Upward sweeping shoulder (smooth curve into the crest)
         path.addCurve(
             to: CGPoint(x: crestCenter, y: deckY - crestHeight),
             control1: CGPoint(x: shoulderStart + crestWidth * 0.35, y: deckY),
@@ -338,7 +342,6 @@ struct ChassisShape: Shape {
             control1: CGPoint(x: shoulderEnd - crestWidth * 0.35, y: deckY - crestHeight),
             control2: CGPoint(x: shoulderEnd - crestWidth * 0.35, y: deckY)
         )
-        // Flat deck to the right edge, then down and around
         path.addLine(to: CGPoint(x: w, y: deckY))
         path.addLine(to: CGPoint(x: w, y: h))
         path.addLine(to: CGPoint(x: 0, y: h))
@@ -347,7 +350,7 @@ struct ChassisShape: Shape {
     }
 }
 
-// MARK: - Segmented arc ring (cyan illumination with dark spacers)
+// MARK: - Segmented arc ring
 
 struct SegmentedArcRing: Shape {
     var segments: Int
@@ -359,6 +362,7 @@ struct SegmentedArcRing: Shape {
         let radius = min(rect.width, rect.height) / 2
         let segmentAngle = 360.0 / CGFloat(segments)
         let arcAngle = segmentAngle - gapDegrees
+
         for i in 0..<segments {
             let start = Angle.degrees(Double(i) * Double(segmentAngle) - 90 - Double(gapDegrees) / 2)
             let end = start + .degrees(Double(arcAngle))
