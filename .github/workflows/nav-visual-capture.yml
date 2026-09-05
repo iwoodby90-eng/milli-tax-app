@@ -1,0 +1,99 @@
+name: Canonical Nav Visual Capture
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'MilliTaxVault/Components/MilliNavBar.swift'
+      - '.github/workflows/nav-visual-capture.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nav-visual-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Nav capture (${{ matrix.device_class }})
+    runs-on: macos-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device_class: compact
+            device: 'iPhone 16e'
+          - device_class: standard
+            device: 'iPhone 17'
+          - device_class: promax
+            device: 'iPhone 17 Pro Max'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve current simulator
+        run: |
+          set -euo pipefail
+          DEVICE_NAME='${{ matrix.device }}'
+          DEVICE_UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, os, sys
+          payload = json.load(sys.stdin)
+          name = os.environ["DEVICE_NAME"]
+          matches = []
+          for runtime, devices in payload.get("devices", {}).items():
+              if "iOS" not in runtime:
+                  continue
+              for device in devices:
+                  if device.get("isAvailable") and device.get("name") == name:
+                      matches.append((runtime, device["udid"]))
+          if not matches:
+              raise SystemExit(f"No available iOS simulator named {name}")
+          matches.sort()
+          print(matches[-1][1])
+          ')
+          echo "DEVICE_UDID=$DEVICE_UDID" >> "$GITHUB_ENV"
+          echo "Resolved $DEVICE_NAME -> $DEVICE_UDID"
+        env:
+          DEVICE_NAME: ${{ matrix.device }}
+
+      - name: Build simulator app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project MilliTaxVault.xcodeproj \
+            -scheme MilliTaxVault \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$DEVICE_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Boot simulator and install
+        run: |
+          set -euo pipefail
+          xcrun simctl boot "$DEVICE_UDID" || true
+          xcrun simctl bootstatus "$DEVICE_UDID" -b
+          APP_PATH=$(find "$RUNNER_TEMP/DerivedData/Build/Products" -type d -name 'MilliTaxVault.app' | head -n 1)
+          test -n "$APP_PATH"
+          xcrun simctl install "$DEVICE_UDID" "$APP_PATH"
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")
+          # Force the deterministic authenticated/main-shell screenshot route so
+          # this workflow actually captures the canonical bottom navigation.
+          xcrun simctl launch "$DEVICE_UDID" "$BUNDLE_ID" -milliScreenshotMode -milliAppState main
+          sleep 6
+
+      - name: Capture runtime
+        run: |
+          mkdir -p screenshots
+          xcrun simctl io "$DEVICE_UDID" screenshot "screenshots/${{ matrix.device_class }}-runtime.png"
+
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-nav-${{ matrix.device_class }}
+          path: screenshots/
+          retention-days: 30
