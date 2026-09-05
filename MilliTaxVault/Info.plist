@@ -18,8 +18,44 @@
 		<string>location</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location while a mileage trip is active to record deductible business miles.</string>
+	<string>Milli uses your location while navigating or recording an active mileage trip so it can provide driving directions and record deductible business miles.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
+	<string>Milli can continue active navigation and mileage tracking in the background so directions and business miles are not lost when you switch apps or lock your iPhone.</string>
+	<key>MKDirectionsApplicationSupportedModes</key>
+	<array>
+		<string>MKDirectionsModeCar</string>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>MKDirectionsRequest</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.maps.directionsrequest</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.milli.taxvault.navigation</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>milli</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.milli.taxvault.default-navigation</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>geo-navigation</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

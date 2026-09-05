@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreLocation
+import MapKit
 import AuthenticationServices
 import StoreKit
 
@@ -12,8 +13,9 @@ enum AppState: String {
 }
 
 // MARK: - Navigation handoff
-// Milli accepts its own deep-link contract everywhere and can also parse Apple's
-// geo-navigation payload when iOS launches Milli as an eligible navigation app.
+// Milli accepts its own deep-link contract everywhere, Apple's routing-app
+// directions request payloads, and geo-navigation URLs on platforms/regions
+// where Apple exposes the default-navigation handoff.
 // A handoff is retained through sign-in so the destination is already loaded
 // when the authenticated user reaches Mileage.
 
@@ -33,6 +35,33 @@ struct NavigationHandoffRequest: Identifiable, Equatable {
 
 enum NavigationHandoffParser {
     static func parse(_ url: URL) -> NavigationHandoffRequest? {
+        // Native Maps routing-app requests use Apple's MKDirectionsRequest
+        // payload. Decode those first instead of attempting to reverse engineer
+        // the URL query contract.
+        if MKDirections.Request.isDirectionsRequest(url) {
+            let directionsRequest = MKDirections.Request(contentsOf: url)
+            if let destination = directionsRequest.destination {
+                let coordinate = destination.placemark.coordinate
+                let placemarkAddress = [
+                    destination.placemark.subThoroughfare,
+                    destination.placemark.thoroughfare,
+                    destination.placemark.locality,
+                    destination.placemark.administrativeArea,
+                    destination.placemark.postalCode
+                ]
+                .compactMap { $0 }
+                .joined(separator: " ")
+
+                return NavigationHandoffRequest(
+                    destinationAddress: placemarkAddress.isEmpty ? nil : placemarkAddress,
+                    destinationName: destination.name,
+                    latitude: coordinate.latitude,
+                    longitude: coordinate.longitude,
+                    sourceApp: "Apple Maps"
+                )
+            }
+        }
+
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
         }
@@ -44,9 +73,11 @@ enum NavigationHandoffParser {
             uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name.lowercased(), $0.value ?? "") }
         )
 
-        let address = firstNonEmpty(
-            items["address"],
+        // Apple's geo-navigation /directions contract passes destination as an
+        // address, place-name, or a comma-separated coordinate pair.
+        let rawDestination = firstNonEmpty(
             items["destination"],
+            items["address"],
             items["daddr"],
             items["q"],
             items["query"]
@@ -58,16 +89,26 @@ enum NavigationHandoffParser {
         var latitude = double(items["lat"] ?? items["latitude"])
         var longitude = double(items["lon"] ?? items["lng"] ?? items["longitude"])
 
-        if (latitude == nil || longitude == nil),
-           let coordinateText = firstNonEmpty(items["ll"], items["coordinate"], items["destination_coordinate"]) {
-            let parts = coordinateText
-                .split(separator: ",")
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            if parts.count >= 2 {
-                latitude = Double(parts[0])
-                longitude = Double(parts[1])
+        if latitude == nil || longitude == nil {
+            if let coordinateText = firstNonEmpty(
+                items["coordinate"],
+                items["ll"],
+                items["destination_coordinate"],
+                coordinatePairIfPresent(rawDestination)
+            ) {
+                let parts = coordinateText
+                    .split(separator: ",")
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                if parts.count >= 2 {
+                    latitude = Double(parts[0])
+                    longitude = Double(parts[1])
+                }
             }
         }
+
+        let address: String? = coordinatePairIfPresent(rawDestination) == nil
+            ? rawDestination
+            : nil
 
         // milli://navigate/123-main-st also works without a query string.
         let pathAddress: String? = {
@@ -86,8 +127,24 @@ enum NavigationHandoffParser {
             destinationName: name,
             latitude: latitude,
             longitude: longitude,
-            sourceApp: source
+            sourceApp: source ?? (scheme == "geo-navigation" ? "Default Navigation" : nil)
         )
+    }
+
+    private static func coordinatePairIfPresent(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let parts = value
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard parts.count == 2,
+              let latitude = Double(parts[0]),
+              let longitude = Double(parts[1]),
+              (-90...90).contains(latitude),
+              (-180...180).contains(longitude)
+        else {
+            return nil
+        }
+        return "\(latitude),\(longitude)"
     }
 
     private static func firstNonEmpty(_ values: String?...) -> String? {
@@ -203,8 +260,9 @@ struct MilliApp: App {
         pendingNavigationRequest = request
 
         // Never bypass authentication. If the user is already authenticated,
-        // ContentView immediately routes to Mileage. Otherwise the request waits
-        // through sign-in/onboarding and is consumed once the main shell appears.
+        // ContentView immediately routes to Mileage/live navigation. Otherwise
+        // the request waits through sign-in/onboarding and is consumed once the
+        // main shell appears.
         if appState == .main {
             return
         }
