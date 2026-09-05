@@ -250,6 +250,7 @@ private struct MileageNavigationHost: View {
             MilliLiveNavigationView(request: request) {
                 pendingNavigationRequest = nil
             }
+            .id(request.id)
         } else {
             MileageView(onBack: onBack)
         }
@@ -732,18 +733,45 @@ private struct MilliLiveNavigationView: View {
     private func shouldReroute(from location: CLLocation) -> Bool {
         guard routeCoordinates.count >= 2 else { return false }
 
-        let stride = max(routeCoordinates.count / 180, 1)
-        var nearest = CLLocationDistance.greatestFiniteMagnitude
-        var index = 0
+        let driverPoint = MKMapPoint(location.coordinate)
+        var nearestDistance = CLLocationDistance.greatestFiniteMagnitude
 
-        while index < routeCoordinates.count {
-            let coordinate = routeCoordinates[index]
-            let routeLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-            nearest = min(nearest, location.distance(from: routeLocation))
-            index += stride
+        for index in 0..<(routeCoordinates.count - 1) {
+            let start = MKMapPoint(routeCoordinates[index])
+            let end = MKMapPoint(routeCoordinates[index + 1])
+            nearestDistance = min(
+                nearestDistance,
+                distanceFrom(driverPoint, toSegmentStart: start, end: end)
+            )
+
+            if nearestDistance <= 160 {
+                return false
+            }
         }
 
-        return nearest > 160
+        return nearestDistance > 160
+    }
+
+    private func distanceFrom(
+        _ point: MKMapPoint,
+        toSegmentStart start: MKMapPoint,
+        end: MKMapPoint
+    ) -> CLLocationDistance {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let lengthSquared = dx * dx + dy * dy
+
+        guard lengthSquared > 0 else {
+            return point.distance(to: start)
+        }
+
+        let projection = ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared
+        let t = max(0.0, min(1.0, projection))
+        let nearestPoint = MKMapPoint(
+            x: start.x + t * dx,
+            y: start.y + t * dy
+        )
+        return point.distance(to: nearestPoint)
     }
 
     private func recenterOnDriver() {
