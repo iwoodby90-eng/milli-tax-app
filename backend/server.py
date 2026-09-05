@@ -2,15 +2,9 @@
 """
 Milli backend — bank link + payout sync + Tax Vault reserve.
 
-Holds the Stripe secret key (env: STRIPE_SECRET_KEY) so the iOS app never
-sees provider credentials. Implements exactly the three endpoints the app uses:
-
-  POST /api/bank-link/session   -> create Stripe Financial Connections session, return hosted URL
-  POST /api/bank-link/complete  -> retrieve connected accounts + live balances
-  POST /api/payouts/sync        -> detect gig-platform payouts in transactions,
-                                   compute/hold tax into the Milli Tax Vault reserve
-
-Run: STRIPE_SECRET_KEY=sk_... python3 server.py
+Holds provider credentials server-side. Current implementation is suitable for
+integration/QA only; production must replace process-memory state with the
+Postgres schema and authenticated user scoping before money movement is enabled.
 """
 
 import os
@@ -28,12 +22,12 @@ if not stripe.api_key:
 
 app = Flask(__name__)
 
-# In-memory session store (swap for Postgres using backend/migrations in prod).
 LINK_SESSIONS = {}
-TAX_VAULT_RESERVE = Decimal("0")  # authoritative reserve balance (cents in prod)
-RESERVE_LEDGER = []
+# Integration-only process memory. State is isolated per connected account so
+# one account can never receive another account's reserve/payout history.
+ACCOUNT_RESERVE_LEDGER = {}
+AUTHORIZED_ACCOUNTS = set()
 
-# Gig platform payout detection: match counterparty/descriptor patterns.
 GIG_PATTERNS = [
     ("DoorDash", re.compile(r"doordash", re.I)),
     ("Uber", re.compile(r"uber", re.I)),
@@ -44,7 +38,7 @@ GIG_PATTERNS = [
     ("Spark Driver", re.compile(r"spark\s*driver|walmart\s*spark", re.I)),
 ]
 
-DEFAULT_TAX_RATE_BPS = 3000  # 30% default reserve rate; per-user tax profile in prod
+DEFAULT_TAX_RATE_BPS = 3000
 
 
 def money(value) -> float:
@@ -53,9 +47,6 @@ def money(value) -> float:
 
 @app.post("/api/bank-link/session")
 def create_link_session():
-    """Create a Stripe Financial Connections session. The hosted page lets the
-    user search their bank, select it, log in securely, and consent to sharing
-    account data with Milli."""
     session_id = f"fc_{uuid.uuid4().hex}"
     try:
         session = stripe.financial_connections.Session.create(
@@ -64,7 +55,6 @@ def create_link_session():
                 "enabled": True,
                 "permissions": ["balances", "ownership", "transactions"],
             }},
-            # return_url receives the redirect after the hosted flow completes.
             return_url=f"https://app.drivemilli.com/bank-link/callback?session_id={session_id}",
         )
     except Exception as exc:  # noqa: BLE001
@@ -82,7 +72,8 @@ def create_link_session():
 
 @app.post("/api/bank-link/complete")
 def complete_link():
-    session_id = request.json.get("sessionId", "")
+    payload = request.get_json(silent=True) or {}
+    session_id = payload.get("sessionId", "")
     record = LINK_SESSIONS.pop(session_id, None)
     if not record:
         return jsonify({"error": "Unknown or expired link session."}), 404
@@ -94,6 +85,9 @@ def complete_link():
             full = stripe.financial_connections.Account.retrieve(
                 acc.id, expand=["balances", "display"]
             )
+            AUTHORIZED_ACCOUNTS.add(full.id)
+            ACCOUNT_RESERVE_LEDGER.setdefault(full.id, [])
+
             balance = 0.0
             for bal in (getattr(full, "balances", None) or []):
                 if getattr(bal, "status", "") == "active" and getattr(bal, "type", "") == "cash":
@@ -117,13 +111,16 @@ def complete_link():
 
 @app.post("/api/payouts/sync")
 def sync_payouts():
-    """Detect gig-platform payouts in the connected account's transactions and
-    hold the correct tax amount from each into the Milli Tax Vault reserve."""
-    account_id = request.json.get("accountId")
+    payload = request.get_json(silent=True) or {}
+    account_id = payload.get("accountId")
     if not account_id:
         return jsonify({"error": "accountId required"}), 400
+    if account_id not in AUTHORIZED_ACCOUNTS:
+        return jsonify({"error": "Account is not linked in this backend session."}), 403
 
-    payouts = []
+    ledger = ACCOUNT_RESERVE_LEDGER.setdefault(account_id, [])
+    existing_ids = {entry["id"] for entry in ledger}
+
     try:
         txns = stripe.financial_connections.Transaction.list(
             account=account_id, limit=100
@@ -134,7 +131,8 @@ def sync_payouts():
     for txn in getattr(txns, "data", []):
         amount = getattr(txn, "amount", 0)
         if amount <= 0:
-            continue  # credits only
+            continue
+
         descriptor = " ".join(filter(None, [
             getattr(txn, "description", "") or "",
             getattr(txn, "merchant_name", "") or "",
@@ -144,33 +142,32 @@ def sync_payouts():
         if not platform:
             continue
 
+        entry_id = getattr(txn, "id", uuid.uuid4().hex)
+        if entry_id in existing_ids:
+            continue
+
         gross = money(amount / 100)
         tax_hold = money(gross * DEFAULT_TAX_RATE_BPS / 10000)
-        entry_id = getattr(txn, "id", uuid.uuid4().hex)
         detected_at = int(getattr(txn, "created", time.time()))
 
-        # Idempotent: never double-hold the same transaction.
-        if any(e["id"] == entry_id for e in RESERVE_LEDGER):
-            continue
-        RESERVE_LEDGER.append({"id": entry_id, "platform": platform, "taxHold": tax_hold})
-
-        payouts.append({
+        record = {
             "id": entry_id,
             "platform": platform,
             "grossAmount": gross,
             "detectedAt": detected_at,
             "taxHoldAmount": tax_hold,
-            # In production this becomes "confirmed" once the reserve transfer
-            # to the Milli Tax Vault account settles; "processing" until then.
             "taxHoldState": "processing",
-        })
+        }
+        ledger.append(record)
+        existing_ids.add(entry_id)
 
-    global TAX_VAULT_RESERVE
-    TAX_VAULT_RESERVE = sum((Decimal(str(e["taxHold"])) for e in RESERVE_LEDGER), Decimal("0"))
+    reserve = sum((Decimal(str(e["taxHoldAmount"])) for e in ledger), Decimal("0"))
 
+    # Return the authoritative persisted view, not only newly discovered deltas,
+    # so repeat syncs never clear the client's payout history.
     return jsonify({
-        "payouts": payouts,
-        "taxVaultReserveBalance": money(TAX_VAULT_RESERVE),
+        "payouts": ledger,
+        "taxVaultReserveBalance": money(reserve),
         "syncedAt": int(time.time()),
     })
 
