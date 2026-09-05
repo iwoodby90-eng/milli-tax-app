@@ -18,13 +18,12 @@ public struct MilliLedgerEntry: Equatable, Identifiable, Sendable {
         case taxPayment
         case transferIn
         case transferOut
-        case reversal(of: String)   // must reference the original movement
+        case reversal(of: String)
         case adjustment
     }
 
     public let id: String
     public let kind: Kind
-    /// Signed amount in cents. Positive increases the referenced bucket.
     public let amountCents: Int64
     public let bucket: Bucket
     public let occurredAt: Date
@@ -47,14 +46,14 @@ public enum MilliLedgerError: Error, Equatable {
     case unknownReversalTarget(String)
     case reversalTargetAlreadyReversed(String)
     case reversalAmountMismatch(original: Int64, attempted: Int64)
+    case reversalBucketMismatch(original: MilliLedgerEntry.Bucket, attempted: MilliLedgerEntry.Bucket)
     case invalidEntry(String)
 }
 
-/// Discrepancy between local authoritative state and provider-side state.
 public struct MilliReconciliationFinding: Equatable, Sendable {
     public enum Severity: Equatable, Hashable, Sendable {
-        case missingLocally   // provider knows a movement we do not
-        case missingAtProvider // we recorded a movement the provider does not confirm
+        case missingLocally
+        case missingAtProvider
         case amountMismatch(local: Int64, provider: Int64)
         case duplicateAtProvider(String)
     }
@@ -81,23 +80,23 @@ public final class MilliLedgerEngine: @unchecked Sendable {
 
     public init() {}
 
-    // MARK: Ingestion (append-only, replay-protected)
+    // MARK: Ingestion
 
-    /// Ingest one provider-confirmed movement. Throws on duplicates, invalid
-    /// reversals, or malformed entries. On throw, the ledger is UNTOUCHED —
-    /// validate before mutate.
     public func ingest(_ entry: MilliLedgerEntry) throws {
         lock.lock(); defer { lock.unlock() }
         try validate(entry)
         entries.append(entry)
         ingestedIDs.insert(entry.id)
-        if case .reversal(let target) = entry.kind { reversedIDs.insert(target) }
+        if case .reversal(let target) = entry.kind {
+            reversedIDs.insert(target)
+        }
     }
 
     private func validate(_ entry: MilliLedgerEntry) throws {
         if ingestedIDs.contains(entry.id) {
             throw MilliLedgerError.duplicateEntry(entry.id)
         }
+
         if case .reversal(let target) = entry.kind {
             guard let original = entries.first(where: { $0.id == target }) else {
                 throw MilliLedgerError.unknownReversalTarget(target)
@@ -107,74 +106,103 @@ public final class MilliLedgerEngine: @unchecked Sendable {
             }
             if entry.amountCents != -original.amountCents {
                 throw MilliLedgerError.reversalAmountMismatch(
-                    original: original.amountCents, attempted: entry.amountCents)
+                    original: original.amountCents,
+                    attempted: entry.amountCents
+                )
+            }
+            guard entry.bucket == original.bucket else {
+                throw MilliLedgerError.reversalBucketMismatch(
+                    original: original.bucket,
+                    attempted: entry.bucket
+                )
             }
         }
-        if entry.id.isEmpty { throw MilliLedgerError.invalidEntry("empty id") }
+
+        if entry.id.isEmpty {
+            throw MilliLedgerError.invalidEntry("empty id")
+        }
     }
 
-    // MARK: Derived balances (fold, never stored)
+    // MARK: Derived balances
 
     public func balance() -> MilliLedgerBalance {
         lock.lock(); defer { lock.unlock() }
-        var b = MilliLedgerBalance()
-        for e in entries {
-            switch e.bucket {
-            case .operatingAccount: b.operatingAccountCents += e.amountCents
-            case .taxVault: b.taxVaultCents += e.amountCents
+        return balanceLocked()
+    }
+
+    /// Caller must already hold `lock`.
+    private func balanceLocked() -> MilliLedgerBalance {
+        var balance = MilliLedgerBalance()
+        for entry in entries {
+            switch entry.bucket {
+            case .operatingAccount:
+                balance.operatingAccountCents += entry.amountCents
+            case .taxVault:
+                balance.taxVaultCents += entry.amountCents
             }
         }
-        return b
+        return balance
     }
 
     // MARK: Reconciliation
 
-    /// Reconcile local journal against provider-side state.
-    /// Provider state is authoritative input — this method never invents it.
     public func reconcile(providerMovements: [ProviderMovement]) -> MilliReconciliationReport {
         lock.lock(); defer { lock.unlock() }
 
         var findings: [MilliReconciliationFinding] = []
         let localByRef = Dictionary(
             entries.filter { $0.providerReference != nil }.map { ($0.providerReference!, $0) },
-            uniquingKeysWith: { first, _ in first })
+            uniquingKeysWith: { first, _ in first }
+        )
 
         var providerRefs: [String: Int] = [:]
         for provider in providerMovements {
             providerRefs[provider.reference, default: 0] += 1
             if providerRefs[provider.reference]! > 1 {
-                findings.append(.init(providerReference: provider.reference,
-                                     severity: .duplicateAtProvider(provider.reference)))
+                findings.append(.init(
+                    providerReference: provider.reference,
+                    severity: .duplicateAtProvider(provider.reference)
+                ))
                 continue
             }
+
             if let local = localByRef[provider.reference] {
                 if local.amountCents != provider.amountCents {
-                    findings.append(.init(providerReference: provider.reference,
-                                         severity: .amountMismatch(local: local.amountCents,
-                                                                  provider: provider.amountCents)))
+                    findings.append(.init(
+                        providerReference: provider.reference,
+                        severity: .amountMismatch(local: local.amountCents, provider: provider.amountCents)
+                    ))
                 }
             } else {
-                findings.append(.init(providerReference: provider.reference,
-                                     severity: .missingLocally))
+                findings.append(.init(
+                    providerReference: provider.reference,
+                    severity: .missingLocally
+                ))
             }
         }
-        for (ref, _) in localByRef where providerRefs[ref] == nil {
-            findings.append(.init(providerReference: ref, severity: .missingAtProvider))
+
+        for (reference, _) in localByRef where providerRefs[reference] == nil {
+            findings.append(.init(
+                providerReference: reference,
+                severity: .missingAtProvider
+            ))
         }
 
         let providerBalance = providerMovements.isEmpty && entries.contains(where: { $0.providerReference != nil })
-            ? nil  // provider reported nothing while we hold provider-confirmed movements: do not claim a balance
+            ? nil
             : providerMovements.reduce(0) { $0 + $1.amountCents }
 
         return MilliReconciliationReport(
             findings: findings,
-            localBalance: balance(),
-            providerBalanceCents: providerBalance)
+            localBalance: balanceLocked(),
+            providerBalanceCents: providerBalance
+        )
     }
 
     public struct ProviderMovement: Equatable, Sendable {
         public let reference: String
         public let amountCents: Int64
+
         public init(reference: String, amountCents: Int64) {
             self.reference = reference
             self.amountCents = amountCents
