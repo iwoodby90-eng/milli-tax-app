@@ -129,3 +129,20 @@ struct RetirementAccount: Identifiable {
     let monthlyContribution: Double
     let annualReturn: Double
 }
+
+// MARK: - Shared Mileage Rate
+// Module-visible counterpart used by navigation shell code outside MileageView.
+// MileageView's file-private helper resolves locally; both intentionally use the
+// same 2026 IRS business-rate schedule until the rate moves into the tax domain.
+enum MileageRate {
+    static func businessRate(for date: Date) -> Double {
+        let calendar = Calendar(identifier: .gregorian)
+        let components = calendar.dateComponents([.year, .month], from: date)
+
+        guard components.year == 2026 else {
+            return 0.76
+        }
+
+        return (components.month ?? 12) >= 7 ? 0.76 : 0.725
+    }
+}
