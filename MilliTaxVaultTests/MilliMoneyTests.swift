@@ -8,7 +8,8 @@ final class MilliMoneyTests: XCTestCase {
     func testParseExactCents() {
         XCTAssertEqual(MilliMoney(string: "5284.17")?.cents, 528_417)
         XCTAssertEqual(MilliMoney(string: "0.01")?.cents, 1)
-        XCTAssertEqual(MilliMoney(string: "-1,247.00" as String), nil) // comma rejected by Decimal(string:)
+        XCTAssertEqual(MilliMoney(string: "-1.00")?.cents, -100) // signed debits are valid
+        XCTAssertEqual(MilliMoney(string: "-1,247.00" as String), nil) // grouping/partial parse rejected
     }
 
     func testRoundingHalfAwayFromZero() {
