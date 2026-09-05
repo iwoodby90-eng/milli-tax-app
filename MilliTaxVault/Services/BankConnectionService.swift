@@ -108,9 +108,6 @@ public struct VerifiedPayout: Identifiable, Codable, Equatable {
         Color(hex: platformColorHex)
     }
 
-    /// LAUNCH P0: honest projection of a legacy cached record into the state
-    /// contract. A locally cached payout has no backend authority, so it is
-    /// rendered as CACHED LIVE in .detected state — never POSTED/PROTECTED.
     public var stateContractProjection: AutopilotPayout {
         AutopilotPayout(
             id: id,
@@ -156,21 +153,12 @@ public final class BankConnectionService: ObservableObject {
 
     private init() {
         loadPersistedData()
-        // LAUNCH P0 CLEANUP: no seeded bank account, no fake balances, no
-        // simulated payouts in the production experience. The service starts
-        // empty and honest; content arrives only from a real provider or the
-        // explicit demo provider (visibly labeled).
     }
 
     public var totalPayoutsAmount: Double {
         payouts.reduce(0) { $0 + $1.grossAmount }
     }
 
-    /// REAL PROVIDER PATH (Stripe Financial Connections hosted flow):
-    /// opens the hosted page where the user searches their bank, selects it,
-    /// logs in securely, and consents to sharing data with Milli. The account
-    /// is only marked connected (isLive: true) once the backend confirms the
-    /// session and returns the live account + balance.
     public func connectBankViaHostedFlow() async {
         guard !isConnecting else { return }
         isConnecting = true
@@ -183,7 +171,6 @@ public final class BankConnectionService: ObservableObject {
         }
 
         guard let accounts, let primary = accounts.accounts.first else {
-            // Cancelled or failed — previous state untouched.
             return
         }
 
@@ -199,11 +186,9 @@ public final class BankConnectionService: ObservableObject {
             isLive: true
         )
 
-        // Immediately pull detected payouts + Tax Vault reserve state.
         await syncTransactions()
     }
 
-    /// Legacy local stub retained for the demo provider only — never marks live.
     public func connectBank(institution: BankInstitution, provider: BankConnectionProvider, accountMask: String = "4821") {
         isConnecting = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
@@ -228,12 +213,8 @@ public final class BankConnectionService: ObservableObject {
         payouts.removeAll()
     }
 
-    /// REAL SYNC PATH: pulls gig-platform payouts the backend detected from
-    /// the connected account, plus the authoritative Tax Vault reserve balance.
-    /// Each detected payout carries the tax amount held for the user; the
-    /// reserve accumulates until quarterly/annual filing.
     public func syncTransactions() async {
-        guard connectedBank != nil else { return }
+        guard let bank = connectedBank else { return }
         guard MilliBackendClient.shared.isConfigured else {
             syncMessage = "Milli backend not configured."
             return
@@ -241,7 +222,7 @@ public final class BankConnectionService: ObservableObject {
         isSyncing = true
         defer { isSyncing = false }
         do {
-            let sync = try await MilliBackendClient.shared.syncPayouts()
+            let sync = try await MilliBackendClient.shared.syncPayouts(accountId: bank.id)
             payouts = sync.payouts.map { payload in
                 let platformMatch = GigPlatformLink.standardPlatforms.first {
                     $0.name.lowercased().contains(payload.platform.lowercased())
@@ -257,7 +238,7 @@ public final class BankConnectionService: ObservableObject {
                     grossAmount: payload.grossAmount,
                     isPending: payload.taxHoldState != "confirmed",
                     isThisWeek: Calendar.current.isDateInWeek(payload.detectedAt),
-                    bankMask: connectedBank?.accountMask ?? "0000",
+                    bankMask: bank.accountMask,
                     achTraceId: payload.id
                 )
             }
@@ -275,11 +256,6 @@ public final class BankConnectionService: ObservableObject {
             linkedPlatforms[idx].isConnected.toggle()
         }
     }
-
-    /// LAUNCH P0 CLEANUP: removed. Seeded/simulated payouts are no longer
-    /// part of the production experience; demo content lives only behind the
-    /// explicit demo provider (TreasuryAutopilotStore.loadDemoData) and is
-    /// visibly labeled DEMO.
 
     private func persist() {
         let encoder = JSONEncoder()
