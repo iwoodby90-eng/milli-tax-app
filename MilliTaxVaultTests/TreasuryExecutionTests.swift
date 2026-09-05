@@ -3,24 +3,24 @@ import XCTest
 
 final class TreasuryExecutionTests: XCTestCase {
 
-    private final class FakeProvider: TreasuryProviderPort, @unchecked Sendable {
+    private actor FakeProvider: TreasuryProviderPort {
         enum Behavior { case succeed; case transportError }
 
-        var behavior: Behavior = .succeed
-        var delayNanoseconds: UInt64 = 0
+        private var behavior: Behavior = .succeed
+        private var delayNanoseconds: UInt64 = 0
+        private var initiateCalls = 0
 
-        private let lock = NSLock()
-        private var _initiateCallCount = 0
+        func configure(behavior: Behavior? = nil, delayNanoseconds: UInt64? = nil) {
+            if let behavior { self.behavior = behavior }
+            if let delayNanoseconds { self.delayNanoseconds = delayNanoseconds }
+        }
 
-        var initiateCallCount: Int {
-            lock.lock(); defer { lock.unlock() }
-            return _initiateCallCount
+        func initiateCallCount() -> Int {
+            initiateCalls
         }
 
         func initiateAllocation(reference: String, amountCents: Int64) async throws -> String {
-            lock.lock()
-            _initiateCallCount += 1
-            lock.unlock()
+            initiateCalls += 1
 
             if delayNanoseconds > 0 {
                 try await Task.sleep(nanoseconds: delayNanoseconds)
@@ -57,7 +57,7 @@ final class TreasuryExecutionTests: XCTestCase {
 
     func testConcurrentAllocationRetriesInitiateProviderOnlyOnce() async throws {
         let provider = FakeProvider()
-        provider.delayNanoseconds = 100_000_000
+        await provider.configure(delayNanoseconds: 100_000_000)
         let service = TreasuryExecutionService(provider: provider)
         _ = await service.recordDetection(reference: "pmt_1", amountCents: 4_311)
 
@@ -69,7 +69,8 @@ final class TreasuryExecutionTests: XCTestCase {
 
         XCTAssertEqual(firstResult.state, .processing)
         XCTAssertEqual(retryResult.state, .processing)
-        XCTAssertEqual(provider.initiateCallCount, 1, "concurrent retries must not duplicate money movement")
+        XCTAssertEqual(await provider.initiateCallCount(), 1,
+                       "concurrent retries must not duplicate money movement")
     }
 
     func testRepeatedAuthoritativeProviderStateIsIdempotent() async throws {
@@ -87,7 +88,7 @@ final class TreasuryExecutionTests: XCTestCase {
 
     func testTransportFailureIsUnavailableNotFailed() async throws {
         let provider = FakeProvider()
-        provider.behavior = .transportError
+        await provider.configure(behavior: .transportError)
         let service = TreasuryExecutionService(provider: provider)
         _ = await service.recordDetection(reference: "pmt_1", amountCents: 100)
         do {
