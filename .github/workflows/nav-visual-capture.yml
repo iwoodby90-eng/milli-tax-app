@@ -81,7 +81,9 @@ jobs:
           test -n "$APP_PATH"
           xcrun simctl install "$DEVICE_UDID" "$APP_PATH"
           BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")
-          xcrun simctl launch "$DEVICE_UDID" "$BUNDLE_ID"
+          # Force the deterministic authenticated/main-shell screenshot route so
+          # this workflow actually captures the canonical bottom navigation.
+          xcrun simctl launch "$DEVICE_UDID" "$BUNDLE_ID" -milliScreenshotMode -milliAppState main
           sleep 6
 
       - name: Capture runtime
