@@ -1415,7 +1415,7 @@ private extension MKPolyline {
     }
 }
 
-private enum MileageRate {
+enum MileageRate {
     /// IRS optional business standard mileage rates for 2026.
     /// Jan 1–Jun 30: $0.725/mi; Jul 1–Dec 31: $0.76/mi.
     static func businessRate(for date: Date) -> Double {
