@@ -43,13 +43,13 @@ public struct MilliMoney: Equatable, Hashable, Sendable {
         self.init(decimal: value)
     }
 
-    /// Convert an exact `Decimal` amount to cents, rounding half away from zero.
+    /// Convert an exact `Decimal` amount to cents. `NSDecimalRound(.plain)` is
+    /// the authoritative cent boundary and already handles half values without
+    /// a second manual adjustment.
     public init(decimal: Decimal) {
         var value = decimal * 100
         var rounded = Decimal()
         NSDecimalRound(&rounded, &value, 0, .plain)
-        // half-away-from-zero for negatives:
-        if rounded < 0 && (value < rounded) { rounded -= 1 }
         self.cents = (rounded as NSDecimalNumber).int64Value
     }
 
@@ -103,13 +103,11 @@ public struct MilliMoney: Equatable, Hashable, Sendable {
 // MARK: - Rounding boundary
 
 extension Decimal {
-    /// Round to exact cents, half away from zero. The single rounding boundary.
+    /// Round to exact cents using Decimal's single `.plain` rounding boundary.
     public static func milliRoundedToCents(_ value: Decimal) -> Decimal {
         var scaled = value * 100
         var rounded = Decimal()
         NSDecimalRound(&rounded, &scaled, 0, .plain)
-        if rounded > 0 && scaled > rounded { rounded += 1 }
-        if rounded < 0 && scaled < rounded { rounded -= 1 }
         return rounded / 100
     }
 }
@@ -163,7 +161,7 @@ public enum MilliAllocation {
 
 public enum MilliMileageMath {
     /// Business mileage deduction: miles (Double, GPS-sourced) × rate (Decimal).
-    /// Rounded once, half away from zero, to exact cents.
+    /// Rounded once to exact cents.
     public static func deduction(miles: Double, ratePerMile: Decimal) -> MilliMoney {
         let milesDecimal = Decimal(string: String(format: "%.4f", miles)) ?? Decimal(miles)
         return MilliMoney(decimal: milesDecimal * ratePerMile)
