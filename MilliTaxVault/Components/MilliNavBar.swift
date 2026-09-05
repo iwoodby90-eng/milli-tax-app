@@ -22,11 +22,11 @@ enum MilliTab: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .vault: return "Payouts"
-        case .activity: return "Mileage"
-        case .wealth: return "Wealth"
-        case .cockpit: return "More"
-        case .home: return "Home"
+        case .vault: return "PAYOUTS"
+        case .activity: return "MILEAGE"
+        case .wealth: return "WEALTH"
+        case .cockpit: return "MORE"
+        case .home: return "HOME"
         }
     }
 }
@@ -39,7 +39,7 @@ enum MilliTab: String, CaseIterable {
 // - Four circular recessed details across the upper deck: two left, two right
 // - Center M physically integrated into the chassis crest (never a floating FAB)
 // - Segmented cyan illumination arcs with dark spacers (never a continuous ring)
-// - Active tab: restrained cyan illumination. Inactive tabs: silver/graphite.
+// - Active tab: restrained cyan illumination. Inactive tabs: dark machined graphite for legibility on chrome.
 // - Motion: static active-state illumination only; no glow cycling or pulsing.
 
 struct MilliNavBar: View {
@@ -174,7 +174,7 @@ struct MilliNavBar: View {
                     }
 
                     Image(systemName: tab.icon)
-                        .font(.system(size: 19, weight: isSelected ? .bold : .medium))
+                        .font(.system(size: 19, weight: isSelected ? .bold : .semibold))
                         .foregroundStyle(
                             isSelected
                                 ? AnyShapeStyle(
@@ -184,24 +184,34 @@ struct MilliNavBar: View {
                                         endPoint: .bottom
                                     )
                                 )
-                                : AnyShapeStyle(Color(hex: "959E9F"))
+                                : AnyShapeStyle(Color(hex: "30373D"))
                         )
-                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.45) : .clear, radius: 4)
+                        .shadow(
+                            color: isSelected
+                                ? MilliColors.cyanGlow.opacity(0.45)
+                                : Color.white.opacity(0.16),
+                            radius: isSelected ? 4 : 0.5,
+                            y: isSelected ? 0 : 0.5
+                        )
                         .frame(height: 24)
                 }
 
                 Text(tab.displayName)
-                    .font(.custom("Inter-Medium", size: 10, relativeTo: .caption2))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : MilliColors.textSecondary)
-                    .tracking(0.3)
-                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.35) : .clear, radius: 3)
+                    .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
+                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "3C444B"))
+                    .tracking(0.55)
+                    .shadow(
+                        color: isSelected ? MilliColors.cyanGlow.opacity(0.35) : Color.white.opacity(0.18),
+                        radius: isSelected ? 3 : 0.5,
+                        y: isSelected ? 0 : 0.5
+                    )
             }
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.displayName)
+        .accessibilityLabel(tab.displayName.capitalized)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
