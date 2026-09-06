@@ -32,9 +32,7 @@ jobs:
         run: xcodebuild -project MilliTaxVault.xcodeproj -list
 
       - name: Compile native iOS simulator target
-        shell: bash
         run: |
-          set -o pipefail
           xcodebuild \
             -project MilliTaxVault.xcodeproj \
             -scheme MilliTaxVault \
@@ -42,15 +40,7 @@ jobs:
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
-            build 2>&1 | tee "$RUNNER_TEMP/milli-native-build.log"
-
-      - name: Upload native build diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: milli-native-build-diagnostics
-          path: ${{ runner.temp }}/milli-native-build.log
-          if-no-files-found: warn
+            build
 
   unit-tests:
     name: Unit tests (MilliTaxVault scheme)
@@ -66,7 +56,6 @@ jobs:
         run: xcrun simctl list devices available
 
       - name: Run unit tests (shared MilliTaxVault scheme)
-        shell: bash
         run: |
           set -o pipefail
           xcodebuild test \
@@ -74,17 +63,9 @@ jobs:
             -scheme MilliTaxVault \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee "$RUNNER_TEMP/milli-unit-tests.log" | xcbeautify
+            | xcbeautify
         env:
           NSUnbufferedIO: YES
-
-      - name: Upload unit test diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: milli-unit-test-diagnostics
-          path: ${{ runner.temp }}/milli-unit-tests.log
-          if-no-files-found: warn
 
       - name: Test summary
         if: always()
