@@ -32,15 +32,15 @@ jobs:
         run: xcodebuild -project MilliTaxVault.xcodeproj -list
 
       - name: Compile native iOS simulator target
-        run: |
-          xcodebuild \
-            -project MilliTaxVault.xcodeproj \
-            -scheme MilliTaxVault \
-            -sdk iphonesimulator \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            build
+        run: >-
+          xcodebuild
+          -project MilliTaxVault.xcodeproj
+          -scheme MilliTaxVault
+          -sdk iphonesimulator
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
 
   unit-tests:
     name: Unit tests (MilliTaxVault scheme)
@@ -56,6 +56,7 @@ jobs:
         run: xcrun simctl list devices available
 
       - name: Run unit tests (shared MilliTaxVault scheme)
+        shell: bash
         run: |
           set -o pipefail
           xcodebuild test \
