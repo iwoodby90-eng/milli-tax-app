@@ -65,7 +65,7 @@ struct OnboardingFlowView: View {
                             onBack: { move(to: 1) }
                         )
                     case 3:
-                        BankConnectionSetupView(
+                        PlaidBankConnectionSetupView(
                             profile: $bankProfile,
                             onNext: { move(to: 4) },
                             onBack: { move(to: 2) }
