@@ -49,8 +49,8 @@ final class PlaidLinkCoordinator: ObservableObject {
             token: linkToken,
             onSuccess: { [weak self] success in
                 let publicToken = success.publicToken
-                let institutionID = success.metadata.institution?.id
-                let institutionName = success.metadata.institution?.name
+                let institutionID = success.metadata.institution.id
+                let institutionName = success.metadata.institution.name
 
                 Task { @MainActor [weak self] in
                     guard let self else { return }
@@ -96,13 +96,7 @@ final class PlaidLinkCoordinator: ObservableObject {
             }
         )
 
-        do {
-            linkSession = try Plaid.createPlaidLinkSession(configuration: configuration)
-        } catch {
-            isLoading = false
-            linkSession = nil
-            errorMessage = "Milli couldn't initialize Plaid Link: \(error.localizedDescription)"
-        }
+        linkSession = Plaid.createPlaidLinkSession(configuration: configuration)
     }
 
     private func completeConnection(
