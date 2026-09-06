@@ -59,6 +59,18 @@ final class PlaidAPIClient: ObservableObject {
         }
     }
 
+    private struct ExchangeRequestBody: Encodable {
+        let publicToken: String
+        let institutionID: String?
+        let institutionName: String?
+
+        enum CodingKeys: String, CodingKey {
+            case publicToken = "public_token"
+            case institutionID = "institution_id"
+            case institutionName = "institution_name"
+        }
+    }
+
     enum ClientError: LocalizedError {
         case invalidBaseURL
         case invalidResponse
@@ -80,15 +92,15 @@ final class PlaidAPIClient: ObservableObject {
     }
 
     private let session: URLSession
-    private let decoder: JSONDecoder
+    private let decoder = JSONDecoder()
+    private let encoder = JSONEncoder()
 
     private init(session: URLSession = .shared) {
         self.session = session
-        self.decoder = JSONDecoder()
     }
 
     func createLinkToken() async throws -> String {
-        let request = try makeRequest(path: "/plaid/link-token", method: "POST")
+        let request = try makeRequest(path: "plaid/link-token", method: "POST")
         let payload: LinkTokenPayload = try await send(request)
         return payload.linkToken
     }
@@ -99,21 +111,20 @@ final class PlaidAPIClient: ObservableObject {
         institutionID: String?,
         institutionName: String?
     ) async throws -> ExchangePayload {
-        var request = try makeRequest(path: "/plaid/exchange-public-token", method: "POST")
+        var request = try makeRequest(path: "plaid/exchange-public-token", method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: [
-            "public_token": publicToken,
-            "institution_id": institutionID as Any,
-            "institution_name": institutionName as Any
-        ].compactMapValues { value in
-            if let value = value as? String { return value }
-            return nil
-        })
+        request.httpBody = try encoder.encode(
+            ExchangeRequestBody(
+                publicToken: publicToken,
+                institutionID: institutionID,
+                institutionName: institutionName
+            )
+        )
         return try await send(request)
     }
 
     func fetchAccounts() async throws -> [PlaidAccountSnapshot] {
-        let request = try makeRequest(path: "/plaid/accounts", method: "GET")
+        let request = try makeRequest(path: "plaid/accounts", method: "GET")
         let envelope: AccountsEnvelope = try await send(request)
         guard !envelope.accounts.isEmpty else { throw ClientError.noLinkedAccounts }
         return envelope.accounts
@@ -144,8 +155,10 @@ final class PlaidAPIClient: ObservableObject {
             throw ClientError.invalidResponse
         }
         guard (200..<300).contains(http.statusCode) else {
-            let message = Self.extractServerMessage(from: data)
-            throw ClientError.server(status: http.statusCode, message: message)
+            throw ClientError.server(
+                status: http.statusCode,
+                message: Self.extractServerMessage(from: data)
+            )
         }
         do {
             return try decoder.decode(T.self, from: data)
@@ -155,10 +168,12 @@ final class PlaidAPIClient: ObservableObject {
     }
 
     private func configuredBaseURL() -> URL? {
-        let raw = (Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String)?
+        let configured = (Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let value = (raw?.isEmpty == false) ? raw! : "https://milli-tax-vault-api.onrender.com"
-        return URL(string: value.hasSuffix("/") ? value : value + "/")
+        let raw = (configured?.isEmpty == false)
+            ? configured!
+            : "https://milli-tax-vault-api.onrender.com"
+        return URL(string: raw.hasSuffix("/") ? raw : raw + "/")
     }
 
     private func configuredClientKey() -> String? {
@@ -172,7 +187,8 @@ final class PlaidAPIClient: ObservableObject {
 
     private func persistentUserID() -> UUID {
         let key = "milliBackendUserUUID"
-        if let raw = UserDefaults.standard.string(forKey: key), let uuid = UUID(uuidString: raw) {
+        if let raw = UserDefaults.standard.string(forKey: key),
+           let uuid = UUID(uuidString: raw) {
             return uuid
         }
         let uuid = UUID()
