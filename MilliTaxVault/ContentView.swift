@@ -662,7 +662,7 @@ private struct MilliNativeNavigationView: View {
                 Text("Today: \(todayMiles.formatted(.number.precision(.fractionLength(2)))) business mi")
                     .font(MilliFont.bodyMedium)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("Estimated deduction: \((todayMiles * MileageRate.businessRate(for: Date())).formatted(.currency(code: "USD")))")
+                Text("Estimated deduction: \((todayMiles * NavigationMileageRate.businessRate(for: Date())).formatted(.currency(code: "USD")))")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.positive)
             }
@@ -837,7 +837,7 @@ private struct MilliNativeNavigationView: View {
         let miles = locationManager.distanceMiles
         let recordedRoute = locationManager.routeCoordinates
         let destination = destinationItem
-        let rate = MileageRate.businessRate(for: startedAt)
+        let rate = NavigationMileageRate.businessRate(for: startedAt)
 
         locationManager.stopTracking()
         isNavigating = false
@@ -856,7 +856,7 @@ private struct MilliNativeNavigationView: View {
                 startAddress: nil,
                 endAddress: destination?.name,
                 startCoordinate: recordedRoute.first.map(MileageCoordinate.init),
-                endCoordinate: destination?.placemark.coordinate.map(MileageCoordinate.init) ?? recordedRoute.last.map(MileageCoordinate.init),
+                endCoordinate: destination.map { MileageCoordinate($0.placemark.coordinate) } ?? recordedRoute.last.map(MileageCoordinate.init),
                 routePoints: recordedRoute.map(MileageCoordinate.init),
                 navigationExternalID: nil,
                 syncState: .pending
