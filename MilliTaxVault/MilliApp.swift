@@ -204,7 +204,7 @@ struct MilliApp: App {
                     .transition(.opacity)
 
                 case .setup:
-                    OnboardingFlowView(onComplete: {
+                    LaunchOnboardingFlowView(onComplete: {
                         hasCompletedSetup = true
                         activateSelectedTrialIfNeeded()
                         transition(to: .main)
