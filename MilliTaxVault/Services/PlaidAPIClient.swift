@@ -172,7 +172,7 @@ final class PlaidAPIClient: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let raw = (configured?.isEmpty == false)
             ? configured!
-            : "https://milli-tax-vault-api.onrender.com"
+            : "https://milli-tax-app-1.onrender.com"
         return URL(string: raw.hasSuffix("/") ? raw : raw + "/")
     }
 
