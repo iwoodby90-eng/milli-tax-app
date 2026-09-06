@@ -19,6 +19,8 @@ services:
         sync: false
       - key: PLAID_WEBHOOK_URL
         sync: false
+      - key: PLAID_REDIRECT_URI
+        sync: false
       - key: CLIENT_API_KEY
         sync: false
       - key: DATABASE_URL
