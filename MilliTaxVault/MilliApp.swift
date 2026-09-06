@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreLocation
+import MapKit
 import AuthenticationServices
 import StoreKit
 
@@ -12,10 +13,9 @@ enum AppState: String {
 }
 
 // MARK: - Navigation handoff
-// Milli accepts its own deep-link contract everywhere and can also parse Apple's
-// geo-navigation payload when iOS launches Milli as an eligible navigation app.
-// A handoff is retained through sign-in so the destination is already loaded
-// when the authenticated user reaches Mileage.
+// Milli accepts Apple Maps routing requests, Apple's geo-navigation contract in
+// eligible regions, and Milli's own deep links. The handoff is retained through
+// authentication and consumed by the native navigation cockpit.
 
 struct NavigationHandoffRequest: Identifiable, Equatable {
     let id = UUID()
@@ -33,6 +33,23 @@ struct NavigationHandoffRequest: Identifiable, Equatable {
 
 enum NavigationHandoffParser {
     static func parse(_ url: URL) -> NavigationHandoffRequest? {
+        // Registered iOS routing apps receive a MapKit directions-request URL.
+        // Decode this first instead of attempting to reverse-engineer its query.
+        if MKDirections.Request.isDirectionsRequest(url) {
+            let directionsRequest = MKDirections.Request(contentsOf: url)
+            guard let destination = directionsRequest.destination else { return nil }
+            let coordinate = destination.placemark.coordinate
+            let hasValidCoordinate = CLLocationCoordinate2DIsValid(coordinate)
+
+            return NavigationHandoffRequest(
+                destinationAddress: nil,
+                destinationName: destination.name,
+                latitude: hasValidCoordinate ? coordinate.latitude : nil,
+                longitude: hasValidCoordinate ? coordinate.longitude : nil,
+                sourceApp: "Apple Maps"
+            )
+        }
+
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
         }
@@ -44,22 +61,31 @@ enum NavigationHandoffParser {
             uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name.lowercased(), $0.value ?? "") }
         )
 
+        // geo-navigation://directions uses `destination`; Milli deep links also
+        // accept address/daddr/q/query for compatibility with existing handoffs.
         let address = firstNonEmpty(
-            items["address"],
             items["destination"],
+            items["address"],
             items["daddr"],
             items["q"],
             items["query"]
         )
 
         let name = firstNonEmpty(items["name"], items["label"], items["title"])
-        let source = firstNonEmpty(items["source"], items["app"], items["provider"])
+        let sourceApp = scheme == "milli"
+            ? firstNonEmpty(items["app"], items["provider"], items["source_app"])
+            : "System Navigation"
 
         var latitude = double(items["lat"] ?? items["latitude"])
         var longitude = double(items["lon"] ?? items["lng"] ?? items["longitude"])
 
         if (latitude == nil || longitude == nil),
-           let coordinateText = firstNonEmpty(items["ll"], items["coordinate"], items["destination_coordinate"]) {
+           let coordinateText = firstNonEmpty(
+                items["coordinate"],
+                items["destination_coordinate"],
+                items["ll"],
+                coordinateCandidate(from: items["destination"])
+           ) {
             let parts = coordinateText
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -86,8 +112,19 @@ enum NavigationHandoffParser {
             destinationName: name,
             latitude: latitude,
             longitude: longitude,
-            sourceApp: source
+            sourceApp: sourceApp
         )
+    }
+
+    private static func coordinateCandidate(from value: String?) -> String? {
+        guard let value else { return nil }
+        let parts = value.split(separator: ",")
+        guard parts.count == 2,
+              Double(parts[0].trimmingCharacters(in: .whitespacesAndNewlines)) != nil,
+              Double(parts[1].trimmingCharacters(in: .whitespacesAndNewlines)) != nil else {
+            return nil
+        }
+        return value
     }
 
     private static func firstNonEmpty(_ values: String?...) -> String? {
@@ -190,9 +227,7 @@ struct MilliApp: App {
             .preferredColorScheme(.dark)
             .onOpenURL(perform: handleIncomingNavigationURL)
             .task {
-                // Verify Apple ID credential state on app launch
                 _ = await appleAuthManager.verifyAppleCredentialState()
-                // Update App Store entitlements on app launch
                 await storeKitService.updateCustomerProductStatus()
             }
         }
@@ -202,9 +237,9 @@ struct MilliApp: App {
         guard let request = NavigationHandoffParser.parse(url) else { return }
         pendingNavigationRequest = request
 
-        // Never bypass authentication. If the user is already authenticated,
-        // ContentView immediately routes to Mileage. Otherwise the request waits
-        // through sign-in/onboarding and is consumed once the main shell appears.
+        // Never bypass authentication. If already authenticated, ContentView
+        // immediately routes to the native navigation cockpit. Otherwise the
+        // handoff survives sign-in/onboarding and is consumed afterward.
         if appState == .main {
             return
         }
