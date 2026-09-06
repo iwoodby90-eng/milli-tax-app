@@ -249,10 +249,10 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
 // MARK: - Shared navigation helpers
 
-/// Shared business-mileage rate used by the live navigation cockpit. The legacy
-/// mileage screen keeps its file-local equivalent so existing behavior remains
-/// untouched while navigation and mileage are consolidated.
-enum MileageRate {
+/// Business-mileage rate used by the live navigation cockpit. The existing
+/// mileage screen keeps its file-local rate helper so this change does not alter
+/// its established behavior.
+enum NavigationMileageRate {
     static func businessRate(for date: Date) -> Double {
         let calendar = Calendar(identifier: .gregorian)
         let components = calendar.dateComponents([.year, .month], from: date)
@@ -265,13 +265,5 @@ enum MileageRate {
             return 0.76
         }
         return 0.725
-    }
-}
-
-/// Functional transform convenience for coordinates reached through optional
-/// navigation chains (for example `mapItem?.placemark.coordinate.map(...)`).
-extension CLLocationCoordinate2D {
-    func map<T>(_ transform: (CLLocationCoordinate2D) -> T) -> T {
-        transform(self)
     }
 }
