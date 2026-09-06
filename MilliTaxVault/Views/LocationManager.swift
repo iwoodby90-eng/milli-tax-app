@@ -246,3 +246,24 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         defaults.set(Date(), forKey: dailyDateKey)
     }
 }
+
+// MARK: - Shared navigation helpers
+
+/// Business-mileage rate used by the live navigation cockpit. The existing
+/// mileage screen keeps its file-local rate helper so this change does not alter
+/// its established behavior.
+enum NavigationMileageRate {
+    static func businessRate(for date: Date) -> Double {
+        let calendar = Calendar(identifier: .gregorian)
+        let components = calendar.dateComponents([.year, .month], from: date)
+
+        guard components.year == 2026 else {
+            return 0.76
+        }
+
+        if let month = components.month, month >= 7 {
+            return 0.76
+        }
+        return 0.725
+    }
+}
