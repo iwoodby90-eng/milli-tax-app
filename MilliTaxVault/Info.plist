@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>MILLI_API_BASE_URL</key>
+	<string>https://milli-tax-vault-api.onrender.com</string>
+	<key>MILLI_CLIENT_API_KEY</key>
+	<string>$(MILLI_CLIENT_API_KEY)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Sora-Regular.ttf</string>
