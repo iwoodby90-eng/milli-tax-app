@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Plaid bank-connect endpoints.
 
 Flow:
@@ -17,6 +18,7 @@ from pydantic import BaseModel
 from ..config import get_settings
 from ..plaid_client import get_client
 from ..security import require_user
+from ..secret_store import encrypt_provider_secret, decrypt_provider_secret
 from .. import db
 
 router = APIRouter(prefix="/plaid", tags=["plaid"])
@@ -89,6 +91,7 @@ def exchange_public_token(
         ItemPublicTokenExchangeRequest(public_token=body.public_token)
     ).to_dict()
     access_token = exchange["access_token"]
+    stored_access_token = encrypt_provider_secret(access_token)
     item_id = exchange["item_id"]
 
     settings = get_settings()
@@ -117,7 +120,7 @@ def exchange_public_token(
                     row_id,
                     user_id,
                     item_id,
-                    access_token,
+                    stored_access_token,
                     body.institution_id,
                     body.institution_name,
                 ),
@@ -234,7 +237,8 @@ def refresh_balances(user_id: uuid.UUID = Depends(require_user)) -> dict:
             )
             items = cur.fetchall()
     refreshed = 0
-    for item_uuid, access_token in items:
+    for item_uuid, stored_access_token in items:
+        access_token = decrypt_provider_secret(stored_access_token)
         refreshed += _sync_accounts(client, item_uuid, user_id, access_token)
     return {"accounts_refreshed": refreshed, "items": len(items)}
 
@@ -298,7 +302,8 @@ def sync_transactions(user_id: uuid.UUID = Depends(require_user)) -> dict:
             items = cur.fetchall()
 
     inserted = 0
-    for _item_uuid, access_token in items:
+    for _item_uuid, stored_access_token in items:
+        access_token = decrypt_provider_secret(stored_access_token)
         cursor_value = None
         has_more = True
         while has_more:

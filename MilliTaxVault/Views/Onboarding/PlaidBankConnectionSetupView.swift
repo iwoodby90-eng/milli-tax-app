@@ -257,12 +257,9 @@ struct PlaidBankConnectionSetupView: View {
         profile.connectionStatus = .connecting
 
         do {
-            guard let publicToken = success.publicToken else {
-                throw PlaidAPIClient.ClientError.invalidResponse
-            }
-
-            let institutionID = success.metadata.institution?.id
-            let institutionName = success.metadata.institution?.name
+            let publicToken = success.publicToken
+            let institutionID = success.metadata.institution.id
+            let institutionName = success.metadata.institution.name
 
             try await PlaidAPIClient.shared.exchangePublicToken(
                 publicToken,

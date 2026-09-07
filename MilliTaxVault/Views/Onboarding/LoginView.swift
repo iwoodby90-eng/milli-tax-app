@@ -360,14 +360,19 @@ struct LoginView: View {
                     appleAuthManager.configureAppleRequest(request)
                 },
                 onCompletion: { result in
-                    if let user = appleAuthManager.handleAuthorizationCompletion(result: result, isSignUp: mode == .signUp) {
-                        if mode == .signUp {
-                            onCreateAccount(user.email)
-                        } else {
-                            onSignIn(user.email)
+                    Task { @MainActor in
+                        if let user = await appleAuthManager.completeAuthorization(
+                            result: result,
+                            isSignUp: mode == .signUp
+                        ) {
+                            if mode == .signUp {
+                                onCreateAccount(user.email)
+                            } else {
+                                onSignIn(user.email)
+                            }
+                        } else if let error = appleAuthManager.authErrorMessage {
+                            authenticationMessage = error
                         }
-                    } else if let error = appleAuthManager.authErrorMessage {
-                        authenticationMessage = error
                     }
                 }
             )

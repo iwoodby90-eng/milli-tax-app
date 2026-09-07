@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Milli Tax Vault reserve ledger.
 
 Data-truth contract:

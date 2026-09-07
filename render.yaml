@@ -12,7 +12,12 @@ services:
         value: sandbox
       - key: PLAID_ENV
         value: sandbox
-      # Secrets are set in the Render dashboard, never committed.
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: AUTH_JWT_SECRET
+        sync: false
+      - key: PROVIDER_TOKEN_ENCRYPTION_KEY
+        sync: false
       - key: PLAID_CLIENT_ID
         sync: false
       - key: PLAID_SECRET
