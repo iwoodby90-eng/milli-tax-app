@@ -7,100 +7,117 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* MilliApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001; };
-		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
-		A10012 /* MilliTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
-		A10013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10013; };
-		A10020 /* ChromeEmblemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
-		A10021 /* MilliNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
-		A10022 /* MilliAIOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
-		A10024 /* TaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024; };
-		A10030 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
-		A10031 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
-		A10032 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
-		A10040 /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040; };
-		A10041 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041; };
-		A10042 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10042; };
-		A10043 /* VaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10043; };
-		A10044 /* WealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10044; };
-		A10045 /* CockpitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045; };
-		A10046 /* MilliMetalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046; };
-		A10047 /* MilliAICompanion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10047; };
-		A10048 /* MilliCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048; };
-		A10049 /* MilliChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049; };
-		A10051 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051; };
-		A10060 /* MilliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060; };
-		A10061 /* MilliTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061; };
-		A10062 /* MilliSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10062; };
-		A10070 /* MilliSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10070; };
-		A10071 /* MilliSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10071; };
-		A10072 /* MilliProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10072; };
-		A10073 /* MilliCenterMButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10073; };
-		A10090 /* BelAirNavBarShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10090; };
-		A10075 /* MilliMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10075; };
-		A10076 /* MilliInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10076; };
-		A10119 /* MilliDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10119; };
-		A10080 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10080; };
-		A10081 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10081; };
-		A10082 /* HomeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10082; };
-		A10107 /* MilliTaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10107; };
-		A10100 /* TreeOfLifeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100; };
-		A10101 /* VehicleProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10101; };
-		A10102 /* TaxProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10102; };
-		A10103 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10103; };
-		A10104 /* VehicleSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10104; };
-		A10105 /* TaxProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10105; };
-		A10106 /* PlanSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10106; };
-		A10110 /* LiveMarketChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10110; };
-		A10111 /* MarketDataViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10111; };
-		A10112 /* RetirementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10112; };
-		A10113 /* MileageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10113; };
-		A10114 /* InvestingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10114; };
-		A10115 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10115; };
-		A10116 /* AddRetirementAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10116; };
-		A10117 /* AddLifeEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10117; };
-		A10118 /* MileageTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118; };
-		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200; };
-		A10201 /* MilliAIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10201; };
-		A10202 /* MilliCentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10202; };
-		A10203 /* ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10203; };
-		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204; };
-		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205; };
-		A10206 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10206; };
-		A10207 /* MilliAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10207; };
-		A10208 /* PayoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10208; };
-		A10209 /* QuarterlyTaxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10209; };
-		A10210 /* TaxReadyScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10210; };
-		A10301 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10301; };
-		A10302 /* AppleAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10302; };
-		A10304 /* BankConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10304; };
-		A10303 /* MilliSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B10303; };
-		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
-		AF0002 /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0002; };
-		AF0003 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0003; };
-		AF0004 /* Sora-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0004; };
-		AF0005 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0005; };
-		AF0006 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0006; };
-		AF0007 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0007; };
-		AF0008 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0008; };
-		A10400 /* QuarterlyTaxEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10400; };
-		A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10500; };
-		A10510 /* MilliWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10510; };
-		A10600 /* PayoutStateContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10600; };
-		A10601 /* TreasuryAutopilotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10601; };
-		A10602 /* TreasuryAutopilotViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10602; };
-		A10700 /* TreasuryAutopilotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10700; };
-		A10800 /* MilliCentsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10800; };
-		A10801 /* MilliCentsAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10801; };
-		A10802 /* MilliMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10802; };
-		A10803 /* MilliMoneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10803; };
-		A10804 /* MilliLedgerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10804; };
-		A10805 /* MilliLedgerEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10805; };
-		A10806 /* TreasuryExecutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10806; };
-		A10807 /* TreasuryExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10807; };
+		3CF2B6FC304D30FA00B3E430 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CF2B6FB304D30FA00B3E430 /* StoreKit.framework */; };
+		3CF2B700304D32CB00B3E430 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3CF2B6FF304D32CB00B3E430 /* LinkKit */; };
+		3CF2B702304D32CB00B3E430 /* LinkKitObjC in Frameworks */ = {isa = PBXBuildFile; productRef = 3CF2B701304D32CB00B3E430 /* LinkKitObjC */; };
+		A10001 /* MilliApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* MilliApp.swift */; };
+		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* ContentView.swift */; };
+		A10012 /* MilliTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012 /* MilliTheme.swift */; };
+		A10013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10013 /* Assets.xcassets */; };
+		A10020 /* ChromeEmblemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020 /* ChromeEmblemView.swift */; };
+		A10021 /* MilliNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021 /* MilliNavBar.swift */; };
+		A10022 /* MilliAIOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022 /* MilliAIOrb.swift */; };
+		A10024 /* TaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* TaxVaultView.swift */; };
+		A10030 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030 /* SplashView.swift */; };
+		A10031 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031 /* OnboardingView.swift */; };
+		A10032 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032 /* LoginView.swift */; };
+		A10040 /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040 /* AppModels.swift */; };
+		A10041 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041 /* DashboardView.swift */; };
+		A10042 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10042 /* ActivityView.swift */; };
+		A10043 /* VaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10043 /* VaultView.swift */; };
+		A10044 /* WealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10044 /* WealthView.swift */; };
+		A10045 /* CockpitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045 /* CockpitView.swift */; };
+		A10046 /* MilliMetalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046 /* MilliMetalCard.swift */; };
+		A10047 /* MilliAICompanion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10047 /* MilliAICompanion.swift */; };
+		A10048 /* MilliCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048 /* MilliCard.swift */; };
+		A10049 /* MilliChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049 /* MilliChart.swift */; };
+		A10051 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051 /* CircularProgressView.swift */; };
+		A10060 /* MilliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060 /* MilliColors.swift */; };
+		A10061 /* MilliTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061 /* MilliTypography.swift */; };
+		A10062 /* MilliSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10062 /* MilliSpacing.swift */; };
+		A10070 /* MilliSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10070 /* MilliSurface.swift */; };
+		A10071 /* MilliSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10071 /* MilliSparkline.swift */; };
+		A10072 /* MilliProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10072 /* MilliProgressRing.swift */; };
+		A10073 /* MilliCenterMButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10073 /* MilliCenterMButton.swift */; };
+		A10075 /* MilliMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10075 /* MilliMetricCard.swift */; };
+		A10076 /* MilliInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10076 /* MilliInsightCard.swift */; };
+		A10080 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10080 /* HomeView.swift */; };
+		A10081 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10081 /* HomeViewModel.swift */; };
+		A10082 /* HomeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10082 /* HomeModels.swift */; };
+		A10090 /* BelAirNavBarShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10090 /* BelAirNavBarShape.swift */; };
+		A10100 /* TreeOfLifeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100 /* TreeOfLifeView.swift */; };
+		A10101 /* VehicleProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10101 /* VehicleProfile.swift */; };
+		A10102 /* TaxProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10102 /* TaxProfile.swift */; };
+		A10103 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10103 /* OnboardingFlowView.swift */; };
+		A10104 /* VehicleSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10104 /* VehicleSetupView.swift */; };
+		A10105 /* TaxProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10105 /* TaxProfileSetupView.swift */; };
+		A10106 /* PlanSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10106 /* PlanSelectionView.swift */; };
+		A10107 /* MilliTaxVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10107 /* MilliTaxVaultView.swift */; };
+		A10110 /* LiveMarketChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10110 /* LiveMarketChartView.swift */; };
+		A10111 /* MarketDataViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10111 /* MarketDataViewModel.swift */; };
+		A10112 /* RetirementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10112 /* RetirementView.swift */; };
+		A10113 /* MileageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10113 /* MileageView.swift */; };
+		A10114 /* InvestingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10114 /* InvestingView.swift */; };
+		A10115 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10115 /* LocationManager.swift */; };
+		A10116 /* AddRetirementAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10116 /* AddRetirementAccountSheet.swift */; };
+		A10117 /* AddLifeEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10117 /* AddLifeEventSheet.swift */; };
+		A10118 /* MileageTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118 /* MileageTrackerView.swift */; };
+		A10119 /* MilliDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10119 /* MilliDetailSheet.swift */; };
+		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200 /* MilliTaxVaultScreen.swift */; };
+		A10201 /* MilliAIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10201 /* MilliAIChatView.swift */; };
+		A10202 /* MilliCentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10202 /* MilliCentsView.swift */; };
+		A10203 /* ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10203 /* ExpensesView.swift */; };
+		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204 /* ReportsView.swift */; };
+		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205 /* WealthOverviewView.swift */; };
+		A10206 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10206 /* MoreView.swift */; };
+		A10207 /* MilliAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10207 /* MilliAIView.swift */; };
+		A10208 /* PayoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10208 /* PayoutsView.swift */; };
+		A10209 /* QuarterlyTaxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10209 /* QuarterlyTaxesView.swift */; };
+		A10210 /* TaxReadyScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10210 /* TaxReadyScoreView.swift */; };
+		A10301 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10301 /* StoreKitService.swift */; };
+		A10302 /* AppleAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10302 /* AppleAuthManager.swift */; };
+		A10303 /* MilliSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B10303 /* MilliSubscriptions.storekit */; };
+		A10304 /* BankConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10304 /* BankConnectionService.swift */; };
+		A10900 /* PlaidBankConnectionSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10900 /* PlaidBankConnectionSetupView.swift */; };
+		A10901 /* PlaidAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10901 /* PlaidAPIClient.swift */; };
+		A10400 /* QuarterlyTaxEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10400 /* QuarterlyTaxEstimator.swift */; };
+		A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10500 /* QuarterlyTaxEstimatorTests.swift */; };
+		A10510 /* MilliWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10510 /* MilliWordmark.swift */; };
+		A10600 /* PayoutStateContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10600 /* PayoutStateContract.swift */; };
+		A10601 /* TreasuryAutopilotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10601 /* TreasuryAutopilotStore.swift */; };
+		A10602 /* TreasuryAutopilotViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10602 /* TreasuryAutopilotViews.swift */; };
+		A10700 /* TreasuryAutopilotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10700 /* TreasuryAutopilotTests.swift */; };
+		A10800 /* MilliCentsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10800 /* MilliCentsAnalyzer.swift */; };
+		A10801 /* MilliCentsAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10801 /* MilliCentsAnalyzerTests.swift */; };
+		A10802 /* MilliMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10802 /* MilliMoney.swift */; };
+		A10803 /* MilliMoneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10803 /* MilliMoneyTests.swift */; };
+		A10804 /* MilliLedgerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10804 /* MilliLedgerEngine.swift */; };
+		A10805 /* MilliLedgerEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10805 /* MilliLedgerEngineTests.swift */; };
+		A10806 /* TreasuryExecutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10806 /* TreasuryExecutionService.swift */; };
+		A10807 /* TreasuryExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10807 /* TreasuryExecutionTests.swift */; };
+		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001 /* Sora-Regular.ttf */; };
+		AF0002 /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0002 /* Sora-Medium.ttf */; };
+		AF0003 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0003 /* Sora-SemiBold.ttf */; };
+		AF0004 /* Sora-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0004 /* Sora-Bold.ttf */; };
+		AF0005 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0005 /* Inter-Regular.ttf */; };
+		AF0006 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0006 /* Inter-Medium.ttf */; };
+		AF0007 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0007 /* Inter-SemiBold.ttf */; };
+		AF0008 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0008 /* Inter-Bold.ttf */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		G10500 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F10001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D10001;
+			remoteInfo = MilliTaxVault;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		3CF2B6F9304D30FA00B3E430 /* MilliTaxVault.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MilliTaxVault.entitlements; sourceTree = "<group>"; };
+		3CF2B6FB304D30FA00B3E430 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
 		B10001 /* MilliApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliApp.swift; sourceTree = "<group>"; };
 		B10002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10012 /* MilliTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTheme.swift; sourceTree = "<group>"; };
@@ -130,8 +147,20 @@
 		B10071 /* MilliSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliSparkline.swift; sourceTree = "<group>"; };
 		B10072 /* MilliProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliProgressRing.swift; sourceTree = "<group>"; };
 		B10073 /* MilliCenterMButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCenterMButton.swift; sourceTree = "<group>"; };
+		B10075 /* MilliMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetricCard.swift; sourceTree = "<group>"; };
+		B10076 /* MilliInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliInsightCard.swift; sourceTree = "<group>"; };
+		B10080 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B10081 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
 		B10090 /* BelAirNavBarShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BelAirNavBarShape.swift; sourceTree = "<group>"; };
-		B10099 /* MilliTaxVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MilliTaxVault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10099 /* MilliTaxVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MilliTaxVault.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10100 /* TreeOfLifeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeOfLifeView.swift; sourceTree = "<group>"; };
+		B10101 /* VehicleProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleProfile.swift; sourceTree = "<group>"; };
+		B10102 /* TaxProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfile.swift; sourceTree = "<group>"; };
+		B10103 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		B10104 /* VehicleSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSetupView.swift; sourceTree = "<group>"; };
+		B10105 /* TaxProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfileSetupView.swift; sourceTree = "<group>"; };
+		B10106 /* PlanSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSelectionView.swift; sourceTree = "<group>"; };
 		B10107 /* MilliTaxVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultView.swift; sourceTree = "<group>"; };
 		B10110 /* LiveMarketChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMarketChartView.swift; sourceTree = "<group>"; };
 		B10111 /* MarketDataViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataViewModel.swift; sourceTree = "<group>"; };
@@ -142,13 +171,7 @@
 		B10116 /* AddRetirementAccountSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRetirementAccountSheet.swift; sourceTree = "<group>"; };
 		B10117 /* AddLifeEventSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLifeEventSheet.swift; sourceTree = "<group>"; };
 		B10118 /* MileageTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MileageTrackerView.swift; sourceTree = "<group>"; };
-		B10100 /* TreeOfLifeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeOfLifeView.swift; sourceTree = "<group>"; };
-		B10101 /* VehicleProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleProfile.swift; sourceTree = "<group>"; };
-		B10102 /* TaxProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfile.swift; sourceTree = "<group>"; };
-		B10103 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
-		B10104 /* VehicleSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSetupView.swift; sourceTree = "<group>"; };
-		B10105 /* TaxProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfileSetupView.swift; sourceTree = "<group>"; };
-		B10106 /* PlanSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSelectionView.swift; sourceTree = "<group>"; };
+		B10119 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
 		B10200 /* MilliTaxVaultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultScreen.swift; sourceTree = "<group>"; };
 		B10201 /* MilliAIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIChatView.swift; sourceTree = "<group>"; };
 		B10202 /* MilliCentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsView.swift; sourceTree = "<group>"; };
@@ -160,6 +183,28 @@
 		B10208 /* PayoutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutsView.swift; sourceTree = "<group>"; };
 		B10209 /* QuarterlyTaxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxesView.swift; sourceTree = "<group>"; };
 		B10210 /* TaxReadyScoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxReadyScoreView.swift; sourceTree = "<group>"; };
+		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
+		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
+		B10303 /* MilliSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MilliSubscriptions.storekit; sourceTree = "<group>"; };
+		B10304 /* BankConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankConnectionService.swift; sourceTree = "<group>"; };
+		B10900 /* PlaidBankConnectionSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVault/Views/Onboarding/PlaidBankConnectionSetupView.swift; sourceTree = SOURCE_ROOT; };
+		B10901 /* PlaidAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVault/Services/PlaidAPIClient.swift; sourceTree = SOURCE_ROOT; };
+		B10400 /* QuarterlyTaxEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimator.swift; sourceTree = "<group>"; };
+		B10500 /* QuarterlyTaxEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimatorTests.swift; sourceTree = "<group>"; };
+		B10501 /* MilliTaxVaultTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MilliTaxVaultTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10510 /* MilliWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliWordmark.swift; sourceTree = "<group>"; };
+		B10600 /* PayoutStateContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutStateContract.swift; sourceTree = "<group>"; };
+		B10601 /* TreasuryAutopilotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotStore.swift; sourceTree = "<group>"; };
+		B10602 /* TreasuryAutopilotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotViews.swift; sourceTree = "<group>"; };
+		B10700 /* TreasuryAutopilotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotTests.swift; sourceTree = "<group>"; };
+		B10800 /* MilliCentsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsAnalyzer.swift; sourceTree = "<group>"; };
+		B10801 /* MilliCentsAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsAnalyzerTests.swift; sourceTree = "<group>"; };
+		B10802 /* MilliMoney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMoney.swift; sourceTree = "<group>"; };
+		B10803 /* MilliMoneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMoneyTests.swift; sourceTree = "<group>"; };
+		B10804 /* MilliLedgerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliLedgerEngine.swift; sourceTree = "<group>"; };
+		B10805 /* MilliLedgerEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliLedgerEngineTests.swift; sourceTree = "<group>"; };
+		B10806 /* TreasuryExecutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryExecutionService.swift; sourceTree = "<group>"; };
+		B10807 /* TreasuryExecutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryExecutionTests.swift; sourceTree = "<group>"; };
 		BF0001 /* Sora-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Regular.ttf"; sourceTree = "<group>"; };
 		BF0002 /* Sora-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Medium.ttf"; sourceTree = "<group>"; };
 		BF0003 /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-SemiBold.ttf"; sourceTree = "<group>"; };
@@ -169,40 +214,43 @@
 		BF0007 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		BF0008 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
-		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
-		B10304 /* BankConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankConnectionService.swift; sourceTree = "<group>"; };
-		B10303 /* MilliSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MilliSubscriptions.storekit; sourceTree = "<group>"; };
-		B10075 /* MilliMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetricCard.swift; sourceTree = "<group>"; };
-		B10076 /* MilliInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliInsightCard.swift; sourceTree = "<group>"; };
-		B10080 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		B10081 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
-		B10082 /* HomeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModels.swift; sourceTree = "<group>"; };
-		B10119 /* MilliDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliDetailSheet.swift; sourceTree = "<group>"; };
-		B10400 /* QuarterlyTaxEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimator.swift; sourceTree = "<group>"; };
-		B10500 /* QuarterlyTaxEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuarterlyTaxEstimatorTests.swift; sourceTree = "<group>"; };
-		B10800 /* MilliCentsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsAnalyzer.swift; sourceTree = "<group>"; };
-		B10801 /* MilliCentsAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsAnalyzerTests.swift; sourceTree = "<group>"; };
-		B10802 /* MilliMoney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMoney.swift; sourceTree = "<group>"; };
-		B10803 /* MilliMoneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMoneyTests.swift; sourceTree = "<group>"; };
-		B10804 /* MilliLedgerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliLedgerEngine.swift; sourceTree = "<group>"; };
-		B10805 /* MilliLedgerEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliLedgerEngineTests.swift; sourceTree = "<group>"; };
-		B10806 /* TreasuryExecutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryExecutionService.swift; sourceTree = "<group>"; };
-		B10807 /* TreasuryExecutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryExecutionTests.swift; sourceTree = "<group>"; };
-		B10510 /* MilliWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliWordmark.swift; sourceTree = "<group>"; };
-		B10600 /* PayoutStateContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutStateContract.swift; sourceTree = "<group>"; };
-		B10601 /* TreasuryAutopilotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotStore.swift; sourceTree = "<group>"; };
-		B10602 /* TreasuryAutopilotViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotViews.swift; sourceTree = "<group>"; };
-		B10700 /* TreasuryAutopilotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasuryAutopilotTests.swift; sourceTree = "<group>"; };
-		B10501 /* MilliTaxVaultTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MilliTaxVaultTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		3CF2B6FD304D30FA00B3E430 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3CF2B702304D32CB00B3E430 /* LinkKitObjC in Frameworks */,
+				3CF2B6FC304D30FA00B3E430 /* StoreKit.framework in Frameworks */,
+				3CF2B700304D32CB00B3E430 /* LinkKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10503 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		3CF2B6FA304D30FA00B3E430 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3CF2B6FB304D30FA00B3E430 /* StoreKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		C10001 = {
 			isa = PBXGroup;
 			children = (
 				C10002 /* MilliTaxVault */,
 				C10500 /* MilliTaxVaultTests */,
+				3CF2B6FA304D30FA00B3E430 /* Frameworks */,
 				C10099 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -210,6 +258,7 @@
 		C10002 /* MilliTaxVault */ = {
 			isa = PBXGroup;
 			children = (
+				3CF2B6F9304D30FA00B3E430 /* MilliTaxVault.entitlements */,
 				B10001 /* MilliApp.swift */,
 				B10002 /* ContentView.swift */,
 				C10010 /* DesignSystem */,
@@ -224,21 +273,6 @@
 				CF0001 /* Resources */,
 			);
 			path = MilliTaxVault;
-			sourceTree = "<group>";
-		};
-		C10014 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				B10301 /* StoreKitService.swift */,
-				B10302 /* AppleAuthManager.swift */,
-				B10304 /* BankConnectionService.swift */,
-				B10601 /* TreasuryAutopilotStore.swift */,
-				B10400 /* QuarterlyTaxEstimator.swift */,
-				B10802 /* MilliMoney.swift */,
-				B10804 /* MilliLedgerEngine.swift */,
-				B10806 /* TreasuryExecutionService.swift */,
-			);
-			path = Services;
 			sourceTree = "<group>";
 		};
 		C10003 /* Views */ = {
@@ -372,6 +406,21 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
+		C10014 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B10301 /* StoreKitService.swift */,
+				B10302 /* AppleAuthManager.swift */,
+				B10304 /* BankConnectionService.swift */,
+				B10601 /* TreasuryAutopilotStore.swift */,
+				B10400 /* QuarterlyTaxEstimator.swift */,
+				B10802 /* MilliMoney.swift */,
+				B10804 /* MilliLedgerEngine.swift */,
+				B10806 /* TreasuryExecutionService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 		C10099 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -379,6 +428,19 @@
 				B10501 /* MilliTaxVaultTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C10500 /* MilliTaxVaultTests */ = {
+			isa = PBXGroup;
+			children = (
+				B10500 /* QuarterlyTaxEstimatorTests.swift */,
+				B10700 /* TreasuryAutopilotTests.swift */,
+				B10801 /* MilliCentsAnalyzerTests.swift */,
+				B10803 /* MilliMoneyTests.swift */,
+				B10805 /* MilliLedgerEngineTests.swift */,
+				B10807 /* TreasuryExecutionTests.swift */,
+			);
+			path = MilliTaxVaultTests;
 			sourceTree = "<group>";
 		};
 		CF0001 /* Resources */ = {
@@ -405,28 +467,16 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
-		C10500 /* MilliTaxVaultTests */ = {
-			isa = PBXGroup;
-			children = (
-				B10500 /* QuarterlyTaxEstimatorTests.swift */,
-				B10700 /* TreasuryAutopilotTests.swift */,
-				B10801 /* MilliCentsAnalyzerTests.swift */,
-				B10803 /* MilliMoneyTests.swift */,
-				B10805 /* MilliLedgerEngineTests.swift */,
-				B10807 /* TreasuryExecutionTests.swift */,
-			);
-			path = MilliTaxVaultTests;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		D10001 /* MilliTaxVault */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E10003;
+			buildConfigurationList = E10003 /* Build configuration list for PBXNativeTarget "MilliTaxVault" */;
 			buildPhases = (
 				D10002 /* Sources */,
 				D10003 /* Resources */,
+				3CF2B6FD304D30FA00B3E430 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -439,7 +489,7 @@
 		};
 		D10500 /* MilliTaxVaultTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E10503;
+			buildConfigurationList = E10503 /* Build configuration list for PBXNativeTarget "MilliTaxVaultTests" */;
 			buildPhases = (
 				D10502 /* Sources */,
 				D10503 /* Frameworks */,
@@ -466,7 +516,7 @@
 				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1540;
 			};
-			buildConfigurationList = E10001;
+			buildConfigurationList = E10001 /* Build configuration list for PBXProject "MilliTaxVault" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -475,6 +525,9 @@
 				Base,
 			);
 			mainGroup = C10001;
+			packageReferences = (
+				3CF2B6FE304D32CB00B3E430 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */,
+			);
 			productRefGroup = C10099 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -485,86 +538,108 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		D10003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10013 /* Assets.xcassets in Resources */,
+				A10303 /* MilliSubscriptions.storekit in Resources */,
+				AF0001 /* Sora-Regular.ttf in Resources */,
+				AF0002 /* Sora-Medium.ttf in Resources */,
+				AF0003 /* Sora-SemiBold.ttf in Resources */,
+				AF0004 /* Sora-Bold.ttf in Resources */,
+				AF0005 /* Inter-Regular.ttf in Resources */,
+				AF0006 /* Inter-Medium.ttf in Resources */,
+				AF0007 /* Inter-SemiBold.ttf in Resources */,
+				AF0008 /* Inter-Bold.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		D10002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10001,
-				A10002,
-				A10012,
-				A10020,
-				A10021,
-				A10022,
-				A10024,
-				A10030,
-				A10031,
-				A10032,
-				A10040,
-				A10041,
-				A10042,
-				A10043,
-				A10044,
-				A10045,
-				A10046,
-				A10047,
-				A10048,
-				A10049,
-				A10051,
-				A10060,
-				A10061,
-				A10062,
-				A10070,
-				A10071,
-				A10072,
-				A10073,
-				A10090,
-				A10075,
-				A10076,
-				A10119,
-				A10080,
-				A10081,
-				A10082,
-				A10100,
-				A10101,
-				A10102,
-				A10103,
-				A10104,
-				A10105,
-				A10106,
-				A10110,
-				A10111,
-				A10112,
-				A10113,
-				A10114,
-				A10115,
-				A10116,
-				A10117,
-				A10118,
-				A10107,
-				A10200,
-				A10201,
-				A10202,
-				A10203,
-				A10204,
-				A10205,
-				A10206,
-				A10207,
-				A10208,
-				A10209,
-				A10210,
-				A10301,
-				A10302,
-				A10304,
-				A10400,
-				A10510,
-				A10600,
-				A10601,
-				A10602,
-				A10800,
-				A10802,
-				A10804,
-				A10806,
+				A10001 /* MilliApp.swift in Sources */,
+				A10002 /* ContentView.swift in Sources */,
+				A10012 /* MilliTheme.swift in Sources */,
+				A10020 /* ChromeEmblemView.swift in Sources */,
+				A10021 /* MilliNavBar.swift in Sources */,
+				A10022 /* MilliAIOrb.swift in Sources */,
+				A10024 /* TaxVaultView.swift in Sources */,
+				A10030 /* SplashView.swift in Sources */,
+				A10031 /* OnboardingView.swift in Sources */,
+				A10032 /* LoginView.swift in Sources */,
+				A10040 /* AppModels.swift in Sources */,
+				A10041 /* DashboardView.swift in Sources */,
+				A10042 /* ActivityView.swift in Sources */,
+				A10043 /* VaultView.swift in Sources */,
+				A10044 /* WealthView.swift in Sources */,
+				A10045 /* CockpitView.swift in Sources */,
+				A10046 /* MilliMetalCard.swift in Sources */,
+				A10047 /* MilliAICompanion.swift in Sources */,
+				A10048 /* MilliCard.swift in Sources */,
+				A10049 /* MilliChart.swift in Sources */,
+				A10051 /* CircularProgressView.swift in Sources */,
+				A10060 /* MilliColors.swift in Sources */,
+				A10061 /* MilliTypography.swift in Sources */,
+				A10062 /* MilliSpacing.swift in Sources */,
+				A10070 /* MilliSurface.swift in Sources */,
+				A10071 /* MilliSparkline.swift in Sources */,
+				A10072 /* MilliProgressRing.swift in Sources */,
+				A10073 /* MilliCenterMButton.swift in Sources */,
+				A10090 /* BelAirNavBarShape.swift in Sources */,
+				A10075 /* MilliMetricCard.swift in Sources */,
+				A10076 /* MilliInsightCard.swift in Sources */,
+				A10119 /* MilliDetailSheet.swift in Sources */,
+				A10080 /* HomeView.swift in Sources */,
+				A10081 /* HomeViewModel.swift in Sources */,
+				A10082 /* HomeModels.swift in Sources */,
+				A10100 /* TreeOfLifeView.swift in Sources */,
+				A10101 /* VehicleProfile.swift in Sources */,
+				A10102 /* TaxProfile.swift in Sources */,
+				A10103 /* OnboardingFlowView.swift in Sources */,
+				A10104 /* VehicleSetupView.swift in Sources */,
+				A10105 /* TaxProfileSetupView.swift in Sources */,
+				A10106 /* PlanSelectionView.swift in Sources */,
+				A10110 /* LiveMarketChartView.swift in Sources */,
+				A10111 /* MarketDataViewModel.swift in Sources */,
+				A10112 /* RetirementView.swift in Sources */,
+				A10113 /* MileageView.swift in Sources */,
+				A10114 /* InvestingView.swift in Sources */,
+				A10115 /* LocationManager.swift in Sources */,
+				A10116 /* AddRetirementAccountSheet.swift in Sources */,
+				A10117 /* AddLifeEventSheet.swift in Sources */,
+				A10118 /* MileageTrackerView.swift in Sources */,
+				A10107 /* MilliTaxVaultView.swift in Sources */,
+				A10200 /* MilliTaxVaultScreen.swift in Sources */,
+				A10201 /* MilliAIChatView.swift in Sources */,
+				A10202 /* MilliCentsView.swift in Sources */,
+				A10203 /* ExpensesView.swift in Sources */,
+				A10204 /* ReportsView.swift in Sources */,
+				A10205 /* WealthOverviewView.swift in Sources */,
+				A10206 /* MoreView.swift in Sources */,
+				A10207 /* MilliAIView.swift in Sources */,
+				A10208 /* PayoutsView.swift in Sources */,
+				A10209 /* QuarterlyTaxesView.swift in Sources */,
+				A10210 /* TaxReadyScoreView.swift in Sources */,
+				A10301 /* StoreKitService.swift in Sources */,
+				A10302 /* AppleAuthManager.swift in Sources */,
+				A10304 /* BankConnectionService.swift in Sources */,
+				A10900 /* PlaidBankConnectionSetupView.swift in Sources */,
+				A10901 /* PlaidAPIClient.swift in Sources */,
+				A10400 /* QuarterlyTaxEstimator.swift in Sources */,
+				A10510 /* MilliWordmark.swift in Sources */,
+				A10600 /* PayoutStateContract.swift in Sources */,
+				A10601 /* TreasuryAutopilotStore.swift in Sources */,
+				A10602 /* TreasuryAutopilotViews.swift in Sources */,
+				A10800 /* MilliCentsAnalyzer.swift in Sources */,
+				A10802 /* MilliMoney.swift in Sources */,
+				A10804 /* MilliLedgerEngine.swift in Sources */,
+				A10806 /* TreasuryExecutionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -583,26 +658,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		D10503 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXContainerItemProxy section */
-		G10500 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F10001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D10001;
-			remoteInfo = MilliTaxVault;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXTargetDependency section */
 		D10501 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -611,44 +666,26 @@
 		};
 /* End PBXTargetDependency section */
 
-/* Begin PBXResourcesBuildPhase section */
-		D10003 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A10013,
-				A10303,
-				AF0001,
-				AF0002,
-				AF0003,
-				AF0004,
-				AF0005,
-				AF0006,
-				AF0007,
-				AF0008,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin XCBuildConfiguration section */
 		E10004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				INFOPLIST_FILE = MilliTaxVault/Info.plist;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MilliTaxVault/MilliTaxVault.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = W5Q42XNM9V;
+				ENABLE_ENHANCED_SECURITY = YES;
+				ENABLE_POINTER_AUTHENTICATION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MilliTaxVault/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Milli Tax Vault";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location while a mileage trip is active to record deductible business miles.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location to automatically track mileage deductions.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli tracks mileage in the background for automatic deduction logging.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -669,17 +706,21 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				INFOPLIST_FILE = MilliTaxVault/Info.plist;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MilliTaxVault/MilliTaxVault.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = W5Q42XNM9V;
+				ENABLE_ENHANCED_SECURITY = YES;
+				ENABLE_POINTER_AUTHENTICATION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MilliTaxVault/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Milli Tax Vault";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location while a mileage trip is active to record deductible business miles.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location to automatically track mileage deductions.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli tracks mileage in the background for automatic deduction logging.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -823,7 +864,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E10001 /* Build configuration list for PBXProject */ = {
+		E10001 /* Build configuration list for PBXProject "MilliTaxVault" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E10006 /* Debug */,
@@ -832,16 +873,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E10503 /* Build configuration list for PBXNativeTarget */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E10504 /* Debug */,
-				E10505 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E10003 /* Build configuration list for PBXNativeTarget */ = {
+		E10003 /* Build configuration list for PBXNativeTarget "MilliTaxVault" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E10004 /* Debug */,
@@ -850,8 +882,40 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		E10503 /* Build configuration list for PBXNativeTarget "MilliTaxVaultTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E10504 /* Debug */,
+				E10505 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		3CF2B6FE304D32CB00B3E430 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/plaid/plaid-link-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3CF2B6FF304D32CB00B3E430 /* LinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CF2B6FE304D32CB00B3E430 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */;
+			productName = LinkKit;
+		};
+		3CF2B701304D32CB00B3E430 /* LinkKitObjC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CF2B6FE304D32CB00B3E430 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */;
+			productName = LinkKitObjC;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F10001 /* Project object */;
 }
