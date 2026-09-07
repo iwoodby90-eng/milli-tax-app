@@ -25,21 +25,75 @@ create index if not exists auth_sessions_user_active_idx
   on auth_sessions(user_id,expires_at desc) where revoked_at is null;
 
 -- NOT VALID lets legacy sandbox rows remain quarantined while enforcing ownership on new writes.
-alter table if exists plaid_items add constraint plaid_items_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists plaid_accounts add constraint plaid_accounts_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists plaid_transactions add constraint plaid_transactions_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists tax_vault_ledger add constraint tax_vault_ledger_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists tax_vault_settings add constraint tax_vault_settings_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists mileage_logs add constraint mileage_logs_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists brokerage_accounts add constraint brokerage_accounts_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists brokerage_orders add constraint brokerage_orders_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
-alter table if exists brokerage_positions add constraint brokerage_positions_user_fk
-  foreign key (user_id) references users(id) on delete cascade not valid;
+do $$
+begin
+    if to_regclass('public.plaid_items') is not null
+       and not exists (select 1 from pg_constraint where conname = 'plaid_items_user_fk') then
+        alter table plaid_items add constraint plaid_items_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.plaid_accounts') is not null
+       and not exists (select 1 from pg_constraint where conname = 'plaid_accounts_user_fk') then
+        alter table plaid_accounts add constraint plaid_accounts_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.plaid_transactions') is not null
+       and not exists (select 1 from pg_constraint where conname = 'plaid_transactions_user_fk') then
+        alter table plaid_transactions add constraint plaid_transactions_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.tax_vault_ledger') is not null
+       and not exists (select 1 from pg_constraint where conname = 'tax_vault_ledger_user_fk') then
+        alter table tax_vault_ledger add constraint tax_vault_ledger_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.tax_vault_settings') is not null
+       and not exists (select 1 from pg_constraint where conname = 'tax_vault_settings_user_fk') then
+        alter table tax_vault_settings add constraint tax_vault_settings_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.mileage_logs') is not null
+       and not exists (select 1 from pg_constraint where conname = 'mileage_logs_user_fk') then
+        alter table mileage_logs add constraint mileage_logs_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.brokerage_accounts') is not null
+       and not exists (select 1 from pg_constraint where conname = 'brokerage_accounts_user_fk') then
+        alter table brokerage_accounts add constraint brokerage_accounts_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.brokerage_orders') is not null
+       and not exists (select 1 from pg_constraint where conname = 'brokerage_orders_user_fk') then
+        alter table brokerage_orders add constraint brokerage_orders_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
+do $$
+begin
+    if to_regclass('public.brokerage_positions') is not null
+       and not exists (select 1 from pg_constraint where conname = 'brokerage_positions_user_fk') then
+        alter table brokerage_positions add constraint brokerage_positions_user_fk
+          foreign key (user_id) references users(id) on delete cascade not valid;
+    end if;
+end $$;
