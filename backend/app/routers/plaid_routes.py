@@ -151,10 +151,18 @@ def _sync_accounts(client, plaid_item_uuid, user_id, access_token) -> int:
                          iso_currency_code, balance_as_of)
                     values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     on conflict (account_id) do update
-                        set available_balance = excluded.available_balance,
-                            current_balance = excluded.current_balance,
-                            balance_as_of = excluded.balance_as_of,
-                            updated_at = now()
+                        set user_id = excluded.user_id,
+                        plaid_item_id = excluded.plaid_item_id,
+                        name = excluded.name,
+                        official_name = excluded.official_name,
+                        mask = excluded.mask,
+                        type = excluded.type,
+                        subtype = excluded.subtype,
+                        available_balance = excluded.available_balance,
+                        current_balance = excluded.current_balance,
+                        iso_currency_code = excluded.iso_currency_code,
+                        balance_as_of = excluded.balance_as_of,
+                        updated_at = now()
                     """,
                     (
                         uuid.uuid4(),
