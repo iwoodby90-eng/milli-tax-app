@@ -2,10 +2,31 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>MKDirectionsRequest</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.maps.directionsrequest</string>
+			</array>
+		</dict>
+	</array>
 	<key>MILLI_API_BASE_URL</key>
 	<string>https://milli-tax-vault-api.onrender.com</string>
-	<key>MILLI_CLIENT_API_KEY</key>
-	<string>$(MILLI_CLIENT_API_KEY)</string>
+	<key>MKDirectionsApplicationSupportedModes</key>
+	<array>
+		<string>MKDirectionsModeBike</string>
+		<string>MKDirectionsModeCar</string>
+		<string>MKDirectionsModeFerry</string>
+		<string>MKDirectionsModeOther</string>
+		<string>MKDirectionsModePedestrian</string>
+		<string>MKDirectionsModeRideShare</string>
+		<string>MKDirectionsModeSubway</string>
+		<string>MKDirectionsModeTaxi</string>
+		<string>MKDirectionsModeTrain</string>
+	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Sora-Regular.ttf</string>
@@ -20,10 +41,8 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
+		<string>processing</string>
+		<string>fetch</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location while a mileage trip is active to record deductible business miles.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli can continue an active mileage trip in the background so business miles are not lost when you switch apps or lock your iPhone.</string>
 </dict>
 </plist>
