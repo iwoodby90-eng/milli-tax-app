@@ -8,7 +8,7 @@ import LinkKit
 
 @MainActor
 final class PlaidLinkCoordinator: ObservableObject {
-    @Published private(set) var linkSession: PlaidLinkSession?
+    @Published private(set) var linkSession: LinkKit.PlaidLinkSession?
     @Published var isPresentingLink = false
     @Published private(set) var isLoading = false
     @Published private(set) var connectedAccount: MilliPlaidAccount?
