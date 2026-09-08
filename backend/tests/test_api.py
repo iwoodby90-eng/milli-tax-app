@@ -1,7 +1,7 @@
 """Contract tests that need no Plaid credentials and no database.
 
-They prove the two properties that matter most: the service is alive, and it
-degrades truthfully (503 UNAVAILABLE) instead of fabricating financial data.
+They prove the service degrades truthfully and that Plaid transaction direction
+is interpreted correctly before anything is allowed to look like gig income.
 """
 
 import os
@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.config import get_settings  # noqa: E402
 from app.main import app  # noqa: E402
+from app.routers.plaid_routes import _classify_gig_payout  # noqa: E402
 
 client = TestClient(app)
 
@@ -62,3 +63,51 @@ def test_webhook_acknowledges_without_credentials():
     )
     assert response.status_code == 200
     assert response.json()["received"] is True
+
+
+def test_posted_negative_doordash_inflow_is_detected_as_payout():
+    platform = _classify_gig_payout(
+        {
+            "pending": False,
+            "amount": -187.42,
+            "name": "DOORDASH PAY 83921",
+            "merchant_name": "DoorDash",
+        }
+    )
+    assert platform == "DoorDash"
+
+
+def test_positive_doordash_outflow_is_not_income():
+    platform = _classify_gig_payout(
+        {
+            "pending": False,
+            "amount": 42.15,
+            "name": "DOORDASH",
+            "merchant_name": "DoorDash",
+        }
+    )
+    assert platform is None
+
+
+def test_pending_matching_inflow_is_not_authoritative_payout():
+    platform = _classify_gig_payout(
+        {
+            "pending": True,
+            "amount": -212.00,
+            "name": "UBER PAY",
+            "merchant_name": "Uber",
+        }
+    )
+    assert platform is None
+
+
+def test_unrelated_inflow_is_not_gig_payout():
+    platform = _classify_gig_payout(
+        {
+            "pending": False,
+            "amount": -900.00,
+            "name": "TRANSFER FROM SAVINGS",
+            "merchant_name": None,
+        }
+    )
+    assert platform is None

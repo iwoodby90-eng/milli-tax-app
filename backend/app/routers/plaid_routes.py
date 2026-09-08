@@ -6,10 +6,17 @@ Flow:
   3. iOS calls POST /plaid/exchange-public-token -> backend stores the access
      token (never returned to the client) and syncs accounts.
   4. Plaid calls POST /plaid/webhook on updates.
+
+Financial truth note:
+Plaid Transactions uses positive amounts for money leaving an account and
+negative amounts for money entering it. Gig payout detection therefore accepts
+only posted negative transactions and exposes a separate positive gross payout
+magnitude to clients. The raw Plaid amount remains unchanged in storage/audit.
 """
 
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -20,6 +27,53 @@ from ..security import require_user
 from .. import db
 
 router = APIRouter(prefix="/plaid", tags=["plaid"])
+
+
+GIG_PAYOUT_DESCRIPTOR_HINTS: dict[str, tuple[str, ...]] = {
+    "Amazon Flex": ("AMAZON FLEX", "AMZN FLEX", "AMAZON.COM SERVICES"),
+    "Spark Driver": ("SPARK DRIVER", "WALMART SPARK", "DDI SPARK"),
+    "Uber": ("UBER", "UBER TECHNOLOGIES", "UBER PAY"),
+    "Lyft": ("LYFT", "LYFT DRIVER"),
+    "DoorDash": ("DOORDASH", "DASHER", "DOORDASH PAY"),
+    "Grubhub": ("GRUBHUB", "GRUBHUB DRIVER"),
+    "Instacart": ("INSTACART", "MAPLEBEAR", "INSTACART SHOPPER"),
+    "Roadie": ("ROADIE", "ROADIE DRIVER"),
+    "Shipt": ("SHIPT", "SHIPT SHOPPER"),
+}
+
+
+def _classify_gig_payout(transaction: dict) -> str | None:
+    """Return a platform only for a posted Plaid inflow with a known descriptor.
+
+    Plaid Transactions represents inflows (direct deposits/refunds) as negative
+    amounts. Never classify a positive outflow as income, and never classify a
+    pending transaction because pending descriptors/amounts may still change.
+    """
+    if transaction.get("pending", False):
+        return None
+
+    try:
+        amount = Decimal(str(transaction.get("amount")))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+    if amount >= 0:
+        return None
+
+    searchable = " ".join(
+        value
+        for value in (
+            transaction.get("name"),
+            transaction.get("merchant_name"),
+            transaction.get("original_description"),
+        )
+        if value
+    ).upper()
+
+    for platform, hints in GIG_PAYOUT_DESCRIPTOR_HINTS.items():
+        if any(hint in searchable for hint in hints):
+            return platform
+    return None
 
 
 def _client():
@@ -151,8 +205,16 @@ def _sync_accounts(client, plaid_item_uuid, user_id, access_token) -> int:
                          iso_currency_code, balance_as_of)
                     values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     on conflict (account_id) do update
-                        set available_balance = excluded.available_balance,
+                        set user_id = excluded.user_id,
+                            plaid_item_id = excluded.plaid_item_id,
+                            name = excluded.name,
+                            official_name = excluded.official_name,
+                            mask = excluded.mask,
+                            type = excluded.type,
+                            subtype = excluded.subtype,
+                            available_balance = excluded.available_balance,
                             current_balance = excluded.current_balance,
+                            iso_currency_code = excluded.iso_currency_code,
                             balance_as_of = excluded.balance_as_of,
                             updated_at = now()
                     """,
@@ -273,6 +335,7 @@ def list_transactions(
                 "pending": r[6],
                 "is_gig_payout": r[7],
                 "payout_platform": r[8],
+                "gross_payout_amount": abs(float(r[4])) if r[7] else None,
             }
             for r in rows
         ],
@@ -316,6 +379,7 @@ def sync_transactions(user_id: uuid.UUID = Depends(require_user)) -> dict:
 def _store_transactions(user_id, transactions) -> int:
     if not transactions:
         return 0
+
     stored = 0
     with db.connection() as conn:
         with conn.cursor() as cur:
@@ -327,17 +391,29 @@ def _store_transactions(user_id, transactions) -> int:
                 row = cur.fetchone()
                 if row is None:
                     continue  # account not linked to this user: skip, never guess
+
+                payout_platform = _classify_gig_payout(txn)
+                is_gig_payout = payout_platform is not None
+                category = (txn.get("personal_finance_category") or {}).get("primary")
+
                 cur.execute(
                     """
                     insert into plaid_transactions
                         (id, user_id, plaid_account_id, transaction_id, pending, amount,
-                         iso_currency_code, date, authorized_date, name, merchant_name, category)
-                    values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         iso_currency_code, date, authorized_date, name, merchant_name,
+                         category, is_gig_payout, payout_platform)
+                    values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     on conflict (transaction_id) do update
                         set pending = excluded.pending,
                             amount = excluded.amount,
+                            iso_currency_code = excluded.iso_currency_code,
+                            date = excluded.date,
+                            authorized_date = excluded.authorized_date,
                             name = excluded.name,
                             merchant_name = excluded.merchant_name,
+                            category = excluded.category,
+                            is_gig_payout = excluded.is_gig_payout,
+                            payout_platform = excluded.payout_platform,
                             updated_at = now()
                     """,
                     (
@@ -352,7 +428,9 @@ def _store_transactions(user_id, transactions) -> int:
                         txn.get("authorized_date"),
                         txn.get("name"),
                         txn.get("merchant_name"),
-                        (txn.get("personal_finance_category") or {}).get("primary"),
+                        category,
+                        is_gig_payout,
+                        payout_platform,
                     ),
                 )
                 stored += 1

@@ -106,6 +106,9 @@ enum NavigationHandoffParser {
 struct MilliApp: App {
     @State private var appState: AppState
     @State private var pendingNavigationRequest: NavigationHandoffRequest?
+    @State private var setupErrorMessage: String?
+    @State private var isCompletingSetup = false
+
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
 
@@ -150,10 +153,12 @@ struct MilliApp: App {
 
                 case .login:
                     LoginView(
-                        onSignIn: { _ in
+                        onSignIn: { profileIdentifier in
+                            activateLocalBackendProfile(profileIdentifier)
                             handleReturningSignIn()
                         },
-                        onCreateAccount: { _ in
+                        onCreateAccount: { profileIdentifier in
+                            activateLocalBackendProfile(profileIdentifier)
                             beginNewAccountSetup()
                         }
                     )
@@ -167,10 +172,8 @@ struct MilliApp: App {
                     .transition(.opacity)
 
                 case .setup:
-                    OnboardingFlowView(onComplete: {
-                        hasCompletedSetup = true
-                        activateSelectedTrialIfNeeded()
-                        transition(to: .main)
+                    LaunchOnboardingFlowView(onComplete: {
+                        finishSetupAuthoritatively()
                     })
                     .transition(.opacity)
 
@@ -189,10 +192,23 @@ struct MilliApp: App {
             .animation(.easeInOut(duration: 0.32), value: appState)
             .preferredColorScheme(.dark)
             .onOpenURL(perform: handleIncomingNavigationURL)
+            .alert(
+                "Setup couldn't finish",
+                isPresented: Binding(
+                    get: { setupErrorMessage != nil },
+                    set: { if !$0 { setupErrorMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {
+                    setupErrorMessage = nil
+                }
+            } message: {
+                Text(setupErrorMessage ?? "Milli couldn't save your Autopilot settings yet.")
+            }
             .task {
-                // Verify Apple ID credential state on app launch
+                // Verify Apple ID credential state on app launch.
                 _ = await appleAuthManager.verifyAppleCredentialState()
-                // Update App Store entitlements on app launch
+                // Update App Store entitlements on app launch.
                 await storeKitService.updateCustomerProductStatus()
             }
         }
@@ -231,6 +247,7 @@ struct MilliApp: App {
         hasCompletedSetup = false
         defaults.removeObject(forKey: "onboarding_vehicle")
         defaults.removeObject(forKey: "onboarding_taxProfile")
+        defaults.removeObject(forKey: "onboarding_bankAutopilotProfile")
         defaults.removeObject(forKey: "onboarding_plan")
         defaults.removeObject(forKey: "milliAutopilotRetirementEnabled")
         defaults.removeObject(forKey: "milliAutopilotInvestingEnabled")
@@ -241,6 +258,83 @@ struct MilliApp: App {
         MilliTrialState.resetForNewLocalAccount()
 
         transition(to: .onboarding)
+    }
+
+    /// The current backend UUID header is an interim row namespace, not
+    /// authentication. Keep it scoped per local email/password profile so a
+    /// second account on the same device can never inherit another profile's
+    /// linked Plaid rows. Sign in with Apple is additionally namespaced by the
+    /// Apple subject inside MilliBackendClient.
+    private func activateLocalBackendProfile(_ profileIdentifier: String) {
+        let normalized = profileIdentifier
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard !normalized.isEmpty else { return }
+
+        let defaults = UserDefaults.standard
+        let profileKey = "milliBackendUserID.profile.\(normalized)"
+
+        let profileUUID: UUID
+        if let stored = defaults.string(forKey: profileKey),
+           let parsed = UUID(uuidString: stored) {
+            profileUUID = parsed
+        } else {
+            profileUUID = UUID()
+            defaults.set(profileUUID.uuidString, forKey: profileKey)
+        }
+
+        defaults.set(normalized, forKey: "milliBackendActiveProfile")
+        defaults.set(profileUUID.uuidString, forKey: "milliBackendUserID")
+    }
+
+    /// Do not enter the authenticated financial shell until the backend agrees
+    /// that Tax Vault Autopilot is configured. This prevents local onboarding
+    /// from claiming automation is enabled while server state remains false.
+    private func finishSetupAuthoritatively() {
+        guard !isCompletingSetup else { return }
+        isCompletingSetup = true
+
+        let reserveRate = configuredTaxReserveRate()
+
+        Task {
+            do {
+                try await MilliBackendVaultSettingsClient.shared.update(
+                    reserveRate: reserveRate,
+                    autopilotEnabled: true
+                )
+
+                await MainActor.run {
+                    hasCompletedSetup = true
+                    activateSelectedTrialIfNeeded()
+                    isCompletingSetup = false
+                    transition(to: .main)
+                }
+            } catch {
+                await MainActor.run {
+                    isCompletingSetup = false
+                    setupErrorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func configuredTaxReserveRate() -> Double {
+        let defaults = UserDefaults.standard
+        guard let data = defaults.data(forKey: "onboarding_taxProfile"),
+              let profile = try? JSONDecoder().decode(TaxProfile.self, from: data)
+        else {
+            return 0.23
+        }
+
+        let income = profile.annualIncomeAmount ?? 55_000
+        let percent: Double
+        switch income {
+        case ..<30_000: percent = 20
+        case ..<60_000: percent = 23
+        case ..<100_000: percent = 27
+        default: percent = 30
+        }
+        return percent / 100
     }
 
     private func activateSelectedTrialIfNeeded() {

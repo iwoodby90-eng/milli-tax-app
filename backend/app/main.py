@@ -7,7 +7,7 @@ and the auditable Tax Vault reserve ledger.
 from fastapi import FastAPI
 
 from .config import get_settings
-from .routers import health, plaid_routes, tax_vault
+from .routers import health, payout_source, plaid_routes, tax_vault
 
 settings = get_settings()
 
@@ -19,6 +19,7 @@ app = FastAPI(
 
 app.include_router(health.router)
 app.include_router(plaid_routes.router)
+app.include_router(payout_source.router)
 app.include_router(tax_vault.router)
 
 
