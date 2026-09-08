@@ -477,7 +477,74 @@ private struct PlaidBankConnectionSetupView: View {
                         .background(RoundedRectangle(cornerRadius: 11).fill(MilliColors.cyanGlow))
                     }
                     .buttonStyle(.plain)
-                    .disabled(plaid.isLoading || plaid.isPresentingLink)
+                    .disabled(plaid.isLoading || plaid.isPresentingLink || plaid.requiresPayoutAccountSelection)
+
+                    if plaid.requiresPayoutAccountSelection {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("CHOOSE THE ACCOUNT WHERE GIG PAYOUTS LAND")
+                                .font(MilliFont.sectionLabel)
+                                .foregroundStyle(MilliColors.textSecondary)
+
+                            Text("Plaid returned more than one account. Milli will not guess which balance is your payout account. Select it explicitly.")
+                                .font(MilliFont.caption)
+                                .foregroundStyle(MilliColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            ForEach(plaid.availableAccounts) { account in
+                                Button {
+                                    Task {
+                                        await plaid.selectPayoutAccount(account)
+                                    }
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "creditcard.fill")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(MilliColors.cyanGlow)
+                                            .frame(width: 30, height: 30)
+                                            .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(account.name ?? "Linked account")
+                                                .font(MilliFont.bodyMedium)
+                                                .foregroundStyle(MilliColors.textPrimary)
+                                            HStack(spacing: 5) {
+                                                if let institution = account.institutionName, !institution.isEmpty {
+                                                    Text(institution)
+                                                }
+                                                if let mask = account.mask, !mask.isEmpty {
+                                                    Text("•••• \(mask)")
+                                                }
+                                                if let subtype = account.subtype, !subtype.isEmpty {
+                                                    Text(subtype.capitalized)
+                                                }
+                                            }
+                                            .font(MilliFont.caption)
+                                            .foregroundStyle(MilliColors.textTertiary)
+                                        }
+
+                                        Spacer(minLength: 6)
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundStyle(MilliColors.cyanGlow)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .frame(minHeight: 48)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(Color.white.opacity(0.025))
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                    .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
+                                            }
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(plaid.isLoading)
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
 
                     if profile.connectionStatus == .connected {
                         HStack(spacing: 8) {
@@ -579,6 +646,7 @@ private struct PlaidBankConnectionSetupView: View {
             if !isPresenting,
                !plaid.isLoading,
                plaid.connectedAccount == nil,
+               plaid.availableAccounts.isEmpty,
                profile.connectionStatus == .connecting {
                 profile.connectionStatus = .notConnected
             }
@@ -595,7 +663,7 @@ private struct PlaidBankConnectionSetupView: View {
             Button("OK", role: .cancel) {
                 plaid.errorMessage = nil
                 if profile.connectionStatus != .connected {
-                    profile.connectionStatus = .needsAttention
+                    profile.connectionStatus = plaid.availableAccounts.isEmpty ? .needsAttention : .connecting
                 }
             }
         } message: {
@@ -605,6 +673,7 @@ private struct PlaidBankConnectionSetupView: View {
 
     private var bankButtonTitle: String {
         if plaid.isLoading { return "Preparing Secure Connection…" }
+        if plaid.requiresPayoutAccountSelection { return "Choose Payout Account Below" }
         return profile.connectionStatus == .connected ? "Bank Connected" : "Connect Bank Securely"
     }
 
