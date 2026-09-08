@@ -2,6 +2,18 @@ import Foundation
 import CoreLocation
 import MapKit
 
+// MARK: - MileageTrackingState
+// Salvaged from the MilliMasterBuild trip work, adapted to the production
+// LocationManager so we keep the stronger filtering, persistence, permissions,
+// and background-tracking behavior already present in milli-tax-app.
+enum MileageTrackingState: Equatable {
+    case idle
+    case acquiringLocation
+    case tracking
+    case degraded
+    case authorizationDenied
+}
+
 // MARK: - LocationManager
 // Production mileage-tracking state for the native SwiftUI app. Tracking is
 // explicitly user-controlled; background delivery is enabled only while an
@@ -16,9 +28,12 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     @Published private(set) var routeCoordinates: [CLLocationCoordinate2D] = []
     @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published private(set) var isTracking = false
+    @Published private(set) var trackingState: MileageTrackingState = .idle
     @Published private(set) var distanceMeters: CLLocationDistance = 0
     @Published private(set) var tripStartedAt: Date?
     @Published private(set) var completedTodayDistanceMeters: CLLocationDistance = 0
+    @Published private(set) var currentSpeedMPH: Double = 0
+    @Published private(set) var horizontalAccuracyMeters: CLLocationAccuracy?
     @Published var errorMessage: String?
 
     private var previousRecordedLocation: CLLocation?
@@ -35,6 +50,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         manager.showsBackgroundLocationIndicator = true
 
         authorizationStatus = manager.authorizationStatus
+        updateTrackingStateForAuthorization()
         loadDailyDistance()
     }
 
@@ -58,11 +74,15 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     func requestPermission() {
         switch authorizationStatus {
         case .notDetermined:
+            trackingState = .acquiringLocation
             manager.requestWhenInUseAuthorization()
         case .denied, .restricted:
+            trackingState = .authorizationDenied
             errorMessage = "Location access is disabled. Enable location access in Settings to track deductible miles."
         case .authorizedWhenInUse, .authorizedAlways:
-            break
+            if !isTracking {
+                trackingState = .idle
+            }
         @unknown default:
             break
         }
@@ -83,10 +103,12 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         case .authorizedWhenInUse:
             manager.requestAlwaysAuthorization()
         case .notDetermined:
+            trackingState = .acquiringLocation
             manager.requestWhenInUseAuthorization()
         case .authorizedAlways:
             break
         case .denied, .restricted:
+            trackingState = .authorizationDenied
             errorMessage = "Background location access is disabled in Settings."
         @unknown default:
             break
@@ -98,6 +120,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
         guard canTrackLocation else {
             shouldStartAfterAuthorization = true
+            trackingState = .acquiringLocation
             requestPermission()
             return
         }
@@ -119,6 +142,9 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
         previousRecordedLocation = nil
         tripStartedAt = nil
+        currentSpeedMPH = 0
+        horizontalAccuracyMeters = nil
+        trackingState = canTrackLocation ? .idle : .authorizationDenied
     }
 
     func resetCurrentTrip() {
@@ -126,6 +152,8 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         distanceMeters = 0
         routeCoordinates = []
         previousRecordedLocation = nil
+        currentSpeedMPH = 0
+        horizontalAccuracyMeters = nil
     }
 
     private func beginTrip() {
@@ -135,8 +163,11 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         distanceMeters = 0
         routeCoordinates = []
         previousRecordedLocation = nil
+        currentSpeedMPH = 0
+        horizontalAccuracyMeters = nil
         tripStartedAt = Date()
         isTracking = true
+        trackingState = .acquiringLocation
 
         // The target includes the `location` background mode. Limit background
         // delivery to an explicit active trip rather than continuously tracking.
@@ -149,8 +180,17 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         lastLocation = location
+        horizontalAccuracyMeters = location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil
+        currentSpeedMPH = location.speed >= 0 ? location.speed * 2.236_936_292_054_4 : 0
 
-        guard isTracking, isUsable(location) else { return }
+        guard isTracking else { return }
+
+        guard isUsable(location) else {
+            trackingState = .degraded
+            return
+        }
+
+        trackingState = .tracking
 
         if let previousRecordedLocation {
             let segment = location.distance(from: previousRecordedLocation)
@@ -181,15 +221,18 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             if shouldStartAfterAuthorization {
                 shouldStartAfterAuthorization = false
                 beginTrip()
+            } else if !isTracking {
+                trackingState = .idle
             }
         case .denied, .restricted:
             shouldStartAfterAuthorization = false
             if isTracking {
                 stopTracking()
             }
+            trackingState = .authorizationDenied
             errorMessage = "Milli needs location access to record deductible mileage."
         case .notDetermined:
-            break
+            trackingState = .acquiringLocation
         @unknown default:
             break
         }
@@ -197,9 +240,15 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         if let locationError = error as? CLError, locationError.code == .locationUnknown {
+            if isTracking {
+                trackingState = .degraded
+            }
             return
         }
 
+        if isTracking {
+            trackingState = .degraded
+        }
         errorMessage = "Mileage tracking temporarily lost GPS. Milli will continue when location updates resume."
     }
 
@@ -212,6 +261,17 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         }
 
         return true
+    }
+
+    private func updateTrackingStateForAuthorization() {
+        switch authorizationStatus {
+        case .denied, .restricted:
+            trackingState = .authorizationDenied
+        case .notDetermined, .authorizedWhenInUse, .authorizedAlways:
+            trackingState = .idle
+        @unknown default:
+            trackingState = .idle
+        }
     }
 
     // MARK: - Daily persistence
