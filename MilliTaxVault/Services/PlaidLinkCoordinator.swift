@@ -12,17 +12,23 @@ final class PlaidLinkCoordinator: ObservableObject {
     @Published private(set) var linkSession: LinkKit.PlaidLinkSession?
     @Published var isPresentingLink = false
     @Published private(set) var isLoading = false
+    @Published private(set) var availableAccounts: [MilliPlaidAccount] = []
     @Published private(set) var connectedAccount: MilliPlaidAccount?
     @Published var errorMessage: String?
 
     private let backend = MilliBackendClient.shared
 
     var isConnected: Bool { connectedAccount != nil }
+    var requiresPayoutAccountSelection: Bool {
+        connectedAccount == nil && availableAccounts.count > 1
+    }
 
     func begin() {
         guard !isLoading, !isPresentingLink else { return }
 
         errorMessage = nil
+        availableAccounts = []
+        connectedAccount = nil
         isLoading = true
         linkSession = nil
 
@@ -41,8 +47,25 @@ final class PlaidLinkCoordinator: ObservableObject {
         isPresentingLink = false
         isLoading = false
         linkSession = nil
+        availableAccounts = []
         connectedAccount = nil
         errorMessage = nil
+    }
+
+    func selectPayoutAccount(_ account: MilliPlaidAccount) async {
+        guard availableAccounts.contains(where: { $0.id == account.id }) else { return }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            try await backend.selectPlaidPayoutSource(accountID: account.accountID)
+            connectedAccount = account
+            errorMessage = nil
+        } catch {
+            connectedAccount = nil
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func createSession(linkToken: String) {
@@ -122,17 +145,30 @@ final class PlaidLinkCoordinator: ObservableObject {
             )
 
             let accounts = try await backend.fetchPlaidAccounts()
-            guard let account = accounts.first else {
+            guard !accounts.isEmpty else {
                 errorMessage = "Plaid connected successfully, but Render did not return a linked account. Check migration 003 and DATABASE_URL on Render."
                 linkSession = nil
                 return
             }
 
-            connectedAccount = account
+            availableAccounts = accounts
             linkSession = nil
+
+            // If Plaid returned exactly one account, there is no ambiguity and
+            // the user has effectively selected it through Link. Persist it as
+            // the payout source. With multiple accounts, stop here and require
+            // an explicit choice in onboarding rather than guessing.
+            if accounts.count == 1, let onlyAccount = accounts.first {
+                try await backend.selectPlaidPayoutSource(accountID: onlyAccount.accountID)
+                connectedAccount = onlyAccount
+            } else {
+                connectedAccount = nil
+            }
+
             errorMessage = nil
         } catch {
             linkSession = nil
+            connectedAccount = nil
             errorMessage = error.localizedDescription
         }
     }
@@ -260,7 +296,6 @@ actor MilliBackendVaultSettingsClient {
             values.append(value)
         }
 
-        // Migration fallbacks only. Production should set MILLI_API_BASE_URL.
         values.append("https://milli-tax-vault-api.onrender.com")
         values.append("https://milli-tax-app.onrender.com")
 
