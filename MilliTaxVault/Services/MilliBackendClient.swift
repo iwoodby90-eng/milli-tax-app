@@ -35,6 +35,16 @@ final class MilliBackendClient {
         let count: Int
     }
 
+    struct PayoutSourceResponse: Decodable {
+        let accountID: String
+        let isPayoutSource: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case accountID = "account_id"
+            case isPayoutSource = "is_payout_source"
+        }
+    }
+
     struct APIErrorPayload: Decodable {
         let detail: String?
     }
@@ -109,6 +119,14 @@ final class MilliBackendClient {
         return response.accounts
     }
 
+    func selectPlaidPayoutSource(accountID: String) async throws {
+        let _: PayoutSourceResponse = try await request(
+            method: "PUT",
+            path: "/plaid/payout-source",
+            body: ["account_id": accountID]
+        )
+    }
+
     func refreshPlaidBalances() async throws {
         let _: GenericStatusResponse = try await request(
             method: "POST",
@@ -146,8 +164,6 @@ final class MilliBackendClient {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            // A deployment can be replaced without restarting the app. Forget
-            // the cached host so the next attempt can rediscover it.
             resolvedBaseURL = nil
             throw ClientError.backendUnavailable
         }
@@ -218,8 +234,6 @@ final class MilliBackendClient {
             values.append(plistURL)
         }
 
-        // Migration fallbacks only. Production should explicitly set
-        // MILLI_API_BASE_URL so a Render rename cannot silently redirect data.
         values.append("https://milli-tax-vault-api.onrender.com")
         values.append("https://milli-tax-app.onrender.com")
 
@@ -272,8 +286,6 @@ final class MilliBackendClient {
         let digest = SHA256.hash(data: Data("\(namespace):\(value)".utf8))
         var bytes = Array(digest.prefix(16))
 
-        // RFC 4122-compatible variant + version bits. The value is deterministic
-        // but does not reveal the Apple subject string itself.
         bytes[6] = (bytes[6] & 0x0F) | 0x50
         bytes[8] = (bytes[8] & 0x3F) | 0x80
 
@@ -319,8 +331,6 @@ struct MilliPlaidAccount: Decodable, Identifiable, Equatable {
 }
 
 private struct GenericStatusResponse: Decodable {
-    // The refresh endpoint returns integer counters. Keep a permissive contract
-    // so adding future counters does not break the iOS client.
     let accountsRefreshed: Int?
     let items: Int?
 
