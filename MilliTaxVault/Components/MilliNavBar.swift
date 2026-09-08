@@ -40,13 +40,14 @@ enum MilliTab: String, CaseIterable {
 // - Center M physically integrated into the chassis crest (never a floating FAB)
 // - Segmented cyan illumination arcs with dark spacers (never a continuous ring)
 // - Active tab: restrained cyan illumination. Inactive tabs: dark machined graphite for legibility on chrome.
-// - Motion: static active-state illumination only; no glow cycling or pulsing.
+// - Center control: refractive liquid-glass sphere with subtle internal fluid motion.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
     var onHomeTap: () -> Void = {}
 
     @State private var isDialPressed = false
+    @State private var liquidPhase = false
 
     private let deckHeight: CGFloat = 58
     private let lowerFaceHeight: CGFloat = 30
@@ -134,8 +135,6 @@ struct MilliNavBar: View {
         .frame(maxWidth: .infinity)
         .frame(height: deckHeight + lowerFaceHeight + 12)
         .background(alignment: .bottom) {
-            // The controls stay inside the safe region while the black-glass chassis
-            // physically continues beneath the home indicator to the screen edge.
             Rectangle()
                 .fill(lowerFaceGradient)
                 .frame(height: safeAreaExtension)
@@ -244,7 +243,7 @@ struct MilliNavBar: View {
             .shadow(color: Color.black.opacity(0.6), radius: 1, x: 0, y: 1)
     }
 
-    // MARK: - Center M Crest Dial
+    // MARK: - Center M Liquid Glass Crest
 
     private var centerDialButton: some View {
         Button {
@@ -253,6 +252,7 @@ struct MilliNavBar: View {
             onHomeTap()
         } label: {
             ZStack {
+                // Machined socket retained so the orb still belongs to the chassis.
                 Circle()
                     .fill(
                         AngularGradient(
@@ -269,50 +269,138 @@ struct MilliNavBar: View {
                         )
                     )
                     .frame(width: 78, height: 78)
-                    .shadow(color: Color.black.opacity(0.9), radius: 8, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.92), radius: 9, x: 0, y: 6)
 
                 Circle()
-                    .fill(Color(hex: "05080B"))
-                    .frame(width: 70, height: 70)
+                    .fill(Color(hex: "020508"))
+                    .frame(width: 71, height: 71)
 
                 SegmentedArcRing(segments: 4, gapDegrees: 14)
-                    .stroke(MilliColors.cyanGlow.opacity(0.85), lineWidth: 2.2)
-                    .frame(width: 62, height: 62)
+                    .stroke(MilliColors.cyanGlow.opacity(0.82), lineWidth: 2.0)
+                    .frame(width: 66, height: 66)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 3)
 
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.75), Color(hex: "8A929B").opacity(0.5)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-                    .frame(width: 55, height: 55)
-
+                // Refractive outer glass body.
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: "141A22"),
-                                Color(hex: "080B0E"),
-                                Color.black
+                                Color.white.opacity(0.20),
+                                Color(hex: "5DEBFF").opacity(0.10),
+                                Color(hex: "09131A").opacity(0.78),
+                                Color.black.opacity(0.94)
                             ],
-                            center: .center,
+                            center: UnitPoint(x: 0.34, y: 0.27),
                             startRadius: 1,
-                            endRadius: 25
+                            endRadius: 34
                         )
                     )
-                    .frame(width: 50, height: 50)
+                    .frame(width: 59, height: 59)
+                    .overlay {
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.92),
+                                        Color.white.opacity(0.18),
+                                        MilliColors.cyanGlow.opacity(0.52),
+                                        Color.white.opacity(0.12)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.15
+                            )
+                    }
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 7)
+
+                // Fluid volume: a dark cyan gel with a softly moving meniscus.
+                ZStack {
+                    Ellipse()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    MilliColors.cyanGlow.opacity(0.26),
+                                    MilliColors.deepCyan.opacity(0.42),
+                                    Color(hex: "03151A").opacity(0.82)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 54, height: 38)
+                        .offset(x: liquidPhase ? 1.8 : -1.8, y: liquidPhase ? 12.5 : 10.5)
+                        .rotationEffect(.degrees(liquidPhase ? 2.2 : -2.2))
+
+                    Ellipse()
+                        .stroke(Color.white.opacity(0.18), lineWidth: 0.75)
+                        .frame(width: 46, height: 9)
+                        .offset(x: liquidPhase ? -1.2 : 1.2, y: liquidPhase ? -5.0 : -4.0)
+                        .rotationEffect(.degrees(liquidPhase ? -2.5 : 2.5))
+
+                    Circle()
+                        .fill(Color.white.opacity(0.23))
+                        .frame(width: 3.2, height: 3.2)
+                        .offset(x: liquidPhase ? 12 : 9, y: liquidPhase ? 8 : 13)
+
+                    Circle()
+                        .fill(MilliColors.cyanGlow.opacity(0.30))
+                        .frame(width: 2.4, height: 2.4)
+                        .offset(x: liquidPhase ? -13 : -10, y: liquidPhase ? 15 : 10)
+                }
+                .frame(width: 55, height: 55)
+                .clipShape(Circle())
+                .allowsHitTesting(false)
+
+                // Suspended M: dark extrusion behind the approved artwork creates thickness.
+                Image("MilliMLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 31, height: 31)
+                    .opacity(0.52)
+                    .offset(x: 1.6, y: 2.3)
+                    .blur(radius: 0.35)
+                    .accessibilityHidden(true)
 
                 Image("MilliMLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 30, height: 30)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.55), radius: 5)
+                    .frame(width: 31, height: 31)
+                    .shadow(color: Color.black.opacity(0.88), radius: 2, x: 0, y: 2)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.68), radius: 6)
+                    .offset(y: liquidPhase ? -0.7 : 0.7)
+                    .accessibilityHidden(true)
+
+                // Upper glass caustic / lens reflection.
+                Ellipse()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.62),
+                                Color.white.opacity(0.10),
+                                Color.clear
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 31, height: 13)
+                    .rotationEffect(.degrees(-18))
+                    .offset(x: -8, y: -16)
+                    .blur(radius: 0.25)
+                    .allowsHitTesting(false)
+
+                // Cyan bounce from the liquid against the lower interior glass.
+                Ellipse()
+                    .fill(MilliColors.cyanGlow.opacity(0.16))
+                    .frame(width: 37, height: 9)
+                    .blur(radius: 3)
+                    .offset(y: 21)
+                    .allowsHitTesting(false)
             }
-            .scaleEffect(isDialPressed ? 0.95 : 1.0)
-            .animation(.spring(response: 0.24, dampingFraction: 0.7), value: isDialPressed)
+            .scaleEffect(isDialPressed ? 0.94 : 1.0)
+            .offset(y: isDialPressed ? 1.5 : 0)
+            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: isDialPressed)
         }
         .buttonStyle(.plain)
         .simultaneousGesture(
@@ -320,6 +408,12 @@ struct MilliNavBar: View {
                 .onChanged { _ in isDialPressed = true }
                 .onEnded { _ in isDialPressed = false }
         )
+        .onAppear {
+            guard !UIAccessibility.isReduceMotionEnabled else { return }
+            withAnimation(.easeInOut(duration: 3.8).repeatForever(autoreverses: true)) {
+                liquidPhase = true
+            }
+        }
         .accessibilityLabel("Home")
         .accessibilityHint("Navigates to the Milli Home cockpit")
     }
