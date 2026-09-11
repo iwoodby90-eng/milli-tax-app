@@ -12,12 +12,17 @@ services:
         value: sandbox
       - key: PLAID_ENV
         value: sandbox
-      # Secrets are set in the Render dashboard, never committed.
+      # Secrets and deployment-specific URLs are set in Render, never committed.
       - key: PLAID_CLIENT_ID
         sync: false
       - key: PLAID_SECRET
         sync: false
       - key: PLAID_WEBHOOK_URL
+        sync: false
+      # Required by Plaid for native iOS OAuth institutions. This must exactly
+      # match an Allowed redirect URI in the Plaid Dashboard and a Universal
+      # Link handled by the iOS app / apple-app-site-association file.
+      - key: PLAID_REDIRECT_URI
         sync: false
       - key: CLIENT_API_KEY
         sync: false

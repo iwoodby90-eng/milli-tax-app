@@ -3,12 +3,11 @@ import LinkKit
 
 // MARK: - PlaidLinkCoordinator
 // Owns one Plaid LinkKit 7 session at a time and completes the token exchange
-// against Milli's Render backend. No Plaid secret or access token is stored on
-// the device.
+// against Milli's backend. No Plaid secret or access token is stored on device.
 
 @MainActor
 final class PlaidLinkCoordinator: ObservableObject {
-    @Published private(set) var linkSession: LinkKit.PlaidLinkSession?
+    @Published private(set) var linkSession: PlaidLinkSession?
     @Published var isPresentingLink = false
     @Published private(set) var isLoading = false
     @Published private(set) var connectedAccount: MilliPlaidAccount?
@@ -27,6 +26,7 @@ final class PlaidLinkCoordinator: ObservableObject {
 
         Task {
             do {
+                // A fresh server-generated Link token is required for every Link session.
                 let linkToken = try await backend.createPlaidLinkToken()
                 createSession(linkToken: linkToken)
             } catch {
@@ -57,6 +57,7 @@ final class PlaidLinkCoordinator: ObservableObject {
                     self.isPresentingLink = false
 
                     guard !publicToken.isEmpty else {
+                        self.isLoading = false
                         self.errorMessage = "Plaid completed without returning a bank connection token. Please try again."
                         self.linkSession = nil
                         return
@@ -84,8 +85,8 @@ final class PlaidLinkCoordinator: ObservableObject {
                 }
             },
             onEvent: { _ in
-                // Link analytics remain inside Plaid. Milli never logs bank
-                // credentials or account secrets from Link events.
+                // Link analytics remain inside Plaid. Never log credentials,
+                // public tokens, account identifiers, or institution secrets.
             },
             onLoad: { [weak self] in
                 Task { @MainActor [weak self] in
@@ -114,6 +115,8 @@ final class PlaidLinkCoordinator: ObservableObject {
         defer { isLoading = false }
 
         do {
+            // Public token exchange occurs server-side. The Plaid access token
+            // is persisted by Milli's backend and is never returned to iOS.
             _ = try await backend.exchangePlaidPublicToken(
                 publicToken,
                 institutionID: institutionID,
@@ -121,8 +124,10 @@ final class PlaidLinkCoordinator: ObservableObject {
             )
 
             let accounts = try await backend.fetchPlaidAccounts()
-            guard let account = accounts.first else {
-                errorMessage = "Plaid connected successfully, but Render did not return a linked account. Check migration 003 and DATABASE_URL on Render."
+            guard let account = accounts.first(where: {
+                ($0.subtype ?? "").localizedCaseInsensitiveContains("checking")
+            }) ?? accounts.first else {
+                errorMessage = "Plaid connected successfully, but Milli did not receive a linked account."
                 linkSession = nil
                 return
             }
