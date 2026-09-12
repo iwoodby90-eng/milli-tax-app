@@ -1,15 +1,23 @@
 import SwiftUI
 import AuthenticationServices
 import Security
+import CryptoKit
 
 // MARK: - Sign in with Apple Authentication Manager
-// Handles Sign in with Apple & Sign up with Apple via AuthenticationServices.
-// Manages ASAuthorizationAppleIDCredential lifecycle, secure Keychain storage of Apple User ID,
-// credential status verification, and token revocation listeners.
+// Owns the Apple credential flow, including the nonce required by Milli's
+// production backend. Apple identity tokens are held only long enough to
+// exchange them for Milli bearer-session tokens and are stored in Keychain
+// while that exchange is pending.
 
 @MainActor
 public final class AppleAuthManager: NSObject, ObservableObject {
     public static let shared = AppleAuthManager()
+
+    struct PendingBackendCredential {
+        let identityToken: String
+        let rawNonce: String
+        let displayName: String?
+    }
 
     // MARK: - Published State
     @Published public private(set) var isSignedInWithApple = false
@@ -21,19 +29,21 @@ public final class AppleAuthManager: NSObject, ObservableObject {
 
     private static let keychainService = "com.milli.taxvault.apple-auth"
     private static let keychainAccountKey = "milliAppleUserID"
+    private static let pendingIdentityTokenKey = "milliPendingAppleIdentityToken"
+    private static let pendingRawNonceKey = "milliPendingAppleRawNonce"
+
+    private var currentRawNonce: String?
 
     public override init() {
         super.init()
 
-        // Load existing Apple User ID from Keychain
-        if let storedUserID = Self.loadAppleUserIDFromKeychain() {
-            self.currentAppleUserID = storedUserID
-            self.isSignedInWithApple = true
-            self.userEmail = UserDefaults.standard.string(forKey: "milliAppleUserEmail")
-            self.userFullName = UserDefaults.standard.string(forKey: "milliAppleUserName")
+        if let storedUserID = Self.loadSecret(account: Self.keychainAccountKey) {
+            currentAppleUserID = storedUserID
+            isSignedInWithApple = true
+            userEmail = UserDefaults.standard.string(forKey: "milliAppleUserEmail")
+            userFullName = UserDefaults.standard.string(forKey: "milliAppleUserName")
         }
 
-        // Listen for Apple ID credential revocation from Settings or other devices
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleCredentialRevokedNotification),
@@ -43,45 +53,69 @@ public final class AppleAuthManager: NSObject, ObservableObject {
     }
 
     // MARK: - Configure Apple ID Request
+
     public func configureAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
+        authErrorMessage = nil
         request.requestedScopes = [.fullName, .email]
+
+        guard let rawNonce = Self.randomNonce() else {
+            currentRawNonce = nil
+            authErrorMessage = "Milli couldn't create a secure Apple sign-in request. Please try again."
+            return
+        }
+
+        currentRawNonce = rawNonce
+        request.nonce = Self.sha256(rawNonce)
     }
 
     // MARK: - Handle Authorization Result
-    /// Processes completion of ASAuthorization (Sign In or Sign Up)
-    /// Returns a tuple of (email, name) on successful authorization, or nil on failure/cancellation.
+
+    /// Parses Apple's credential and stages its identity token + raw nonce in
+    /// Keychain. MilliBackendClient exchanges this pair with POST /auth/apple
+    /// before the first protected backend request (including Plaid Link).
     public func handleAuthorizationCompletion(
         result: Result<ASAuthorization, Error>,
         isSignUp: Bool
     ) -> (email: String, name: String)? {
         authErrorMessage = nil
         isProcessing = true
-
         defer { isProcessing = false }
 
         switch result {
         case .success(let authorization):
             guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-                authErrorMessage = "Received invalid credential from Apple."
+                currentRawNonce = nil
+                authErrorMessage = "Received an invalid credential from Apple."
+                return nil
+            }
+
+            guard let rawNonce = currentRawNonce, !rawNonce.isEmpty else {
+                authErrorMessage = "Apple sign-in completed without Milli's secure nonce. Please try again."
+                return nil
+            }
+            currentRawNonce = nil
+
+            guard let tokenData = appleIDCredential.identityToken,
+                  let identityToken = String(data: tokenData, encoding: .utf8),
+                  identityToken.count >= 20 else {
+                authErrorMessage = "Apple did not return a usable identity token. Please try signing in again."
                 return nil
             }
 
             let userID = appleIDCredential.user
-            self.currentAppleUserID = userID
+            currentAppleUserID = userID
 
-            // Extract Name components if provided (Apple only sends name/email on FIRST authorization)
-            var resolvedName: String = ""
+            var resolvedName = ""
             if let fullName = appleIDCredential.fullName {
                 let formatter = PersonNameComponentsFormatter()
-                resolvedName = formatter.string(from: fullName).trimmingCharacters(in: .whitespacesAndNewlines)
+                resolvedName = formatter.string(from: fullName)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
             }
-
             if resolvedName.isEmpty {
                 resolvedName = UserDefaults.standard.string(forKey: "milliProfileName") ?? "Milli Member"
             }
 
-            // Extract Email if provided
-            var resolvedEmail: String = ""
+            var resolvedEmail = ""
             if let email = appleIDCredential.email {
                 resolvedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             } else if let storedEmail = UserDefaults.standard.string(forKey: "milliAppleUserEmail") {
@@ -92,8 +126,14 @@ public final class AppleAuthManager: NSObject, ObservableObject {
                 resolvedEmail = "\(userID.prefix(8).lowercased())@privaterelay.appleid.com"
             }
 
-            // Save to Keychain and local store
-            Self.saveAppleUserIDToKeychain(userID: userID)
+            guard Self.storeSecret(identityToken, account: Self.pendingIdentityTokenKey),
+                  Self.storeSecret(rawNonce, account: Self.pendingRawNonceKey),
+                  Self.storeSecret(userID, account: Self.keychainAccountKey) else {
+                clearPendingBackendCredential()
+                authErrorMessage = "Milli couldn't securely store the Apple sign-in credential. Please try again."
+                return nil
+            }
+
             let defaults = UserDefaults.standard
             defaults.set(resolvedEmail, forKey: "milliAppleUserEmail")
             defaults.set(resolvedName, forKey: "milliAppleUserName")
@@ -102,15 +142,15 @@ public final class AppleAuthManager: NSObject, ObservableObject {
             defaults.set(true, forKey: "milliHasCreatedAccount")
             defaults.set("apple", forKey: "milliAuthProvider")
 
-            self.userEmail = resolvedEmail
-            self.userFullName = resolvedName
-            self.isSignedInWithApple = true
+            userEmail = resolvedEmail
+            userFullName = resolvedName
+            isSignedInWithApple = true
 
             return (email: resolvedEmail, name: resolvedName)
 
         case .failure(let error):
+            currentRawNonce = nil
             if let asError = error as? ASAuthorizationError, asError.code == .canceled {
-                // User intentionally dismissed Apple sheet
                 return nil
             }
             authErrorMessage = "Sign in with Apple encountered an issue: \(error.localizedDescription)"
@@ -118,7 +158,30 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Backend handoff
+
+    func pendingBackendCredential() -> PendingBackendCredential? {
+        guard let identityToken = Self.loadSecret(account: Self.pendingIdentityTokenKey),
+              let rawNonce = Self.loadSecret(account: Self.pendingRawNonceKey),
+              !identityToken.isEmpty,
+              !rawNonce.isEmpty else {
+            return nil
+        }
+
+        return PendingBackendCredential(
+            identityToken: identityToken,
+            rawNonce: rawNonce,
+            displayName: userFullName ?? UserDefaults.standard.string(forKey: "milliProfileName")
+        )
+    }
+
+    func clearPendingBackendCredential() {
+        Self.deleteSecret(account: Self.pendingIdentityTokenKey)
+        Self.deleteSecret(account: Self.pendingRawNonceKey)
+    }
+
     // MARK: - Credential State Check
+
     public func verifyAppleCredentialState() async -> ASAuthorizationAppleIDProvider.CredentialState {
         guard let userID = currentAppleUserID else {
             return .notFound
@@ -129,10 +192,10 @@ public final class AppleAuthManager: NSObject, ObservableObject {
             let state = try await provider.credentialState(forUserID: userID)
             switch state {
             case .authorized:
-                self.isSignedInWithApple = true
+                isSignedInWithApple = true
             case .revoked, .notFound:
-                self.isSignedInWithApple = false
-                self.signOut()
+                isSignedInWithApple = false
+                signOut()
             case .transferred:
                 break
             @unknown default:
@@ -152,22 +215,58 @@ public final class AppleAuthManager: NSObject, ObservableObject {
     }
 
     // MARK: - Sign Out
+
     public func signOut() {
-        Self.deleteAppleUserIDFromKeychain()
+        Self.deleteSecret(account: Self.keychainAccountKey)
+        clearPendingBackendCredential()
+        MilliBackendClient.shared.clearSession()
         currentAppleUserID = nil
         isSignedInWithApple = false
         userEmail = nil
         userFullName = nil
     }
 
-    // MARK: - Keychain Security Utilities
-    private static func saveAppleUserIDToKeychain(userID: String) {
-        guard let data = userID.data(using: .utf8) else { return }
+    // MARK: - Nonce
+
+    private static func randomNonce(length: Int = 32) -> String? {
+        guard length > 0 else { return nil }
+
+        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        result.reserveCapacity(length)
+
+        while result.count < length {
+            var bytes = [UInt8](repeating: 0, count: 16)
+            let status = bytes.withUnsafeMutableBytes { buffer in
+                SecRandomCopyBytes(kSecRandomDefault, buffer.count, buffer.baseAddress!)
+            }
+            guard status == errSecSuccess else { return nil }
+
+            for byte in bytes where result.count < length {
+                if Int(byte) < charset.count * (256 / charset.count) {
+                    result.append(charset[Int(byte) % charset.count])
+                }
+            }
+        }
+
+        return result
+    }
+
+    private static func sha256(_ input: String) -> String {
+        let digest = SHA256.hash(data: Data(input.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    // MARK: - Keychain
+
+    @discardableResult
+    private static func storeSecret(_ value: String, account: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainAccountKey
+            kSecAttrAccount as String: account
         ]
 
         SecItemDelete(query as CFDictionary)
@@ -176,14 +275,14 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         insert[kSecValueData as String] = data
         insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 
-        SecItemAdd(insert as CFDictionary, nil)
+        return SecItemAdd(insert as CFDictionary, nil) == errSecSuccess
     }
 
-    private static func loadAppleUserIDFromKeychain() -> String? {
+    private static func loadSecret(account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainAccountKey,
+            kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -191,19 +290,17 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         var result: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let data = result as? Data,
-              let userID = String(data: data, encoding: .utf8)
-        else {
+              let value = String(data: data, encoding: .utf8) else {
             return nil
         }
-
-        return userID
+        return value
     }
 
-    private static func deleteAppleUserIDFromKeychain() {
+    private static func deleteSecret(account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainAccountKey
+            kSecAttrAccount as String: account
         ]
         SecItemDelete(query as CFDictionary)
     }
