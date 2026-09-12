@@ -3,7 +3,7 @@ import UIKit
 
 // MARK: - Milli AI Character
 // Vector-built transparent companion. No bitmap plate or opaque background is used.
-// The approved MilliMLogo asset is the only M rendered on the character.
+// The approved native Milli M is rendered on the character's chest.
 
 struct MilliAICharacterView: View {
     var size: CGFloat = 70
@@ -11,12 +11,39 @@ struct MilliAICharacterView: View {
 
     @State private var eyePulse = false
     @State private var bodyTilt: Double = -1
+    @State private var haloRotation: Double = 0
+    @State private var haloScale: CGFloat = 0.96
 
     private var scale: CGFloat { size / 70 }
 
     var body: some View {
         ZStack {
-            // Soft ambient glow only — there is intentionally no card/background shape.
+            // Ambient animated energy field behind Milli AI. It is transparent,
+            // so the dashboard remains visible through the effect.
+            if animated {
+                Circle()
+                    .trim(from: 0.08, to: 0.82)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.clear, MilliColors.cyanGlow.opacity(0.45), Color.clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 1.2 * scale, lineCap: .round)
+                    )
+                    .frame(width: 60 * scale, height: 60 * scale)
+                    .rotationEffect(.degrees(haloRotation))
+                    .scaleEffect(haloScale)
+                    .blur(radius: 0.35 * scale)
+
+                Circle()
+                    .trim(from: 0.18, to: 0.72)
+                    .stroke(MilliColors.deepCyan.opacity(0.30), lineWidth: 0.8 * scale)
+                    .frame(width: 68 * scale, height: 68 * scale)
+                    .rotationEffect(.degrees(-haloRotation * 0.72))
+                    .scaleEffect(1.02)
+            }
+
             Ellipse()
                 .fill(MilliColors.cyanGlow.opacity(0.11))
                 .frame(width: 54 * scale, height: 18 * scale)
@@ -35,16 +62,19 @@ struct MilliAICharacterView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Milli AI")
         .onAppear {
-            guard animated else { return }
-            if !UIAccessibility.isReduceMotionEnabled {
-                withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
-                    eyePulse = true
-                }
+            guard animated, !UIAccessibility.isReduceMotionEnabled else { return }
+
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+                eyePulse = true
             }
-            if !UIAccessibility.isReduceMotionEnabled {
-                withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
-                    bodyTilt = 1.2
-                }
+
+            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
+                bodyTilt = 1.2
+                haloScale = 1.04
+            }
+
+            withAnimation(.linear(duration: 9.5).repeatForever(autoreverses: false)) {
+                haloRotation = 360
             }
         }
     }
@@ -90,7 +120,6 @@ struct MilliAICharacterView: View {
                 .frame(width: 14 * scale, height: 1.2 * scale)
                 .offset(y: 9 * scale)
 
-            // Headphone-style ear pods
             earPod
                 .offset(x: -21 * scale, y: 0)
             earPod
@@ -110,20 +139,13 @@ struct MilliAICharacterView: View {
 
     private var earPod: some View {
         Capsule(style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeDeep],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+            .fill(chromeGradient)
             .frame(width: 5.5 * scale, height: 14 * scale)
             .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 2.5 * scale)
     }
 
     private var torso: some View {
         ZStack {
-            // Arms
             Capsule(style: .continuous)
                 .fill(chromeGradient)
                 .frame(width: 7 * scale, height: 24 * scale)
@@ -136,7 +158,6 @@ struct MilliAICharacterView: View {
                 .rotationEffect(.degrees(-23))
                 .offset(x: 20 * scale, y: 2 * scale)
 
-            // Body shell
             RoundedRectangle(cornerRadius: 10 * scale, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -157,17 +178,10 @@ struct MilliAICharacterView: View {
                         .padding(.top, 4 * scale)
                 }
 
-            // Approved M on chest
-            Image("MilliMLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 15 * scale, height: 15 * scale)
-                .blendMode(.screen)
-                .clipShape(Circle())
+            MilliMMark(size: 15 * scale)
                 .shadow(color: MilliColors.cyanGlow.opacity(0.25), radius: 2 * scale)
                 .offset(y: 1 * scale)
 
-            // Feet
             HStack(spacing: 9 * scale) {
                 Capsule(style: .continuous)
                     .fill(chromeGradient)
@@ -191,7 +205,7 @@ struct MilliAICharacterView: View {
 }
 
 // MARK: - MilliAIOrb
-// Persistent floating Milli companion. The character is transparent and lightly animated
+// Persistent floating Milli companion. The character is transparent and animated
 // so it can live at the bottom-right without appearing as a square image tile.
 
 struct MilliAIOrb: View {
