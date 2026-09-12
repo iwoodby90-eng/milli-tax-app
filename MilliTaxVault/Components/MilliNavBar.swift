@@ -40,7 +40,7 @@ enum MilliTab: String, CaseIterable {
 // - Center M physically integrated into the chassis crest (never a floating FAB)
 // - Segmented cyan illumination arcs with dark spacers (never a continuous ring)
 // - Active tab: restrained cyan illumination. Inactive tabs: dark machined graphite for legibility on chrome.
-// - Motion: static active-state illumination only; no glow cycling or pulsing.
+// - Motion: tactile press only; no distracting ambient pulse.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
@@ -134,8 +134,6 @@ struct MilliNavBar: View {
         .frame(maxWidth: .infinity)
         .frame(height: deckHeight + lowerFaceHeight + 12)
         .background(alignment: .bottom) {
-            // The controls stay inside the safe region while the black-glass chassis
-            // physically continues beneath the home indicator to the screen edge.
             Rectangle()
                 .fill(lowerFaceGradient)
                 .frame(height: safeAreaExtension)
@@ -305,10 +303,7 @@ struct MilliNavBar: View {
                     )
                     .frame(width: 50, height: 50)
 
-                Image("MilliMLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 30, height: 30)
+                MilliMMark(size: 31)
                     .shadow(color: MilliColors.cyanGlow.opacity(0.55), radius: 5)
             }
             .scaleEffect(isDialPressed ? 0.95 : 1.0)
@@ -387,8 +382,6 @@ struct SegmentedArcRing: Shape {
         return path
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     ZStack {
