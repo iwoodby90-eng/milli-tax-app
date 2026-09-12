@@ -12,10 +12,10 @@ enum MilliTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .vault: return "lock.shield.fill"
-        case .activity: return "waveform.path.ecg"
-        case .wealth: return "chart.bar.xaxis"
-        case .cockpit: return "gauge.open.with.lines.needle.33percent"
+        case .vault: return "wallet.pass.fill"
+        case .activity: return "location.north.fill"
+        case .wealth: return "dollarsign.circle.fill"
+        case .cockpit: return "ellipsis"
         case .home: return ""
         }
     }
@@ -32,15 +32,10 @@ enum MilliTab: String, CaseIterable {
 }
 
 // MARK: - MilliNavBar
-// Canonical MILLI navigation (locked reference, Image 40):
-// - Full-width sculpted metallic chassis integrated into the screen edge (NOT a floating capsule)
-// - Signature silhouette: flat deck -> upward sweeping shoulder -> center M crest -> downward shoulder -> flat deck
-// - Broad polished silver/chrome upper deck with visible depth; deep obsidian black-glass lower face
-// - Four circular recessed details across the upper deck: two left, two right
-// - Center M physically integrated into the chassis crest (never a floating FAB)
-// - Segmented cyan illumination arcs with dark spacers (never a continuous ring)
-// - Active tab: restrained cyan illumination. Inactive tabs: dark machined graphite for legibility on chrome.
-// - Motion: tactile press only; no distracting ambient pulse.
+// Canonical MILLI navigation based on the approved sculpted reference:
+// polished chrome chassis, glossy obsidian face, four recessed instrument wells,
+// an integrated center crest with a large segmented-cyan M dial, and no generic
+// flat tab-bar treatment.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
@@ -48,94 +43,22 @@ struct MilliNavBar: View {
 
     @State private var isDialPressed = false
 
-    private let deckHeight: CGFloat = 58
-    private let lowerFaceHeight: CGFloat = 30
-    private let crestHeight: CGFloat = 34
-    private let safeAreaExtension: CGFloat = 44
-
-    private var lowerFaceGradient: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: Color(hex: "14181D"), location: 0.0),
-                .init(color: Color(hex: "07090B"), location: 0.6),
-                .init(color: Color.black, location: 1.0)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
+    private let chassisHeight: CGFloat = 124
+    private let crestHeight: CGFloat = 38
+    private let safeAreaExtension: CGFloat = 36
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ChassisShape(crestHeight: crestHeight)
-                .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(hex: "E8EAED"), location: 0.0),
-                            .init(color: Color(hex: "9BA1A8"), location: 0.35),
-                            .init(color: Color(hex: "C6CAD0"), location: 0.65),
-                            .init(color: Color(hex: "6E747B"), location: 1.0)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    ChassisShape(crestHeight: crestHeight)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.85),
-                                    Color(hex: "A0AAB2").opacity(0.55),
-                                    Color.white.opacity(0.35)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.0
-                        )
-                )
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(lowerFaceGradient)
-                        .frame(height: lowerFaceHeight)
-                        .overlay(alignment: .top) {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.10))
-                                .frame(height: 0.5)
-                        }
-                }
-                .shadow(color: Color.black.opacity(0.85), radius: 14, x: 0, y: -6)
-                .frame(height: deckHeight + lowerFaceHeight)
-
-            recessedDetails
-                .allowsHitTesting(false)
-                .frame(height: deckHeight + lowerFaceHeight, alignment: .top)
-                .padding(.top, 10)
-                .padding(.horizontal, 34)
-
-            HStack(spacing: 0) {
-                tabButton(.vault)
-                tabButton(.activity)
-
-                Spacer()
-                    .frame(width: 96)
-
-                tabButton(.wealth)
-                tabButton(.cockpit)
-            }
-            .padding(.horizontal, 10)
-            .frame(height: deckHeight + lowerFaceHeight, alignment: .top)
-            .padding(.top, 4)
-
+        ZStack(alignment: .top) {
+            chassis
+            blackGlassFace
+            tabRow
             centerDialButton
-                .offset(y: -crestHeight + 6)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: deckHeight + lowerFaceHeight + 12)
+        .frame(height: chassisHeight)
         .background(alignment: .bottom) {
             Rectangle()
-                .fill(lowerFaceGradient)
+                .fill(Color.black)
                 .frame(height: safeAreaExtension)
                 .offset(y: safeAreaExtension)
                 .ignoresSafeArea(edges: .bottom)
@@ -145,67 +68,152 @@ struct MilliNavBar: View {
         .accessibilityLabel("Milli navigation")
     }
 
-    // MARK: - Tab Item Button
+    private var chassis: some View {
+        ChassisShape(crestHeight: crestHeight)
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: "F5F7F9"), location: 0.00),
+                        .init(color: Color(hex: "A7ADB5"), location: 0.18),
+                        .init(color: Color(hex: "E5E8EB"), location: 0.38),
+                        .init(color: Color(hex: "7E858E"), location: 0.67),
+                        .init(color: Color(hex: "C7CCD2"), location: 0.88),
+                        .init(color: Color(hex: "666D75"), location: 1.00)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay {
+                ChassisShape(crestHeight: crestHeight)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.94), Color(hex: "9DA4AC"), Color.white.opacity(0.30)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.2
+                    )
+            }
+            .overlay(alignment: .top) {
+                ChassisShape(crestHeight: crestHeight)
+                    .stroke(Color.white.opacity(0.22), lineWidth: 3.5)
+                    .blur(radius: 1.2)
+                    .offset(y: 2)
+                    .mask(
+                        LinearGradient(
+                            colors: [.white, .clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    )
+            }
+            .shadow(color: .black.opacity(0.88), radius: 18, y: 8)
+            .frame(height: chassisHeight)
+    }
+
+    private var blackGlassFace: some View {
+        RoundedRectangle(cornerRadius: 28, style: .continuous)
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: "1B2026"), location: 0.00),
+                        .init(color: Color(hex: "090C10"), location: 0.36),
+                        .init(color: Color.black, location: 1.00)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.30), Color.white.opacity(0.08), Color.black.opacity(0.65)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1.0
+                    )
+            }
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [Color.white.opacity(0.16), Color.clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            }
+            .padding(.horizontal, 7)
+            .frame(height: 78)
+            .offset(y: 43)
+            .shadow(color: .black.opacity(0.72), radius: 5, y: 3)
+            .allowsHitTesting(false)
+    }
+
+    private var tabRow: some View {
+        HStack(spacing: 0) {
+            tabButton(.vault)
+            tabButton(.activity)
+
+            Spacer()
+                .frame(width: 112)
+
+            tabButton(.wealth)
+            tabButton(.cockpit)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 82, alignment: .top)
+        .offset(y: 35)
+    }
 
     private func tabButton(_ tab: MilliTab) -> some View {
         let isSelected = selectedTab == tab
+
         return Button {
             selectedTab = tab
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 ZStack {
-                    if isSelected {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        MilliColors.cyanGlow.opacity(0.28),
-                                        MilliColors.cyanGlow.opacity(0.0)
-                                    ],
-                                    center: .center,
-                                    startRadius: 2,
-                                    endRadius: 20
-                                )
-                            )
-                            .frame(width: 36, height: 36)
-                    }
+                    recessedInstrumentWell(active: isSelected)
 
                     Image(systemName: tab.icon)
-                        .font(.system(size: 19, weight: isSelected ? .bold : .semibold))
+                        .font(.system(size: tab == .cockpit ? 19 : 20, weight: .bold))
                         .foregroundStyle(
                             isSelected
-                                ? AnyShapeStyle(
-                                    LinearGradient(
-                                        colors: [Color.white, MilliColors.cyanGlow],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
+                            ? AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "A6FAFF"), MilliColors.cyanGlow, MilliColors.deepCyan],
+                                    startPoint: .top,
+                                    endPoint: .bottom
                                 )
-                                : AnyShapeStyle(Color(hex: "30373D"))
+                            )
+                            : AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "D0D3D7"), Color(hex: "777E87")],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
                         )
                         .shadow(
-                            color: isSelected
-                                ? MilliColors.cyanGlow.opacity(0.45)
-                                : Color.white.opacity(0.16),
-                            radius: isSelected ? 4 : 0.5,
-                            y: isSelected ? 0 : 0.5
+                            color: isSelected ? MilliColors.cyanGlow.opacity(0.58) : .black.opacity(0.55),
+                            radius: isSelected ? 5 : 1,
+                            y: 1
                         )
-                        .frame(height: 24)
                 }
+                .frame(height: 43)
 
                 Text(tab.displayName)
-                    .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "3C444B"))
-                    .tracking(0.55)
-                    .shadow(
-                        color: isSelected ? MilliColors.cyanGlow.opacity(0.35) : Color.white.opacity(0.18),
-                        radius: isSelected ? 3 : 0.5,
-                        y: isSelected ? 0 : 0.5
-                    )
+                    .font(.custom("Inter-SemiBold", size: 10.5, relativeTo: .caption))
+                    .tracking(0.45)
+                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "8E959D"))
+                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.35) : .clear, radius: 3)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: 74)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -213,36 +221,41 @@ struct MilliNavBar: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    // MARK: - Recessed deck details
+    private func recessedInstrumentWell(active: Bool) -> some View {
+        ZStack {
+            Ellipse()
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "F0F2F4"), Color(hex: "777D85"), Color(hex: "D0D4D8")],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 55, height: 31)
+                .shadow(color: .black.opacity(0.85), radius: 2, y: 2)
 
-    private var recessedDetails: some View {
-        HStack(spacing: 26) {
-            ForEach(0..<2, id: \.self) { _ in recessedDot }
-            Spacer().frame(width: 150)
-            ForEach(0..<2, id: \.self) { _ in recessedDot }
+            Ellipse()
+                .fill(
+                    RadialGradient(
+                        colors: [Color(hex: "262C32"), Color(hex: "090C0F"), Color.black],
+                        center: UnitPoint(x: 0.46, y: 0.38),
+                        startRadius: 1,
+                        endRadius: 27
+                    )
+                )
+                .frame(width: 47, height: 23)
+                .overlay {
+                    Ellipse()
+                        .stroke(
+                            active ? MilliColors.cyanGlow.opacity(0.72) : Color.white.opacity(0.13),
+                            lineWidth: active ? 1.3 : 0.7
+                        )
+                }
+                .shadow(color: active ? MilliColors.cyanGlow.opacity(0.25) : .clear, radius: 5)
         }
     }
 
-    private var recessedDot: some View {
-        Circle()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color(hex: "2A2F35"),
-                        Color(hex: "0C0F12")
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .frame(width: 7, height: 7)
-            .overlay(
-                Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.5)
-            )
-            .shadow(color: Color.black.opacity(0.6), radius: 1, x: 0, y: 1)
-    }
-
-    // MARK: - Center M Crest Dial
+    // MARK: Center M crest dial
 
     private var centerDialButton: some View {
         Button {
@@ -255,61 +268,72 @@ struct MilliNavBar: View {
                     .fill(
                         AngularGradient(
                             colors: [
-                                Color(hex: "F4F7FA"),
-                                Color(hex: "757D87"),
-                                Color(hex: "DFE4EA"),
-                                Color(hex: "2F353F"),
-                                Color(hex: "CBD2D9"),
-                                Color(hex: "666E78"),
-                                Color(hex: "F8FAFC")
+                                Color(hex: "F7F9FB"),
+                                Color(hex: "686F78"),
+                                Color(hex: "DDE2E7"),
+                                Color(hex: "3C434B"),
+                                Color(hex: "F4F6F8"),
+                                Color(hex: "777F88"),
+                                Color(hex: "ECEFF2")
                             ],
                             center: .center
                         )
                     )
-                    .frame(width: 78, height: 78)
-                    .shadow(color: Color.black.opacity(0.9), radius: 8, x: 0, y: 5)
+                    .frame(width: 104, height: 104)
+                    .overlay {
+                        Circle().stroke(Color.white.opacity(0.60), lineWidth: 0.9)
+                    }
+                    .shadow(color: .black.opacity(0.92), radius: 10, y: 7)
 
                 Circle()
-                    .fill(Color(hex: "05080B"))
-                    .frame(width: 70, height: 70)
+                    .fill(Color(hex: "11161B"))
+                    .frame(width: 94, height: 94)
+                    .overlay {
+                        Circle().stroke(Color.black.opacity(0.9), lineWidth: 2)
+                    }
 
-                SegmentedArcRing(segments: 4, gapDegrees: 14)
-                    .stroke(MilliColors.cyanGlow.opacity(0.85), lineWidth: 2.2)
-                    .frame(width: 62, height: 62)
-
-                Circle()
+                SegmentedArcRing(segments: 6, gapDegrees: 11)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.75), Color(hex: "8A929B").opacity(0.5)],
+                            colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1.0
+                        style: StrokeStyle(lineWidth: 4.2, lineCap: .butt)
                     )
-                    .frame(width: 55, height: 55)
+                    .frame(width: 82, height: 82)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.42), radius: 6)
 
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [
-                                Color(hex: "141A22"),
-                                Color(hex: "080B0E"),
-                                Color.black
-                            ],
-                            center: .center,
+                            colors: [Color(hex: "172027"), Color(hex: "080B0E"), Color.black],
+                            center: UnitPoint(x: 0.42, y: 0.32),
                             startRadius: 1,
-                            endRadius: 25
+                            endRadius: 36
                         )
                     )
-                    .frame(width: 50, height: 50)
+                    .frame(width: 69, height: 69)
+                    .overlay {
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.55), Color(hex: "7B838C"), Color.white.opacity(0.10)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
+                            )
+                    }
 
-                MilliMMark(size: 31)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.55), radius: 5)
+                MilliMMark(size: 45)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.48), radius: 6)
             }
-            .scaleEffect(isDialPressed ? 0.95 : 1.0)
-            .animation(.spring(response: 0.24, dampingFraction: 0.7), value: isDialPressed)
+            .scaleEffect(isDialPressed ? 0.955 : 1.0)
+            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: isDialPressed)
         }
         .buttonStyle(.plain)
+        .offset(y: 2)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in isDialPressed = true }
@@ -329,27 +353,55 @@ struct ChassisShape: Shape {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        let crestWidth: CGFloat = 96
-        let crestCenter = w / 2
-        let shoulderStart = crestCenter - crestWidth / 2
-        let shoulderEnd = crestCenter + crestWidth / 2
-        let deckY: CGFloat = 0
+        let center = w / 2
+        let crestHalfWidth: CGFloat = 64
+        let shoulderOuter: CGFloat = 112
+        let deckY = crestHeight + 10
+        let cornerRadius: CGFloat = 28
 
-        path.move(to: CGPoint(x: 0, y: deckY))
-        path.addLine(to: CGPoint(x: shoulderStart, y: deckY))
+        path.move(to: CGPoint(x: 0, y: deckY + cornerRadius))
+        path.addQuadCurve(
+            to: CGPoint(x: cornerRadius, y: deckY),
+            control: CGPoint(x: 0, y: deckY)
+        )
+
+        path.addLine(to: CGPoint(x: center - shoulderOuter, y: deckY))
         path.addCurve(
-            to: CGPoint(x: crestCenter, y: deckY - crestHeight),
-            control1: CGPoint(x: shoulderStart + crestWidth * 0.35, y: deckY),
-            control2: CGPoint(x: shoulderStart + crestWidth * 0.35, y: deckY - crestHeight)
+            to: CGPoint(x: center - crestHalfWidth, y: 18),
+            control1: CGPoint(x: center - 90, y: deckY),
+            control2: CGPoint(x: center - 82, y: 18)
         )
         path.addCurve(
-            to: CGPoint(x: shoulderEnd, y: deckY),
-            control1: CGPoint(x: shoulderEnd - crestWidth * 0.35, y: deckY - crestHeight),
-            control2: CGPoint(x: shoulderEnd - crestWidth * 0.35, y: deckY)
+            to: CGPoint(x: center, y: 0),
+            control1: CGPoint(x: center - 46, y: 7),
+            control2: CGPoint(x: center - 22, y: 0)
         )
-        path.addLine(to: CGPoint(x: w, y: deckY))
-        path.addLine(to: CGPoint(x: w, y: h))
-        path.addLine(to: CGPoint(x: 0, y: h))
+        path.addCurve(
+            to: CGPoint(x: center + crestHalfWidth, y: 18),
+            control1: CGPoint(x: center + 22, y: 0),
+            control2: CGPoint(x: center + 46, y: 7)
+        )
+        path.addCurve(
+            to: CGPoint(x: center + shoulderOuter, y: deckY),
+            control1: CGPoint(x: center + 82, y: 18),
+            control2: CGPoint(x: center + 90, y: deckY)
+        )
+
+        path.addLine(to: CGPoint(x: w - cornerRadius, y: deckY))
+        path.addQuadCurve(
+            to: CGPoint(x: w, y: deckY + cornerRadius),
+            control: CGPoint(x: w, y: deckY)
+        )
+        path.addLine(to: CGPoint(x: w, y: h - 18))
+        path.addQuadCurve(
+            to: CGPoint(x: w - 18, y: h),
+            control: CGPoint(x: w, y: h)
+        )
+        path.addLine(to: CGPoint(x: 18, y: h))
+        path.addQuadCurve(
+            to: CGPoint(x: 0, y: h - 18),
+            control: CGPoint(x: 0, y: h)
+        )
         path.closeSubpath()
         return path
     }
