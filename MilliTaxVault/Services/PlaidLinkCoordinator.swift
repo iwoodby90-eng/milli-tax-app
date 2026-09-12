@@ -97,7 +97,13 @@ final class PlaidLinkCoordinator: ObservableObject {
             }
         )
 
-        linkSession = Plaid.createPlaidLinkSession(configuration: configuration)
+        do {
+            linkSession = try Plaid.createPlaidLinkSession(configuration: configuration)
+        } catch {
+            isLoading = false
+            linkSession = nil
+            errorMessage = "Milli couldn't initialize Plaid Link: \(error.localizedDescription)"
+        }
     }
 
     private func completeConnection(
