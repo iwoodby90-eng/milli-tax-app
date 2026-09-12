@@ -696,6 +696,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location to automatically track mileage deductions.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli tracks mileage in the background for automatic deduction logging.";
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = arm64e;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -727,6 +728,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Milli uses your location to automatically track mileage deductions.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Milli tracks mileage in the background for automatic deduction logging.";
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = arm64e;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
