@@ -2,9 +2,8 @@ import SwiftUI
 import LinkKit
 
 // MARK: - LaunchOnboardingFlowView
-// Six-screen production onboarding reconstructed from the approved MILLI visual
-// reference. All controls remain native SwiftUI and the bank step uses live
-// Plaid Link through Milli's backend.
+// Production six-step setup. The layout is deliberately width-constrained and
+// safe-area aware so no onboarding content can drift off-screen on smaller iPhones.
 
 struct LaunchOnboardingFlowView: View {
     @State private var currentStep = 0
@@ -16,6 +15,7 @@ struct LaunchOnboardingFlowView: View {
     @State private var selectedPlan: MilliPlan = .pro
 
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var plaid = PlaidLinkCoordinator()
 
     @State private var taxEnabled = true
     @State private var savingsEnabled = false
@@ -29,215 +29,268 @@ struct LaunchOnboardingFlowView: View {
     var onComplete: () -> Void
 
     private let stepCount = 6
-    private let sidePadding: CGFloat = 28
+    private let sidePadding: CGFloat = 20
+    private let maxContentWidth: CGFloat = 460
 
     var body: some View {
-        ZStack {
-            onboardingBackground
+        GeometryReader { proxy in
+            ZStack {
+                onboardingBackground
 
-            VStack(spacing: 0) {
-                header
-                    .padding(.horizontal, sidePadding)
-                    .padding(.top, 8)
+                VStack(spacing: 0) {
+                    header
+                        .padding(.horizontal, sidePadding)
+                        .padding(.top, 8)
 
-                progressBar
-                    .padding(.horizontal, sidePadding)
-                    .padding(.top, 11)
-                    .padding(.bottom, 8)
+                    progressBar
+                        .padding(.horizontal, sidePadding)
+                        .padding(.top, 10)
+                        .padding(.bottom, 8)
 
-                Group {
-                    switch currentStep {
-                    case 0: welcomeStep
-                    case 1: taxProfileStep
-                    case 2: gigProfileStep
-                    case 3: bankStep
-                    case 4: mileageStep
-                    case 5: autopilotStep
-                    default: welcomeStep
+                    Group {
+                        switch currentStep {
+                        case 0: welcomeStep
+                        case 1: taxProfileStep
+                        case 2: gigProfileStep
+                        case 3: bankStep
+                        case 4: mileageStep
+                        case 5: autopilotStep
+                        default: welcomeStep
+                        }
                     }
+                    .id(currentStep)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        )
+                    )
                 }
-                .id(currentStep)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
+                .frame(width: min(proxy.size.width, maxContentWidth))
+                .frame(maxHeight: .infinity, alignment: .top)
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
         }
         .preferredColorScheme(.dark)
-        .animation(.easeInOut(duration: 0.28), value: currentStep)
+        .animation(.easeInOut(duration: 0.26), value: currentStep)
+        .sheet(isPresented: $plaid.isPresentingLink) {
+            if let session = plaid.linkSession {
+                session.sheet()
+            } else {
+                ZStack {
+                    MilliColors.background.ignoresSafeArea()
+                    ProgressView("Preparing secure bank connection…")
+                        .tint(MilliColors.cyanGlow)
+                        .foregroundStyle(Color.white)
+                }
+            }
+        }
+        .alert(
+            "Bank connection needs attention",
+            isPresented: Binding(
+                get: { plaid.errorMessage != nil },
+                set: { if !$0 { plaid.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { plaid.errorMessage = nil }
+        } message: {
+            Text(plaid.errorMessage ?? "Please try again.")
+        }
+        .onChange(of: plaid.connectedAccount) { _, account in
+            guard let account else { return }
+            bankProfile.institutionName = account.institutionName ?? "Connected Bank"
+            bankProfile.accountName = account.name ?? "Primary Account"
+            bankProfile.accountLastFour = account.mask ?? ""
+            bankProfile.connectionStatus = .connected
+        }
+        .onChange(of: plaid.isLoading) { _, loading in
+            if loading, bankProfile.connectionStatus != .connected {
+                bankProfile.connectionStatus = .connecting
+            } else if !loading,
+                      !plaid.isConnected,
+                      plaid.errorMessage == nil,
+                      bankProfile.connectionStatus == .connecting {
+                bankProfile.connectionStatus = .notConnected
+            }
+        }
     }
 
-    // MARK: Shared chrome
+    // MARK: - Shared layout
 
     private var header: some View {
-        HStack(alignment: .center) {
-            Image("milli_wordmark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 108, height: 46, alignment: .leading)
-                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 10)
+        HStack(spacing: 12) {
+            MilliWordmark(fontSize: 18, tracking: 4.2)
                 .accessibilityLabel("MILLI")
 
-            Spacer()
+            Spacer(minLength: 8)
 
             Text("SETUP \(currentStep + 1) OF \(stepCount)")
-                .font(.custom("Inter-SemiBold", size: 12, relativeTo: .caption))
-                .tracking(2.2)
-                .foregroundStyle(Color.white.opacity(0.72))
+                .font(.custom("Inter-SemiBold", size: 10, relativeTo: .caption2))
+                .tracking(1.6)
+                .foregroundStyle(Color.white.opacity(0.68))
+                .lineLimit(1)
         }
-        .frame(height: 50)
+        .frame(maxWidth: .infinity)
+        .frame(height: 38)
     }
 
     private var progressBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             ForEach(0..<stepCount, id: \.self) { step in
                 Capsule(style: .continuous)
-                    .fill(step <= currentStep ? MilliColors.cyanGlow : Color.white.opacity(0.14))
-                    .frame(height: 6)
+                    .fill(step <= currentStep ? MilliColors.cyanGlow : Color.white.opacity(0.13))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 4)
                     .shadow(
-                        color: step <= currentStep ? MilliColors.cyanGlow.opacity(0.45) : .clear,
-                        radius: 6
+                        color: step == currentStep ? MilliColors.cyanGlow.opacity(0.36) : .clear,
+                        radius: 4
                     )
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var onboardingBackground: some View {
         ZStack {
-            Color(hex: "07090B").ignoresSafeArea()
+            MilliColors.background.ignoresSafeArea()
 
             LinearGradient(
-                colors: [
-                    Color(hex: "071216").opacity(0.96),
-                    Color(hex: "07090B"),
-                    Color.black.opacity(0.98)
-                ],
+                colors: [Color(hex: "071216").opacity(0.94), MilliColors.background, Color.black],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
             RadialGradient(
-                colors: [MilliColors.cyanGlow.opacity(0.10), .clear],
+                colors: [MilliColors.cyanGlow.opacity(0.09), .clear],
                 center: .topLeading,
                 startRadius: 0,
-                endRadius: 370
+                endRadius: 320
             )
             .ignoresSafeArea()
 
             VStack {
                 Spacer()
                 Ellipse()
-                    .stroke(MilliColors.cyanGlow.opacity(0.34), lineWidth: 1)
-                    .frame(width: 520, height: 130)
-                    .blur(radius: 0.4)
-                    .offset(y: 72)
+                    .stroke(MilliColors.cyanGlow.opacity(0.24), lineWidth: 1)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 108)
+                    .scaleEffect(x: 1.28, y: 1)
+                    .offset(y: 60)
             }
+            .allowsHitTesting(false)
             .ignoresSafeArea()
         }
     }
 
     private func screenScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 15) {
                 content()
                 footerTagline
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, sidePadding)
-            .padding(.top, 20)
-            .padding(.bottom, 26)
+            .padding(.top, 16)
+            .padding(.bottom, 30)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var footerTagline: some View {
-        HStack(spacing: 11) {
-            Capsule().fill(MilliColors.cyanGlow.opacity(0.82)).frame(width: 42, height: 1)
+        HStack(spacing: 10) {
+            Capsule().fill(MilliColors.cyanGlow.opacity(0.76)).frame(width: 34, height: 1)
             Text("MONEY, MADE INTELLIGENT.")
                 .font(.custom("Inter-Medium", size: 8, relativeTo: .caption2))
-                .tracking(3.0)
-                .foregroundStyle(Color.white.opacity(0.68))
-            Capsule().fill(MilliColors.cyanGlow.opacity(0.82)).frame(width: 42, height: 1)
+                .tracking(2.4)
+                .foregroundStyle(Color.white.opacity(0.62))
+            Capsule().fill(MilliColors.cyanGlow.opacity(0.76)).frame(width: 34, height: 1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 6)
+        .padding(.top, 4)
     }
 
     private func eyebrow(_ text: String) -> some View {
         Text(text)
-            .font(.custom("Sora-SemiBold", size: 14, relativeTo: .subheadline))
-            .tracking(2.4)
+            .font(.custom("Sora-SemiBold", size: 12, relativeTo: .subheadline))
+            .tracking(2.2)
             .foregroundStyle(MilliColors.cyanGlow)
+            .lineLimit(1)
     }
 
     private func title(_ text: String) -> some View {
         Text(text)
-            .font(.custom("Sora-Bold", size: 37, relativeTo: .largeTitle))
+            .font(.custom("Sora-Bold", size: 32, relativeTo: .largeTitle))
             .foregroundStyle(Color.white)
-            .lineSpacing(-2)
+            .lineSpacing(-1)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func bodyCopy(_ text: String) -> some View {
         Text(text)
-            .font(.custom("Inter-Regular", size: 16, relativeTo: .body))
+            .font(.custom("Inter-Regular", size: 15, relativeTo: .body))
             .foregroundStyle(Color.white.opacity(0.66))
-            .lineSpacing(4)
+            .lineSpacing(3)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func glassCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
-            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.055), Color(hex: "072027").opacity(0.54)],
+                            colors: [Color.white.opacity(0.05), Color(hex: "072027").opacity(0.47)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.72), MilliColors.cyanGlow.opacity(0.62)],
+                            colors: [Color.white.opacity(0.40), MilliColors.cyanGlow.opacity(0.48)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1
+                        lineWidth: 0.8
                     )
-            )
-            .shadow(color: MilliColors.cyanGlow.opacity(0.13), radius: 16, y: 6)
+            }
+            .shadow(color: MilliColors.cyanGlow.opacity(0.09), radius: 12, y: 5)
     }
 
     private func cardLabel(_ text: String) -> some View {
         Text(text)
-            .font(.custom("Inter-SemiBold", size: 13, relativeTo: .caption))
-            .tracking(3.0)
-            .foregroundStyle(Color.white.opacity(0.72))
+            .font(.custom("Inter-SemiBold", size: 11, relativeTo: .caption))
+            .tracking(2.5)
+            .foregroundStyle(Color.white.opacity(0.68))
     }
 
     private func primaryButton(_ label: String, systemImage: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                 }
                 Text(label)
-                    .font(.custom("Sora-Bold", size: 18, relativeTo: .headline))
+                    .font(.custom("Sora-Bold", size: 17, relativeTo: .headline))
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 20, weight: .heavy))
+                    .font(.system(size: 18, weight: .heavy))
             }
             .foregroundStyle(Color(hex: "041014"))
-            .padding(.horizontal, 22)
+            .padding(.horizontal, 20)
             .frame(maxWidth: .infinity)
-            .frame(height: 62)
+            .frame(height: 58)
             .background(
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [Color(hex: "16E4F2"), Color(hex: "00CBE4")],
@@ -246,31 +299,31 @@ struct LaunchOnboardingFlowView: View {
                         )
                     )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .stroke(Color.white.opacity(0.88), lineWidth: 1)
-            )
-            .shadow(color: MilliColors.cyanGlow.opacity(0.36), radius: 14, y: 5)
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.white.opacity(0.78), lineWidth: 0.9)
+            }
+            .shadow(color: MilliColors.cyanGlow.opacity(0.28), radius: 12, y: 4)
         }
         .buttonStyle(.plain)
     }
 
     private func next(_ step: Int) {
-        withAnimation(.easeInOut(duration: 0.28)) {
+        withAnimation(.easeInOut(duration: 0.26)) {
             currentStep = min(max(step, 0), stepCount - 1)
         }
     }
 
-    // MARK: Step 1 — Welcome
+    // MARK: - Step 1 — Welcome
 
     private var welcomeStep: some View {
         screenScroll {
             eyebrow("WELCOME TO MILLI")
-            title("Money, made\nintelligent.")
+            title("Money, made intelligent.")
             bodyCopy("Milli helps gig workers automatically protect taxes, track mileage, and build wealth from every payout — all in one premium financial home.")
 
             glassCard {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     cardLabel("WHAT MILLI DOES")
                     featureRow(icon: "shield.lefthalf.filled", title: "Protect taxes automatically")
                     featureRow(icon: "location.fill", title: "Track deductible miles")
@@ -279,11 +332,11 @@ struct LaunchOnboardingFlowView: View {
             }
 
             glassCard {
-                VStack(alignment: .leading, spacing: 13) {
+                VStack(alignment: .leading, spacing: 11) {
                     cardLabel("READY TO START")
                     Text("Setup only takes a few minutes.")
-                        .font(.custom("Inter-Regular", size: 15))
-                        .foregroundStyle(Color.white.opacity(0.66))
+                        .font(.custom("Inter-Regular", size: 14))
+                        .foregroundStyle(Color.white.opacity(0.65))
                     primaryButton("Begin Setup") { next(1) }
                 }
             }
@@ -291,28 +344,24 @@ struct LaunchOnboardingFlowView: View {
     }
 
     private func featureRow(icon: String, title: String) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
-                .frame(width: 40)
+                .frame(width: 34)
             Text(title)
-                .font(.custom("Inter-Medium", size: 16))
-                .foregroundStyle(Color.white.opacity(0.92))
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundStyle(Color.white.opacity(0.72))
+                .font(.custom("Inter-Medium", size: 15))
+                .foregroundStyle(Color.white.opacity(0.91))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
         }
-        .padding(.horizontal, 14)
-        .frame(height: 58)
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color.white.opacity(0.035))
-                .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.white.opacity(0.22), lineWidth: 0.7))
-        )
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.03)))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.18), lineWidth: 0.7))
     }
 
-    // MARK: Step 2 — Tax + Profile
+    // MARK: - Step 2 — Tax profile
 
     private var taxProfileStep: some View {
         screenScroll {
@@ -321,7 +370,7 @@ struct LaunchOnboardingFlowView: View {
             bodyCopy("Your tax profile helps Milli estimate federal, state, and self-employment taxes accurately from each payout.")
 
             glassCard {
-                VStack(alignment: .leading, spacing: 11) {
+                VStack(alignment: .leading, spacing: 10) {
                     cardLabel("FILING STATUS")
                     filingStatusRow(.single, icon: "person.fill")
                     filingStatusRow(.marriedJoint, icon: "person.2.fill")
@@ -330,7 +379,7 @@ struct LaunchOnboardingFlowView: View {
             }
 
             glassCard {
-                VStack(alignment: .leading, spacing: 11) {
+                VStack(alignment: .leading, spacing: 10) {
                     cardLabel("PROFILE DETAILS")
 
                     Menu {
@@ -365,7 +414,7 @@ struct LaunchOnboardingFlowView: View {
                         if taxProfile.estimatedAnnualIncome.isEmpty { taxProfile.estimatedAnnualIncome = "87500" }
                         next(2)
                     }
-                    .padding(.top, 3)
+                    .padding(.top, 2)
                 }
             }
         }
@@ -376,31 +425,23 @@ struct LaunchOnboardingFlowView: View {
         return Button {
             taxProfile.filingStatus = status
         } label: {
-            HStack(spacing: 16) {
+            HStack(spacing: 13) {
                 Image(systemName: icon)
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(selected ? MilliColors.cyanGlow : Color.white.opacity(0.88))
-                    .frame(width: 28)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(selected ? MilliColors.cyanGlow : Color.white.opacity(0.82))
+                    .frame(width: 26)
                 Text(status.rawValue)
-                    .font(.custom("Inter-Medium", size: 16))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .font(.custom("Inter-Medium", size: 15))
+                    .foregroundStyle(Color.white.opacity(0.91))
                 Spacer()
-                Circle()
-                    .fill(selected ? MilliColors.cyanGlow : .clear)
-                    .frame(width: 19, height: 19)
-                    .overlay(Circle().stroke(selected ? Color.black : Color.white.opacity(0.42), lineWidth: 1.5))
-                    .shadow(color: selected ? MilliColors.cyanGlow.opacity(0.65) : .clear, radius: 7)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selected ? MilliColors.cyanGlow : Color.white.opacity(0.34))
             }
-            .padding(.horizontal, 15)
-            .frame(height: 56)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.025))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.26), lineWidth: selected ? 1.2 : 0.7)
-            )
+            .padding(.horizontal, 13)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(RoundedRectangle(cornerRadius: 13).fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.022)))
+            .overlay(RoundedRectangle(cornerRadius: 13).stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.20), lineWidth: selected ? 1.1 : 0.7))
         }
         .buttonStyle(.plain)
     }
@@ -408,20 +449,23 @@ struct LaunchOnboardingFlowView: View {
     private func detailRow(label: String, value: String) -> some View {
         HStack(spacing: 10) {
             Text(label)
-                .font(.custom("Inter-Regular", size: 14))
-                .foregroundStyle(Color.white.opacity(0.60))
-            Spacer()
+                .font(.custom("Inter-Regular", size: 13))
+                .foregroundStyle(Color.white.opacity(0.58))
+            Spacer(minLength: 8)
             Text(value)
-                .font(.custom("Inter-Medium", size: 14))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .font(.custom("Inter-Medium", size: 13))
+                .foregroundStyle(Color.white.opacity(0.90))
                 .lineLimit(1)
+                .minimumScaleFactor(0.78)
             Image(systemName: "chevron.right")
-                .foregroundStyle(Color.white.opacity(0.72))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.62))
         }
-        .padding(.horizontal, 14)
-        .frame(height: 54)
-        .background(RoundedRectangle(cornerRadius: 13).fill(Color.white.opacity(0.028)))
-        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.white.opacity(0.22), lineWidth: 0.7))
+        .padding(.horizontal, 13)
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.025)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.18), lineWidth: 0.7))
     }
 
     private func incomeAmount(for band: String) -> String {
@@ -434,18 +478,21 @@ struct LaunchOnboardingFlowView: View {
         }
     }
 
-    // MARK: Step 3 — Gig profile
+    // MARK: - Step 3 — Gig profile
 
     private var gigProfileStep: some View {
         screenScroll {
             eyebrow("GIG WORK PROFILE")
             title("Who pays you to work?")
-            bodyCopy("Choose the platforms you drive or deliver for so Milli can tailor payout matching, mileage insights, and tax estimates.")
+            bodyCopy("Choose your active driving or delivery platforms once. Milli uses this profile later for payout matching, mileage insights, and tax estimates.")
 
             glassCard {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     cardLabel("ACTIVE PLATFORMS")
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 9), GridItem(.flexible(), spacing: 9)],
+                        spacing: 9
+                    ) {
                         ForEach(primaryGigPlatforms) { platform in
                             platformTile(platform)
                         }
@@ -454,9 +501,9 @@ struct LaunchOnboardingFlowView: View {
             }
 
             glassCard {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     cardLabel("PAYOUT FREQUENCY")
-                    HStack(spacing: 10) {
+                    HStack(spacing: 8) {
                         ForEach(GigPayoutFrequency.allCases) { frequency in
                             frequencyPill(frequency)
                         }
@@ -475,56 +522,46 @@ struct LaunchOnboardingFlowView: View {
     private func platformTile(_ platform: GigPlatform) -> some View {
         let selected = bankProfile.selectedPlatforms.contains(platform)
         return Button {
-            if selected { bankProfile.selectedPlatforms.remove(platform) }
-            else { bankProfile.selectedPlatforms.insert(platform) }
-        } label: {
-            HStack(spacing: 9) {
-                platformIcon(platform)
-                Text(platform.rawValue)
-                    .font(.custom("Inter-Medium", size: 13))
-                    .foregroundStyle(Color.white.opacity(0.90))
-                    .lineLimit(1)
-                Spacer(minLength: 2)
-                Circle()
-                    .fill(selected ? MilliColors.cyanGlow : .clear)
-                    .frame(width: 18, height: 18)
-                    .overlay(Circle().stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.35), lineWidth: 1))
-                    .overlay {
-                        if selected {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 9, weight: .heavy))
-                                .foregroundStyle(Color(hex: "041014"))
-                        }
-                    }
+            if selected {
+                bankProfile.selectedPlatforms.remove(platform)
+            } else {
+                bankProfile.selectedPlatforms.insert(platform)
             }
-            .padding(.horizontal, 12)
-            .frame(height: 58)
-            .background(RoundedRectangle(cornerRadius: 14).fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.025)))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.23), lineWidth: selected ? 1.2 : 0.7))
-            .shadow(color: selected ? MilliColors.cyanGlow.opacity(0.18) : .clear, radius: 8)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: platformSymbol(platform))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(selected ? MilliColors.cyanGlow : Color.white.opacity(0.60))
+                    .frame(width: 20)
+                Text(platform.rawValue)
+                    .font(.custom("Inter-Medium", size: 12))
+                    .foregroundStyle(selected ? Color.white : Color.white.opacity(0.68))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                Spacer(minLength: 2)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 15))
+                    .foregroundStyle(selected ? MilliColors.cyanGlow : Color.white.opacity(0.30))
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(RoundedRectangle(cornerRadius: 13).fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.022)))
+            .overlay(RoundedRectangle(cornerRadius: 13).stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.18), lineWidth: selected ? 1.1 : 0.7))
         }
         .buttonStyle(.plain)
     }
 
-    @ViewBuilder
-    private func platformIcon(_ platform: GigPlatform) -> some View {
+    private func platformSymbol(_ platform: GigPlatform) -> String {
         switch platform {
-        case .amazonFlex:
-            Image("amazon-flex-icon").resizable().scaledToFit().frame(width: 28, height: 28)
-        case .sparkDriver:
-            Image("spark-driver-icon").resizable().scaledToFit().frame(width: 28, height: 28)
-        case .uber:
-            Image("uber-icon").resizable().scaledToFit().frame(width: 28, height: 28)
-        case .doorDash:
-            Image("doordash-icon").resizable().scaledToFit().frame(width: 28, height: 28)
-        case .instacart:
-            Image("instacart-icon").resizable().scaledToFit().frame(width: 28, height: 28)
-        case .lyft:
-            Text("lyft").font(.system(size: 13, weight: .black)).foregroundStyle(Color(hex: "FF00BF")).frame(width: 28)
-        case .grubhub:
-            Image(systemName: "fork.knife").foregroundStyle(Color(hex: "FF6B00")).frame(width: 28)
-        default:
-            Image(systemName: "briefcase.fill").foregroundStyle(MilliColors.cyanGlow).frame(width: 28)
+        case .amazonFlex: return "shippingbox.fill"
+        case .sparkDriver: return "bolt.fill"
+        case .uber: return "car.fill"
+        case .doorDash: return "takeoutbag.and.cup.and.straw.fill"
+        case .instacart: return "basket.fill"
+        case .grubhub: return "fork.knife"
+        case .lyft: return "car.side.fill"
+        default: return "briefcase.fill"
         }
     }
 
@@ -533,48 +570,186 @@ struct LaunchOnboardingFlowView: View {
         return Button {
             payoutFrequency = frequency
         } label: {
-            HStack(spacing: 7) {
-                Circle()
-                    .fill(selected ? MilliColors.cyanGlow : .clear)
-                    .frame(width: 18, height: 18)
-                    .overlay(Circle().stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.42), lineWidth: 1.2))
+            VStack(spacing: 5) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selected ? MilliColors.cyanGlow : Color.white.opacity(0.34))
                 Text(frequency.rawValue)
-                    .font(.custom("Inter-Medium", size: 13))
-                    .foregroundStyle(Color.white.opacity(0.90))
+                    .font(.custom("Inter-Medium", size: 12))
+                    .foregroundStyle(Color.white.opacity(0.88))
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(RoundedRectangle(cornerRadius: 14).fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.025)))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.23), lineWidth: selected ? 1.2 : 0.7))
+            .frame(height: 54)
+            .background(RoundedRectangle(cornerRadius: 13).fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.022)))
+            .overlay(RoundedRectangle(cornerRadius: 13).stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.18), lineWidth: selected ? 1.1 : 0.7))
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: Step 4 — live Plaid bank link
+    // MARK: - Step 4 — Bank only
 
     private var bankStep: some View {
-        PlaidReferenceBankStep(
-            profile: $bankProfile,
-            sidePadding: sidePadding,
-            onBack: { next(2) },
-            onNext: { next(4) }
-        )
+        screenScroll {
+            eyebrow("BANK CONNECTION")
+            title("Connect your payout account.")
+            bodyCopy("Milli uses Plaid to securely connect the bank account where your gig payouts land. Your banking credentials are handled by Plaid and never pass through Milli.")
+
+            bankAccountCard
+            connectionAccessCard
+            bankPermissionCard
+
+            HStack(spacing: 10) {
+                Button("Back") { next(2) }
+                    .font(.custom("Inter-SemiBold", size: 14))
+                    .foregroundStyle(Color.white.opacity(0.72))
+                    .frame(width: 72, height: 56)
+                    .background(RoundedRectangle(cornerRadius: 15).fill(Color.white.opacity(0.055)))
+                    .buttonStyle(.plain)
+
+                Button {
+                    next(4)
+                } label: {
+                    HStack {
+                        Text("Continue")
+                            .font(.custom("Sora-Bold", size: 16))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .fontWeight(.bold)
+                    }
+                    .foregroundStyle(Color(hex: "041014"))
+                    .padding(.horizontal, 18)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(RoundedRectangle(cornerRadius: 15).fill(MilliColors.cyanGlow))
+                }
+                .buttonStyle(.plain)
+                .disabled(!bankProfile.isReadyForAutopilot)
+                .opacity(bankProfile.isReadyForAutopilot ? 1 : 0.34)
+            }
+        }
     }
 
-    // MARK: Step 5 — mileage
+    private var bankAccountCard: some View {
+        glassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    cardLabel("PAYOUT ACCOUNT")
+                    Spacer()
+                    Text(bankProfile.connectionStatus == .connected ? "CONNECTED" : "REQUIRED")
+                        .font(.custom("Inter-SemiBold", size: 10))
+                        .foregroundStyle(bankProfile.connectionStatus == .connected ? MilliColors.cyanGlow : Color(hex: "D7AD45"))
+                }
+
+                Button {
+                    bankProfile.connectionStatus = .connecting
+                    plaid.begin()
+                } label: {
+                    HStack(spacing: 12) {
+                        if plaid.isLoading {
+                            ProgressView().tint(Color(hex: "041014"))
+                        } else {
+                            Image(systemName: bankProfile.connectionStatus == .connected ? "checkmark.shield.fill" : "building.columns.fill")
+                                .font(.system(size: 20, weight: .bold))
+                        }
+
+                        Text(bankProfile.connectionStatus == .connected ? connectedBankTitle : "Connect Bank Securely")
+                            .font(.custom("Sora-Bold", size: 16))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.76)
+                        Spacer()
+                        Image(systemName: bankProfile.connectionStatus == .connected ? "checkmark.circle.fill" : "chevron.right")
+                            .font(.system(size: 18, weight: .heavy))
+                    }
+                    .foregroundStyle(Color(hex: "041014"))
+                    .padding(.horizontal, 18)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(RoundedRectangle(cornerRadius: 15).fill(MilliColors.cyanGlow))
+                    .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.white.opacity(0.76), lineWidth: 0.9))
+                }
+                .buttonStyle(.plain)
+                .disabled(plaid.isLoading)
+            }
+        }
+    }
+
+    private var connectedBankTitle: String {
+        let bank = bankProfile.institutionName.isEmpty ? "Bank" : bankProfile.institutionName
+        let mask = bankProfile.accountLastFour.isEmpty ? "" : " ••••\(bankProfile.accountLastFour)"
+        return "\(bank)\(mask)"
+    }
+
+    private var connectionAccessCard: some View {
+        glassCard {
+            VStack(alignment: .leading, spacing: 11) {
+                cardLabel("WHAT THE CONNECTION ALLOWS")
+                bankCapability("Identify eligible gig payout deposits", icon: "arrow.down.circle.fill")
+                bankCapability("Read balances and recent transactions for payout matching", icon: "list.bullet.rectangle.fill")
+                bankCapability("Calculate tax protection from matched payouts", icon: "shield.checkered")
+                bankCapability("Refresh account data without storing your bank password", icon: "lock.shield.fill")
+
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(MilliColors.cyanGlow)
+                    Text("Plaid handles bank credentials. Milli receives only the account data you authorize.")
+                        .font(.custom("Inter-Regular", size: 12))
+                        .foregroundStyle(Color.white.opacity(0.60))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 2)
+            }
+        }
+    }
+
+    private func bankCapability(_ text: String, icon: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 20)
+            Text(text)
+                .font(.custom("Inter-Medium", size: 13))
+                .foregroundStyle(Color.white.opacity(0.84))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var bankPermissionCard: some View {
+        glassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                cardLabel("YOUR AUTHORIZATION")
+
+                Toggle("Detect eligible gig payouts in this connected account", isOn: $bankProfile.transactionMonitoringConsent)
+                    .font(.custom("Inter-Regular", size: 13))
+                    .tint(MilliColors.cyanGlow)
+
+                Toggle("Move calculated tax reserves to Milli Tax Vault™", isOn: $bankProfile.taxVaultTransferConsent)
+                    .font(.custom("Inter-Regular", size: 13))
+                    .tint(MilliColors.cyanGlow)
+
+                Text("You can change these permissions later in Autopilot settings.")
+                    .font(.custom("Inter-Regular", size: 11))
+                    .foregroundStyle(Color.white.opacity(0.52))
+            }
+            .foregroundStyle(Color.white.opacity(0.82))
+        }
+    }
+
+    // MARK: - Step 5 — Mileage
 
     private var mileageStep: some View {
         screenScroll {
             eyebrow("MILEAGE TRACKING")
-            title("Track every deductible\nmile automatically.")
-            bodyCopy("Enable always-on mileage tracking so Milli records business trips, route history, and IRS-ready totals in the background.")
+            title("Track every deductible mile automatically.")
+            bodyCopy("Enable location access so Milli can record business trips, route history, and IRS-ready mileage totals while you drive.")
 
             glassCard {
                 VStack(alignment: .leading, spacing: 10) {
                     cardLabel("LOCATION ACCESS")
-                    Text("Allow Always for hands-free trip detection.")
-                        .font(.custom("Inter-Regular", size: 14))
-                        .foregroundStyle(Color.white.opacity(0.64))
+                    Text("Allow Always for hands-free trip detection and uninterrupted navigation.")
+                        .font(.custom("Inter-Regular", size: 13))
+                        .foregroundStyle(Color.white.opacity(0.62))
+                        .fixedSize(horizontal: false, vertical: true)
                     primaryButton(locationButtonTitle, systemImage: "location.fill") {
                         requestMileageAuthorization()
                     }
@@ -582,46 +757,12 @@ struct LaunchOnboardingFlowView: View {
             }
 
             glassCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        cardLabel("TODAY’S TRIP PREVIEW")
-                        Spacer()
-                        Text("SEE DETAILS")
-                            .font(.custom("Inter-SemiBold", size: 10))
-                            .tracking(1.2)
-                            .foregroundStyle(Color.white.opacity(0.62))
+                VStack(alignment: .leading, spacing: 10) {
+                    cardLabel("TRACKING PREVIEW")
+                    HStack(spacing: 10) {
+                        mileageStat(icon: "road.lanes", label: "TODAY", value: formattedTodayMiles + " mi")
+                        mileageStat(icon: "location.circle.fill", label: "STATUS", value: locationManager.canTrackLocation ? "Ready" : "Off")
                     }
-
-                    RoutePreviewCard()
-                        .frame(height: 142)
-
-                    HStack(spacing: 8) {
-                        mileageStat(icon: "road.lanes", label: "BUSINESS MILES", value: formattedTodayMiles)
-                        mileageStat(icon: "car.fill", label: "TRIPS", value: "—")
-                        mileageStat(icon: "clock.fill", label: "DRIVE TIME", value: "—")
-                    }
-
-                    HStack(spacing: 12) {
-                        Image(systemName: "car.circle.fill")
-                            .font(.system(size: 33))
-                            .foregroundStyle(Color.white.opacity(0.90))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("PRIMARY VEHICLE")
-                                .font(.custom("Inter-SemiBold", size: 9))
-                                .tracking(2.0)
-                                .foregroundStyle(Color.white.opacity(0.60))
-                            Text("Add primary vehicle")
-                                .font(.custom("Inter-Medium", size: 15))
-                                .foregroundStyle(Color.white.opacity(0.90))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(Color.white.opacity(0.65))
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(height: 58)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.025)))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.22), lineWidth: 0.7))
                 }
             }
 
@@ -652,35 +793,36 @@ struct LaunchOnboardingFlowView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
             Text(label)
-                .font(.custom("Inter-SemiBold", size: 7))
+                .font(.custom("Inter-SemiBold", size: 8))
                 .tracking(0.8)
-                .foregroundStyle(Color.white.opacity(0.58))
-                .lineLimit(1)
+                .foregroundStyle(Color.white.opacity(0.56))
             Text(value)
-                .font(.custom("Sora-Bold", size: 18))
+                .font(.custom("Sora-Bold", size: 16))
                 .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 82)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.025)))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MilliColors.cyanGlow.opacity(0.48), lineWidth: 0.8))
+        .frame(height: 80)
+        .background(RoundedRectangle(cornerRadius: 13).fill(Color.white.opacity(0.025)))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MilliColors.cyanGlow.opacity(0.36), lineWidth: 0.8))
     }
 
-    // MARK: Step 6 — Autopilot
+    // MARK: - Step 6 — Autopilot
 
     private var autopilotStep: some View {
         screenScroll {
             eyebrow("MILLI AUTOPILOT")
-            title("Turn on automatic\ntax protection.")
+            title("Turn on automatic tax protection.")
             bodyCopy("Choose how each payout should be divided. Milli can reserve taxes automatically, then optionally route money to savings, retirement, or investing.")
 
             glassCard {
-                VStack(alignment: .leading, spacing: 11) {
+                VStack(alignment: .leading, spacing: 10) {
                     cardLabel("ALLOCATION SETTINGS")
-                    allocationRow(title: "Tax Reserve", icon: "building.columns.fill", enabled: $taxEnabled, percent: $taxPercent, accent: MilliColors.cyanGlow)
-                    allocationRow(title: "Savings", icon: "piggybank.fill", enabled: $savingsEnabled, percent: $savingsPercent, accent: Color.white.opacity(0.72))
-                    allocationRow(title: "Retirement", icon: "chart.bar.fill", enabled: $retirementEnabled, percent: $retirementPercent, accent: Color.white.opacity(0.72))
-                    allocationRow(title: "Investing", icon: "leaf.fill", enabled: $investingEnabled, percent: $investingPercent, accent: Color.white.opacity(0.72))
+                    allocationRow(title: "Tax Reserve", icon: "building.columns.fill", enabled: $taxEnabled, percent: $taxPercent)
+                    allocationRow(title: "Savings", icon: "piggybank.fill", enabled: $savingsEnabled, percent: $savingsPercent)
+                    allocationRow(title: "Retirement", icon: "chart.bar.fill", enabled: $retirementEnabled, percent: $retirementPercent)
+                    allocationRow(title: "Investing", icon: "leaf.fill", enabled: $investingEnabled, percent: $investingPercent)
                 }
             }
 
@@ -689,10 +831,10 @@ struct LaunchOnboardingFlowView: View {
                     cardLabel("AUTOPILOT PREVIEW")
                     receiptRow("Gross Payout", amount: "$187.42", strong: true)
                     receiptRow("Tax Reserve (\(Int(taxPercent))%)", amount: negativeAllocation(187.42, taxEnabled ? taxPercent : 0))
-                    receiptRow("Retirement (\(Int(retirementPercent))%)", amount: negativeAllocation(187.42, retirementEnabled ? retirementPercent : 0))
-                    receiptRow("Investing (\(Int(investingPercent))%)", amount: negativeAllocation(187.42, investingEnabled ? investingPercent : 0))
-                    receiptRow("Savings (\(Int(savingsPercent))%)", amount: negativeAllocation(187.42, savingsEnabled ? savingsPercent : 0))
-                    Divider().overlay(Color.white.opacity(0.30))
+                    receiptRow("Retirement", amount: negativeAllocation(187.42, retirementEnabled ? retirementPercent : 0))
+                    receiptRow("Investing", amount: negativeAllocation(187.42, investingEnabled ? investingPercent : 0))
+                    receiptRow("Savings", amount: negativeAllocation(187.42, savingsEnabled ? savingsPercent : 0))
+                    Divider().overlay(Color.white.opacity(0.24))
                     receiptRow("Available to Spend", amount: availableToSpendFormatted, strong: true, cyan: true)
                 }
             }
@@ -707,57 +849,54 @@ struct LaunchOnboardingFlowView: View {
         title: String,
         icon: String,
         enabled: Binding<Bool>,
-        percent: Binding<Double>,
-        accent: Color
+        percent: Binding<Double>
     ) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(enabled.wrappedValue ? MilliColors.cyanGlow : Color.white.opacity(0.78))
-                .frame(width: 28)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(enabled.wrappedValue ? MilliColors.cyanGlow : Color.white.opacity(0.58))
+                .frame(width: 22)
 
-            Text(title)
-                .font(.custom("Inter-Medium", size: 14))
-                .foregroundStyle(Color.white.opacity(0.92))
-                .frame(width: 88, alignment: .leading)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.custom("Inter-Medium", size: 13))
+                    .foregroundStyle(Color.white.opacity(0.88))
+                Text("\(Int(percent.wrappedValue))%")
+                    .font(.custom("Inter-Regular", size: 10))
+                    .foregroundStyle(Color.white.opacity(0.48))
+            }
+            .frame(width: 76, alignment: .leading)
 
             Slider(value: percent, in: 1...35, step: 1)
-                .tint(enabled.wrappedValue ? MilliColors.cyanGlow : Color.white.opacity(0.26))
+                .tint(enabled.wrappedValue ? MilliColors.cyanGlow : Color.white.opacity(0.22))
                 .disabled(!enabled.wrappedValue)
-
-            Text("\(Int(percent.wrappedValue))%")
-                .font(.custom("Sora-SemiBold", size: 14))
-                .monospacedDigit()
-                .foregroundStyle(Color.white.opacity(0.92))
-                .frame(width: 36, alignment: .trailing)
 
             Toggle("", isOn: enabled)
                 .labelsHidden()
-                .scaleEffect(0.80)
-                .tint(accent)
+                .scaleEffect(0.78)
+                .tint(MilliColors.cyanGlow)
         }
-        .padding(.horizontal, 10)
-        .frame(height: 52)
-        .background(RoundedRectangle(cornerRadius: 13).fill(enabled.wrappedValue ? MilliColors.cyanGlow.opacity(0.055) : Color.white.opacity(0.02)))
-        .overlay(RoundedRectangle(cornerRadius: 13).stroke(enabled.wrappedValue ? MilliColors.cyanGlow.opacity(0.82) : Color.white.opacity(0.18), lineWidth: 0.8))
+        .padding(.horizontal, 9)
+        .frame(height: 50)
+        .background(RoundedRectangle(cornerRadius: 12).fill(enabled.wrappedValue ? MilliColors.cyanGlow.opacity(0.05) : Color.white.opacity(0.018)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(enabled.wrappedValue ? MilliColors.cyanGlow.opacity(0.55) : Color.white.opacity(0.15), lineWidth: 0.7))
     }
 
     private func receiptRow(_ label: String, amount: String, strong: Bool = false, cyan: Bool = false) -> some View {
         HStack {
             Text(label)
-                .font(.custom(strong ? "Inter-SemiBold" : "Inter-Regular", size: 14))
-                .foregroundStyle(Color.white.opacity(strong ? 0.88 : 0.74))
+                .font(.custom(strong ? "Inter-SemiBold" : "Inter-Regular", size: 13))
+                .foregroundStyle(Color.white.opacity(strong ? 0.88 : 0.70))
             Spacer()
             Text(amount)
-                .font(.custom(strong ? "Sora-Bold" : "Inter-Medium", size: 14))
+                .font(.custom(strong ? "Sora-Bold" : "Inter-Medium", size: 13))
                 .monospacedDigit()
-                .foregroundStyle(cyan ? MilliColors.cyanGlow : Color.white.opacity(0.92))
+                .foregroundStyle(cyan ? MilliColors.cyanGlow : Color.white.opacity(0.90))
         }
     }
 
     private func negativeAllocation(_ gross: Double, _ percent: Double) -> String {
-        let amount = gross * percent / 100
-        return String(format: "-$%.2f", amount)
+        String(format: "-$%.2f", gross * percent / 100)
     }
 
     private var availableToSpendFormatted: String {
@@ -765,8 +904,7 @@ struct LaunchOnboardingFlowView: View {
             + (savingsEnabled ? savingsPercent : 0)
             + (retirementEnabled ? retirementPercent : 0)
             + (investingEnabled ? investingPercent : 0)
-        let available = max(0, 187.42 * (1 - totalPercent / 100))
-        return String(format: "$%.2f", available)
+        return String(format: "$%.2f", max(0, 187.42 * (1 - totalPercent / 100)))
     }
 
     private func saveAndComplete() {
@@ -796,293 +934,10 @@ struct LaunchOnboardingFlowView: View {
     }
 }
 
-// MARK: - Plaid reference screen
-
-private struct PlaidReferenceBankStep: View {
-    @Binding var profile: BankAutopilotProfile
-    let sidePadding: CGFloat
-    let onBack: () -> Void
-    let onNext: () -> Void
-
-    @StateObject private var plaid = PlaidLinkCoordinator()
-
-    private let platforms: [GigPlatform] = [.amazonFlex, .sparkDriver, .uber, .doorDash, .instacart, .lyft]
-
-    var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("BANK + PAYOUT DETECTION")
-                    .font(.custom("Sora-SemiBold", size: 14))
-                    .tracking(2.4)
-                    .foregroundStyle(MilliColors.cyanGlow)
-
-                Text("Connect where your\ngig payouts land.")
-                    .font(.custom("Sora-Bold", size: 37, relativeTo: .largeTitle))
-                    .foregroundStyle(Color.white)
-                    .lineSpacing(-2)
-
-                Text("Milli uses Plaid to securely connect the account where your gig deposits land. Your banking credentials are handled by Plaid and never pass through Milli.")
-                    .font(.custom("Inter-Regular", size: 16))
-                    .foregroundStyle(Color.white.opacity(0.66))
-                    .lineSpacing(4)
-
-                bankCard
-                sourcesCard
-                permissionsCard
-
-                HStack(spacing: 12) {
-                    Button("Back", action: onBack)
-                        .font(.custom("Inter-SemiBold", size: 14))
-                        .foregroundStyle(Color.white.opacity(0.72))
-                        .frame(width: 72, height: 56)
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.06)))
-
-                    Button(action: onNext) {
-                        HStack {
-                            Text("Continue")
-                                .font(.custom("Sora-Bold", size: 17))
-                            Spacer()
-                            Image(systemName: "chevron.right").fontWeight(.bold)
-                        }
-                        .foregroundStyle(Color(hex: "041014"))
-                        .padding(.horizontal, 20)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(RoundedRectangle(cornerRadius: 16).fill(MilliColors.cyanGlow))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!profile.isReadyForAutopilot)
-                    .opacity(profile.isReadyForAutopilot ? 1 : 0.38)
-                }
-
-                HStack(spacing: 11) {
-                    Capsule().fill(MilliColors.cyanGlow.opacity(0.82)).frame(width: 42, height: 1)
-                    Text("MONEY, MADE INTELLIGENT.")
-                        .font(.custom("Inter-Medium", size: 8))
-                        .tracking(3)
-                        .foregroundStyle(Color.white.opacity(0.68))
-                    Capsule().fill(MilliColors.cyanGlow.opacity(0.82)).frame(width: 42, height: 1)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .padding(.horizontal, sidePadding)
-            .padding(.top, 20)
-            .padding(.bottom, 28)
-        }
-        .sheet(isPresented: $plaid.isPresentingLink) {
-            if let session = plaid.linkSession {
-                session.sheet()
-            } else {
-                ZStack {
-                    Color.black.ignoresSafeArea()
-                    ProgressView("Preparing secure bank connection…")
-                        .tint(MilliColors.cyanGlow)
-                        .foregroundStyle(Color.white)
-                }
-            }
-        }
-        .alert("Bank connection needs attention", isPresented: Binding(
-            get: { plaid.errorMessage != nil },
-            set: { if !$0 { plaid.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { plaid.errorMessage = nil }
-        } message: {
-            Text(plaid.errorMessage ?? "Please try again.")
-        }
-        .onChange(of: plaid.connectedAccount) { _, account in
-            guard let account else { return }
-            profile.institutionName = account.institutionName ?? "Connected Bank"
-            profile.accountName = account.name ?? "Primary Account"
-            profile.accountLastFour = account.mask ?? ""
-            profile.connectionStatus = .connected
-        }
-        .onChange(of: plaid.isLoading) { _, loading in
-            if loading, profile.connectionStatus != .connected {
-                profile.connectionStatus = .connecting
-            } else if !loading, !plaid.isConnected, plaid.errorMessage == nil, profile.connectionStatus == .connecting {
-                profile.connectionStatus = .notConnected
-            }
-        }
-    }
-
-    private var bankCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("PAYOUT ACCOUNT")
-                    .font(.custom("Inter-SemiBold", size: 13))
-                    .tracking(3)
-                    .foregroundStyle(Color.white.opacity(0.72))
-                Spacer()
-                Text(profile.connectionStatus == .connected ? "CONNECTED" : "REQUIRED")
-                    .font(.custom("Inter-SemiBold", size: 12))
-                    .foregroundStyle(profile.connectionStatus == .connected ? MilliColors.cyanGlow : Color(hex: "D7AD45"))
-            }
-
-            Button {
-                profile.connectionStatus = .connecting
-                plaid.begin()
-            } label: {
-                HStack(spacing: 13) {
-                    if plaid.isLoading {
-                        ProgressView().tint(Color(hex: "041014"))
-                    } else {
-                        Image(systemName: profile.connectionStatus == .connected ? "checkmark.shield.fill" : "building.columns.fill")
-                            .font(.system(size: 22, weight: .bold))
-                    }
-
-                    Text(profile.connectionStatus == .connected ? connectedTitle : "Connect Bank Securely")
-                        .font(.custom("Sora-Bold", size: 17))
-                        .lineLimit(1)
-                    Spacer()
-                    Image(systemName: profile.connectionStatus == .connected ? "checkmark.circle.fill" : "chevron.right")
-                        .font(.system(size: 20, weight: .heavy))
-                }
-                .foregroundStyle(Color(hex: "041014"))
-                .padding(.horizontal, 20)
-                .frame(maxWidth: .infinity)
-                .frame(height: 62)
-                .background(RoundedRectangle(cornerRadius: 17).fill(MilliColors.cyanGlow))
-                .overlay(RoundedRectangle(cornerRadius: 17).stroke(Color.white.opacity(0.88), lineWidth: 1))
-                .shadow(color: MilliColors.cyanGlow.opacity(0.36), radius: 14, y: 5)
-            }
-            .buttonStyle(.plain)
-            .disabled(plaid.isLoading)
-        }
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: "08181D").opacity(0.86)))
-        .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.white.opacity(0.48), lineWidth: 1))
-    }
-
-    private var connectedTitle: String {
-        let bank = profile.institutionName.isEmpty ? "Bank" : profile.institutionName
-        let mask = profile.accountLastFour.isEmpty ? "" : " ••••\(profile.accountLastFour)"
-        return "\(bank)\(mask)"
-    }
-
-    private var sourcesCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("GIG PAYOUT SOURCES")
-                    .font(.custom("Inter-SemiBold", size: 13))
-                    .tracking(3)
-                    .foregroundStyle(Color.white.opacity(0.72))
-                Spacer()
-                Toggle("", isOn: $profile.autoDetectPlatforms)
-                    .labelsHidden()
-                    .tint(MilliColors.cyanGlow)
-            }
-
-            Text("Confirm the companies you drive or deliver for. Auto-detect uses this as a high-confidence filter when matching bank deposits.")
-                .font(.custom("Inter-Regular", size: 14))
-                .foregroundStyle(Color.white.opacity(0.62))
-                .lineSpacing(3)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 9) {
-                ForEach(platforms) { platform in
-                    let selected = profile.selectedPlatforms.contains(platform)
-                    Button {
-                        if selected { profile.selectedPlatforms.remove(platform) }
-                        else { profile.selectedPlatforms.insert(platform) }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(selected ? MilliColors.cyanGlow : Color.white.opacity(0.08))
-                                .frame(width: 9, height: 9)
-                            Text(platform.rawValue)
-                                .font(.custom("Inter-Medium", size: 13))
-                                .foregroundStyle(selected ? Color.white : Color.white.opacity(0.62))
-                                .lineLimit(1)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 11)
-                        .frame(height: 48)
-                        .background(RoundedRectangle(cornerRadius: 13).fill(selected ? MilliColors.cyanGlow.opacity(0.07) : Color.white.opacity(0.025)))
-                        .overlay(RoundedRectangle(cornerRadius: 13).stroke(selected ? MilliColors.cyanGlow : Color.white.opacity(0.18), lineWidth: selected ? 1.1 : 0.7))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(hex: "08181D").opacity(0.86)))
-        .overlay(RoundedRectangle(cornerRadius: 24).stroke(MilliColors.cyanGlow.opacity(0.40), lineWidth: 1))
-    }
-
-    private var permissionsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("AUTOPILOT PERMISSIONS")
-                .font(.custom("Inter-SemiBold", size: 11))
-                .tracking(2.3)
-                .foregroundStyle(Color.white.opacity(0.65))
-
-            Toggle("Detect eligible gig payouts in the connected account", isOn: $profile.transactionMonitoringConsent)
-                .font(.custom("Inter-Regular", size: 13))
-                .tint(MilliColors.cyanGlow)
-
-            Toggle("Move calculated tax reserves to Milli Tax Vault™", isOn: $profile.taxVaultTransferConsent)
-                .font(.custom("Inter-Regular", size: 13))
-                .tint(MilliColors.cyanGlow)
-        }
-        .foregroundStyle(Color.white.opacity(0.80))
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color.white.opacity(0.035)))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.18), lineWidth: 0.7))
-    }
-}
-
 private enum GigPayoutFrequency: String, CaseIterable, Identifiable {
     case daily = "Daily"
     case weekly = "Weekly"
     case mixed = "Mixed"
+
     var id: String { rawValue }
-}
-
-private struct RoutePreviewCard: View {
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(hex: "08151B"))
-
-                ForEach(0..<8, id: \.self) { index in
-                    Path { path in
-                        let y = geometry.size.height * CGFloat(index + 1) / 9
-                        path.move(to: CGPoint(x: 0, y: y))
-                        path.addLine(to: CGPoint(x: geometry.size.width, y: y - CGFloat(index % 3) * 7))
-                    }
-                    .stroke(Color.white.opacity(0.055), lineWidth: 1)
-                }
-
-                Path { path in
-                    path.move(to: CGPoint(x: 22, y: geometry.size.height * 0.78))
-                    path.addCurve(
-                        to: CGPoint(x: geometry.size.width * 0.46, y: geometry.size.height * 0.56),
-                        control1: CGPoint(x: geometry.size.width * 0.18, y: geometry.size.height * 0.72),
-                        control2: CGPoint(x: geometry.size.width * 0.31, y: geometry.size.height * 0.84)
-                    )
-                    path.addCurve(
-                        to: CGPoint(x: geometry.size.width - 30, y: geometry.size.height * 0.26),
-                        control1: CGPoint(x: geometry.size.width * 0.62, y: geometry.size.height * 0.28),
-                        control2: CGPoint(x: geometry.size.width * 0.75, y: geometry.size.height * 0.58)
-                    )
-                }
-                .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-                .shadow(color: MilliColors.cyanGlow.opacity(0.70), radius: 7)
-
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 14, height: 14)
-                    .overlay(Circle().stroke(MilliColors.cyanGlow, lineWidth: 4))
-                    .position(x: 22, y: geometry.size.height * 0.78)
-
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 14, height: 14)
-                    .overlay(Circle().stroke(MilliColors.cyanGlow, lineWidth: 4))
-                    .position(x: geometry.size.width - 30, y: geometry.size.height * 0.26)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(MilliColors.cyanGlow.opacity(0.45), lineWidth: 0.8))
-    }
 }
