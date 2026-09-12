@@ -1,14 +1,35 @@
 import Foundation
-import CryptoKit
+import Security
 
 // MARK: - MilliBackendClient
-// Native iOS client for the FastAPI service deployed on Render.
-// Plaid credentials and access tokens never enter the app; the client only
-// receives short-lived Link tokens and account snapshots from the backend.
+// Native iOS client for Milli's FastAPI service on Render.
+// Production authentication is bearer-session based. Sign in with Apple stages
+// an identity token + raw nonce in AppleAuthManager; this client exchanges that
+// credential for access/refresh tokens before any protected request.
 
 @MainActor
 final class MilliBackendClient {
     static let shared = MilliBackendClient()
+
+    struct AuthTokenResponse: Decodable {
+        let accessToken: String
+        let refreshToken: String
+        let tokenType: String?
+        let expiresIn: Int
+        let userID: String
+        let email: String?
+        let displayName: String?
+
+        enum CodingKeys: String, CodingKey {
+            case accessToken = "access_token"
+            case refreshToken = "refresh_token"
+            case tokenType = "token_type"
+            case expiresIn = "expires_in"
+            case userID = "user_id"
+            case email
+            case displayName = "display_name"
+        }
+    }
 
     struct PlaidLinkTokenResponse: Decodable {
         let linkToken: String
@@ -42,17 +63,17 @@ final class MilliBackendClient {
     enum ClientError: LocalizedError {
         case backendUnavailable
         case invalidResponse
-        case unauthorized(String)
+        case authenticationRequired(String)
         case server(status: Int, message: String)
         case decoding(Error)
 
         var errorDescription: String? {
             switch self {
             case .backendUnavailable:
-                return "Milli couldn't reach the Render banking service. Check the backend deployment and MILLI_API_BASE_URL."
+                return "Milli couldn't reach the banking service. Please check your connection and try again."
             case .invalidResponse:
                 return "Milli received an invalid response from the banking service."
-            case .unauthorized(let message):
+            case .authenticationRequired(let message):
                 return message
             case .server(let status, let message):
                 return "Banking service error \(status): \(message)"
@@ -61,6 +82,10 @@ final class MilliBackendClient {
             }
         }
     }
+
+    private static let sessionKeychainService = "com.milli.taxvault.backend-session"
+    private static let accessTokenKey = "milliBackendAccessToken"
+    private static let refreshTokenKey = "milliBackendRefreshToken"
 
     private let session: URLSession
     private var resolvedBaseURL: URL?
@@ -72,6 +97,8 @@ final class MilliBackendClient {
         configuration.waitsForConnectivity = true
         session = URLSession(configuration: configuration)
     }
+
+    // MARK: - Plaid
 
     func createPlaidLinkToken() async throws -> String {
         let response: PlaidLinkTokenResponse = try await request(
@@ -116,12 +143,146 @@ final class MilliBackendClient {
         )
     }
 
+    // MARK: - Session lifecycle
+
+    var hasStoredSession: Bool {
+        Self.loadSecret(account: Self.accessTokenKey) != nil
+            || Self.loadSecret(account: Self.refreshTokenKey) != nil
+    }
+
+    func clearSession() {
+        Self.deleteSecret(account: Self.accessTokenKey)
+        Self.deleteSecret(account: Self.refreshTokenKey)
+    }
+
+    private func ensureAccessToken() async throws -> String {
+        if let accessToken = Self.loadSecret(account: Self.accessTokenKey), !accessToken.isEmpty {
+            return accessToken
+        }
+
+        if let refreshToken = Self.loadSecret(account: Self.refreshTokenKey), !refreshToken.isEmpty {
+            do {
+                let refreshed = try await refreshSession(using: refreshToken)
+                return refreshed.accessToken
+            } catch {
+                clearSession()
+            }
+        }
+
+        if let pending = AppleAuthManager.shared.pendingBackendCredential() {
+            let response = try await exchangeAppleCredential(pending)
+            return response.accessToken
+        }
+
+        throw ClientError.authenticationRequired(
+            "Milli needs a secure backend session before connecting your bank. Sign in with Apple again, then retry the bank connection."
+        )
+    }
+
+    private func recoverSessionAfterUnauthorized() async -> Bool {
+        Self.deleteSecret(account: Self.accessTokenKey)
+
+        if let refreshToken = Self.loadSecret(account: Self.refreshTokenKey), !refreshToken.isEmpty {
+            do {
+                _ = try await refreshSession(using: refreshToken)
+                return true
+            } catch {
+                clearSession()
+            }
+        }
+
+        if let pending = AppleAuthManager.shared.pendingBackendCredential() {
+            do {
+                _ = try await exchangeAppleCredential(pending)
+                return true
+            } catch {
+                clearSession()
+            }
+        }
+
+        return false
+    }
+
+    private func exchangeAppleCredential(
+        _ credential: AppleAuthManager.PendingBackendCredential
+    ) async throws -> AuthTokenResponse {
+        var body: [String: Any] = [
+            "identity_token": credential.identityToken,
+            "raw_nonce": credential.rawNonce
+        ]
+        if let displayName = credential.displayName, !displayName.isEmpty {
+            body["display_name"] = displayName
+        }
+
+        let response: AuthTokenResponse = try await request(
+            method: "POST",
+            path: "/auth/apple",
+            body: body,
+            authenticated: false,
+            retryOnUnauthorized: false
+        )
+
+        guard storeSession(response) else {
+            throw ClientError.authenticationRequired(
+                "Milli authenticated with Apple but couldn't securely store the backend session. Please try again."
+            )
+        }
+
+        AppleAuthManager.shared.clearPendingBackendCredential()
+        return response
+    }
+
+    private func refreshSession(using refreshToken: String) async throws -> AuthTokenResponse {
+        let response: AuthTokenResponse = try await request(
+            method: "POST",
+            path: "/auth/refresh",
+            body: ["refresh_token": refreshToken],
+            authenticated: false,
+            retryOnUnauthorized: false
+        )
+
+        guard storeSession(response) else {
+            throw ClientError.authenticationRequired(
+                "Milli refreshed your session but couldn't securely store it. Please sign in again."
+            )
+        }
+        return response
+    }
+
+    @discardableResult
+    private func storeSession(_ response: AuthTokenResponse) -> Bool {
+        guard !response.accessToken.isEmpty, !response.refreshToken.isEmpty else { return false }
+
+        let accessStored = Self.storeSecret(response.accessToken, account: Self.accessTokenKey)
+        let refreshStored = Self.storeSecret(response.refreshToken, account: Self.refreshTokenKey)
+
+        if !accessStored || !refreshStored {
+            clearSession()
+            return false
+        }
+
+        let defaults = UserDefaults.standard
+        defaults.set(response.userID, forKey: "milliBackendUserID")
+        if let email = response.email, !email.isEmpty {
+            defaults.set(email, forKey: "milliProfileEmail")
+            defaults.set(email, forKey: "milliAppleUserEmail")
+        }
+        if let displayName = response.displayName, !displayName.isEmpty {
+            defaults.set(displayName, forKey: "milliProfileName")
+            defaults.set(displayName, forKey: "milliAppleUserName")
+        }
+
+        return true
+    }
+
     // MARK: - Core request
 
     private func request<T: Decodable>(
         method: String,
         path: String,
-        body: [String: Any]? = nil
+        body: [String: Any]? = nil,
+        authenticated: Bool = true,
+        retryOnUnauthorized: Bool = true
     ) async throws -> T {
         let baseURL = try await resolveBaseURL()
         let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
@@ -131,10 +292,10 @@ final class MilliBackendClient {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(stableBackendUserID().uuidString, forHTTPHeaderField: "X-Milli-User-Id")
 
-        if let clientKey = configuredClientKey, !clientKey.isEmpty {
-            request.setValue(clientKey, forHTTPHeaderField: "X-Milli-Client-Key")
+        if authenticated {
+            let accessToken = try await ensureAccessToken()
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         }
 
         if let body {
@@ -146,8 +307,6 @@ final class MilliBackendClient {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            // A deployment can be replaced without restarting the app. Forget
-            // the cached host so the next attempt can rediscover it.
             resolvedBaseURL = nil
             throw ClientError.backendUnavailable
         }
@@ -156,18 +315,31 @@ final class MilliBackendClient {
             throw ClientError.invalidResponse
         }
 
+        if http.statusCode == 401, authenticated, retryOnUnauthorized {
+            if await recoverSessionAfterUnauthorized() {
+                return try await self.request(
+                    method: method,
+                    path: path,
+                    body: body,
+                    authenticated: true,
+                    retryOnUnauthorized: false
+                )
+            }
+
+            throw ClientError.authenticationRequired(
+                "Your Milli session expired. Sign in with Apple again, then retry the bank connection."
+            )
+        }
+
         guard (200...299).contains(http.statusCode) else {
             let detail = (try? JSONDecoder().decode(APIErrorPayload.self, from: data).detail)
                 ?? String(data: data, encoding: .utf8)
                 ?? "Unknown server error"
 
             if http.statusCode == 401 {
-                if detail.localizedCaseInsensitiveContains("client key") {
-                    throw ClientError.unauthorized(
-                        "Render rejected Milli's client key. Set MILLI_CLIENT_API_KEY in the Xcode scheme to the same CLIENT_API_KEY configured on Render."
-                    )
-                }
-                throw ClientError.unauthorized("The banking service rejected this Milli session: \(detail)")
+                throw ClientError.authenticationRequired(
+                    detail.isEmpty ? "Milli authentication was rejected. Please sign in again." : detail
+                )
             }
 
             throw ClientError.server(status: http.statusCode, message: detail)
@@ -195,8 +367,7 @@ final class MilliBackendClient {
 
             guard let (_, response) = try? await session.data(for: request),
                   let http = response as? HTTPURLResponse,
-                  (200...299).contains(http.statusCode)
-            else {
+                  (200...299).contains(http.statusCode) else {
                 continue
             }
 
@@ -218,10 +389,9 @@ final class MilliBackendClient {
             values.append(plistURL)
         }
 
-        // Migration fallbacks only. Production should explicitly set
-        // MILLI_API_BASE_URL so a Render rename cannot silently redirect data.
+        // Known Milli deployments. Info.plist should normally resolve first.
+        values.append("https://milli-tax-app-1.onrender.com")
         values.append("https://milli-tax-vault-api.onrender.com")
-        values.append("https://milli-tax-app.onrender.com")
 
         var seen = Set<String>()
         return values.compactMap { rawValue in
@@ -232,57 +402,52 @@ final class MilliBackendClient {
         }
     }
 
-    private var configuredClientKey: String? {
-        if let value = ProcessInfo.processInfo.environment["MILLI_CLIENT_API_KEY"], !value.isEmpty {
-            return value
-        }
-        if let value = Bundle.main.object(forInfoDictionaryKey: "MILLI_CLIENT_API_KEY") as? String, !value.isEmpty {
-            return value
-        }
-        return nil
+    // MARK: - Keychain
+
+    @discardableResult
+    private static func storeSecret(_ value: String, account: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: sessionKeychainService,
+            kSecAttrAccount as String: account
+        ]
+
+        SecItemDelete(query as CFDictionary)
+
+        var insert = query
+        insert[kSecValueData as String] = data
+        insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+
+        return SecItemAdd(insert as CFDictionary, nil) == errSecSuccess
     }
 
-    // MARK: - Backend identity
+    private static func loadSecret(account: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: sessionKeychainService,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
 
-    /// The current backend contract scopes rows by UUID. Until the production
-    /// authentication service exchanges Apple's identity token for a server
-    /// session, derive a stable UUID from the Apple user id. This is an
-    /// identity namespace only, not authentication; the backend must not treat
-    /// possession of this UUID as proof of identity.
-    private func stableBackendUserID() -> UUID {
-        let defaults = UserDefaults.standard
-
-        if let appleUserID = AppleAuthManager.shared.currentAppleUserID, !appleUserID.isEmpty {
-            let uuid = deterministicUUID(namespace: "milli.apple", value: appleUserID)
-            defaults.set(uuid.uuidString, forKey: "milliBackendUserID")
-            return uuid
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data,
+              let value = String(data: data, encoding: .utf8) else {
+            return nil
         }
-
-        if let stored = defaults.string(forKey: "milliBackendUserID"),
-           let uuid = UUID(uuidString: stored) {
-            return uuid
-        }
-
-        let uuid = UUID()
-        defaults.set(uuid.uuidString, forKey: "milliBackendUserID")
-        return uuid
+        return value
     }
 
-    private func deterministicUUID(namespace: String, value: String) -> UUID {
-        let digest = SHA256.hash(data: Data("\(namespace):\(value)".utf8))
-        var bytes = Array(digest.prefix(16))
-
-        // RFC 4122-compatible variant + version bits. The value is deterministic
-        // but does not reveal the Apple subject string itself.
-        bytes[6] = (bytes[6] & 0x0F) | 0x50
-        bytes[8] = (bytes[8] & 0x3F) | 0x80
-
-        return UUID(uuid: (
-            bytes[0], bytes[1], bytes[2], bytes[3],
-            bytes[4], bytes[5], bytes[6], bytes[7],
-            bytes[8], bytes[9], bytes[10], bytes[11],
-            bytes[12], bytes[13], bytes[14], bytes[15]
-        ))
+    private static func deleteSecret(account: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: sessionKeychainService,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 }
 
@@ -319,8 +484,6 @@ struct MilliPlaidAccount: Decodable, Identifiable, Equatable {
 }
 
 private struct GenericStatusResponse: Decodable {
-    // The refresh endpoint returns integer counters. Keep a permissive contract
-    // so adding future counters does not break the iOS client.
     let accountsRefreshed: Int?
     let items: Int?
 
