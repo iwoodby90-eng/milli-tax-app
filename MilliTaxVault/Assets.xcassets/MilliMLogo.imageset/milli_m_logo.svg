@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Milli M">
+  <defs>
+    <linearGradient id="chrome" x1="32" y1="28" x2="220" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F7F9FB"/>
+      <stop offset="0.22" stop-color="#9FA6AE"/>
+      <stop offset="0.47" stop-color="#EEF1F4"/>
+      <stop offset="0.72" stop-color="#666D76"/>
+      <stop offset="1" stop-color="#D8DCE1"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="86" x2="0" y2="228" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00F0FF"/>
+      <stop offset="0.55" stop-color="#00B4C2"/>
+      <stop offset="1" stop-color="#007B89"/>
+    </linearGradient>
+    <filter id="cyanGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <path d="M20 225V33h44l64 90 64-90h44v192h-41V100l-67 78-67-78v125H20Z" fill="url(#chrome)" stroke="#F8FAFC" stroke-opacity="0.58" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M168 139l27-38v93l-27 31v-86Z" fill="url(#cyan)" stroke="#C9FBFF" stroke-opacity="0.48" stroke-width="1.4" filter="url(#cyanGlow)"/>
+  <path d="M29 47h31l68 94 62-87" fill="none" stroke="#FFFFFF" stroke-opacity="0.46" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
