@@ -331,15 +331,8 @@ struct HomeView: View {
     private var aiInsight: some View {
         Button { navigate?(.milliAI) } label: {
             HStack(spacing: 10) {
-                Image("MilliAIOrb")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(MilliColors.cyanGlow.opacity(0.18), lineWidth: 0.7)
-                    }
+                MilliAICharacterView(size: 38, animated: true)
+                    .frame(width: 40, height: 40)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("MILLI AI INSIGHT")
