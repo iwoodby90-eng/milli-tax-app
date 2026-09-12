@@ -2,61 +2,55 @@ import SwiftUI
 import UIKit
 
 // MARK: - Milli AI Character
-// Vector-built transparent companion. No bitmap plate or opaque background is used.
-// The approved native Milli M is rendered on the character's chest.
+// Native SwiftUI reconstruction of the approved glossy black/chrome Milli AI
+// reference: rounded visor head, cyan illuminated eyes/rim, articulated metallic
+// body, and the canonical transparent Milli M on the chest. No opaque image plate.
 
 struct MilliAICharacterView: View {
-    var size: CGFloat = 70
+    var size: CGFloat = 88
     var animated: Bool = false
 
     @State private var eyePulse = false
-    @State private var bodyTilt: Double = -1
+    @State private var floatOffset: CGFloat = 1.5
     @State private var haloRotation: Double = 0
-    @State private var haloScale: CGFloat = 0.96
+    @State private var armLift: Double = -4
 
-    private var scale: CGFloat { size / 70 }
+    private var scale: CGFloat { size / 100 }
 
     var body: some View {
         ZStack {
-            // Ambient animated energy field behind Milli AI. It is transparent,
-            // so the dashboard remains visible through the effect.
             if animated {
                 Circle()
-                    .trim(from: 0.08, to: 0.82)
+                    .trim(from: 0.05, to: 0.78)
                     .stroke(
-                        LinearGradient(
-                            colors: [Color.clear, MilliColors.cyanGlow.opacity(0.45), Color.clear],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                        AngularGradient(
+                            colors: [Color.clear, MilliColors.cyanGlow.opacity(0.55), Color.clear],
+                            center: .center
                         ),
                         style: StrokeStyle(lineWidth: 1.2 * scale, lineCap: .round)
                     )
-                    .frame(width: 60 * scale, height: 60 * scale)
+                    .frame(width: 92 * scale, height: 92 * scale)
                     .rotationEffect(.degrees(haloRotation))
-                    .scaleEffect(haloScale)
-                    .blur(radius: 0.35 * scale)
+                    .blur(radius: 0.25 * scale)
 
                 Circle()
-                    .trim(from: 0.18, to: 0.72)
-                    .stroke(MilliColors.deepCyan.opacity(0.30), lineWidth: 0.8 * scale)
-                    .frame(width: 68 * scale, height: 68 * scale)
-                    .rotationEffect(.degrees(-haloRotation * 0.72))
-                    .scaleEffect(1.02)
+                    .stroke(MilliColors.deepCyan.opacity(0.18), lineWidth: 0.8 * scale)
+                    .frame(width: 82 * scale, height: 82 * scale)
             }
 
             Ellipse()
-                .fill(MilliColors.cyanGlow.opacity(0.11))
-                .frame(width: 54 * scale, height: 18 * scale)
-                .blur(radius: 8 * scale)
-                .offset(y: 29 * scale)
+                .fill(MilliColors.cyanGlow.opacity(0.18))
+                .frame(width: 60 * scale, height: 13 * scale)
+                .blur(radius: 7 * scale)
+                .offset(y: 43 * scale)
 
-            VStack(spacing: -2 * scale) {
-                head
+            VStack(spacing: -1 * scale) {
+                headAssembly
+                    .zIndex(4)
+                bodyAssembly
                     .zIndex(2)
-                torso
-                    .zIndex(1)
             }
-            .rotationEffect(.degrees(bodyTilt))
+            .offset(y: floatOffset)
         }
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
@@ -64,140 +58,248 @@ struct MilliAICharacterView: View {
         .onAppear {
             guard animated, !UIAccessibility.isReduceMotionEnabled else { return }
 
-            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 1.55).repeatForever(autoreverses: true)) {
                 eyePulse = true
             }
 
             withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
-                bodyTilt = 1.2
-                haloScale = 1.04
+                floatOffset = -2.5
+                armLift = 3
             }
 
-            withAnimation(.linear(duration: 9.5).repeatForever(autoreverses: false)) {
+            withAnimation(.linear(duration: 10.5).repeatForever(autoreverses: false)) {
                 haloRotation = 360
             }
         }
     }
 
-    private var head: some View {
+    // MARK: Head
+
+    private var headAssembly: some View {
         ZStack {
-            Circle()
+            RoundedRectangle(cornerRadius: 20 * scale, style: .continuous)
+                .fill(chromeGradient)
+                .frame(width: 58 * scale, height: 45 * scale)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20 * scale, style: .continuous)
+                        .stroke(Color.white.opacity(0.55), lineWidth: 0.8 * scale)
+                }
+                .shadow(color: .black.opacity(0.72), radius: 5 * scale, y: 4 * scale)
+
+            RoundedRectangle(cornerRadius: 17 * scale, style: .continuous)
                 .fill(
                     RadialGradient(
-                        colors: [MilliColors.cardBackground, MilliColors.cardBackground, Color.black],
-                        center: UnitPoint(x: 0.48, y: 0.38),
+                        colors: [Color(hex: "13232A"), Color(hex: "05090C"), Color.black],
+                        center: UnitPoint(x: 0.44, y: 0.30),
                         startRadius: 1,
-                        endRadius: 25 * scale
+                        endRadius: 32 * scale
                     )
                 )
-                .frame(width: 37 * scale, height: 37 * scale)
+                .frame(width: 52 * scale, height: 39 * scale)
                 .overlay {
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeDeep],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 2.4 * scale
-                        )
+                    RoundedRectangle(cornerRadius: 17 * scale, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.72), lineWidth: 1.15 * scale)
                 }
-                .overlay {
-                    Circle()
-                        .stroke(MilliColors.cyanGlow.opacity(0.45), lineWidth: 0.7 * scale)
-                        .padding(3 * scale)
-                }
-                .shadow(color: MilliColors.cyanGlow.opacity(0.28), radius: 7 * scale)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.34), radius: 6 * scale)
 
-            HStack(spacing: 7 * scale) {
+            // Gloss reflection from the approved visor reference.
+            Capsule(style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.38), Color.white.opacity(0.02)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 25 * scale, height: 7 * scale)
+                .rotationEffect(.degrees(-12))
+                .offset(x: -8 * scale, y: -12 * scale)
+                .blur(radius: 0.45 * scale)
+
+            HStack(spacing: 15 * scale) {
                 eye
                 eye
             }
             .offset(y: -1 * scale)
 
-            Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.22))
-                .frame(width: 14 * scale, height: 1.2 * scale)
-                .offset(y: 9 * scale)
-
             earPod
-                .offset(x: -21 * scale, y: 0)
+                .offset(x: -32 * scale)
             earPod
-                .offset(x: 21 * scale, y: 0)
+                .offset(x: 32 * scale)
         }
+        .frame(width: 70 * scale, height: 47 * scale)
     }
 
     private var eye: some View {
-        Circle()
-            .fill(MilliColors.cyanGlow)
-            .frame(width: 4.6 * scale, height: 4.6 * scale)
+        Capsule(style: .continuous)
+            .fill(Color(hex: "8AF8FF"))
+            .frame(width: 5.2 * scale, height: 10.5 * scale)
+            .overlay {
+                Capsule(style: .continuous)
+                    .fill(MilliColors.cyanGlow.opacity(0.88))
+                    .padding(0.7 * scale)
+            }
             .shadow(
-                color: MilliColors.cyanGlow.opacity(eyePulse ? 0.95 : 0.55),
-                radius: (eyePulse ? 4.2 : 2.2) * scale
+                color: MilliColors.cyanGlow.opacity(eyePulse ? 0.95 : 0.58),
+                radius: (eyePulse ? 5.5 : 3.0) * scale
             )
     }
 
     private var earPod: some View {
-        Capsule(style: .continuous)
-            .fill(chromeGradient)
-            .frame(width: 5.5 * scale, height: 14 * scale)
-            .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 2.5 * scale)
+        ZStack {
+            Capsule(style: .continuous)
+                .fill(chromeGradient)
+                .frame(width: 8 * scale, height: 21 * scale)
+            Capsule(style: .continuous)
+                .fill(Color(hex: "091015"))
+                .frame(width: 4.5 * scale, height: 15 * scale)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.42), lineWidth: 0.6 * scale)
+                }
+        }
+        .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 3 * scale)
+    }
+
+    // MARK: Body
+
+    private var bodyAssembly: some View {
+        ZStack {
+            neck
+                .offset(y: -23 * scale)
+
+            leftArm
+                .offset(x: -27 * scale, y: -4 * scale)
+                .rotationEffect(.degrees(armLift), anchor: .topTrailing)
+
+            rightArm
+                .offset(x: 27 * scale, y: -4 * scale)
+                .rotationEffect(.degrees(-armLift), anchor: .topLeading)
+
+            torso
+                .zIndex(3)
+
+            leftLeg
+                .offset(x: -11 * scale, y: 29 * scale)
+            rightLeg
+                .offset(x: 11 * scale, y: 29 * scale)
+        }
+        .frame(width: 72 * scale, height: 54 * scale)
+    }
+
+    private var neck: some View {
+        ZStack {
+            Capsule(style: .continuous)
+                .fill(chromeGradient)
+                .frame(width: 17 * scale, height: 10 * scale)
+            Capsule(style: .continuous)
+                .fill(MilliColors.cyanGlow.opacity(0.38))
+                .frame(width: 12 * scale, height: 2.2 * scale)
+                .offset(y: -2 * scale)
+        }
     }
 
     private var torso: some View {
         ZStack {
-            Capsule(style: .continuous)
+            RoundedRectangle(cornerRadius: 14 * scale, style: .continuous)
                 .fill(chromeGradient)
-                .frame(width: 7 * scale, height: 24 * scale)
-                .rotationEffect(.degrees(23))
-                .offset(x: -20 * scale, y: 2 * scale)
+                .frame(width: 42 * scale, height: 38 * scale)
+                .shadow(color: .black.opacity(0.72), radius: 4 * scale, y: 3 * scale)
 
-            Capsule(style: .continuous)
-                .fill(chromeGradient)
-                .frame(width: 7 * scale, height: 24 * scale)
-                .rotationEffect(.degrees(-23))
-                .offset(x: 20 * scale, y: 2 * scale)
-
-            RoundedRectangle(cornerRadius: 10 * scale, style: .continuous)
+            RoundedRectangle(cornerRadius: 12 * scale, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [MilliColors.cardBackground, MilliColors.cardBackground, MilliColors.cardBackground],
+                        colors: [Color(hex: "151D22"), Color(hex: "070B0E"), Color.black],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 34 * scale, height: 28 * scale)
+                .frame(width: 36 * scale, height: 32 * scale)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10 * scale, style: .continuous)
-                        .stroke(chromeGradient, lineWidth: 1.4 * scale)
-                }
-                .overlay(alignment: .top) {
-                    Capsule(style: .continuous)
-                        .fill(MilliColors.cyanGlow.opacity(0.55))
-                        .frame(width: 17 * scale, height: 1.3 * scale)
-                        .padding(.top, 4 * scale)
+                    RoundedRectangle(cornerRadius: 12 * scale, style: .continuous)
+                        .stroke(Color.white.opacity(0.16), lineWidth: 0.6 * scale)
                 }
 
-            MilliMMark(size: 15 * scale)
-                .shadow(color: MilliColors.cyanGlow.opacity(0.25), radius: 2 * scale)
-                .offset(y: 1 * scale)
+            RoundedRectangle(cornerRadius: 7 * scale, style: .continuous)
+                .fill(Color.black.opacity(0.58))
+                .frame(width: 25 * scale, height: 21 * scale)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7 * scale, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.20), lineWidth: 0.6 * scale)
+                }
 
-            HStack(spacing: 9 * scale) {
-                Capsule(style: .continuous)
-                    .fill(chromeGradient)
-                    .frame(width: 9 * scale, height: 4 * scale)
-                Capsule(style: .continuous)
-                    .fill(chromeGradient)
-                    .frame(width: 9 * scale, height: 4 * scale)
-            }
-            .offset(y: 17 * scale)
+            MilliMMark(size: 19 * scale)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.42), radius: 3 * scale)
+
+            Capsule(style: .continuous)
+                .fill(MilliColors.cyanGlow.opacity(0.48))
+                .frame(width: 19 * scale, height: 1.5 * scale)
+                .offset(y: -13 * scale)
         }
-        .frame(width: 58 * scale, height: 32 * scale)
+    }
+
+    private var leftArm: some View {
+        arm(isLeft: true)
+    }
+
+    private var rightArm: some View {
+        arm(isLeft: false)
+    }
+
+    private func arm(isLeft: Bool) -> some View {
+        VStack(spacing: -1 * scale) {
+            Capsule(style: .continuous)
+                .fill(chromeGradient)
+                .frame(width: 9 * scale, height: 22 * scale)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(Color.white.opacity(0.24), lineWidth: 0.5 * scale)
+                }
+
+            Circle()
+                .fill(chromeGradient)
+                .frame(width: 8 * scale, height: 8 * scale)
+
+            RoundedRectangle(cornerRadius: 3 * scale)
+                .fill(Color(hex: "11171B"))
+                .frame(width: 8 * scale, height: 6 * scale)
+        }
+        .rotationEffect(.degrees(isLeft ? 13 : -13))
+    }
+
+    private var leftLeg: some View {
+        leg
+    }
+
+    private var rightLeg: some View {
+        leg
+    }
+
+    private var leg: some View {
+        VStack(spacing: -1 * scale) {
+            Capsule(style: .continuous)
+                .fill(chromeGradient)
+                .frame(width: 10 * scale, height: 18 * scale)
+            RoundedRectangle(cornerRadius: 4 * scale)
+                .fill(
+                    LinearGradient(
+                        colors: [MilliColors.chromeWhite, MilliColors.chromeMid, Color(hex: "11171B")],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 15 * scale, height: 7 * scale)
+        }
     }
 
     private var chromeGradient: LinearGradient {
         LinearGradient(
-            colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeDeep],
+            stops: [
+                .init(color: Color(hex: "F4F7F9"), location: 0.0),
+                .init(color: Color(hex: "838B94"), location: 0.30),
+                .init(color: Color(hex: "D8DDE2"), location: 0.58),
+                .init(color: Color(hex: "424951"), location: 1.0)
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -205,17 +307,17 @@ struct MilliAICharacterView: View {
 }
 
 // MARK: - MilliAIOrb
-// Persistent floating Milli companion. The character is transparent and animated
-// so it can live at the bottom-right without appearing as a square image tile.
+// Persistent floating companion sized to read as the approved full-body robot,
+// not as a tiny generic orb.
 
 struct MilliAIOrb: View {
     @State private var floatY: CGFloat = 2
     @State private var floatX: CGFloat = -1
-    @State private var tilt: Double = -1.0
+    @State private var tilt: Double = -0.8
 
     var onTap: () -> Void = {}
 
-    private let characterSize: CGFloat = 72
+    private let characterSize: CGFloat = 94
 
     var body: some View {
         Button(action: onTap) {
@@ -225,14 +327,14 @@ struct MilliAIOrb: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(width: characterSize + 14, height: characterSize + 14)
+        .frame(width: characterSize + 12, height: characterSize + 12)
         .accessibilityLabel("Open Milli AI")
         .onAppear {
             if !UIAccessibility.isReduceMotionEnabled {
-                withAnimation(.easeInOut(duration: 2.7).repeatForever(autoreverses: true)) {
+                withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
                     floatY = -4
                     floatX = 2
-                    tilt = 1.1
+                    tilt = 0.9
                 }
             }
         }
