@@ -1,15 +1,13 @@
 import SwiftUI
 
 // MARK: - MilliWordmark
-// Canonical wordmark per Ian's spec: chrome/silver 3D letters
-// with a cyan accent ONLY on the M's inner diagonal.
-// Other letters (I, L, L, I) are pure chrome gradient.
+// Canonical wordmark: chrome/silver 3D letters with the approved Electric Cyan
+// accent ONLY on the M's inner diagonal. I, L, L, I remain pure chrome.
 
 struct MilliWordmark: View {
     var fontSize: CGFloat = 30
     var tracking: CGFloat = 1.6
 
-    // Chrome gradient applied to all characters
     private var chromeGradient: LinearGradient {
         LinearGradient(
             colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
@@ -18,38 +16,38 @@ struct MilliWordmark: View {
         )
     }
 
+    private var approvedMAccent: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(hex: "8AF8FF"),
+                Color(hex: "00E5FF"),
+                Color(hex: "00B4C2")
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     var body: some View {
         ZStack {
-            // Base chrome text
             Text("MILLI")
                 .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
                 .tracking(tracking)
                 .foregroundStyle(chromeGradient)
 
-            // Cyan accent overlay — clipped to M's inner diagonal
             Text("MILLI")
                 .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
                 .tracking(tracking)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.deepCyan.opacity(0.85), MilliColors.cyan.opacity(0.65)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .mask(
-                    MInnerDiagonalMask()
-                )
+                .foregroundStyle(approvedMAccent)
+                .mask(MInnerDiagonalMask())
         }
-        .shadow(color: MilliColors.cyanGlow.opacity(0.14), radius: 4)
+        .shadow(color: Color(hex: "00E5FF").opacity(0.12), radius: 4)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel("Milli")
     }
 }
 
-// Custom shape that covers only the M's inner diagonal stroke region.
-// The M occupies approximately the first 22% of the "MILLI" text width;
-// the inner diagonal is the center V-notch of the character.
+// Custom shape covering only the M's inner diagonal stroke region.
 private struct MInnerDiagonalMask: Shape {
     func path(in rect: CGRect) -> Path {
         let mWidth = rect.width * 0.22
@@ -57,7 +55,6 @@ private struct MInnerDiagonalMask: Shape {
         let diagonalHalfWidth = mWidth * 0.10
 
         var path = Path()
-        // Triangle covering the inner V of the M (left diagonal stroke)
         path.move(to: CGPoint(x: centerX - diagonalHalfWidth * 0.3, y: rect.minY))
         path.addLine(to: CGPoint(x: centerX + diagonalHalfWidth * 1.6, y: rect.minY))
         path.addLine(to: CGPoint(x: centerX + diagonalHalfWidth * 0.4, y: rect.maxY * 0.7))
