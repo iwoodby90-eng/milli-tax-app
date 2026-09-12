@@ -22,10 +22,8 @@ struct SplashView: View {
                     .scaleEffect(emblemScale)
 
                 VStack(spacing: 14) {
-                    Image("milli_wordmark")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 290)
+                    // Native transparent wordmark; never use a rectangular image plate.
+                    MilliWordmark(fontSize: 48, tracking: 8.0)
                         .accessibilityHidden(true)
 
                     Text("Money, Made Intelligent.")
