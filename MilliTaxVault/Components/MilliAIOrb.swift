@@ -2,66 +2,57 @@ import SwiftUI
 import UIKit
 
 // MARK: - Milli AI Character
-// Canonical Milli companion. The approved robot artwork remains the source of
-// truth. The image is composited into the native surface with a soft edge mask
-// so the original dark studio background never reads as a pasted rectangle.
+// Canonical Milli companion. The approved transparent robot artwork is the source
+// of truth. No masking, blending workaround, or opaque plate is allowed around it.
 
 struct MilliAICharacterView: View {
     var size: CGFloat = 88
     var animated: Bool = false
 
     @State private var floatY: CGFloat = 0
-    @State private var glowScale: CGFloat = 0.97
-    @State private var glowOpacity: Double = 0.20
+    @State private var glowScale: CGFloat = 0.98
+    @State private var glowOpacity: Double = 0.18
+
+    private var assetName: String {
+        size >= 120 ? "milli-ai-robot-large" : "milli-ai-robot"
+    }
 
     var body: some View {
         ZStack {
             Ellipse()
-                .fill(MilliColors.cyanGlow.opacity(glowOpacity * 0.58))
-                .frame(width: size * 0.70, height: size * 0.16)
-                .blur(radius: max(7, size * 0.085))
+                .fill(MilliColors.cyanGlow.opacity(glowOpacity * 0.68))
+                .frame(width: size * 0.64, height: size * 0.12)
+                .blur(radius: max(7, size * 0.075))
                 .scaleEffect(glowScale)
-                .offset(y: size * 0.40)
+                .offset(y: size * 0.43)
 
             RadialGradient(
                 colors: [
-                    MilliColors.cyanGlow.opacity(glowOpacity * 0.36),
+                    MilliColors.cyanGlow.opacity(glowOpacity * 0.28),
                     Color.clear
                 ],
-                center: .center,
+                center: UnitPoint(x: 0.50, y: 0.52),
                 startRadius: 2,
-                endRadius: size * 0.58
+                endRadius: size * 0.60
             )
-            .frame(width: size * 1.10, height: size * 1.10)
+            .frame(width: size * 1.08, height: size * 1.08)
+            .allowsHitTesting(false)
 
-            // Use one approved production asset at every size. The former
-            // large variant was not visually identical and caused the AI
-            // surface to diverge from the approved companion reference.
-            Image("milli-ai-robot")
+            Image(assetName)
                 .resizable()
                 .interpolation(.high)
                 .antialiased(true)
                 .scaledToFit()
                 .frame(width: size, height: size)
-                .mask {
-                    RadialGradient(
-                        stops: [
-                            .init(color: .white, location: 0.00),
-                            .init(color: .white, location: 0.62),
-                            .init(color: .white.opacity(0.96), location: 0.76),
-                            .init(color: .white.opacity(0.48), location: 0.91),
-                            .init(color: .clear, location: 1.00)
-                        ],
-                        center: UnitPoint(x: 0.50, y: 0.49),
-                        startRadius: 0,
-                        endRadius: size * 0.72
-                    )
-                    .frame(width: size * 1.08, height: size * 1.08)
-                }
                 .offset(y: floatY)
-                .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: max(5, size * 0.06), y: 2)
+                .shadow(
+                    color: MilliColors.cyanGlow.opacity(0.20),
+                    radius: max(5, size * 0.055),
+                    y: 2
+                )
         }
         .frame(width: size, height: size)
+        .drawingGroup(opaque: false, colorMode: .extendedLinear)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Milli AI")
@@ -70,8 +61,8 @@ struct MilliAICharacterView: View {
 
             withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
                 floatY = -3
-                glowScale = 1.035
-                glowOpacity = 0.34
+                glowScale = 1.03
+                glowOpacity = 0.31
             }
         }
     }
@@ -86,7 +77,7 @@ struct MilliAIOrb: View {
 
     var onTap: () -> Void = {}
 
-    private let characterSize: CGFloat = 66
+    private let characterSize: CGFloat = 64
 
     var body: some View {
         Button(action: onTap) {
@@ -95,7 +86,7 @@ struct MilliAIOrb: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .frame(width: characterSize + 6, height: characterSize + 8)
+        .frame(width: characterSize + 8, height: characterSize + 10)
         .accessibilityLabel("Open Milli AI")
         .onAppear {
             guard !UIAccessibility.isReduceMotionEnabled else { return }
