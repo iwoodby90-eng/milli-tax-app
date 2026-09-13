@@ -14,6 +14,7 @@ BUNDLE_ID="${BUNDLE_ID:-com.milli.taxvault}"
 OUTPUT_DIR="${OUTPUT_DIR:-artifacts/milli-screen-qa}"
 DERIVED_DATA="${DERIVED_DATA:-/tmp/MilliVisualQADerivedData}"
 SCREEN_SETTLE_SECONDS="${SCREEN_SETTLE_SECONDS:-4}"
+HEAVY_SCREEN_SETTLE_SECONDS="${HEAVY_SCREEN_SETTLE_SECONDS:-7}"
 MAP_SETTLE_SECONDS="${MAP_SETTLE_SECONDS:-7}"
 
 SCREENS=(
@@ -75,8 +76,6 @@ export SIMULATOR_UDID
 
 echo "Using simulator: $SIMULATOR_UDID"
 
-# simctl bootstatus -b can hang for several minutes on a degraded hosted runner.
-# Request boot with a hard timeout, then poll the simulator registry ourselves.
 python3 - <<'PY'
 import os, subprocess
 udid = os.environ["SIMULATOR_UDID"]
@@ -150,10 +149,6 @@ wait_and_capture() {
 
   echo "$launch_output"
   pid="$(printf '%s\n' "$launch_output" | awk -F': ' 'NF > 1 {print $NF}' | tail -n 1)"
-
-  # Hosted Xcode simulators can spend several seconds on the native launch screen
-  # during cold starts. MapKit also needs a little extra time to load real map
-  # tiles before the Mileage reference capture is accepted.
   sleep "$settle_seconds"
 
   if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
@@ -173,15 +168,20 @@ capture_screen() {
   local launch_output
   local settle_seconds="$SCREEN_SETTLE_SECONDS"
 
-  if [[ "$screen" == "mileage" ]]; then
-    settle_seconds="$MAP_SETTLE_SECONDS"
-  fi
+  case "$screen" in
+    mileage)
+      settle_seconds="$MAP_SETTLE_SECONDS"
+      ;;
+    milliCents|expenses|taxReadyScore|milliAI)
+      # These surfaces initialize heavier view/model graphs on a cold hosted
+      # simulator. Give SwiftUI enough time to replace the launch surface before
+      # capture instead of accepting an all-white transient frame.
+      settle_seconds="$HEAVY_SCREEN_SETTLE_SECONDS"
+      ;;
+  esac
 
   xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
-  # SIMCTL_CHILD_ variables are the most reliable way to inject per-launch
-  # state into a hosted iOS simulator. ContentView reads these DEBUG-only values
-  # and routes directly to the requested native screen.
   launch_output="$(
     SIMCTL_CHILD_MILLI_SCREENSHOT_MODE=1 \
     SIMCTL_CHILD_MILLI_SCREEN="$screen" \
