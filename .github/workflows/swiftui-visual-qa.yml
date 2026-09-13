@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - agent/milli-swiftui-master-build
+      - agent/senior-ios-fidelity-pass-0913
     paths:
       - 'MilliTaxVault/**'
       - 'MilliTaxVault.xcodeproj/**'
