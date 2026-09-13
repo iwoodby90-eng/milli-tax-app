@@ -30,10 +30,10 @@ enum MilliSpacing {
     static let radiusXl: CGFloat = 16
     static let radiusFull: CGFloat = 100
 
-    // Canonical sculpted navigation occupies more vertical space than a standard
-    // tab bar. Keep content and the floating Milli AI companion visibly above it.
-    static let bottomNavHeight: CGFloat = 124
-    static let bottomContentClearance: CGFloat = 158
+    // Canonical navigation is intentionally compact. Content keeps enough room
+    // for the center M dial without sacrificing the lower third of the screen.
+    static let bottomNavHeight: CGFloat = 100
+    static let bottomContentClearance: CGFloat = 126
 }
 
 // MARK: - MilliRadius
