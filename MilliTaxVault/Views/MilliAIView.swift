@@ -2,9 +2,8 @@ import SwiftUI
 import UIKit
 
 // MARK: - MilliAIView
-// Dedicated assistant surface using Milli's transparent vector companion.
-// Until a production conversational-AI endpoint is connected, the screen uses a
-// deterministic on-device routing fallback rather than pretending a remote model answered.
+// Premium assistant surface. The approved Milli AI character is a visual anchor,
+// while the conversation remains restrained and finance-first rather than chat-app generic.
 
 struct MilliAIView: View {
     var onBack: () -> Void = {}
@@ -12,8 +11,14 @@ struct MilliAIView: View {
 
     @State private var messageText = ""
     @State private var messages: [MilliAIMessage] = MilliAIMessage.seedConversation
-    @State private var companionFloat: CGFloat = 1
     @FocusState private var isInputFocused: Bool
+
+    private let quickPrompts = [
+        "How much will I owe in taxes?",
+        "When is my next payout?",
+        "How can I reduce my tax bill?",
+        "Show me my financial outlook"
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,8 +26,9 @@ struct MilliAIView: View {
 
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
-                    LazyVStack(spacing: 12) {
-                        intro
+                    LazyVStack(spacing: 14) {
+                        assistantHero
+                        quickActions
 
                         ForEach(messages) { message in
                             messageView(message)
@@ -30,8 +36,8 @@ struct MilliAIView: View {
                         }
                     }
                     .padding(.horizontal, MilliSpacing.screenHorizontal)
-                    .padding(.top, 6)
-                    .padding(.bottom, 18)
+                    .padding(.top, 8)
+                    .padding(.bottom, 20)
                 }
                 .onChange(of: messages.count) { _, _ in
                     if let last = messages.last {
@@ -45,14 +51,18 @@ struct MilliAIView: View {
             composer
                 .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
         }
-        .background(MilliColors.background.ignoresSafeArea())
-        .onAppear {
-            if !UIAccessibility.isReduceMotionEnabled {
-                withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
-                    companionFloat = -3
-                }
+        .background(
+            ZStack {
+                MilliColors.background.ignoresSafeArea()
+                RadialGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.055), Color.clear],
+                    center: UnitPoint(x: 0.84, y: 0.10),
+                    startRadius: 0,
+                    endRadius: 260
+                )
+                .ignoresSafeArea()
             }
-        }
+        )
     }
 
     private var header: some View {
@@ -62,23 +72,25 @@ struct MilliAIView: View {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(MilliColors.textSecondary)
-                        .frame(width: 34, height: 34)
+                        .frame(width: 36, height: 36)
                         .background(Circle().fill(Color.white.opacity(0.035)))
                 }
                 .buttonStyle(.plain)
 
                 Spacer()
 
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(MilliColors.textTertiary)
-                    .frame(width: 34, height: 34)
-                    .accessibilityLabel("Private assistant session")
+                HStack(spacing: 5) {
+                    Image(systemName: "lock.shield.fill")
+                    Text("PRIVATE")
+                }
+                .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                .tracking(0.65)
+                .foregroundStyle(MilliColors.textTertiary)
             }
 
             Text("MILLI AI")
-                .font(MilliFont.headlineSmall)
-                .tracking(3.0)
+                .font(.custom("Sora-SemiBold", size: 16, relativeTo: .headline))
+                .tracking(3.2)
                 .foregroundStyle(MilliColors.silverBright)
         }
         .padding(.horizontal, MilliSpacing.screenHorizontal)
@@ -86,23 +98,80 @@ struct MilliAIView: View {
         .padding(.bottom, 4)
     }
 
-    private var intro: some View {
-        HStack(alignment: .center, spacing: 8) {
-            aiPortrait(size: 78, animated: true)
-                .offset(y: companionFloat)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text("How can I help?")
-                    .font(MilliFont.headlineSmall)
+    private var assistantHero: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 7) {
+                Text("Hi, I'm Milli.")
+                    .font(.custom("Sora-Bold", size: 25, relativeTo: .title2))
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("Ask about taxes, payouts, mileage, retirement, investing, or whether a gig offer makes financial sense.")
-                    .font(MilliFont.bodySmall)
+
+                Text("Your financial copilot for taxes, payouts, mileage, planning, and smarter money decisions.")
+                    .font(MilliFont.bodyMedium)
                     .foregroundStyle(MilliColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(MilliColors.cyanGlow)
+                        .frame(width: 5, height: 5)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.6), radius: 3)
+                    Text("Ready to help")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .milliCard(padding: 12)
+
+            MilliAICharacterView(size: 122, animated: true)
+                .frame(width: 116, height: 122)
         }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 4)
+    }
+
+    private var quickActions: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(quickPrompts.enumerated()), id: \.offset) { index, prompt in
+                Button {
+                    submitPrompt(prompt)
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(prompt)
+                            .font(.custom("Inter-Medium", size: 12.5, relativeTo: .footnote))
+                            .foregroundStyle(MilliColors.textPrimary)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(MilliColors.textTertiary)
+                    }
+                    .padding(.horizontal, 13)
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+
+                if index < quickPrompts.count - 1 {
+                    Divider()
+                        .overlay(Color.white.opacity(0.055))
+                        .padding(.leading, 13)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "0D151A"), Color(hex: "080C0F")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
+                }
+        )
     }
 
     @ViewBuilder
@@ -111,23 +180,23 @@ struct MilliAIView: View {
         case .user:
             userBubble(message.text)
         case .assistant:
-            aiCard(message)
+            aiResponse(message)
         }
     }
 
     private func userBubble(_ text: String) -> some View {
         HStack {
-            Spacer(minLength: 58)
+            Spacer(minLength: 64)
             Text(text)
                 .font(MilliFont.bodyMedium)
                 .foregroundStyle(MilliColors.blackGlass)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
+                                colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -136,9 +205,10 @@ struct MilliAIView: View {
         }
     }
 
-    private func aiCard(_ message: MilliAIMessage) -> some View {
-        HStack(alignment: .top, spacing: 7) {
-            aiPortrait(size: 42, animated: false)
+    private func aiResponse(_ message: MilliAIMessage) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            MilliAICharacterView(size: 44, animated: false)
+                .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(message.text)
@@ -158,29 +228,27 @@ struct MilliAIView: View {
                         }
                         .font(MilliFont.labelLarge)
                         .foregroundStyle(MilliColors.cyanGlow)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 34)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(MilliColors.cyanGlow.opacity(0.42), lineWidth: 0.8)
-                        )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .milliCard(padding: 12)
-
-            Spacer(minLength: 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 13)
+            .background(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .fill(Color.white.opacity(0.025))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
+                    }
+            )
         }
-    }
-
-    private func aiPortrait(size: CGFloat, animated: Bool) -> some View {
-        MilliAICharacterView(size: size, animated: animated)
     }
 
     private var composer: some View {
         HStack(spacing: 10) {
-            TextField("Ask Milli AI anything...", text: $messageText, axis: .vertical)
+            TextField("Ask Milli anything...", text: $messageText, axis: .vertical)
                 .lineLimit(1...3)
                 .font(MilliFont.bodyMedium)
                 .foregroundStyle(MilliColors.textPrimary)
@@ -193,7 +261,7 @@ struct MilliAIView: View {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(canSend ? MilliColors.blackGlass : MilliColors.textTertiary)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 31, height: 31)
                     .background(
                         Circle()
                             .fill(canSend ? MilliColors.cyanGlow : Color.white.opacity(0.04))
@@ -203,22 +271,27 @@ struct MilliAIView: View {
             .disabled(!canSend)
             .accessibilityLabel("Send message")
         }
-        .padding(.horizontal, 12)
-        .frame(minHeight: 48)
+        .padding(.horizontal, 13)
+        .frame(minHeight: 50)
         .background(
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(MilliColors.cardBackground)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(hex: "0B1115"))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(MilliColors.border, lineWidth: 0.7)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
                 }
         )
         .padding(.horizontal, MilliSpacing.screenHorizontal)
-        .padding(.top, 6)
+        .padding(.top, 7)
     }
 
     private var canSend: Bool {
         !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func submitPrompt(_ prompt: String) {
+        messageText = prompt
+        sendMessage()
     }
 
     private func sendMessage() {
