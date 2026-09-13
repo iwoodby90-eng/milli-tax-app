@@ -30,10 +30,10 @@ enum MilliSpacing {
     static let radiusXl: CGFloat = 16
     static let radiusFull: CGFloat = 100
 
-    // Canonical navigation is intentionally compact. Content keeps enough room
-    // for the center M dial without sacrificing the lower third of the screen.
-    static let bottomNavHeight: CGFloat = 100
-    static let bottomContentClearance: CGFloat = 126
+    // Canonical navigation follows the approved low-profile hardware reference.
+    // It must remain prominent without consuming the lower third of the iPhone.
+    static let bottomNavHeight: CGFloat = 92
+    static let bottomContentClearance: CGFloat = 116
 }
 
 // MARK: - MilliRadius
