@@ -2,10 +2,10 @@ import SwiftUI
 import UIKit
 
 // MARK: - TreeOfLifeView
-// High-fidelity implementation of Milli's approved Tree of Life experience.
-// Production values remain grounded in user-provided data. A deterministic
-// DEBUG-only fixture is used by screenshot QA so visual fidelity can be judged
-// against the approved populated reference without leaking demo data to users.
+// Canonical Tree of Life experience. The tree is the hero; financial planning
+// information supports it instead of competing with it. Production values remain
+// grounded in user-entered data. Populated reference values exist only in DEBUG
+// screenshot mode for visual QA.
 
 struct TreeOfLifeView: View {
     var onBack: () -> Void = {}
@@ -31,19 +31,29 @@ struct TreeOfLifeView: View {
 
         return [
             LifePlanningEvent(
+                type: .businessLaunch,
+                targetDate: calendar.date(byAdding: .month, value: 10, to: now) ?? now,
+                estimatedCost: 18_000
+            ),
+            LifePlanningEvent(
                 type: .marriage,
-                targetDate: calendar.date(byAdding: .year, value: 1, to: now) ?? now,
+                targetDate: calendar.date(byAdding: .year, value: 2, to: now) ?? now,
                 estimatedCost: 25_000
             ),
             LifePlanningEvent(
                 type: .child,
-                targetDate: calendar.date(byAdding: .year, value: 4, to: now) ?? now,
+                targetDate: calendar.date(byAdding: .year, value: 5, to: now) ?? now,
                 estimatedCost: 35_000
             ),
             LifePlanningEvent(
                 type: .homePurchase,
-                targetDate: calendar.date(byAdding: .year, value: 6, to: now) ?? now,
+                targetDate: calendar.date(byAdding: .year, value: 7, to: now) ?? now,
                 estimatedCost: 120_000
+            ),
+            LifePlanningEvent(
+                type: .education,
+                targetDate: calendar.date(byAdding: .year, value: 11, to: now) ?? now,
+                estimatedCost: 60_000
             ),
             LifePlanningEvent(
                 type: .retirement,
@@ -58,13 +68,12 @@ struct TreeOfLifeView: View {
     var body: some View {
         GeometryReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 14) {
+                VStack(spacing: 18) {
                     header
-                    hero(width: proxy.size.width - (MilliSpacing.screenHorizontal * 2))
-                    keyLifeEvents
+                    treeStage(width: proxy.size.width - (MilliSpacing.screenHorizontal * 2))
+                    planningSummary
                     planningAdjustments
-                    wealthPath
-                    aiInsight
+                    aiPlanningInsight
                 }
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.top, 8)
@@ -74,31 +83,29 @@ struct TreeOfLifeView: View {
         }
         .sheet(isPresented: $showAddEvent) {
             AddLifeEventSheet { event in
-                withAnimation(.spring(response: 0.50, dampingFraction: 0.82)) {
+                withAnimation(.spring(response: 0.48, dampingFraction: 0.82)) {
                     events.append(event)
                 }
             }
         }
         .onAppear {
             guard !UIAccessibility.isReduceMotionEnabled else { return }
-            withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
                 glowPulse = true
             }
         }
     }
 
+    // MARK: Background / header
+
     private var background: some View {
         ZStack {
             MilliColors.background.ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color(hex: "001017").opacity(0.44),
-                    Color.clear,
-                    Color(hex: "100B08").opacity(0.18)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            RadialGradient(
+                colors: [MilliColors.cyanGlow.opacity(0.055), Color.clear],
+                center: UnitPoint(x: 0.50, y: 0.23),
+                startRadius: 0,
+                endRadius: 330
             )
             .ignoresSafeArea()
         }
@@ -111,11 +118,7 @@ struct TreeOfLifeView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(MilliColors.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.045))
-                            .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 0.7))
-                    )
+                    .background(Circle().fill(Color.white.opacity(0.035)))
             }
             .buttonStyle(.plain)
 
@@ -124,9 +127,9 @@ struct TreeOfLifeView: View {
                     .font(MilliFont.screenTitle)
                     .foregroundStyle(MilliColors.textPrimary)
 
-                Text("PLAN · GROW · THRIVE")
+                Text("YOUR FUTURE · VISUALIZED")
                     .font(MilliFont.caption)
-                    .tracking(1.45)
+                    .tracking(1.35)
                     .foregroundStyle(MilliColors.cyanGlow)
             }
 
@@ -135,547 +138,495 @@ struct TreeOfLifeView: View {
             Button {
                 showAddEvent = true
             } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(MilliColors.blackGlass)
-                    .frame(width: 38, height: 38)
-                    .background(
-                        Circle()
-                            .fill(MilliColors.cyanGlow)
-                            .shadow(color: MilliColors.cyanGlow.opacity(0.28), radius: 10)
-                    )
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                    Text("Event")
+                }
+                .font(.custom("Inter-SemiBold", size: 10, relativeTo: .caption))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .padding(.horizontal, 11)
+                .frame(height: 34)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.025))
+                        .overlay {
+                            Capsule().stroke(MilliColors.cyanGlow.opacity(0.34), lineWidth: 0.8)
+                        }
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Add life event")
         }
     }
 
-    private func hero(width: CGFloat) -> some View {
-        let height = min(max(width * 1.28, 480), 610)
+    // MARK: Hero tree
+
+    private func treeStage(width: CGFloat) -> some View {
+        let height = min(max(width * 1.50, 560), 720)
 
         return ZStack {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color(hex: "03090D"))
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(hex: "02070A"))
 
-            Image("tree-of-life-bg")
+            Image("treeoflife-bg")
                 .resizable()
                 .scaledToFill()
                 .frame(width: width, height: height)
                 .clipped()
-                .opacity(0.97)
+                .opacity(0.98)
 
             LinearGradient(
                 colors: [
-                    Color.black.opacity(0.64),
+                    Color.black.opacity(0.50),
                     Color.clear,
-                    Color.black.opacity(0.14),
-                    Color.black.opacity(0.72)
+                    Color.clear,
+                    Color.black.opacity(0.62)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
 
             RadialGradient(
-                colors: [MilliColors.cyanGlow.opacity(glowPulse ? 0.19 : 0.11), Color.clear],
-                center: UnitPoint(x: 0.48, y: 0.48),
-                startRadius: 20,
+                colors: [MilliColors.cyanGlow.opacity(glowPulse ? 0.13 : 0.07), Color.clear],
+                center: UnitPoint(x: 0.51, y: 0.50),
+                startRadius: 30,
                 endRadius: width * 0.58
             )
 
-            VStack(spacing: 0) {
-                projectionHeader
-                    .padding(.top, 24)
+            projectionHeader
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.top, 22)
 
-                Spacer()
+            if !events.isEmpty {
+                milestoneOverlay(width: width, height: height)
+            }
 
-                if events.isEmpty {
-                    heroEmptyState
-                        .padding(.bottom, 20)
-                } else {
-                    heroMetrics
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 18)
-                }
+            if events.isEmpty {
+                heroEmptyState
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 28)
+            } else {
+                heroFooter
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
             }
         }
         .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.34),
-                            MilliColors.cyanGlow.opacity(0.30),
-                            Color(hex: "D9B58B").opacity(0.24),
-                            Color.white.opacity(0.10)
-                        ],
+                        colors: [Color.white.opacity(0.26), MilliColors.cyanGlow.opacity(0.26), Color.white.opacity(0.04)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 0.9
+                    lineWidth: 0.8
                 )
         }
-        .shadow(color: MilliColors.cyanGlow.opacity(0.10), radius: 24, y: 8)
+        .shadow(color: MilliColors.cyanGlow.opacity(0.07), radius: 22, y: 8)
     }
 
     private var projectionHeader: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 4) {
             Text("PROJECTED NET WORTH")
                 .font(MilliFont.sectionLabel)
-                .tracking(1.3)
-                .foregroundStyle(Color.white.opacity(0.68))
+                .tracking(1.2)
+                .foregroundStyle(Color.white.opacity(0.66))
 
             Text(visualFixtureMode ? "$5,284,170" : "—")
-                .font(.custom("Sora-SemiBold", size: 40, relativeTo: .largeTitle))
+                .font(.custom("Sora-SemiBold", size: 30, relativeTo: .title))
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
-                .minimumScaleFactor(0.72)
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
 
-            Text(visualFixtureMode ? "at age 65" : "Projection activates when your financial inputs are complete")
-                .font(MilliFont.bodySmall)
+            Text(visualFixtureMode ? "at age 65" : "Complete your financial inputs to activate projection")
+                .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(Color.black.opacity(0.34))
+                .blur(radius: 0.2)
+        )
+    }
+
+    private func milestoneOverlay(width: CGFloat, height: CGFloat) -> some View {
+        let visibleEvents = Array(events.sorted(by: { $0.targetDate < $1.targetDate }).prefix(6))
+
+        return ZStack {
+            ForEach(Array(visibleEvents.enumerated()), id: \.offset) { index, event in
+                milestoneNode(event)
+                    .position(milestonePosition(index: index, width: width, height: height))
+            }
 
             if visualFixtureMode {
-                Text("Today: $2,341,080")
-                    .font(MilliFont.bodySmall)
-                    .foregroundStyle(MilliColors.cyanGlow)
-            } else if !events.isEmpty {
-                Text("Life goals currently planned: \(compactCurrency(plannedGoalValue))")
-                    .font(MilliFont.bodySmall)
-                    .foregroundStyle(MilliColors.cyanGlow)
-                    .padding(.top, 2)
+                centralGoalNode
+                    .position(x: width * 0.51, y: height * 0.49)
             }
         }
     }
 
+    private func milestoneNode(_ event: LifePlanningEvent) -> some View {
+        VStack(spacing: 5) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(hex: "17232A"), Color.black],
+                            center: UnitPoint(x: 0.42, y: 0.35),
+                            startRadius: 1,
+                            endRadius: 24
+                        )
+                    )
+                    .frame(width: 48, height: 48)
+                    .overlay {
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.48), MilliColors.cyanGlow.opacity(0.72), Color.white.opacity(0.12)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
+                            )
+                    }
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.24), radius: 7)
+
+                Image(systemName: event.type.icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text(event.type.rawValue)
+                .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
+                .foregroundStyle(MilliColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(event.targetDate.formatted(.dateTime.year()))
+                .font(.custom("Inter-Regular", size: 8.5, relativeTo: .caption2))
+                .foregroundStyle(MilliColors.cyanGlow)
+        }
+        .frame(width: 94)
+    }
+
+    private var centralGoalNode: some View {
+        VStack(spacing: 5) {
+            ZStack {
+                Circle()
+                    .fill(Color.black.opacity(0.78))
+                    .frame(width: 58, height: 58)
+                    .overlay {
+                        Circle().stroke(Color.white.opacity(0.30), lineWidth: 1)
+                    }
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 9)
+
+                Image(systemName: "diamond.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(MilliColors.silverBright)
+            }
+
+            Text("Financial Freedom")
+                .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
+                .foregroundStyle(MilliColors.textPrimary)
+            Text("Your goal")
+                .font(.custom("Inter-Regular", size: 8.5, relativeTo: .caption2))
+                .foregroundStyle(MilliColors.cyanGlow)
+        }
+        .frame(width: 112)
+    }
+
+    private func milestonePosition(index: Int, width: CGFloat, height: CGFloat) -> CGPoint {
+        let positions: [(CGFloat, CGFloat)] = [
+            (0.22, 0.30),
+            (0.15, 0.45),
+            (0.22, 0.61),
+            (0.79, 0.31),
+            (0.85, 0.47),
+            (0.78, 0.63)
+        ]
+        let point = positions[index % positions.count]
+        return CGPoint(x: width * point.0, y: height * point.1)
+    }
+
     private var heroEmptyState: some View {
-        VStack(spacing: 10) {
-            Text("Your future starts here")
+        VStack(spacing: 9) {
+            Text("Your future grows from the decisions you make today.")
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
 
-            Text("Add the milestones that matter to you. Milli will build the planning timeline without inventing assumptions.")
+            Text("Add the milestones that matter to you. Milli will build the timeline without inventing assumptions.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 285)
 
             Button {
                 showAddEvent = true
             } label: {
                 HStack(spacing: 7) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "plus")
                     Text("Add First Life Event")
                 }
                 .font(MilliFont.labelLarge)
                 .foregroundStyle(Color.black)
                 .padding(.horizontal, 18)
-                .frame(height: 42)
-                .background(
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "A5FAFF"), MilliColors.cyanGlow],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 12)
-                )
+                .frame(height: 40)
+                .background(Capsule().fill(MilliColors.cyanGlow))
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.black.opacity(0.60))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.black.opacity(0.58))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(MilliColors.cyanGlow.opacity(0.16), lineWidth: 0.8)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.14), lineWidth: 0.7)
                 }
         )
-        .padding(.horizontal, 18)
     }
 
-    private var heroMetrics: some View {
-        HStack(spacing: 10) {
-            if visualFixtureMode {
-                heroMetric(
-                    title: "CONTRIBUTIONS",
-                    value: "$2.3M",
-                    subtitle: "43%",
-                    tint: MilliColors.cyanGlow
-                )
-
-                heroMetric(
-                    title: "GROWTH",
-                    value: "$3.0M",
-                    subtitle: "57%",
-                    tint: Color(hex: "D9B58B")
-                )
-            } else {
-                heroMetric(
-                    title: "LIFE GOALS",
-                    value: compactCurrency(plannedGoalValue),
-                    subtitle: "User-entered targets",
-                    tint: MilliColors.cyanGlow
-                )
-
-                heroMetric(
-                    title: "MILESTONES",
-                    value: String(events.count),
-                    subtitle: nextEventLabel == "—" ? "Plan active" : "Next \(nextEventLabel)",
-                    tint: Color(hex: "D9B58B")
-                )
-            }
+    private var heroFooter: some View {
+        HStack(spacing: 8) {
+            footerMetric(title: "LIFE EVENTS", value: String(events.count), accent: MilliColors.cyanGlow)
+            footerMetric(title: "PLANNED VALUE", value: compactCurrency(plannedGoalValue), accent: Color(hex: "D9B58B"))
         }
     }
 
-    private func heroMetric(title: String, value: String, subtitle: String, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+    private func footerMetric(title: String, value: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(MilliFont.sectionLabel)
-                .foregroundStyle(tint)
+                .foregroundStyle(accent)
             Text(value)
                 .font(MilliFont.numericMedium)
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.70)
-            Text(subtitle)
-                .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textSecondary)
-                .lineLimit(1)
+                .minimumScaleFactor(0.68)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(13)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(Color.black.opacity(0.58))
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Color.black.opacity(0.56))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(tint.opacity(0.25), lineWidth: 0.8)
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(accent.opacity(0.18), lineWidth: 0.7)
                 }
         )
     }
 
-    private var keyLifeEvents: some View {
+    // MARK: Planning summary
+
+    private var planningSummary: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "KEY LIFE EVENTS", action: "Add") {
-                showAddEvent = true
+            sectionHeader("YOUR PLAN")
+
+            HStack(spacing: 0) {
+                summaryMetric(
+                    title: "Projected Net Worth",
+                    value: visualFixtureMode ? "$5.28M" : "—",
+                    detail: visualFixtureMode ? "Age 65" : "Awaiting inputs",
+                    accent: MilliColors.cyanGlow
+                )
+
+                Rectangle().fill(Color.white.opacity(0.07)).frame(width: 1, height: 72)
+
+                summaryMetric(
+                    title: "Monthly Investment",
+                    value: visualFixtureMode ? "$2,600" : "—",
+                    detail: visualFixtureMode ? "Current plan" : "Not set",
+                    accent: MilliColors.positive
+                )
+
+                Rectangle().fill(Color.white.opacity(0.07)).frame(width: 1, height: 72)
+
+                summaryMetric(
+                    title: "Life Goals",
+                    value: compactCurrency(plannedGoalValue),
+                    detail: "Planned targets",
+                    accent: Color(hex: "D9B58B")
+                )
+            }
+            .padding(.vertical, 10)
+            .background(integratedSurface)
+        }
+    }
+
+    private func summaryMetric(title: String, value: String, detail: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                .tracking(0.45)
+                .foregroundStyle(MilliColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(.custom("Sora-SemiBold", size: 16, relativeTo: .headline))
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+            Text(detail)
+                .font(MilliFont.caption)
+                .foregroundStyle(accent)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+    }
+
+    // MARK: Planning adjustments
+
+    private var planningAdjustments: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                sectionHeader("WHAT IF?")
+                Spacer()
+                Text("See the impact before you change the plan")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
 
-            if events.isEmpty {
+            if visualFixtureMode {
+                adjustmentRow(
+                    icon: "arrow.up.right",
+                    title: "Increase Savings",
+                    detail: "+2% annual contribution",
+                    impact: "+$1.2M",
+                    positive: true
+                )
+                adjustmentRow(
+                    icon: "clock.arrow.circlepath",
+                    title: "Retire Earlier",
+                    detail: "Model age 60",
+                    impact: "-$186K",
+                    positive: false
+                )
+                adjustmentRow(
+                    icon: "airplane",
+                    title: "Travel More",
+                    detail: "Add lifestyle spending",
+                    impact: "-$42K",
+                    positive: false
+                )
+            } else {
                 HStack(spacing: 10) {
-                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                    Image(systemName: "slider.horizontal.3")
                         .foregroundStyle(MilliColors.cyanGlow)
-                    Text("Your milestones will appear here as a financial timeline.")
+                    Text("Scenario analysis activates when your projection inputs are complete.")
                         .font(MilliFont.bodySmall)
                         .foregroundStyle(MilliColors.textSecondary)
                     Spacer()
                 }
-                .padding(.vertical, 6)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(events.sorted(by: { $0.targetDate < $1.targetDate })) { event in
-                            lifeEventCard(event)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
+                .padding(.vertical, 8)
             }
         }
-        .milliCard(padding: 14)
+        .padding(14)
+        .background(integratedSurface)
     }
 
-    private func lifeEventCard(_ event: LifePlanningEvent) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(Color.black.opacity(0.72))
-                    .frame(width: 50, height: 50)
-                    .overlay {
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.40), MilliColors.cyanGlow.opacity(0.50)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.1
-                            )
-                    }
-                Image(systemName: event.type.icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(MilliColors.cyanGlow)
-            }
-
-            Text(event.type.rawValue)
-                .font(MilliFont.labelLarge)
-                .foregroundStyle(MilliColors.textPrimary)
-                .lineLimit(1)
-
-            Text(event.targetDate.formatted(.dateTime.month(.abbreviated).year()))
-                .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            Text(compactCurrency(event.estimatedCost))
-                .font(MilliFont.bodySmall)
-                .monospacedDigit()
-                .foregroundStyle(Color(hex: "D9B58B"))
-        }
-        .frame(width: 118)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.025))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
-                }
-        )
-    }
-
-    private var planningAdjustments: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "PLANNING ADJUSTMENTS")
-
-            adjustmentRow(
-                icon: "percent",
-                title: "Savings Rate",
-                value: visualFixtureMode ? "15%" : "Not set",
-                detail: visualFixtureMode ? "Recommended" : "Complete your financial profile",
-                accent: MilliColors.cyanGlow
-            )
-
-            Divider().overlay(Color.white.opacity(0.06))
-
-            adjustmentRow(
-                icon: "dial.medium",
-                title: "Risk Tolerance",
-                value: visualFixtureMode ? "Moderate" : "Not set",
-                detail: visualFixtureMode ? "Balanced growth" : "Used for long-term projections",
-                accent: Color(hex: "D9B58B")
-            )
-
-            Divider().overlay(Color.white.opacity(0.06))
-
-            adjustmentRow(
-                icon: "calendar.badge.clock",
-                title: "Next Review",
-                value: visualFixtureMode ? "90 days" : "After setup",
-                detail: visualFixtureMode ? "Plan health check" : "Milli will schedule the first plan review",
-                accent: MilliColors.cyanGlow
-            )
-        }
-        .milliCard(padding: 14)
-    }
-
-    private func adjustmentRow(icon: String, title: String, value: String, detail: String, accent: Color) -> some View {
-        HStack(spacing: 12) {
+    private func adjustmentRow(icon: String, title: String, detail: String, impact: String, positive: Bool) -> some View {
+        HStack(spacing: 11) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(accent)
-                .frame(width: 36, height: 36)
-                .background(Circle().fill(accent.opacity(0.08)))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(MilliFont.bodyMedium)
+                    .font(.custom("Inter-SemiBold", size: 12.5, relativeTo: .footnote))
                     .foregroundStyle(MilliColors.textPrimary)
                 Text(detail)
                     .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.textSecondary)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
 
             Spacer()
 
-            Text(value)
-                .font(MilliFont.labelLarge)
-                .foregroundStyle(accent)
-                .multilineTextAlignment(.trailing)
+            Text(impact)
+                .font(.custom("Sora-SemiBold", size: 12, relativeTo: .footnote))
+                .foregroundStyle(positive ? MilliColors.positive : MilliColors.textSecondary)
         }
     }
 
-    private var wealthPath: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "WEALTH PATH")
+    // MARK: Milli AI
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.white.opacity(0.018))
-
-                GeometryReader { geo in
-                    let w = geo.size.width
-                    let h = geo.size.height
-
-                    Path { path in
-                        for fraction in [0.24, 0.50, 0.76] {
-                            path.move(to: CGPoint(x: 18, y: h * fraction))
-                            path.addLine(to: CGPoint(x: w - 18, y: h * fraction))
-                        }
-                    }
-                    .stroke(Color.white.opacity(0.055), style: StrokeStyle(lineWidth: 0.7, dash: [3, 5]))
-
-                    if visualFixtureMode {
-                        Path { path in
-                            path.move(to: CGPoint(x: 20, y: h * 0.80))
-                            path.addCurve(
-                                to: CGPoint(x: w * 0.35, y: h * 0.57),
-                                control1: CGPoint(x: w * 0.13, y: h * 0.73),
-                                control2: CGPoint(x: w * 0.22, y: h * 0.58)
-                            )
-                            path.addCurve(
-                                to: CGPoint(x: w * 0.62, y: h * 0.49),
-                                control1: CGPoint(x: w * 0.43, y: h * 0.54),
-                                control2: CGPoint(x: w * 0.52, y: h * 0.55)
-                            )
-                            path.addCurve(
-                                to: CGPoint(x: w - 22, y: h * 0.20),
-                                control1: CGPoint(x: w * 0.75, y: h * 0.42),
-                                control2: CGPoint(x: w * 0.86, y: h * 0.22)
-                            )
-                        }
-                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round))
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.35), radius: 5)
-
-                        Path { path in
-                            path.move(to: CGPoint(x: 20, y: h * 0.82))
-                            path.addCurve(
-                                to: CGPoint(x: w - 22, y: h * 0.27),
-                                control1: CGPoint(x: w * 0.35, y: h * 0.70),
-                                control2: CGPoint(x: w * 0.65, y: h * 0.45)
-                            )
-                        }
-                        .stroke(Color.white.opacity(0.48), style: StrokeStyle(lineWidth: 1.0, dash: [4, 4]))
-
-                        Text("$5.28M")
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.cyanGlow)
-                            .position(x: w - 42, y: h * 0.13)
-
-                        Text("Today")
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.textTertiary)
-                            .position(x: 36, y: h - 14)
-
-                        Text("Age 65")
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.textTertiary)
-                            .position(x: w - 42, y: h - 14)
-                    } else {
-                        VStack(spacing: 7) {
-                            Image(systemName: "chart.xyaxis.line")
-                                .font(.system(size: 21, weight: .medium))
-                                .foregroundStyle(MilliColors.cyanGlow)
-                            Text("Projection waiting for complete financial inputs")
-                                .font(MilliFont.bodySmall)
-                                .foregroundStyle(MilliColors.textSecondary)
-                                .multilineTextAlignment(.center)
-                            Text("No invented balances or growth assumptions are displayed.")
-                                .font(MilliFont.caption)
-                                .foregroundStyle(MilliColors.textTertiary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(width: w, height: h)
-                        .padding(.horizontal, 26)
-                    }
-                }
-            }
-            .frame(height: 170)
-        }
-        .milliCard(padding: 14)
-    }
-
-    private var aiInsight: some View {
-        HStack(alignment: .center, spacing: 14) {
-            MilliAICharacterView(size: 88, animated: !UIAccessibility.isReduceMotionEnabled)
-                .frame(width: 94, height: 104)
+    private var aiPlanningInsight: some View {
+        HStack(spacing: 13) {
+            MilliAICharacterView(size: 92, animated: true)
+                .frame(width: 92, height: 92)
 
             VStack(alignment: .leading, spacing: 5) {
-                Text("Milli AI")
-                    .font(MilliFont.headlineSmall)
+                Text("MILLI AI")
+                    .font(.custom("Inter-SemiBold", size: 10))
+                    .tracking(1.0)
                     .foregroundStyle(MilliColors.cyanGlow)
-
+                Text("Plan with context")
+                    .font(MilliFont.headlineSmall)
+                    .foregroundStyle(MilliColors.textPrimary)
                 Text(aiInsightText)
                     .font(MilliFont.bodySmall)
-                    .foregroundStyle(MilliColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("Plan intelligently. Adjust as life changes.")
-                    .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "061116"), Color.black.opacity(0.88)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+        .padding(.vertical, 8)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(MilliFont.sectionLabel)
+            .tracking(1.15)
+            .foregroundStyle(MilliColors.textSecondary)
+    }
+
+    private var integratedSurface: some View {
+        RoundedRectangle(cornerRadius: 17, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: "0D151A"), Color(hex: "080C0F")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(MilliColors.cyanGlow.opacity(0.18), lineWidth: 0.8)
-                }
-        )
-    }
-
-    private func sectionHeader(title: String, action: String? = nil, handler: (() -> Void)? = nil) -> some View {
-        HStack {
-            Text(title)
-                .font(MilliFont.sectionLabel)
-                .tracking(1.15)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            Spacer()
-
-            if let action, let handler {
-                Button(action, action: handler)
-                    .font(MilliFont.labelLarge)
-                    .foregroundStyle(MilliColors.cyanGlow)
-                    .buttonStyle(.plain)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                    .stroke(Color.white.opacity(0.075), lineWidth: 0.7)
             }
-        }
     }
+
+    // MARK: Derived values
 
     private var plannedGoalValue: Double {
         events.reduce(0) { $0 + $1.estimatedCost }
     }
 
-    private var nextEventLabel: String {
-        guard let next = events
-            .filter({ $0.targetDate >= Date() })
-            .sorted(by: { $0.targetDate < $1.targetDate })
-            .first
-        else {
-            return "—"
-        }
-
-        return next.targetDate.formatted(.dateTime.month(.abbreviated).year())
-    }
-
     private var aiInsightText: String {
         if visualFixtureMode {
-            return "Increasing your annual savings by 2% could materially strengthen your long-term plan."
+            return "Increasing annual savings by 2% could materially strengthen the long-term plan while preserving your current milestones."
         }
 
         guard !events.isEmpty else {
             return "Add your first life event and I’ll organize the milestones that matter to your future plan."
         }
 
-        if let next = events.sorted(by: { $0.targetDate < $1.targetDate }).first {
+        let next = events.sorted(by: { $0.targetDate < $1.targetDate }).first
+        if let next {
             return "You have \(events.count) planned milestone\(events.count == 1 ? "" : "s"). Your next goal is \(next.type.rawValue.lowercased()) in \(next.targetDate.formatted(.dateTime.month(.wide).year()))."
         }
 
