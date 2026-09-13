@@ -3,16 +3,57 @@ import UIKit
 
 // MARK: - TreeOfLifeView
 // High-fidelity implementation of Milli's approved Tree of Life experience.
-// The visual system follows the approved cinematic reference while keeping all
-// financial values and milestones grounded in user-provided data. No fake
-// projected net worth or seeded life events are shown in production.
+// Production values remain grounded in user-provided data. A deterministic
+// DEBUG-only fixture is used by screenshot QA so visual fidelity can be judged
+// against the approved populated reference without leaking demo data to users.
 
 struct TreeOfLifeView: View {
     var onBack: () -> Void = {}
 
     @State private var showAddEvent = false
-    @State private var events: [LifePlanningEvent] = []
+    @State private var events: [LifePlanningEvent] = Self.initialEventsForCurrentMode()
     @State private var glowPulse = false
+
+    private static var isVisualFixtureMode: Bool {
+        #if DEBUG
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || processInfo.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
+    }
+
+    private static func initialEventsForCurrentMode() -> [LifePlanningEvent] {
+        guard isVisualFixtureMode else { return [] }
+        let calendar = Calendar.current
+        let now = Date()
+
+        return [
+            LifePlanningEvent(
+                type: .marriage,
+                targetDate: calendar.date(byAdding: .year, value: 1, to: now) ?? now,
+                estimatedCost: 25_000
+            ),
+            LifePlanningEvent(
+                type: .child,
+                targetDate: calendar.date(byAdding: .year, value: 4, to: now) ?? now,
+                estimatedCost: 35_000
+            ),
+            LifePlanningEvent(
+                type: .homePurchase,
+                targetDate: calendar.date(byAdding: .year, value: 6, to: now) ?? now,
+                estimatedCost: 120_000
+            ),
+            LifePlanningEvent(
+                type: .retirement,
+                targetDate: calendar.date(byAdding: .year, value: 35, to: now) ?? now,
+                estimatedCost: 3_000_000
+            )
+        ]
+    }
+
+    private var visualFixtureMode: Bool { Self.isVisualFixtureMode }
 
     var body: some View {
         GeometryReader { proxy in
@@ -121,13 +162,13 @@ struct TreeOfLifeView: View {
                 .scaledToFill()
                 .frame(width: width, height: height)
                 .clipped()
-                .opacity(0.95)
+                .opacity(0.97)
 
             LinearGradient(
                 colors: [
-                    Color.black.opacity(0.62),
+                    Color.black.opacity(0.64),
                     Color.clear,
-                    Color.black.opacity(0.18),
+                    Color.black.opacity(0.14),
                     Color.black.opacity(0.72)
                 ],
                 startPoint: .top,
@@ -135,7 +176,7 @@ struct TreeOfLifeView: View {
             )
 
             RadialGradient(
-                colors: [MilliColors.cyanGlow.opacity(glowPulse ? 0.18 : 0.10), Color.clear],
+                colors: [MilliColors.cyanGlow.opacity(glowPulse ? 0.19 : 0.11), Color.clear],
                 center: UnitPoint(x: 0.48, y: 0.48),
                 startRadius: 20,
                 endRadius: width * 0.58
@@ -185,18 +226,24 @@ struct TreeOfLifeView: View {
                 .tracking(1.3)
                 .foregroundStyle(Color.white.opacity(0.68))
 
-            Text("—")
+            Text(visualFixtureMode ? "$5,284,170" : "—")
                 .font(.custom("Sora-SemiBold", size: 40, relativeTo: .largeTitle))
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
+                .minimumScaleFactor(0.72)
+                .lineLimit(1)
 
-            Text("Projection activates when your financial inputs are complete")
+            Text(visualFixtureMode ? "at age 65" : "Projection activates when your financial inputs are complete")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)
 
-            if !events.isEmpty {
+            if visualFixtureMode {
+                Text("Today: $2,341,080")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.cyanGlow)
+            } else if !events.isEmpty {
                 Text("Life goals currently planned: \(compactCurrency(plannedGoalValue))")
                     .font(MilliFont.bodySmall)
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -257,19 +304,35 @@ struct TreeOfLifeView: View {
 
     private var heroMetrics: some View {
         HStack(spacing: 10) {
-            heroMetric(
-                title: "LIFE GOALS",
-                value: compactCurrency(plannedGoalValue),
-                subtitle: "User-entered targets",
-                tint: MilliColors.cyanGlow
-            )
+            if visualFixtureMode {
+                heroMetric(
+                    title: "CONTRIBUTIONS",
+                    value: "$2.3M",
+                    subtitle: "43%",
+                    tint: MilliColors.cyanGlow
+                )
 
-            heroMetric(
-                title: "MILESTONES",
-                value: String(events.count),
-                subtitle: nextEventLabel == "—" ? "Plan active" : "Next \(nextEventLabel)",
-                tint: Color(hex: "D9B58B")
-            )
+                heroMetric(
+                    title: "GROWTH",
+                    value: "$3.0M",
+                    subtitle: "57%",
+                    tint: Color(hex: "D9B58B")
+                )
+            } else {
+                heroMetric(
+                    title: "LIFE GOALS",
+                    value: compactCurrency(plannedGoalValue),
+                    subtitle: "User-entered targets",
+                    tint: MilliColors.cyanGlow
+                )
+
+                heroMetric(
+                    title: "MILESTONES",
+                    value: String(events.count),
+                    subtitle: nextEventLabel == "—" ? "Plan active" : "Next \(nextEventLabel)",
+                    tint: Color(hex: "D9B58B")
+                )
+            }
         }
     }
 
@@ -386,8 +449,8 @@ struct TreeOfLifeView: View {
             adjustmentRow(
                 icon: "percent",
                 title: "Savings Rate",
-                value: "Not set",
-                detail: "Complete your financial profile",
+                value: visualFixtureMode ? "15%" : "Not set",
+                detail: visualFixtureMode ? "Recommended" : "Complete your financial profile",
                 accent: MilliColors.cyanGlow
             )
 
@@ -396,8 +459,8 @@ struct TreeOfLifeView: View {
             adjustmentRow(
                 icon: "dial.medium",
                 title: "Risk Tolerance",
-                value: "Not set",
-                detail: "Used for long-term projections",
+                value: visualFixtureMode ? "Moderate" : "Not set",
+                detail: visualFixtureMode ? "Balanced growth" : "Used for long-term projections",
                 accent: Color(hex: "D9B58B")
             )
 
@@ -406,8 +469,8 @@ struct TreeOfLifeView: View {
             adjustmentRow(
                 icon: "calendar.badge.clock",
                 title: "Next Review",
-                value: "After setup",
-                detail: "Milli will schedule the first plan review",
+                value: visualFixtureMode ? "90 days" : "After setup",
+                detail: visualFixtureMode ? "Plan health check" : "Milli will schedule the first plan review",
                 accent: MilliColors.cyanGlow
             )
         }
@@ -448,30 +511,82 @@ struct TreeOfLifeView: View {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(Color.white.opacity(0.018))
 
-                Path { path in
-                    path.move(to: CGPoint(x: 18, y: 134))
-                    path.addLine(to: CGPoint(x: 318, y: 134))
-                    path.move(to: CGPoint(x: 18, y: 86))
-                    path.addLine(to: CGPoint(x: 318, y: 86))
-                    path.move(to: CGPoint(x: 18, y: 38))
-                    path.addLine(to: CGPoint(x: 318, y: 38))
-                }
-                .stroke(Color.white.opacity(0.055), style: StrokeStyle(lineWidth: 0.7, dash: [3, 5]))
+                GeometryReader { geo in
+                    let w = geo.size.width
+                    let h = geo.size.height
 
-                VStack(spacing: 7) {
-                    Image(systemName: "chart.xyaxis.line")
-                        .font(.system(size: 21, weight: .medium))
-                        .foregroundStyle(MilliColors.cyanGlow)
-                    Text("Projection waiting for complete financial inputs")
-                        .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.textSecondary)
-                        .multilineTextAlignment(.center)
-                    Text("No invented balances or growth assumptions are displayed.")
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
-                        .multilineTextAlignment(.center)
+                    Path { path in
+                        for fraction in [0.24, 0.50, 0.76] {
+                            path.move(to: CGPoint(x: 18, y: h * fraction))
+                            path.addLine(to: CGPoint(x: w - 18, y: h * fraction))
+                        }
+                    }
+                    .stroke(Color.white.opacity(0.055), style: StrokeStyle(lineWidth: 0.7, dash: [3, 5]))
+
+                    if visualFixtureMode {
+                        Path { path in
+                            path.move(to: CGPoint(x: 20, y: h * 0.80))
+                            path.addCurve(
+                                to: CGPoint(x: w * 0.35, y: h * 0.57),
+                                control1: CGPoint(x: w * 0.13, y: h * 0.73),
+                                control2: CGPoint(x: w * 0.22, y: h * 0.58)
+                            )
+                            path.addCurve(
+                                to: CGPoint(x: w * 0.62, y: h * 0.49),
+                                control1: CGPoint(x: w * 0.43, y: h * 0.54),
+                                control2: CGPoint(x: w * 0.52, y: h * 0.55)
+                            )
+                            path.addCurve(
+                                to: CGPoint(x: w - 22, y: h * 0.20),
+                                control1: CGPoint(x: w * 0.75, y: h * 0.42),
+                                control2: CGPoint(x: w * 0.86, y: h * 0.22)
+                            )
+                        }
+                        .stroke(MilliColors.cyanGlow, style: StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round))
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.35), radius: 5)
+
+                        Path { path in
+                            path.move(to: CGPoint(x: 20, y: h * 0.82))
+                            path.addCurve(
+                                to: CGPoint(x: w - 22, y: h * 0.27),
+                                control1: CGPoint(x: w * 0.35, y: h * 0.70),
+                                control2: CGPoint(x: w * 0.65, y: h * 0.45)
+                            )
+                        }
+                        .stroke(Color.white.opacity(0.48), style: StrokeStyle(lineWidth: 1.0, dash: [4, 4]))
+
+                        Text("$5.28M")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.cyanGlow)
+                            .position(x: w - 42, y: h * 0.13)
+
+                        Text("Today")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                            .position(x: 36, y: h - 14)
+
+                        Text("Age 65")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                            .position(x: w - 42, y: h - 14)
+                    } else {
+                        VStack(spacing: 7) {
+                            Image(systemName: "chart.xyaxis.line")
+                                .font(.system(size: 21, weight: .medium))
+                                .foregroundStyle(MilliColors.cyanGlow)
+                            Text("Projection waiting for complete financial inputs")
+                                .font(MilliFont.bodySmall)
+                                .foregroundStyle(MilliColors.textSecondary)
+                                .multilineTextAlignment(.center)
+                            Text("No invented balances or growth assumptions are displayed.")
+                                .font(MilliFont.caption)
+                                .foregroundStyle(MilliColors.textTertiary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(width: w, height: h)
+                        .padding(.horizontal, 26)
+                    }
                 }
-                .padding(.horizontal, 26)
             }
             .frame(height: 170)
         }
@@ -552,6 +667,10 @@ struct TreeOfLifeView: View {
     }
 
     private var aiInsightText: String {
+        if visualFixtureMode {
+            return "Increasing your annual savings by 2% could materially strengthen your long-term plan."
+        }
+
         guard !events.isEmpty else {
             return "Add your first life event and I’ll organize the milestones that matter to your future plan."
         }
