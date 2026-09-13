@@ -24,9 +24,7 @@
 		A10043 /* VaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10043; };
 		A10044 /* WealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10044; };
 		A10045 /* CockpitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045; };
-		A10046 /* MilliMetalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046; };
-		A10047 /* MilliAICompanion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10047; };
-		A10048 /* MilliCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048; };
+		A10046 /* MilliMetalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046; };		A10048 /* MilliCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048; };
 		A10049 /* MilliChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049; };
 		A10051 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051; };
 		A10060 /* MilliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060; };
@@ -60,9 +58,7 @@
 		A10116 /* AddRetirementAccountSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10116; };
 		A10117 /* AddLifeEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10117; };
 		A10118 /* MileageTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118; };
-		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200; };
-		A10201 /* MilliAIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10201; };
-		A10202 /* MilliCentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10202; };
+		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200; };		A10202 /* MilliCentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10202; };
 		A10203 /* ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10203; };
 		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204; };
 		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205; };
@@ -118,9 +114,7 @@
 		B10043 /* VaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultView.swift; sourceTree = "<group>"; };
 		B10044 /* WealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WealthView.swift; sourceTree = "<group>"; };
 		B10045 /* CockpitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CockpitView.swift; sourceTree = "<group>"; };
-		B10046 /* MilliMetalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetalCard.swift; sourceTree = "<group>"; };
-		B10047 /* MilliAICompanion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAICompanion.swift; sourceTree = "<group>"; };
-		B10048 /* MilliCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCard.swift; sourceTree = "<group>"; };
+		B10046 /* MilliMetalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetalCard.swift; sourceTree = "<group>"; };		B10048 /* MilliCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCard.swift; sourceTree = "<group>"; };
 		B10049 /* MilliChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliChart.swift; sourceTree = "<group>"; };
 		B10051 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B10060 /* MilliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliColors.swift; sourceTree = "<group>"; };
@@ -149,9 +143,7 @@
 		B10104 /* VehicleSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSetupView.swift; sourceTree = "<group>"; };
 		B10105 /* TaxProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxProfileSetupView.swift; sourceTree = "<group>"; };
 		B10106 /* PlanSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSelectionView.swift; sourceTree = "<group>"; };
-		B10200 /* MilliTaxVaultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultScreen.swift; sourceTree = "<group>"; };
-		B10201 /* MilliAIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliAIChatView.swift; sourceTree = "<group>"; };
-		B10202 /* MilliCentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsView.swift; sourceTree = "<group>"; };
+		B10200 /* MilliTaxVaultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliTaxVaultScreen.swift; sourceTree = "<group>"; };		B10202 /* MilliCentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliCentsView.swift; sourceTree = "<group>"; };
 		B10203 /* ExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpensesView.swift; sourceTree = "<group>"; };
 		B10204 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		B10205 /* WealthOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WealthOverviewView.swift; sourceTree = "<group>"; };
@@ -263,9 +255,7 @@
 				B10117 /* AddLifeEventSheet.swift */,
 				B10118 /* MileageTrackerView.swift */,
 				B10100 /* TreeOfLifeView.swift */,
-				B10200 /* MilliTaxVaultScreen.swift */,
-				B10201 /* MilliAIChatView.swift */,
-				B10202 /* MilliCentsView.swift */,
+				B10200 /* MilliTaxVaultScreen.swift */,				B10202 /* MilliCentsView.swift */,
 				B10203 /* ExpensesView.swift */,
 				B10204 /* ReportsView.swift */,
 				B10205 /* WealthOverviewView.swift */,
@@ -294,9 +284,7 @@
 				B10021 /* MilliNavBar.swift */,
 				B10022 /* MilliAIOrb.swift */,
 				B10119 /* MilliDetailSheet.swift */,
-				B10046 /* MilliMetalCard.swift */,
-				B10047 /* MilliAICompanion.swift */,
-				B10070 /* MilliSurface.swift */,
+				B10046 /* MilliMetalCard.swift */,				B10070 /* MilliSurface.swift */,
 				B10071 /* MilliSparkline.swift */,
 				B10072 /* MilliProgressRing.swift */,
 				B10073 /* MilliCenterMButton.swift */,
