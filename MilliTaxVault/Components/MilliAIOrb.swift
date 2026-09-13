@@ -35,7 +35,6 @@ struct MilliAICharacterView: View {
             Image(assetName)
                 .resizable()
                 .interpolation(.high)
-                .antialiased(true)
                 .scaledToFit()
                 .frame(width: size, height: size)
                 .offset(y: floatY)
