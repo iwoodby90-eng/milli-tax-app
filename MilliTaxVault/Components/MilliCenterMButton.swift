@@ -1,18 +1,10 @@
 import SwiftUI
 import UIKit
 
-// MARK: - MilliCenterMButton — 3D Chrome Hardware Dial with Segmented Cyan Ring
-// Visual spec: 1954 Bel Air dashboard gauge / hardware dial
-// Layers (outside-in):
-//   1. Segmented cyan illuminated tick ring (48 segments, glowing)
-//   2. Outer chrome bezel (angular gradient, multi-stop metallic)
-//   3. Mid chrome groove (dark recessed channel)
-//   4. Inner dark face (radial gradient, deep obsidian)
-//   5. Approved Milli M artwork, optically composited onto the face
-//   6. Top specular highlight crescent (white→clear)
-//   7. Bottom cyan ambient reflection
-// Diameter: 78pt (within 74–82pt spec)
-// Interaction: scale-down + haptic impact on press
+// MARK: - MilliCenterMButton
+// Compact canonical center control used by legacy surfaces/previews. The live
+// navigation owns its own integrated assembly, but this component remains visually
+// aligned and uses the native transparent MilliMMark rather than bitmap compositing.
 
 struct MilliCenterMButton: View {
     let action: () -> Void
@@ -43,15 +35,12 @@ struct MilliCenterMButton: View {
                         )
                     )
                     .frame(width: outerSize - grooveInset * 2, height: outerSize - grooveInset * 2)
-                    .overlay {
-                        Circle()
-                            .stroke(Color.black.opacity(0.72), lineWidth: 0.8)
-                    }
+                    .overlay { Circle().stroke(Color.black.opacity(0.72), lineWidth: 0.8) }
 
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "1A1F2E"), Color(hex: "0D1117"), Color(hex: "07090B")],
+                            colors: [Color(hex: "1A1F24"), Color(hex: "0D1115"), Color(hex: "07090B")],
                             center: .center,
                             startRadius: 0,
                             endRadius: (outerSize - innerFaceInset * 2) / 2
@@ -75,21 +64,13 @@ struct MilliCenterMButton: View {
                             )
                     }
 
-                // The approved logo PNG contains a dark source plate. Screen compositing
-                // optically drops that black plate into the black-glass dial while retaining
-                // the metallic/cyan M itself, avoiding a visible square inside the round control.
-                Image("MilliMLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 38, height: 38)
-                    .blendMode(.screen)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.16), radius: 3)
-                    .accessibilityHidden(true)
+                MilliMMark(size: 40)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.24), radius: 3)
 
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.20), Color.clear],
+                            colors: [Color.white.opacity(0.18), Color.clear],
                             startPoint: .top,
                             endPoint: .center
                         )
@@ -97,35 +78,21 @@ struct MilliCenterMButton: View {
                     .frame(width: outerSize - innerFaceInset * 2 - 4, height: outerSize - innerFaceInset * 2 - 4)
                     .mask(
                         VStack(spacing: 0) {
-                            Ellipse()
-                                .frame(height: (outerSize - innerFaceInset * 2) * 0.34)
+                            Ellipse().frame(height: (outerSize - innerFaceInset * 2) * 0.34)
                             Spacer()
                         }
                     )
                     .allowsHitTesting(false)
-
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color.clear, Color.clear, MilliColors.cyan.opacity(0.27), Color.clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 1.5
-                    )
-                    .frame(width: outerSize - 1, height: outerSize - 1)
-                    .allowsHitTesting(false)
             }
-            .scaleEffect(isPressed ? 0.94 : 1)
+            .scaleEffect(isPressed ? 0.95 : 1)
             .animation(.easeInOut(duration: 0.08), value: isPressed)
             .sensoryFeedback(.impact(weight: .heavy, intensity: 0.8), trigger: isPressed)
         }
         .buttonStyle(MDialPressStyle(isPressed: $isPressed))
         .onAppear {
-            if !UIAccessibility.isReduceMotionEnabled {
-                withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                    glowPulse = true
-                }
+            guard !UIAccessibility.isReduceMotionEnabled else { return }
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                glowPulse = true
             }
         }
     }
@@ -165,7 +132,7 @@ private struct MDialPressStyle: ButtonStyle {
 
 #Preview {
     ZStack {
-        Color(hex: "07090B")
+        MilliColors.obsidian
         MilliCenterMButton(action: {})
     }
 }
