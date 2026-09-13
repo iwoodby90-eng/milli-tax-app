@@ -32,9 +32,9 @@ enum MilliTab: String, CaseIterable {
 }
 
 // MARK: - MilliNavBar
-// Canonical navigation: slim black-glass tray, precision chrome edge and one
-// dominant center M assembly. The four destinations are deliberately quiet so
-// the control reads like premium financial hardware instead of five toy buttons.
+// Approved canonical navigation: low-profile black glass, a restrained polished
+// metal bridge, and one dominant center-M assembly. The chrome frames the UI;
+// it does not become the UI.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
@@ -42,20 +42,21 @@ struct MilliNavBar: View {
 
     @State private var isDialPressed = false
 
-    private let barHeight: CGFloat = 100
-    private let centerDiameter: CGFloat = 86
-    private let centerGap: CGFloat = 96
+    private let barHeight: CGFloat = MilliSpacing.bottomNavHeight
+    private let centerDiameter: CGFloat = 78
+    private let centerGap: CGFloat = 90
 
     var body: some View {
         ZStack(alignment: .top) {
-            canonicalChassis
-            canonicalFace
+            chassis
+            glassFace
+            topSpecular
             tabRow
             centerDial
         }
         .frame(maxWidth: .infinity)
         .frame(height: barHeight)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 7)
         .background(alignment: .bottom) {
             Rectangle()
                 .fill(Color.black)
@@ -68,17 +69,17 @@ struct MilliNavBar: View {
         .accessibilityLabel("Milli navigation")
     }
 
-    private var canonicalChassis: some View {
+    private var chassis: some View {
         CanonicalNavShape()
             .fill(
                 LinearGradient(
                     stops: [
-                        .init(color: Color(hex: "F7F9FA"), location: 0.00),
-                        .init(color: Color(hex: "A0A7AE"), location: 0.18),
-                        .init(color: Color(hex: "E5E8EA"), location: 0.36),
-                        .init(color: Color(hex: "555D65"), location: 0.70),
-                        .init(color: Color(hex: "C5CBD0"), location: 0.90),
-                        .init(color: Color(hex: "6A7178"), location: 1.00)
+                        .init(color: Color(hex: "F7F8F9"), location: 0.00),
+                        .init(color: Color(hex: "A5ABB0"), location: 0.10),
+                        .init(color: Color(hex: "E8EAEC"), location: 0.20),
+                        .init(color: Color(hex: "565D63"), location: 0.54),
+                        .init(color: Color(hex: "B4BAC0"), location: 0.78),
+                        .init(color: Color(hex: "4A5056"), location: 1.00)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -88,31 +89,51 @@ struct MilliNavBar: View {
                 CanonicalNavShape()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.82), Color(hex: "777F87"), Color.white.opacity(0.30)],
+                            colors: [Color.white.opacity(0.82), Color(hex: "6C747B"), Color.white.opacity(0.24)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.9
+                        lineWidth: 0.75
                     )
             }
-            .shadow(color: .black.opacity(0.82), radius: 16, y: 7)
+            .shadow(color: .black.opacity(0.82), radius: 14, y: 7)
     }
 
-    private var canonicalFace: some View {
+    private var glassFace: some View {
         CanonicalNavShape()
             .fill(
                 LinearGradient(
-                    colors: [Color(hex: "11171C"), Color(hex: "070A0D"), Color.black],
+                    stops: [
+                        .init(color: Color(hex: "151B20"), location: 0.00),
+                        .init(color: Color(hex: "090D10"), location: 0.34),
+                        .init(color: Color(hex: "020304"), location: 1.00)
+                    ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
             .overlay {
                 CanonicalNavShape()
-                    .stroke(MilliColors.cyanGlow.opacity(0.12), lineWidth: 0.75)
+                    .stroke(MilliColors.cyanGlow.opacity(0.14), lineWidth: 0.65)
             }
-            .scaleEffect(x: 0.985, y: 0.91, anchor: .bottom)
+            .scaleEffect(x: 0.985, y: 0.905, anchor: .bottom)
             .offset(y: 3)
+            .allowsHitTesting(false)
+    }
+
+    private var topSpecular: some View {
+        Capsule()
+            .fill(
+                LinearGradient(
+                    colors: [Color.white.opacity(0.55), Color.white.opacity(0.08), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 1)
+            .padding(.horizontal, 24)
+            .offset(y: 17)
             .allowsHitTesting(false)
     }
 
@@ -127,8 +148,8 @@ struct MilliNavBar: View {
             tabButton(.wealth)
             tabButton(.cockpit)
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 29)
+        .padding(.horizontal, 7)
+        .padding(.top, 25)
         .frame(height: barHeight, alignment: .top)
     }
 
@@ -139,32 +160,25 @@ struct MilliNavBar: View {
             selectedTab = tab
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
-            VStack(spacing: 5) {
+            VStack(spacing: 3) {
                 ZStack {
-                    Circle()
-                        .fill(
-                            isSelected
-                            ? AnyShapeStyle(
-                                RadialGradient(
-                                    colors: [MilliColors.cyanGlow.opacity(0.24), Color.white.opacity(0.05), Color.clear],
-                                    center: .center,
-                                    startRadius: 1,
-                                    endRadius: 22
-                                )
-                            )
-                            : AnyShapeStyle(Color.clear)
-                        )
-                        .frame(width: 38, height: 38)
+                    if isSelected {
+                        Circle()
+                            .fill(MilliColors.cyanGlow.opacity(0.075))
+                            .frame(width: 31, height: 31)
+                            .blur(radius: 1)
+                    }
 
                     Image(systemName: tab.icon)
-                        .font(.system(size: tab == .cockpit ? 18 : 17, weight: .semibold))
-                        .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "C4C9CE"))
-                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.38) : .clear, radius: 4)
+                        .font(.system(size: tab == .cockpit ? 17 : 16, weight: .semibold))
+                        .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "C2C7CC"))
+                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.34) : .clear, radius: 4)
                 }
+                .frame(height: 31)
 
                 Text(tab.displayName)
-                    .font(.custom("Inter-Medium", size: 10.5, relativeTo: .caption))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "A8AFB5"))
+                    .font(.custom("Inter-Medium", size: 10, relativeTo: .caption))
+                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "A3AAB0"))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -186,64 +200,64 @@ struct MilliNavBar: View {
                     .fill(
                         AngularGradient(
                             colors: [
-                                Color(hex: "F8FAFB"),
-                                Color(hex: "6A7178"),
-                                Color(hex: "E2E6E9"),
-                                Color(hex: "40474E"),
-                                Color(hex: "F3F5F6"),
-                                Color(hex: "747B82"),
-                                Color(hex: "EBEEF0")
+                                Color(hex: "F8F9FA"),
+                                Color(hex: "666D74"),
+                                Color(hex: "DEE2E5"),
+                                Color(hex: "3E454B"),
+                                Color(hex: "F4F6F7"),
+                                Color(hex: "7B8289"),
+                                Color(hex: "E8EBED")
                             ],
                             center: .center
                         )
                     )
                     .frame(width: centerDiameter, height: centerDiameter)
-                    .overlay { Circle().stroke(Color.white.opacity(0.62), lineWidth: 0.8) }
-                    .shadow(color: .black.opacity(0.85), radius: 9, y: 5)
+                    .overlay { Circle().stroke(Color.white.opacity(0.64), lineWidth: 0.75) }
+                    .shadow(color: .black.opacity(0.86), radius: 9, y: 5)
 
                 Circle()
-                    .fill(Color(hex: "070B0E"))
-                    .frame(width: centerDiameter - 10, height: centerDiameter - 10)
-                    .overlay { Circle().stroke(Color.black.opacity(0.9), lineWidth: 1.5) }
+                    .fill(Color(hex: "05080A"))
+                    .frame(width: centerDiameter - 9, height: centerDiameter - 9)
+                    .overlay { Circle().stroke(Color.black.opacity(0.95), lineWidth: 1.2) }
 
-                SegmentedArcRing(segments: 32, gapDegrees: 5.5)
+                SegmentedArcRing(segments: 32, gapDegrees: 5.1)
                     .stroke(
                         LinearGradient(
                             colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        style: StrokeStyle(lineWidth: 3.3, lineCap: .butt)
+                        style: StrokeStyle(lineWidth: 3.0, lineCap: .butt)
                     )
-                    .frame(width: centerDiameter - 18, height: centerDiameter - 18)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.45), radius: 5)
+                    .frame(width: centerDiameter - 17, height: centerDiameter - 17)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.44), radius: 4)
 
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "172027"), Color(hex: "080B0E"), Color.black],
+                            colors: [Color(hex: "182127"), Color(hex: "070A0D"), Color.black],
                             center: UnitPoint(x: 0.42, y: 0.30),
                             startRadius: 1,
-                            endRadius: 34
+                            endRadius: 31
                         )
                     )
-                    .frame(width: centerDiameter - 31, height: centerDiameter - 31)
+                    .frame(width: centerDiameter - 29, height: centerDiameter - 29)
                     .overlay {
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    colors: [Color.white.opacity(0.50), Color(hex: "717981"), Color.white.opacity(0.08)],
+                                    colors: [Color.white.opacity(0.48), Color(hex: "737B82"), Color.white.opacity(0.07)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 0.9
+                                lineWidth: 0.8
                             )
                     }
 
-                MilliMMark(size: 40)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 4)
+                MilliMMark(size: 36)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.28), radius: 4)
             }
-            .scaleEffect(isDialPressed ? 0.96 : 1)
+            .scaleEffect(isDialPressed ? 0.965 : 1)
             .animation(.spring(response: 0.22, dampingFraction: 0.76), value: isDialPressed)
         }
         .buttonStyle(.plain)
@@ -266,31 +280,31 @@ struct CanonicalNavShape: Shape {
         let w = rect.width
         let h = rect.height
         let center = rect.midX
-        let corner: CGFloat = 24
-        let shoulder: CGFloat = 62
-        let crestDepth: CGFloat = 18
+        let corner: CGFloat = 22
+        let shoulder: CGFloat = 57
+        let crestDepth: CGFloat = 16
 
         p.move(to: CGPoint(x: corner, y: crestDepth))
         p.addLine(to: CGPoint(x: center - shoulder, y: crestDepth))
         p.addCurve(
-            to: CGPoint(x: center - 42, y: 4),
-            control1: CGPoint(x: center - 54, y: crestDepth),
-            control2: CGPoint(x: center - 50, y: 7)
+            to: CGPoint(x: center - 39, y: 4),
+            control1: CGPoint(x: center - 51, y: crestDepth),
+            control2: CGPoint(x: center - 47, y: 7)
         )
         p.addCurve(
             to: CGPoint(x: center, y: 0),
-            control1: CGPoint(x: center - 28, y: 0),
-            control2: CGPoint(x: center - 14, y: 0)
+            control1: CGPoint(x: center - 26, y: 0),
+            control2: CGPoint(x: center - 13, y: 0)
         )
         p.addCurve(
-            to: CGPoint(x: center + 42, y: 4),
-            control1: CGPoint(x: center + 14, y: 0),
-            control2: CGPoint(x: center + 28, y: 0)
+            to: CGPoint(x: center + 39, y: 4),
+            control1: CGPoint(x: center + 13, y: 0),
+            control2: CGPoint(x: center + 26, y: 0)
         )
         p.addCurve(
             to: CGPoint(x: center + shoulder, y: crestDepth),
-            control1: CGPoint(x: center + 50, y: 7),
-            control2: CGPoint(x: center + 54, y: crestDepth)
+            control1: CGPoint(x: center + 47, y: 7),
+            control2: CGPoint(x: center + 51, y: crestDepth)
         )
         p.addLine(to: CGPoint(x: w - corner, y: crestDepth))
         p.addQuadCurve(to: CGPoint(x: w, y: crestDepth + corner), control: CGPoint(x: w, y: crestDepth))
@@ -305,7 +319,6 @@ struct CanonicalNavShape: Shape {
     }
 }
 
-// Compatibility alias retained for any older previews/components.
 struct ChassisShape: Shape {
     var crestHeight: CGFloat
 
