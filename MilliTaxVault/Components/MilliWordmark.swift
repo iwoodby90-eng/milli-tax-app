@@ -21,7 +21,7 @@ struct MilliWordmark: View {
             colors: [
                 Color(hex: "8AF8FF"),
                 Color(hex: "00E5FF"),
-                Color(hex: "00B4C2")
+                Color(hex: "00E5FF")
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
