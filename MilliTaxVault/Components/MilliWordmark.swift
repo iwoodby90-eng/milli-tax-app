@@ -1,8 +1,9 @@
 import SwiftUI
 
 // MARK: - MilliWordmark
-// Canonical wordmark: chrome/silver 3D letters with the approved Electric Cyan
-// accent ONLY on the M's inner diagonal. I, L, L, I remain pure chrome.
+// Canonical wordmark: polished silver letters with one Electric Cyan blade in the
+// M. The brand mark stays transparent and native so it never reads as a pasted
+// rectangular image on dark surfaces.
 
 struct MilliWordmark: View {
     var fontSize: CGFloat = 30
@@ -10,7 +11,13 @@ struct MilliWordmark: View {
 
     private var chromeGradient: LinearGradient {
         LinearGradient(
-            colors: [MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite],
+            stops: [
+                .init(color: Color(hex: "FFFFFF"), location: 0.00),
+                .init(color: Color(hex: "9CA4AA"), location: 0.22),
+                .init(color: Color(hex: "F5F7F8"), location: 0.48),
+                .init(color: Color(hex: "697077"), location: 0.72),
+                .init(color: Color(hex: "D9DDE0"), location: 1.00)
+            ],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -18,11 +25,7 @@ struct MilliWordmark: View {
 
     private var approvedMAccent: LinearGradient {
         LinearGradient(
-            colors: [
-                Color(hex: "8AF8FF"),
-                Color(hex: "00E5FF"),
-                Color(hex: "00E5FF")
-            ],
+            colors: [Color(hex: "8AF8FF"), Color(hex: "00E5FF"), Color(hex: "00E5FF")],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -33,7 +36,30 @@ struct MilliWordmark: View {
             Text("MILLI")
                 .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
                 .tracking(tracking)
+                .foregroundStyle(Color.black.opacity(0.88))
+                .offset(y: max(0.7, fontSize * 0.035))
+
+            Text("MILLI")
+                .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
+                .tracking(tracking)
                 .foregroundStyle(chromeGradient)
+                .overlay {
+                    Text("MILLI")
+                        .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
+                        .tracking(tracking)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.48), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                        .mask(
+                            Text("MILLI")
+                                .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
+                                .tracking(tracking)
+                        )
+                }
 
             Text("MILLI")
                 .font(.custom("Sora-Bold", size: fontSize, relativeTo: .title))
@@ -41,13 +67,13 @@ struct MilliWordmark: View {
                 .foregroundStyle(approvedMAccent)
                 .mask(MInnerDiagonalMask())
         }
-        .shadow(color: Color(hex: "00E5FF").opacity(0.12), radius: 4)
+        .shadow(color: Color.black.opacity(0.45), radius: 2.5, y: 2)
+        .shadow(color: MilliColors.cyanGlow.opacity(0.08), radius: 4)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel("Milli")
     }
 }
 
-// Custom shape covering only the M's inner diagonal stroke region.
 private struct MInnerDiagonalMask: Shape {
     func path(in rect: CGRect) -> Path {
         let mWidth = rect.width * 0.22
