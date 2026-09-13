@@ -2,31 +2,57 @@ import SwiftUI
 import Charts
 
 // MARK: - WealthOverviewView
-// Primary wealth hub: one premium surface for investing, retirement, savings,
-// longer-term planning, and the payout flows that fund them.
+// Canonical wealth hub. One strong portfolio hero, a quiet destination rail and
+// consolidated planning surfaces replace the previous grid of independent cards.
+// Reference values are restricted to DEBUG screenshot mode so production never
+// presents fabricated balances as user data.
 
 struct WealthOverviewView: View {
     var onBack: () -> Void = {}
     var navigate: ((ActiveScreen) -> Void)? = nil
 
-    private let model = WealthOverviewModel.reference
+    private static var isVisualFixtureMode: Bool {
+        #if DEBUG
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || processInfo.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
+    }
+
+    private var model: WealthOverviewModel? {
+        Self.isVisualFixtureMode ? .reference : nil
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
+            VStack(spacing: 18) {
                 header
-                wealthDestinations
-                netWorthHero
-                allocationCard
-                projectionCard
-                goalsCard
+                portfolioHero
+                destinationRail
+                allocationAndProjection
+                goalsAndPlanning
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background(
+            ZStack {
+                MilliColors.background.ignoresSafeArea()
+                RadialGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.045), Color.clear],
+                    center: UnitPoint(x: 0.82, y: 0.12),
+                    startRadius: 0,
+                    endRadius: 300
+                )
+                .ignoresSafeArea()
+            }
+        )
     }
+
+    // MARK: Header
 
     private var header: some View {
         HStack {
@@ -34,7 +60,7 @@ struct WealthOverviewView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(MilliColors.textSecondary)
-                    .frame(width: 34, height: 34)
+                    .frame(width: 36, height: 36)
                     .background(Circle().fill(Color.white.opacity(0.035)))
             }
             .buttonStyle(.plain)
@@ -53,302 +79,330 @@ struct WealthOverviewView: View {
 
             Spacer()
 
-            Image(systemName: "chart.pie.fill")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
-                .frame(width: 34, height: 34)
-        }
-    }
-
-    private var wealthDestinations: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("WEALTH HUB")
-                .sectionHeaderStyle()
-
-            HStack(spacing: 7) {
-                destinationTile(
-                    title: "Investing",
-                    subtitle: "Markets & portfolio",
-                    icon: "chart.xyaxis.line",
-                    destination: .investing
-                )
-                destinationTile(
-                    title: "Retirement",
-                    subtitle: "Projection & 401(k)",
-                    icon: "hourglass.bottomhalf.filled",
-                    destination: .retirement
-                )
-            }
-
-            HStack(spacing: 7) {
-                destinationTile(
-                    title: "Savings",
-                    subtitle: "Goals & reserves",
-                    icon: "banknote.fill",
-                    destination: .savings
-                )
-                destinationTile(
-                    title: "Payouts",
-                    subtitle: "Fund the future",
-                    icon: "arrow.down.circle.fill",
-                    destination: .vault
-                )
-            }
-
-            HStack(spacing: 7) {
-                destinationTile(
-                    title: "Tree of Life",
-                    subtitle: "Life-event planning",
-                    icon: "point.3.filled.connected.trianglepath.dotted",
-                    destination: .treeOfLife
-                )
-                destinationTile(
-                    title: "Reports",
-                    subtitle: "Track progress",
-                    icon: "doc.text.magnifyingglass",
-                    destination: .reports
-                )
-            }
-        }
-        .milliCard(padding: 12)
-    }
-
-    private func destinationTile(
-        title: String,
-        subtitle: String,
-        icon: String,
-        destination: ActiveScreen
-    ) -> some View {
-        Button {
-            navigate?(destination)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+            Button { navigate?(.treeOfLife) } label: {
+                Image(systemName: "point.3.filled.connected.trianglepath.dotted")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(MilliColors.cyanGlow)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(MilliColors.cyanGlow.opacity(0.08))
-                    )
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Color.white.opacity(0.025)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Tree of Life")
+        }
+    }
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(MilliFont.bodySmall)
-                        .foregroundStyle(MilliColors.textPrimary)
-                        .lineLimit(1)
-                    Text(subtitle)
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+    // MARK: Portfolio hero
+
+    private var portfolioHero: some View {
+        ZStack(alignment: .topLeading) {
+            Image("wealth-hero")
+                .resizable()
+                .scaledToFill()
+                .opacity(0.20)
+                .clipped()
+
+            LinearGradient(
+                colors: [Color(hex: "0B141A").opacity(0.48), Color.black.opacity(0.92)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("TOTAL NET WORTH")
+                        .font(MilliFont.sectionLabel)
+                        .tracking(1.15)
+                        .foregroundStyle(MilliColors.textSecondary)
+                    Spacer()
+                    Text(model == nil ? "UNAVAILABLE" : "PREVIEW")
+                        .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                        .tracking(0.7)
+                        .foregroundStyle(model == nil ? MilliColors.textTertiary : MilliColors.cyanGlow)
                 }
 
-                Spacer(minLength: 2)
+                if let model {
+                    Text(model.totalNetWorth.formatted(.currency(code: "USD").precision(.fractionLength(0))))
+                        .font(.custom("Sora-Bold", size: 40, relativeTo: .largeTitle))
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.70)
 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(MilliColors.textTertiary)
-            }
-            .padding(9)
-            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.025))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.white.opacity(0.055), lineWidth: 0.6)
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .bold))
+                        Text("\(model.monthlyChange.formatted(.currency(code: "USD").sign(strategy: .always()).precision(.fractionLength(0)))) this month")
+                            .font(MilliFont.bodySmall)
                     }
-            )
+                    .foregroundStyle(MilliColors.positive)
+
+                    Chart(model.trend) { point in
+                        AreaMark(
+                            x: .value("Month", point.month),
+                            y: .value("Net Worth", point.value)
+                        )
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [MilliColors.cyanGlow.opacity(0.20), MilliColors.cyanGlow.opacity(0.01)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .interpolationMethod(.monotone)
+
+                        LineMark(
+                            x: .value("Month", point.month),
+                            y: .value("Net Worth", point.value)
+                        )
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        .interpolationMethod(.monotone)
+                    }
+                    .chartYAxis(.hidden)
+                    .chartXAxis {
+                        AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                            AxisValueLabel()
+                                .foregroundStyle(MilliColors.textTertiary)
+                                .font(MilliFont.caption)
+                        }
+                    }
+                    .frame(height: 92)
+                } else {
+                    Text("—")
+                        .font(.custom("Sora-Bold", size: 40, relativeTo: .largeTitle))
+                        .foregroundStyle(MilliColors.textPrimary)
+
+                    Text("Connect and classify your financial accounts to build your live wealth view. Milli will not invent portfolio values.")
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+
+                    Button { navigate?(.accounts) } label: {
+                        HStack(spacing: 6) {
+                            Text("Review accounts")
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(MilliFont.labelLarge)
+                        .foregroundStyle(MilliColors.cyanGlow)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 8)
+                }
+            }
+            .padding(17)
+        }
+        .frame(maxWidth: .infinity, minHeight: model == nil ? 205 : 238)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.22), MilliColors.cyanGlow.opacity(0.18), Color.white.opacity(0.03)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.8
+                )
+        }
+    }
+
+    // MARK: Destination rail
+
+    private var destinationRail: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("WEALTH TOOLS")
+                .sectionHeaderStyle()
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 18) {
+                    destinationButton("Investing", "chart.xyaxis.line", .investing)
+                    destinationButton("Retirement", "hourglass", .retirement)
+                    destinationButton("Savings", "banknote", .savings)
+                    destinationButton("Tree of Life", "tree", .treeOfLife)
+                    destinationButton("Reports", "doc.text", .reports)
+                }
+                .padding(.horizontal, 2)
+            }
+        }
+    }
+
+    private func destinationButton(_ title: String, _ icon: String, _ destination: ActiveScreen) -> some View {
+        Button { navigate?(destination) } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.025))
+                        .frame(width: 42, height: 42)
+                        .overlay { Circle().stroke(Color.white.opacity(0.07), lineWidth: 0.7) }
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+                Text(title)
+                    .font(.custom("Inter-Medium", size: 10.5, relativeTo: .caption))
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .lineLimit(1)
+            }
+            .frame(minWidth: 62)
         }
         .buttonStyle(.plain)
     }
 
-    private var netWorthHero: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("TOTAL NET WORTH")
-                .sectionHeaderStyle()
+    // MARK: Allocation + projection
 
-            Text(model.totalNetWorth.formatted(.currency(code: "USD").precision(.fractionLength(0))))
-                .font(MilliFont.heroNumber)
-                .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
-
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 10, weight: .bold))
-                Text("\(model.monthlyChange.formatted(.currency(code: "USD").sign(strategy: .always()).precision(.fractionLength(0)))) this month")
-                    .font(MilliFont.bodySmall)
+    private var allocationAndProjection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("PORTFOLIO")
+                    .sectionHeaderStyle()
+                Spacer()
+                Text(model == nil ? "Connect accounts to activate" : "Allocation & outlook")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
             }
-            .foregroundStyle(MilliColors.positive)
 
-            Chart(model.trend) { point in
-                AreaMark(
-                    x: .value("Month", point.month),
-                    y: .value("Net Worth", point.value)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MilliColors.cyanGlow.opacity(0.20), MilliColors.cyanGlow.opacity(0.01)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
-
-                LineMark(
-                    x: .value("Month", point.month),
-                    y: .value("Net Worth", point.value)
-                )
-                .foregroundStyle(MilliColors.cyanGlow)
-                .lineStyle(StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
-                .interpolationMethod(.catmullRom)
-            }
-            .chartYAxis(.hidden)
-            .chartXAxis(.hidden)
-            .frame(height: 82)
-        }
-        .milliCard(padding: 14)
-    }
-
-    private var allocationCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("WEALTH ALLOCATION")
-                .sectionHeaderStyle()
-
-            HStack(spacing: 14) {
-                Chart(model.allocations) { allocation in
-                    SectorMark(
-                        angle: .value("Value", allocation.value),
-                        innerRadius: .ratio(0.67),
-                        angularInset: 1.5
-                    )
-                    .foregroundStyle(allocation.color)
-                    .cornerRadius(2)
-                }
-                .chartLegend(.hidden)
-                .frame(width: 120, height: 120)
-                .overlay {
-                    VStack(spacing: 1) {
-                        Text("TOTAL")
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.textTertiary)
-                        Text(compactCurrency(model.totalNetWorth))
-                            .font(MilliFont.numericSmall)
-                            .monospacedDigit()
-                            .foregroundStyle(MilliColors.textPrimary)
+            if let model {
+                HStack(spacing: 16) {
+                    Chart(model.allocations) { allocation in
+                        SectorMark(
+                            angle: .value("Value", allocation.value),
+                            innerRadius: .ratio(0.69),
+                            angularInset: 1.5
+                        )
+                        .foregroundStyle(allocation.color)
+                        .cornerRadius(2)
                     }
-                }
+                    .chartLegend(.hidden)
+                    .frame(width: 126, height: 126)
+                    .overlay {
+                        VStack(spacing: 1) {
+                            Text(compactCurrency(model.totalNetWorth))
+                                .font(MilliFont.numericMedium)
+                                .monospacedDigit()
+                                .foregroundStyle(MilliColors.textPrimary)
+                            Text("TOTAL")
+                                .font(MilliFont.caption)
+                                .tracking(0.6)
+                                .foregroundStyle(MilliColors.textTertiary)
+                        }
+                    }
 
-                VStack(spacing: 7) {
-                    ForEach(model.allocations) { allocation in
-                        HStack(spacing: 7) {
-                            Circle()
-                                .fill(allocation.color)
-                                .frame(width: 7, height: 7)
-                            VStack(alignment: .leading, spacing: 1) {
+                    VStack(spacing: 9) {
+                        ForEach(model.allocations) { allocation in
+                            HStack(spacing: 7) {
+                                Circle()
+                                    .fill(allocation.color)
+                                    .frame(width: 7, height: 7)
                                 Text(allocation.name)
                                     .font(MilliFont.bodySmall)
                                     .foregroundStyle(MilliColors.textPrimary)
-                                Text(allocation.value.formatted(.currency(code: "USD").precision(.fractionLength(0))))
+                                Spacer()
+                                Text(allocation.share(of: model.totalNetWorth).formatted(.percent.precision(.fractionLength(0))))
                                     .font(MilliFont.caption)
                                     .monospacedDigit()
                                     .foregroundStyle(MilliColors.textSecondary)
                             }
-                            Spacer()
-                            Text(allocation.share(of: model.totalNetWorth).formatted(.percent.precision(.fractionLength(0))))
-                                .font(MilliFont.caption)
-                                .monospacedDigit()
-                                .foregroundStyle(MilliColors.textTertiary)
                         }
                     }
                 }
-            }
-        }
-        .milliCard(padding: 14)
-    }
 
-    private var projectionCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("FUTURE WEALTH")
-                    .sectionHeaderStyle()
-                Spacer()
-                Text("MODERATE")
-                    .font(MilliFont.caption)
-                    .tracking(0.5)
-                    .foregroundStyle(MilliColors.cyanGlow)
-            }
+                Divider().overlay(Color.white.opacity(0.06))
 
-            HStack(spacing: 8) {
-                projectionMetric("Retirement Value", compactCurrency(model.retirementProjection), MilliColors.positive)
-                projectionMetric("Future Net Worth", compactCurrency(model.futureNetWorth), MilliColors.cyanGlow)
-            }
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("MONTHLY CONTRIBUTIONS")
-                        .font(MilliFont.sectionLabel)
-                        .foregroundStyle(MilliColors.textSecondary)
-                    Text("Across retirement, investing and savings")
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
+                HStack(spacing: 0) {
+                    projectionMetric("Retirement", compactCurrency(model.retirementProjection), MilliColors.positive)
+                    Rectangle().fill(Color.white.opacity(0.07)).frame(width: 1, height: 58)
+                    projectionMetric("Future Net Worth", compactCurrency(model.futureNetWorth), MilliColors.cyanGlow)
+                    Rectangle().fill(Color.white.opacity(0.07)).frame(width: 1, height: 58)
+                    projectionMetric("Monthly", compactCurrency(model.monthlyContributions), MilliColors.silverBright)
                 }
-                Spacer()
-                Text(model.monthlyContributions.formatted(.currency(code: "USD").precision(.fractionLength(0))))
-                    .font(MilliFont.numericMedium)
-                    .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+            } else {
+                HStack(spacing: 11) {
+                    Image(systemName: "chart.pie")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Allocation unavailable")
+                            .font(MilliFont.headlineSmall)
+                            .foregroundStyle(MilliColors.textPrimary)
+                        Text("Once account data is available, investments, retirement, savings and cash will appear here.")
+                            .font(MilliFont.bodySmall)
+                            .foregroundStyle(MilliColors.textSecondary)
+                    }
+                }
+                .padding(.vertical, 8)
             }
         }
-        .milliCard(padding: 14)
+        .padding(15)
+        .background(integratedSurface)
     }
 
     private func projectionMetric(_ title: String, _ value: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title.uppercased())
-                .font(MilliFont.sectionLabel)
+                .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
+                .tracking(0.45)
                 .foregroundStyle(MilliColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
             Text(value)
-                .font(MilliFont.numericMedium)
+                .font(.custom("Sora-SemiBold", size: 14, relativeTo: .subheadline))
                 .monospacedDigit()
                 .foregroundStyle(color)
                 .lineLimit(1)
-                .minimumScaleFactor(0.74)
+                .minimumScaleFactor(0.65)
         }
-        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.025))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.055), lineWidth: 0.6)
-                }
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 9)
     }
 
-    private var goalsCard: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Text("CURRENT GOALS")
-                .sectionHeaderStyle()
+    // MARK: Goals / planning
 
-            goalRow("Emergency Reserve", current: 12_800, target: 18_000, icon: "shield.fill")
-            goalRow("Home Fund", current: 18_765, target: 50_000, icon: "house.fill")
+    private var goalsAndPlanning: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("PLANNING")
+                    .sectionHeaderStyle()
+                Spacer()
+                Button { navigate?(.treeOfLife) } label: {
+                    Text("Open Tree of Life")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.cyanGlow)
+                }
+                .buttonStyle(.plain)
+            }
+
+            if model != nil {
+                goalRow("Emergency Reserve", current: 12_800, target: 18_000, icon: "shield.fill")
+                goalRow("Home Fund", current: 18_765, target: 50_000, icon: "house.fill")
+            } else {
+                HStack(spacing: 11) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .foregroundStyle(MilliColors.cyanGlow)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Build your future plan")
+                            .font(MilliFont.headlineSmall)
+                            .foregroundStyle(MilliColors.textPrimary)
+                        Text("Add life events and goals without fabricating account values.")
+                            .font(MilliFont.bodySmall)
+                            .foregroundStyle(MilliColors.textSecondary)
+                    }
+                    Spacer()
+                }
+            }
         }
-        .milliCard(padding: 14)
+        .padding(.horizontal, 2)
     }
 
     private func goalRow(_ title: String, current: Double, target: Double, icon: String) -> some View {
         let progress = target > 0 ? min(max(current / target, 0), 1) : 0
 
-        return VStack(spacing: 6) {
-            HStack(spacing: 8) {
+        return VStack(spacing: 7) {
+            HStack(spacing: 9) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(MilliColors.cyanGlow)
-                    .frame(width: 26, height: 26)
-                    .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+                    .frame(width: 26)
 
                 Text(title)
                     .font(MilliFont.bodySmall)
@@ -372,6 +426,22 @@ struct WealthOverviewView: View {
             }
             .frame(height: 4)
         }
+        .padding(.vertical, 3)
+    }
+
+    private var integratedSurface: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: "0D151A"), Color(hex: "080C0F")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.white.opacity(0.075), lineWidth: 0.7)
+            }
     }
 
     private func compactCurrency(_ value: Double) -> String {
