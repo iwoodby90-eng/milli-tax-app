@@ -1,9 +1,9 @@
 import SwiftUI
-import UIKit
 
 // MARK: - MilliAIView
-// Premium assistant surface. The approved Milli AI character is a visual anchor,
-// while the conversation remains restrained and finance-first rather than chat-app generic.
+// Canonical premium assistant surface. Milli AI is treated as a branded
+// financial copilot, not a generic chat screen. The approved companion artwork
+// is the hero and the interaction surfaces remain restrained and legible.
 
 struct MilliAIView: View {
     var onBack: () -> Void = {}
@@ -21,228 +21,298 @@ struct MilliAIView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
+        ZStack {
+            assistantBackground
 
-            ScrollViewReader { proxy in
+            VStack(spacing: 0) {
+                header
+
                 ScrollView(.vertical, showsIndicators: false) {
-                    LazyVStack(spacing: 14) {
+                    VStack(spacing: 18) {
                         assistantHero
                         quickActions
-
-                        ForEach(messages) { message in
-                            messageView(message)
-                                .id(message.id)
-                        }
+                        conversation
                     }
                     .padding(.horizontal, MilliSpacing.screenHorizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 24)
                 }
-                .onChange(of: messages.count) { _, _ in
-                    if let last = messages.last {
-                        withAnimation(.easeOut(duration: 0.25)) {
-                            proxy.scrollTo(last.id, anchor: .bottom)
-                        }
-                    }
-                }
-            }
 
-            composer
-                .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
-        }
-        .background(
-            ZStack {
-                MilliColors.background.ignoresSafeArea()
-                RadialGradient(
-                    colors: [MilliColors.cyanGlow.opacity(0.055), Color.clear],
-                    center: UnitPoint(x: 0.84, y: 0.10),
-                    startRadius: 0,
-                    endRadius: 260
-                )
-                .ignoresSafeArea()
+                composer
+                    .padding(.bottom, MilliSpacing.bottomNavHeight - 4)
             }
-        )
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var assistantBackground: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+
+            LinearGradient(
+                colors: [Color(hex: "071116"), Color(hex: "030609"), Color.black],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [MilliColors.cyanGlow.opacity(0.10), Color.clear],
+                center: UnitPoint(x: 0.78, y: 0.17),
+                startRadius: 4,
+                endRadius: 330
+            )
+            .ignoresSafeArea()
+        }
     }
 
     private var header: some View {
-        ZStack {
-            HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(MilliColors.textSecondary)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(Color.white.opacity(0.035)))
-                }
-                .buttonStyle(.plain)
+        HStack(spacing: 12) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MilliColors.textPrimary)
+                    .frame(width: 38, height: 38)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.035))
+                            .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 0.7))
+                    )
+            }
+            .buttonStyle(.plain)
 
-                Spacer()
+            VStack(alignment: .leading, spacing: 2) {
+                Text("MILLI AI")
+                    .font(.custom("Sora-Bold", size: 17, relativeTo: .headline))
+                    .tracking(2.6)
+                    .foregroundStyle(MilliColors.silverBright)
 
-                HStack(spacing: 5) {
-                    Image(systemName: "lock.shield.fill")
-                    Text("PRIVATE")
-                }
-                .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
-                .tracking(0.65)
-                .foregroundStyle(MilliColors.textTertiary)
+                Text("FINANCIAL COPILOT")
+                    .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                    .tracking(1.35)
+                    .foregroundStyle(MilliColors.cyanGlow)
             }
 
-            Text("MILLI AI")
-                .font(.custom("Sora-SemiBold", size: 16, relativeTo: .headline))
-                .tracking(3.2)
-                .foregroundStyle(MilliColors.silverBright)
+            Spacer()
+
+            HStack(spacing: 5) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("PRIVATE")
+                    .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                    .tracking(0.7)
+            }
+            .foregroundStyle(MilliColors.textTertiary)
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(Capsule().fill(Color.white.opacity(0.035)))
         }
         .padding(.horizontal, MilliSpacing.screenHorizontal)
         .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.bottom, 5)
     }
 
     private var assistantHero: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Hi, I'm Milli.")
-                    .font(.custom("Sora-Bold", size: 25, relativeTo: .title2))
-                    .foregroundStyle(MilliColors.textPrimary)
-
-                Text("Your financial copilot for taxes, payouts, mileage, planning, and smarter money decisions.")
-                    .font(MilliFont.bodyMedium)
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(MilliColors.cyanGlow)
-                        .frame(width: 5, height: 5)
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.6), radius: 3)
-                    Text("Ready to help")
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.cyanGlow)
-                }
-                .padding(.top, 2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            MilliAICharacterView(size: 122, animated: true)
-                .frame(width: 116, height: 122)
-        }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 4)
-    }
-
-    private var quickActions: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(quickPrompts.enumerated()), id: \.offset) { index, prompt in
-                Button {
-                    submitPrompt(prompt)
-                } label: {
-                    HStack(spacing: 10) {
-                        Text(prompt)
-                            .font(.custom("Inter-Medium", size: 12.5, relativeTo: .footnote))
-                            .foregroundStyle(MilliColors.textPrimary)
-                            .multilineTextAlignment(.leading)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(MilliColors.textTertiary)
-                    }
-                    .padding(.horizontal, 13)
-                    .frame(minHeight: 44)
-                }
-                .buttonStyle(.plain)
-
-                if index < quickPrompts.count - 1 {
-                    Divider()
-                        .overlay(Color.white.opacity(0.055))
-                        .padding(.leading, 13)
-                }
-            }
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "0D151A"), Color(hex: "080C0F")],
+                        colors: [Color(hex: "0A151B"), Color(hex: "04080B"), Color.black],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.20), MilliColors.cyanGlow.opacity(0.24), Color.white.opacity(0.035)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.8
+                        )
                 }
-        )
+
+            RadialGradient(
+                colors: [MilliColors.cyanGlow.opacity(0.13), Color.clear],
+                center: UnitPoint(x: 0.76, y: 0.46),
+                startRadius: 0,
+                endRadius: 170
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Hi, I'm Milli.")
+                        .font(.custom("Sora-Bold", size: 30, relativeTo: .title))
+                        .foregroundStyle(MilliColors.textPrimary)
+
+                    Text("Ask me about taxes, payouts, mileage, planning, and the financial decisions behind your next move.")
+                        .font(.custom("Inter-Regular", size: 14.5, relativeTo: .body))
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .lineSpacing(2.4)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(MilliColors.cyanGlow)
+                            .frame(width: 6, height: 6)
+                            .shadow(color: MilliColors.cyanGlow.opacity(0.7), radius: 4)
+                        Text("READY TO HELP")
+                            .font(.custom("Inter-SemiBold", size: 9, relativeTo: .caption2))
+                            .tracking(0.95)
+                            .foregroundStyle(MilliColors.cyanGlow)
+                    }
+                    .padding(.top, 4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                MilliAICharacterView(size: 154, animated: true)
+                    .frame(width: 132, height: 172)
+                    .offset(x: 6, y: 4)
+            }
+            .padding(.leading, 18)
+            .padding(.trailing, 8)
+            .padding(.vertical, 18)
+        }
+        .frame(minHeight: 220)
+        .shadow(color: MilliColors.cyanGlow.opacity(0.06), radius: 24, y: 10)
+    }
+
+    private var quickActions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ASK MILLI")
+                .font(MilliFont.sectionLabel)
+                .tracking(1.1)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            VStack(spacing: 0) {
+                ForEach(Array(quickPrompts.enumerated()), id: \.offset) { index, prompt in
+                    Button {
+                        submitPrompt(prompt)
+                    } label: {
+                        HStack(spacing: 11) {
+                            ZStack {
+                                Circle()
+                                    .fill(MilliColors.cyanGlow.opacity(0.075))
+                                    .frame(width: 29, height: 29)
+                                Image(systemName: promptIcon(for: index))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(MilliColors.cyanGlow)
+                            }
+
+                            Text(prompt)
+                                .font(.custom("Inter-Medium", size: 13, relativeTo: .footnote))
+                                .foregroundStyle(MilliColors.textPrimary)
+                                .multilineTextAlignment(.leading)
+
+                            Spacer(minLength: 6)
+
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(MilliColors.textTertiary)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 48)
+                    }
+                    .buttonStyle(.plain)
+
+                    if index < quickPrompts.count - 1 {
+                        Divider()
+                            .overlay(Color.white.opacity(0.055))
+                            .padding(.leading, 52)
+                    }
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.white.opacity(0.025))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.075), lineWidth: 0.7)
+                    }
+            )
+        }
+    }
+
+    private var conversation: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if !messages.isEmpty {
+                Text("CONVERSATION")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(1.1)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+
+            ForEach(messages) { message in
+                messageView(message)
+            }
+        }
     }
 
     @ViewBuilder
     private func messageView(_ message: MilliAIMessage) -> some View {
         switch message.role {
         case .user:
-            userBubble(message.text)
-        case .assistant:
-            aiResponse(message)
-        }
-    }
-
-    private func userBubble(_ text: String) -> some View {
-        HStack {
-            Spacer(minLength: 64)
-            Text(text)
-                .font(MilliFont.bodyMedium)
-                .foregroundStyle(MilliColors.blackGlass)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-        }
-    }
-
-    private func aiResponse(_ message: MilliAIMessage) -> some View {
-        HStack(alignment: .top, spacing: 9) {
-            MilliAICharacterView(size: 44, animated: false)
-                .frame(width: 44, height: 44)
-
-            VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Spacer(minLength: 58)
                 Text(message.text)
                     .font(MilliFont.bodyMedium)
-                    .foregroundStyle(MilliColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let actionTitle = message.actionTitle,
-                   let destination = message.destination {
-                    Button {
-                        navigate?(destination)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(actionTitle)
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 10, weight: .bold))
-                        }
-                        .font(MilliFont.labelLarge)
-                        .foregroundStyle(MilliColors.cyanGlow)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 13)
-            .background(
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .fill(Color.white.opacity(0.025))
-                    .overlay {
+                    .foregroundStyle(MilliColors.blackGlass)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .background(
                         RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+            }
+
+        case .assistant:
+            HStack(alignment: .top, spacing: 10) {
+                MilliAICharacterView(size: 48, animated: false)
+                    .frame(width: 44, height: 50)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(message.text)
+                        .font(MilliFont.bodyMedium)
+                        .foregroundStyle(MilliColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let actionTitle = message.actionTitle,
+                       let destination = message.destination {
+                        Button {
+                            navigate?(destination)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(actionTitle)
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 9, weight: .bold))
+                            }
+                            .font(MilliFont.labelLarge)
+                            .foregroundStyle(MilliColors.cyanGlow)
+                        }
+                        .buttonStyle(.plain)
                     }
-            )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 13)
+                .background(
+                    RoundedRectangle(cornerRadius: 17, style: .continuous)
+                        .fill(Color.white.opacity(0.025))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                                .stroke(Color.white.opacity(0.065), lineWidth: 0.7)
+                        }
+                )
+            }
         }
     }
 
@@ -261,32 +331,39 @@ struct MilliAIView: View {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(canSend ? MilliColors.blackGlass : MilliColors.textTertiary)
-                    .frame(width: 31, height: 31)
-                    .background(
-                        Circle()
-                            .fill(canSend ? MilliColors.cyanGlow : Color.white.opacity(0.04))
-                    )
+                    .frame(width: 32, height: 32)
+                    .background(Circle().fill(canSend ? MilliColors.cyanGlow : Color.white.opacity(0.045)))
             }
             .buttonStyle(.plain)
             .disabled(!canSend)
             .accessibilityLabel("Send message")
         }
-        .padding(.horizontal, 13)
-        .frame(minHeight: 50)
+        .padding(.horizontal, 14)
+        .frame(minHeight: 52)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(hex: "0B1115"))
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .fill(Color(hex: "0A1014"))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 17, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
                 }
         )
         .padding(.horizontal, MilliSpacing.screenHorizontal)
-        .padding(.top, 7)
+        .padding(.top, 8)
+        .background(Color.black.opacity(0.96))
     }
 
     private var canSend: Bool {
         !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func promptIcon(for index: Int) -> String {
+        switch index {
+        case 0: return "percent"
+        case 1: return "banknote.fill"
+        case 2: return "shield.lefthalf.filled"
+        default: return "chart.line.uptrend.xyaxis"
+        }
     }
 
     private func submitPrompt(_ prompt: String) {
@@ -303,7 +380,7 @@ struct MilliAIView: View {
         isInputFocused = false
 
         let response = MilliAIFallbackEngine.response(to: text)
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(.easeOut(duration: 0.20)) {
             messages.append(response)
         }
     }
@@ -377,7 +454,7 @@ private enum MilliAIFallbackEngine {
         if query.contains("invest") || query.contains("market") || query.contains("portfolio") {
             return MilliAIMessage(
                 role: .assistant,
-                text: "The Investing view contains your portfolio surface, holdings, live market indicators, and OHLC candlestick chart.",
+                text: "The Investing view contains your portfolio surface, holdings, live market indicators, and market history.",
                 actionTitle: "View Investing",
                 destination: .investing
             )
