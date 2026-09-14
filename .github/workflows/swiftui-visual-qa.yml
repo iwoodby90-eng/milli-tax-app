@@ -44,7 +44,11 @@ jobs:
           set -euo pipefail
           bash scripts/verify-milli-screen-captures.sh "$RUNNER_TEMP/milli-screen-qa"
 
+      # Always retain the screenshots, including failed sanity runs. A senior
+      # visual QA pass needs the defective frames to diagnose the actual surface
+      # instead of losing the evidence when verification correctly rejects it.
       - name: Upload visual QA screenshots
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: milli-swiftui-screen-qa
