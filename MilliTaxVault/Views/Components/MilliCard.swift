@@ -1,9 +1,11 @@
 import SwiftUI
 
 // MARK: - MilliCard
-// Premium graphite/black-glass surface shared by the whole app.
-// The goal is depth without visual noise: machined edge, restrained cyan atmosphere,
-// and enough separation from the obsidian canvas to read cleanly on OLED displays.
+// Canonical Milli surface system. Every reusable card now shares the same
+// premium black-glass material language: near-black graphite, a machined silver
+// edge, restrained Electric Cyan atmosphere, controlled specular light and deep
+// OLED separation. The treatment is intentionally quiet so financial content
+// remains dominant.
 
 struct MilliCard<Content: View>: View {
     let content: Content
@@ -26,18 +28,40 @@ struct MilliCardBackground: View {
         let shape = RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
 
         shape
-            .fill(MilliColors.blackGlassSurface)
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: "121B20"), location: 0.00),
+                        .init(color: Color(hex: "0A0F12"), location: 0.42),
+                        .init(color: Color(hex: "050708"), location: 1.00)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .overlay {
-                MilliGradients.cyanAmbient
-                    .opacity(showGlow ? 1 : 0)
-                    .clipShape(shape)
-                    .allowsHitTesting(false)
+                RadialGradient(
+                    colors: [
+                        MilliColors.cyanGlow.opacity(showGlow ? 0.060 : 0.020),
+                        Color.clear
+                    ],
+                    center: UnitPoint(x: 0.86, y: 0.06),
+                    startRadius: 0,
+                    endRadius: 150
+                )
+                .clipShape(shape)
+                .allowsHitTesting(false)
             }
             .overlay {
                 shape
                     .stroke(
-                        showGlow ? MilliColors.precisionChromeEdge : LinearGradient(
-                            colors: [MilliColors.borderSubtle, MilliColors.borderSubtle],
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.22),
+                                Color(hex: "8B949C").opacity(0.12),
+                                MilliColors.cyanGlow.opacity(showGlow ? 0.12 : 0.04),
+                                Color.white.opacity(0.025)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -48,31 +72,32 @@ struct MilliCardBackground: View {
                 LinearGradient(
                     colors: [
                         Color.clear,
-                        MilliColors.glassHighlight,
-                        Color.white.opacity(0.025),
+                        Color.white.opacity(0.30),
+                        Color.white.opacity(0.045),
                         Color.clear
                     ],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-                .frame(height: 0.8)
-                .padding(.horizontal, 18)
+                .frame(height: 0.7)
+                .padding(.horizontal, 17)
                 .allowsHitTesting(false)
             }
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .bottomTrailing) {
                 LinearGradient(
-                    colors: [Color.clear, MilliColors.glassLowlight, Color.clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
+                    colors: [Color.clear, MilliColors.cyanGlow.opacity(showGlow ? 0.18 : 0.04)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                .frame(height: 0.6)
-                .padding(.horizontal, 14)
+                .frame(width: 88, height: 0.7)
+                .padding(.trailing, 16)
+                .padding(.bottom, 1)
                 .allowsHitTesting(false)
             }
-            .shadow(color: Color.black.opacity(0.48), radius: 14, x: 0, y: 7)
+            .shadow(color: Color.black.opacity(0.58), radius: 14, x: 0, y: 8)
             .shadow(
-                color: showGlow ? MilliColors.cyanGlow.opacity(0.035) : Color.clear,
-                radius: 10,
+                color: showGlow ? MilliColors.cyanGlow.opacity(0.022) : Color.clear,
+                radius: 9,
                 x: 0,
                 y: -1
             )
