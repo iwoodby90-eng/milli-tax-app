@@ -2,8 +2,9 @@ import SwiftUI
 import UIKit
 
 // MARK: - Milli AI Character
-// Canonical Milli companion. The approved transparent robot artwork is the source
-// of truth. No masking, blending workaround, or opaque plate is allowed around it.
+// Canonical Milli companion. The approved transparent robot artwork is the
+// visual source of truth. SwiftUI adds only environmental light and restrained
+// motion; it never redraws, masks, or places the character on an opaque plate.
 
 struct MilliAICharacterView: View {
     var size: CGFloat = 88
@@ -11,31 +12,33 @@ struct MilliAICharacterView: View {
 
     @State private var floatY: CGFloat = 0
     @State private var glowScale: CGFloat = 0.98
-    @State private var glowOpacity: Double = 0.18
+    @State private var glowOpacity: Double = 0.16
 
     private var assetName: String {
-        size >= 120 ? "milli-ai-robot-large" : "milli-ai-robot"
+        // Use the high-detail master for nearly every visible product surface.
+        // The compact asset is reserved for very small inline placements.
+        size >= 58 ? "milli-ai-robot-large" : "milli-ai-robot"
     }
 
     var body: some View {
         ZStack {
             Ellipse()
-                .fill(MilliColors.cyanGlow.opacity(glowOpacity * 0.68))
-                .frame(width: size * 0.64, height: size * 0.12)
-                .blur(radius: max(7, size * 0.075))
+                .fill(MilliColors.cyanGlow.opacity(glowOpacity * 0.72))
+                .frame(width: size * 0.58, height: size * 0.09)
+                .blur(radius: max(7, size * 0.065))
                 .scaleEffect(glowScale)
                 .offset(y: size * 0.43)
 
             RadialGradient(
                 colors: [
-                    MilliColors.cyanGlow.opacity(glowOpacity * 0.28),
+                    MilliColors.cyanGlow.opacity(glowOpacity * 0.24),
                     Color.clear
                 ],
-                center: UnitPoint(x: 0.50, y: 0.52),
+                center: UnitPoint(x: 0.50, y: 0.48),
                 startRadius: 2,
-                endRadius: size * 0.60
+                endRadius: size * 0.56
             )
-            .frame(width: size * 1.08, height: size * 1.08)
+            .frame(width: size * 1.02, height: size * 1.02)
             .allowsHitTesting(false)
 
             Image(assetName)
@@ -46,8 +49,8 @@ struct MilliAICharacterView: View {
                 .frame(width: size, height: size)
                 .offset(y: floatY)
                 .shadow(
-                    color: MilliColors.cyanGlow.opacity(0.20),
-                    radius: max(5, size * 0.055),
+                    color: MilliColors.cyanGlow.opacity(0.16),
+                    radius: max(4, size * 0.045),
                     y: 2
                 )
         }
@@ -59,40 +62,58 @@ struct MilliAICharacterView: View {
         .onAppear {
             guard animated, !UIAccessibility.isReduceMotionEnabled else { return }
 
-            withAnimation(.easeInOut(duration: 2.8).repeatForever(autoreverses: true)) {
-                floatY = -3
-                glowScale = 1.03
-                glowOpacity = 0.31
+            withAnimation(.easeInOut(duration: 3.1).repeatForever(autoreverses: true)) {
+                floatY = -2.5
+                glowScale = 1.025
+                glowOpacity = 0.26
             }
         }
     }
 }
 
 // MARK: - MilliAIOrb
-// Compact contextual launcher. It intentionally stays visually subordinate to
-// the canonical center-M navigation control.
+// Contextual launcher used by the app shell. It is intentionally compact so the
+// navigation and financial content retain visual priority. Full-body Milli is
+// reserved for AI, onboarding, and insight surfaces.
 
 struct MilliAIOrb: View {
-    @State private var floatY: CGFloat = 1
-
     var onTap: () -> Void = {}
-
-    private let characterSize: CGFloat = 64
 
     var body: some View {
         Button(action: onTap) {
-            MilliAICharacterView(size: characterSize, animated: true)
-                .offset(y: floatY)
-                .contentShape(Rectangle())
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(hex: "101A20"), Color(hex: "05080A"), .black],
+                            center: UnitPoint(x: 0.38, y: 0.26),
+                            startRadius: 1,
+                            endRadius: 30
+                        )
+                    )
+                    .frame(width: 50, height: 50)
+                    .overlay {
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.34), MilliColors.cyanGlow.opacity(0.34), Color.white.opacity(0.05)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.8
+                            )
+                    }
+                    .shadow(color: .black.opacity(0.62), radius: 8, y: 4)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.10), radius: 8)
+
+                MilliAICharacterView(size: 45, animated: true)
+                    .frame(width: 43, height: 43)
+                    .clipShape(Circle())
+            }
+            .frame(width: 54, height: 54)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .frame(width: characterSize + 8, height: characterSize + 10)
         .accessibilityLabel("Open Milli AI")
-        .onAppear {
-            guard !UIAccessibility.isReduceMotionEnabled else { return }
-            withAnimation(.easeInOut(duration: 2.9).repeatForever(autoreverses: true)) {
-                floatY = -2
-            }
-        }
     }
 }
