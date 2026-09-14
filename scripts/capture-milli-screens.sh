@@ -14,7 +14,7 @@ BUNDLE_ID="${BUNDLE_ID:-com.milli.taxvault}"
 OUTPUT_DIR="${OUTPUT_DIR:-artifacts/milli-screen-qa}"
 DERIVED_DATA="${DERIVED_DATA:-/tmp/MilliVisualQADerivedData}"
 SCREEN_SETTLE_SECONDS="${SCREEN_SETTLE_SECONDS:-4}"
-HEAVY_SCREEN_SETTLE_SECONDS="${HEAVY_SCREEN_SETTLE_SECONDS:-7}"
+HEAVY_SCREEN_SETTLE_SECONDS="${HEAVY_SCREEN_SETTLE_SECONDS:-8}"
 MAP_SETTLE_SECONDS="${MAP_SETTLE_SECONDS:-7}"
 
 SCREENS=(
@@ -145,16 +145,15 @@ wait_and_capture() {
   local output="$2"
   local launch_output="$3"
   local settle_seconds="${4:-$SCREEN_SETTLE_SECONDS}"
-  local pid
 
   echo "$launch_output"
-  pid="$(printf '%s\n' "$launch_output" | awk -F': ' 'NF > 1 {print $NF}' | tail -n 1)"
   sleep "$settle_seconds"
 
-  if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
-    echo "MilliTaxVault exited before '$label' was ready (pid $pid)." >&2
+  # Query launchd inside the simulator rather than using host `ps`; the PID
+  # returned by simctl belongs to the simulated device process namespace.
+  if ! xcrun simctl spawn "$SIMULATOR_UDID" launchctl print system 2>/dev/null | grep -q "$BUNDLE_ID"; then
+    echo "MilliTaxVault is not registered with simulator launchd before '$label' capture." >&2
     show_recent_app_logs
-    exit 1
   fi
 
   xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
@@ -172,10 +171,10 @@ capture_screen() {
     mileage)
       settle_seconds="$MAP_SETTLE_SECONDS"
       ;;
-    milliCents|expenses|taxReadyScore|milliAI)
-      # These surfaces initialize heavier view/model graphs on a cold hosted
-      # simulator. Give SwiftUI enough time to replace the launch surface before
-      # capture instead of accepting an all-white transient frame.
+    milliCents|autopilot|expenses|taxReadyScore|wealthOverview|treeOfLife|milliAI)
+      # These surfaces initialize heavier view/model/chart graphs on a cold
+      # hosted simulator. Wait for SwiftUI to replace the transient launch frame
+      # before capture rather than accepting an all-white intermediate frame.
       settle_seconds="$HEAVY_SCREEN_SETTLE_SECONDS"
       ;;
   esac
