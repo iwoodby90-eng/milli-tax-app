@@ -32,9 +32,9 @@ enum MilliTab: String, CaseIterable {
 }
 
 // MARK: - MilliNavBar
-// Canonical navigation hardware. The bar uses a low-profile machined-silver
-// bridge over black glass, four quiet tab destinations and one dominant center
-// M assembly. It is intentionally cinematic without becoming visually heavy.
+// Canonical navigation hardware. The chassis is intentionally darker and more
+// machined than decorative: polished gunmetal, recessed black-glass controls,
+// restrained cyan optics and one dominant center M instrument.
 
 struct MilliNavBar: View {
     @Binding var selectedTab: MilliTab
@@ -43,8 +43,8 @@ struct MilliNavBar: View {
     @State private var isDialPressed = false
 
     private let barHeight: CGFloat = MilliSpacing.bottomNavHeight
-    private let centerDiameter: CGFloat = 80
-    private let centerGap: CGFloat = 92
+    private let centerDiameter: CGFloat = 78
+    private let centerGap: CGFloat = 88
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -74,12 +74,12 @@ struct MilliNavBar: View {
             .fill(
                 LinearGradient(
                     stops: [
-                        .init(color: Color(hex: "F7F9FA"), location: 0.00),
-                        .init(color: Color(hex: "9AA1A7"), location: 0.10),
-                        .init(color: Color(hex: "E5E8EA"), location: 0.21),
-                        .init(color: Color(hex: "646B72"), location: 0.48),
-                        .init(color: Color(hex: "BFC4C8"), location: 0.72),
-                        .init(color: Color(hex: "41474D"), location: 1.00)
+                        .init(color: Color(hex: "E7EAEC"), location: 0.00),
+                        .init(color: Color(hex: "90979D"), location: 0.075),
+                        .init(color: Color(hex: "464C51"), location: 0.18),
+                        .init(color: Color(hex: "20252A"), location: 0.42),
+                        .init(color: Color(hex: "5F666B"), location: 0.68),
+                        .init(color: Color(hex: "171B1F"), location: 1.00)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -89,15 +89,15 @@ struct MilliNavBar: View {
                 CanonicalNavShape()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.92), Color(hex: "737A80"), Color.white.opacity(0.24)],
+                            colors: [Color.white.opacity(0.78), Color(hex: "737A80").opacity(0.82), Color.black.opacity(0.70)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.75
+                        lineWidth: 0.72
                     )
             }
-            .shadow(color: .black.opacity(0.84), radius: 15, y: 8)
-            .shadow(color: MilliColors.cyanGlow.opacity(0.035), radius: 10, y: -2)
+            .shadow(color: .black.opacity(0.90), radius: 16, y: 9)
+            .shadow(color: MilliColors.cyanGlow.opacity(0.028), radius: 11, y: -2)
     }
 
     private var innerGlass: some View {
@@ -105,9 +105,9 @@ struct MilliNavBar: View {
             .fill(
                 LinearGradient(
                     stops: [
-                        .init(color: Color(hex: "151B1F"), location: 0.00),
-                        .init(color: Color(hex: "090D10"), location: 0.34),
-                        .init(color: Color(hex: "020304"), location: 1.00)
+                        .init(color: Color(hex: "12171B"), location: 0.00),
+                        .init(color: Color(hex: "070A0D"), location: 0.36),
+                        .init(color: Color(hex: "010203"), location: 1.00)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -117,14 +117,14 @@ struct MilliNavBar: View {
                 CanonicalNavShape()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.12), MilliColors.cyanGlow.opacity(0.12), Color.white.opacity(0.02)],
+                            colors: [Color.white.opacity(0.12), MilliColors.cyanGlow.opacity(0.10), Color.white.opacity(0.015)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.65
+                        lineWidth: 0.62
                     )
             }
-            .scaleEffect(x: 0.986, y: 0.90, anchor: .bottom)
+            .scaleEffect(x: 0.986, y: 0.89, anchor: .bottom)
             .offset(y: 3)
             .allowsHitTesting(false)
     }
@@ -133,18 +133,19 @@ struct MilliNavBar: View {
         LinearGradient(
             colors: [
                 Color.clear,
-                Color.white.opacity(0.70),
-                Color(hex: "B5BBC0").opacity(0.65),
                 Color.white.opacity(0.18),
+                Color.white.opacity(0.72),
+                Color(hex: "AAB1B6").opacity(0.62),
+                Color.white.opacity(0.10),
                 Color.clear
             ],
             startPoint: .leading,
             endPoint: .trailing
         )
         .frame(maxWidth: .infinity)
-        .frame(height: 1.2)
+        .frame(height: 1.15)
         .padding(.horizontal, 20)
-        .offset(y: 15)
+        .offset(y: 14)
         .allowsHitTesting(false)
     }
 
@@ -160,7 +161,7 @@ struct MilliNavBar: View {
             tabButton(.cockpit)
         }
         .padding(.horizontal, 8)
-        .padding(.top, 24)
+        .padding(.top, 20)
         .frame(height: barHeight, alignment: .top)
     }
 
@@ -172,21 +173,50 @@ struct MilliNavBar: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             VStack(spacing: 3) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: tab == .cockpit ? 17 : 16, weight: .semibold))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "BDC2C7"))
-                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.28) : .clear, radius: 3)
-                    .frame(height: 27)
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(hex: "20272C"),
+                                    Color(hex: "090C0F"),
+                                    Color.black
+                                ],
+                                center: UnitPoint(x: 0.38, y: 0.28),
+                                startRadius: 1,
+                                endRadius: 19
+                            )
+                        )
+                        .frame(width: 30, height: 30)
+                        .overlay {
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.34), Color(hex: "5E666C"), Color.white.opacity(0.05)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.65
+                                )
+                        }
+                        .shadow(color: .black.opacity(0.72), radius: 4, y: 2)
+                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.22) : .clear, radius: 4)
+
+                    Image(systemName: tab.icon)
+                        .font(.system(size: tab == .cockpit ? 14 : 13.5, weight: .semibold))
+                        .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "C2C6CA"))
+                        .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.34) : .clear, radius: 3)
+                }
 
                 Text(tab.displayName)
-                    .font(.custom("Inter-Medium", size: 9.5, relativeTo: .caption))
+                    .font(.custom("Inter-Medium", size: 9.2, relativeTo: .caption))
                     .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "9EA5AB"))
                     .lineLimit(1)
 
                 Capsule()
                     .fill(isSelected ? MilliColors.cyanGlow : Color.clear)
-                    .frame(width: 20, height: 1.5)
-                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.40) : .clear, radius: 2)
+                    .frame(width: 18, height: 1.4)
+                    .shadow(color: isSelected ? MilliColors.cyanGlow.opacity(0.42) : .clear, radius: 2)
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
@@ -207,25 +237,25 @@ struct MilliNavBar: View {
                     .fill(
                         AngularGradient(
                             colors: [
-                                Color(hex: "F8F9FA"),
-                                Color(hex: "5D646A"),
-                                Color(hex: "DCE0E3"),
-                                Color(hex: "333A40"),
-                                Color(hex: "F2F4F5"),
-                                Color(hex: "777E84"),
-                                Color(hex: "E7EAEC")
+                                Color(hex: "EEF1F2"),
+                                Color(hex: "535A60"),
+                                Color(hex: "BEC4C8"),
+                                Color(hex: "22282D"),
+                                Color(hex: "E3E6E8"),
+                                Color(hex: "656C72"),
+                                Color(hex: "D3D7DA")
                             ],
                             center: .center
                         )
                     )
                     .frame(width: centerDiameter, height: centerDiameter)
                     .overlay {
-                        Circle().stroke(Color.white.opacity(0.70), lineWidth: 0.75)
+                        Circle().stroke(Color.white.opacity(0.66), lineWidth: 0.70)
                     }
-                    .shadow(color: .black.opacity(0.86), radius: 9, y: 5)
+                    .shadow(color: .black.opacity(0.92), radius: 10, y: 6)
 
                 Circle()
-                    .fill(Color(hex: "05080A"))
+                    .fill(Color(hex: "030506"))
                     .frame(width: centerDiameter - 9, height: centerDiameter - 9)
                     .overlay {
                         Circle().stroke(Color.black.opacity(0.95), lineWidth: 1.1)
@@ -234,20 +264,20 @@ struct MilliNavBar: View {
                 SegmentedArcRing(segments: 34, gapDegrees: 4.8)
                     .stroke(
                         LinearGradient(
-                            colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow, MilliColors.deepCyan],
+                            colors: [Color(hex: "9AFBFF"), MilliColors.cyanGlow, MilliColors.deepCyan],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        style: StrokeStyle(lineWidth: 3.0, lineCap: .butt)
+                        style: StrokeStyle(lineWidth: 2.8, lineCap: .butt)
                     )
                     .frame(width: centerDiameter - 17, height: centerDiameter - 17)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.46), radius: 4)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.48), radius: 4)
 
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "192229"), Color(hex: "070A0D"), .black],
-                            center: UnitPoint(x: 0.40, y: 0.28),
+                            colors: [Color(hex: "182127"), Color(hex: "06090B"), .black],
+                            center: UnitPoint(x: 0.38, y: 0.26),
                             startRadius: 1,
                             endRadius: 31
                         )
@@ -257,16 +287,16 @@ struct MilliNavBar: View {
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    colors: [Color.white.opacity(0.50), Color(hex: "747B82"), Color.white.opacity(0.07)],
+                                    colors: [Color.white.opacity(0.52), Color(hex: "656C72"), Color.white.opacity(0.055)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 0.8
+                                lineWidth: 0.75
                             )
                     }
 
-                MilliMMark(size: 37)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 4)
+                MilliMMark(size: 36)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.34), radius: 4)
             }
             .scaleEffect(isDialPressed ? 0.965 : 1)
             .animation(.spring(response: 0.22, dampingFraction: 0.78), value: isDialPressed)
@@ -293,7 +323,7 @@ struct CanonicalNavShape: Shape {
         let center = rect.midX
         let corner: CGFloat = 21
         let shoulder: CGFloat = 58
-        let crestDepth: CGFloat = 15
+        let crestDepth: CGFloat = 14
 
         path.move(to: CGPoint(x: corner, y: crestDepth))
         path.addLine(to: CGPoint(x: center - shoulder, y: crestDepth))
@@ -330,8 +360,6 @@ struct CanonicalNavShape: Shape {
     }
 }
 
-// Compatibility facade retained for screens/tests that referenced the earlier
-// chassis type directly.
 struct ChassisShape: Shape {
     var crestHeight: CGFloat
 
@@ -359,13 +387,7 @@ struct SegmentedArcRing: Shape {
             let end = start + .degrees(Double(arcAngle))
             path.addArc(center: center, radius: radius, startAngle: start, endAngle: end, clockwise: false)
         }
-        return path
-    }
-}
 
-#Preview {
-    ZStack(alignment: .bottom) {
-        MilliColors.obsidian.ignoresSafeArea()
-        MilliNavBar(selectedTab: .constant(.vault))
+        return path
     }
 }
