@@ -1,11 +1,10 @@
 import SwiftUI
 
 // MARK: - HomeView
-// Canonical Milli home dashboard. The screen deliberately mirrors the approved
-// high-fidelity product direction: one clear balance hero, a concise payout
-// state, tax confidence, a financial flow, three compact operational metrics,
-// and one integrated Milli AI insight. Decorative UI never outranks financial
-// information.
+// Canonical Milli dashboard. The composition is intentionally cinematic and
+// dense: a fixed premium header, one dominant financial hero, concise payout
+// state, tax confidence, money flow, operating metrics and one integrated Milli
+// AI insight. Decorative UI never outranks financial information.
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
@@ -14,22 +13,34 @@ struct HomeView: View {
     var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
+        ZStack {
+            screenBackground
+
+            VStack(spacing: 0) {
                 topBar
-                spendHero
-                latestPayout
-                taxConfidenceRow
-                allocationTimeline
-                operatingMetrics
-                aiInsight
+                    .padding(.horizontal, MilliSpacing.screenHorizontal)
+                    .padding(.top, 3)
+                    .padding(.bottom, 7)
+
+                headerGlint
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 8)
+
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 10) {
+                        spendHero
+                        latestPayout
+                        taxConfidenceRow
+                        allocationTimeline
+                        operatingMetrics
+                        aiInsight
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, MilliSpacing.screenHorizontal)
+                    .padding(.bottom, MilliSpacing.bottomContentClearance + 10)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, 6)
-            .padding(.bottom, MilliSpacing.bottomContentClearance + 12)
         }
-        .background(screenBackground)
         .sheet(isPresented: $showNotifications) {
             MilliDetailSheet(title: "Notifications")
                 .presentationDetents([.medium, .large])
@@ -44,17 +55,25 @@ struct HomeView: View {
             MilliColors.background.ignoresSafeArea()
 
             LinearGradient(
-                colors: [Color(hex: "071116"), Color(hex: "030507"), .black],
+                colors: [Color(hex: "071015"), Color(hex: "030506"), .black],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
             RadialGradient(
-                colors: [MilliColors.cyanGlow.opacity(0.075), .clear],
-                center: UnitPoint(x: 0.86, y: 0.08),
+                colors: [MilliColors.cyanGlow.opacity(0.070), .clear],
+                center: UnitPoint(x: 0.82, y: 0.08),
                 startRadius: 0,
-                endRadius: 270
+                endRadius: 300
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [Color.white.opacity(0.025), .clear],
+                center: UnitPoint(x: 0.12, y: 0.02),
+                startRadius: 0,
+                endRadius: 220
             )
             .ignoresSafeArea()
         }
@@ -62,22 +81,37 @@ struct HomeView: View {
 
     // MARK: - Header
 
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        case 17..<22: return "Good evening"
+        default: return "Welcome back"
+        }
+    }
+
     private var topBar: some View {
         HStack(spacing: 12) {
-            MilliMMark(size: 30)
+            MilliMMark(size: 29)
                 .frame(width: 34, height: 34)
 
             Spacer()
 
-            VStack(spacing: 1) {
-                Text("Good morning")
-                    .font(.custom("Sora-Medium", size: 17, relativeTo: .headline))
+            VStack(spacing: 2) {
+                Text(greeting)
+                    .font(.custom("Sora-Medium", size: 16.5, relativeTo: .headline))
                     .foregroundStyle(MilliColors.textPrimary)
 
-                Text("MONEY, MADE INTELLIGENT.")
-                    .font(.custom("Inter-Medium", size: 7.8, relativeTo: .caption2))
-                    .tracking(1.4)
-                    .foregroundStyle(MilliColors.textTertiary)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(MilliColors.positive)
+                        .frame(width: 4, height: 4)
+                    Text("AUTOPILOT • PROTECTED")
+                        .font(.custom("Inter-SemiBold", size: 7.6, relativeTo: .caption2))
+                        .tracking(1.0)
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
             }
 
             Spacer()
@@ -87,11 +121,25 @@ struct HomeView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(0.035))
+                        .fill(
+                            RadialGradient(
+                                colors: [Color(hex: "182127"), Color(hex: "070A0D"), .black],
+                                center: UnitPoint(x: 0.38, y: 0.28),
+                                startRadius: 1,
+                                endRadius: 24
+                            )
+                        )
                         .frame(width: 36, height: 36)
                         .overlay {
                             Circle()
-                                .stroke(Color.white.opacity(0.09), lineWidth: 0.7)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.30), Color.white.opacity(0.04)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.7
+                                )
                         }
 
                     Image(systemName: "bell")
@@ -101,13 +149,23 @@ struct HomeView: View {
                     Circle()
                         .fill(MilliColors.cyanGlow)
                         .frame(width: 5, height: 5)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.60), radius: 3)
                         .offset(x: 10, y: -10)
                 }
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Notifications")
         }
-        .frame(height: 46)
+        .frame(height: 44)
+    }
+
+    private var headerGlint: some View {
+        LinearGradient(
+            colors: [Color.clear, Color.white.opacity(0.13), MilliColors.cyanGlow.opacity(0.20), Color.white.opacity(0.07), Color.clear],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(height: 0.7)
     }
 
     // MARK: - Available to spend
@@ -115,10 +173,10 @@ struct HomeView: View {
     private var spendHero: some View {
         Button { navigate?(.accounts) } label: {
             ZStack {
-                RoundedRectangle(cornerRadius: 21, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "142128"), Color(hex: "0A1115"), Color(hex: "050709")],
+                            colors: [Color(hex: "162229"), Color(hex: "0A1014"), Color(hex: "030506")],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -127,45 +185,54 @@ struct HomeView: View {
                 Image("home-hero-bg")
                     .resizable()
                     .scaledToFill()
-                    .opacity(0.20)
-                    .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
+                    .opacity(0.16)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                RadialGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.12), Color.clear],
+                    center: UnitPoint(x: 0.88, y: 0.72),
+                    startRadius: 0,
+                    endRadius: 150
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
                 LinearGradient(
-                    colors: [Color.clear, Color.black.opacity(0.45)],
+                    colors: [Color.white.opacity(0.06), Color.clear, Color.black.opacity(0.48)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     VStack(alignment: .leading, spacing: 7) {
                         Text("AVAILABLE TO SPEND")
-                            .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption))
-                            .tracking(1.1)
+                            .font(.custom("Inter-SemiBold", size: 9.4, relativeTo: .caption))
+                            .tracking(1.15)
                             .foregroundStyle(MilliColors.textSecondary)
 
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(viewModel.availableToSpend)
-                                .font(.custom("Sora-SemiBold", size: 35, relativeTo: .largeTitle))
+                                .font(.custom("Sora-SemiBold", size: 34, relativeTo: .largeTitle))
                                 .monospacedDigit()
                                 .foregroundStyle(MilliColors.textPrimary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.70)
 
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(MilliColors.textTertiary)
                         }
 
                         Text("AFTER PROTECTED ALLOCATIONS")
-                            .font(.custom("Inter-Medium", size: 8, relativeTo: .caption2))
-                            .tracking(0.75)
+                            .font(.custom("Inter-Medium", size: 7.8, relativeTo: .caption2))
+                            .tracking(0.76)
                             .foregroundStyle(MilliColors.textTertiary)
 
                         HStack(spacing: 6) {
                             Circle()
                                 .fill(MilliColors.positive)
                                 .frame(width: 5, height: 5)
+                                .shadow(color: MilliColors.positive.opacity(0.45), radius: 3)
                             Text("Updated just now")
                                 .font(MilliFont.caption)
                                 .foregroundStyle(MilliColors.textSecondary)
@@ -175,25 +242,36 @@ struct HomeView: View {
                     Spacer(minLength: 4)
 
                     MilliDebitCardMini()
-                        .frame(width: 118, height: 80)
+                        .frame(width: 120, height: 81)
                         .rotationEffect(.degrees(-6))
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 10, y: 5)
+                        .shadow(color: .black.opacity(0.55), radius: 12, y: 8)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 10, y: 4)
                 }
-                .padding(16)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
             }
-            .frame(height: 156)
+            .frame(height: 148)
             .overlay {
-                RoundedRectangle(cornerRadius: 21, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.30), MilliColors.cyanGlow.opacity(0.28), Color.white.opacity(0.04)],
+                            colors: [Color.white.opacity(0.34), Color(hex: "707980").opacity(0.16), MilliColors.cyanGlow.opacity(0.24), Color.white.opacity(0.025)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.85
+                        lineWidth: 0.78
                     )
             }
-            .shadow(color: .black.opacity(0.44), radius: 16, y: 8)
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [Color.clear, Color.white.opacity(0.36), Color.white.opacity(0.05), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: 0.8)
+                .padding(.horizontal, 20)
+            }
+            .shadow(color: .black.opacity(0.58), radius: 18, y: 10)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Available to spend \(viewModel.availableToSpend). Open accounts")
@@ -208,8 +286,8 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("LATEST PAYOUT")
-                        .font(.custom("Inter-SemiBold", size: 8.6, relativeTo: .caption2))
-                        .tracking(0.8)
+                        .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                        .tracking(0.82)
                         .foregroundStyle(MilliColors.textTertiary)
 
                     Text(viewModel.latestPayout.platformName)
@@ -225,40 +303,47 @@ struct HomeView: View {
 
                 VStack(alignment: .trailing, spacing: 3) {
                     Text(viewModel.latestPayout.amount)
-                        .font(.custom("Sora-SemiBold", size: 19, relativeTo: .title3))
+                        .font(.custom("Sora-SemiBold", size: 18.5, relativeTo: .title3))
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.cyanGlow)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.12), radius: 5)
 
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.seal.fill")
                         Text("AUTOPILOT")
                     }
-                    .font(.custom("Inter-SemiBold", size: 8.2, relativeTo: .caption2))
+                    .font(.custom("Inter-SemiBold", size: 8.1, relativeTo: .caption2))
                     .tracking(0.55)
                     .foregroundStyle(MilliColors.positive)
                 }
             }
             .padding(.horizontal, 13)
-            .frame(height: 72)
-            .background(premiumSurface(cornerRadius: 17))
+            .frame(height: 68)
+            .background(premiumSurface(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
 
     private var platformBadge: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.035))
-                .frame(width: 42, height: 42)
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "1B2227"), Color(hex: "070A0D")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 40, height: 40)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
                 }
 
             Image(viewModel.latestPayout.platformAssetName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 26, height: 26)
+                .frame(width: 25, height: 25)
         }
     }
 
@@ -280,7 +365,7 @@ struct HomeView: View {
                     }
 
                     Text(viewModel.taxVaultBalance)
-                        .font(.custom("Sora-SemiBold", size: 23, relativeTo: .title2))
+                        .font(.custom("Sora-SemiBold", size: 22.5, relativeTo: .title2))
                         .monospacedDigit()
                         .foregroundStyle(MilliColors.textPrimary)
                         .lineLimit(1)
@@ -292,28 +377,29 @@ struct HomeView: View {
 
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.07))
+                            Capsule().fill(Color.white.opacity(0.065))
                             Capsule()
                                 .fill(
                                     LinearGradient(
-                                        colors: [MilliColors.deepCyan, MilliColors.cyanGlow],
+                                        colors: [MilliColors.deepCyan, Color(hex: "8AF8FF")],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
                                 )
                                 .frame(width: geo.size.width * 0.58)
+                                .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 3)
                         }
                     }
                     .frame(height: 4)
                 }
                 .padding(13)
-                .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-                .background(premiumSurface(cornerRadius: 17))
+                .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+                .background(premiumSurface(cornerRadius: 16))
             }
             .buttonStyle(.plain)
 
             Button { navigate?(.taxReadyScore) } label: {
-                VStack(spacing: 7) {
+                VStack(spacing: 6) {
                     HStack {
                         Text("TAX READY SCORE™")
                             .font(.custom("Inter-SemiBold", size: 8.2, relativeTo: .caption2))
@@ -324,7 +410,7 @@ struct HomeView: View {
 
                     ZStack {
                         Circle()
-                            .stroke(Color.white.opacity(0.08), lineWidth: 8)
+                            .stroke(Color.white.opacity(0.07), lineWidth: 8)
 
                         Circle()
                             .trim(from: 0, to: CGFloat(viewModel.taxReadyScore) / 100)
@@ -341,20 +427,20 @@ struct HomeView: View {
 
                         VStack(spacing: 0) {
                             Text("\(viewModel.taxReadyScore)")
-                                .font(.custom("Sora-SemiBold", size: 27, relativeTo: .title2))
+                                .font(.custom("Sora-SemiBold", size: 26, relativeTo: .title2))
                                 .monospacedDigit()
                                 .foregroundStyle(MilliColors.textPrimary)
                             Text("ON TRACK")
-                                .font(.custom("Inter-SemiBold", size: 7.5, relativeTo: .caption2))
+                                .font(.custom("Inter-SemiBold", size: 7.3, relativeTo: .caption2))
                                 .tracking(0.6)
                                 .foregroundStyle(MilliColors.positive)
                         }
                     }
-                    .frame(width: 76, height: 76)
+                    .frame(width: 72, height: 72)
                 }
                 .padding(13)
-                .frame(maxWidth: .infinity, minHeight: 132, alignment: .top)
-                .background(premiumSurface(cornerRadius: 17))
+                .frame(maxWidth: .infinity, minHeight: 126, alignment: .top)
+                .background(premiumSurface(cornerRadius: 16))
             }
             .buttonStyle(.plain)
         }
@@ -363,15 +449,15 @@ struct HomeView: View {
     // MARK: - Allocation timeline
 
     private var allocationTimeline: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("FINANCIAL FLOW")
-                    .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption))
+                    .font(.custom("Inter-SemiBold", size: 9.2, relativeTo: .caption))
                     .tracking(0.85)
                     .foregroundStyle(MilliColors.textSecondary)
                 Spacer()
                 Text("LATEST PAYOUT")
-                    .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
+                    .font(.custom("Inter-SemiBold", size: 7.8, relativeTo: .caption2))
                     .tracking(0.7)
                     .foregroundStyle(MilliColors.cyanGlow)
             }
@@ -384,31 +470,32 @@ struct HomeView: View {
                 flowNode(title: "Spend", value: viewModel.availableToSpend, accent: MilliColors.silverBright)
             }
         }
-        .padding(14)
-        .background(premiumSurface(cornerRadius: 17))
+        .padding(13)
+        .background(premiumSurface(cornerRadius: 16))
     }
 
     private func flowNode(title: String, value: String, accent: Color) -> some View {
         VStack(spacing: 6) {
             ZStack {
                 Circle()
-                    .fill(Color.black.opacity(0.78))
+                    .fill(Color.black.opacity(0.82))
                     .frame(width: 14, height: 14)
                     .overlay {
-                        Circle().stroke(accent, lineWidth: 1.4)
+                        Circle().stroke(accent, lineWidth: 1.35)
                     }
                 Circle()
                     .fill(accent)
                     .frame(width: 4, height: 4)
+                    .shadow(color: accent.opacity(0.55), radius: 2)
             }
 
             Text(title.uppercased())
-                .font(.custom("Inter-SemiBold", size: 7.8, relativeTo: .caption2))
+                .font(.custom("Inter-SemiBold", size: 7.7, relativeTo: .caption2))
                 .tracking(0.5)
                 .foregroundStyle(MilliColors.textTertiary)
 
             Text(value)
-                .font(.custom("Sora-Medium", size: 11.5, relativeTo: .caption))
+                .font(.custom("Sora-Medium", size: 11.3, relativeTo: .caption))
                 .monospacedDigit()
                 .foregroundStyle(MilliColors.textPrimary)
                 .lineLimit(1)
@@ -421,7 +508,7 @@ struct HomeView: View {
         Rectangle()
             .fill(
                 LinearGradient(
-                    colors: [MilliColors.cyanGlow.opacity(0.48), Color.white.opacity(0.10)],
+                    colors: [MilliColors.cyanGlow.opacity(0.42), Color.white.opacity(0.09)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -473,33 +560,33 @@ struct HomeView: View {
         destination: ActiveScreen
     ) -> some View {
         Button { navigate?(destination) } label: {
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(title)
-                        .font(.custom("Inter-SemiBold", size: 7.8, relativeTo: .caption2))
+                        .font(.custom("Inter-SemiBold", size: 7.6, relativeTo: .caption2))
                         .tracking(0.5)
                         .foregroundStyle(MilliColors.textTertiary)
                     Spacer(minLength: 2)
                     Image(systemName: icon)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 10.5, weight: .semibold))
                         .foregroundStyle(accent)
                 }
 
                 Text(value)
-                    .font(.custom("Sora-SemiBold", size: 13.5, relativeTo: .subheadline))
+                    .font(.custom("Sora-SemiBold", size: 13.2, relativeTo: .subheadline))
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.60)
 
                 Text(detail)
-                    .font(.custom("Inter-Medium", size: 8.5, relativeTo: .caption2))
-                    .foregroundStyle(accent.opacity(0.88))
+                    .font(.custom("Inter-Medium", size: 8.3, relativeTo: .caption2))
+                    .foregroundStyle(accent.opacity(0.86))
                     .lineLimit(1)
             }
-            .padding(11)
-            .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
-            .background(premiumSurface(cornerRadius: 15))
+            .padding(10)
+            .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
+            .background(premiumSurface(cornerRadius: 14))
         }
         .buttonStyle(.plain)
     }
@@ -508,14 +595,14 @@ struct HomeView: View {
 
     private var aiInsight: some View {
         Button { navigate?(.milliAI) } label: {
-            HStack(spacing: 10) {
-                MilliAICharacterView(size: 72, animated: true)
-                    .frame(width: 68, height: 76)
+            HStack(spacing: 9) {
+                MilliAICharacterView(size: 64, animated: true)
+                    .frame(width: 60, height: 66)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
                         Text("MILLI AI INSIGHT")
-                            .font(.custom("Inter-SemiBold", size: 8.7, relativeTo: .caption2))
+                            .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
                             .tracking(0.75)
                             .foregroundStyle(MilliColors.cyanGlow)
                         Circle()
@@ -524,7 +611,7 @@ struct HomeView: View {
                     }
 
                     Text(viewModel.aiInsight)
-                        .font(.custom("Inter-Medium", size: 12, relativeTo: .caption))
+                        .font(.custom("Inter-Medium", size: 11.7, relativeTo: .caption))
                         .foregroundStyle(MilliColors.textSecondary)
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
@@ -537,21 +624,8 @@ struct HomeView: View {
                     .foregroundStyle(MilliColors.textTertiary)
             }
             .padding(.horizontal, 11)
-            .padding(.vertical, 7)
-            .background(
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: "07151A"), Color(hex: "040607")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 17, style: .continuous)
-                            .stroke(MilliColors.cyanGlow.opacity(0.20), lineWidth: 0.75)
-                    }
-            )
+            .padding(.vertical, 6)
+            .background(premiumSurface(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
@@ -559,32 +633,55 @@ struct HomeView: View {
     // MARK: - Shared local surface
 
     private func premiumSurface(cornerRadius: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        return shape
             .fill(
                 LinearGradient(
-                    colors: [Color(hex: "10191E"), Color(hex: "080C0F"), Color(hex: "040607")],
+                    stops: [
+                        .init(color: Color(hex: "11191D"), location: 0.00),
+                        .init(color: Color(hex: "080C0F"), location: 0.48),
+                        .init(color: Color(hex: "030506"), location: 1.00)
+                    ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
             .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                RadialGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.045), .clear],
+                    center: UnitPoint(x: 0.92, y: 0.05),
+                    startRadius: 0,
+                    endRadius: 100
+                )
+                .clipShape(shape)
+            }
+            .overlay {
+                shape
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.19), MilliColors.cyanGlow.opacity(0.10), Color.white.opacity(0.025)],
+                            colors: [Color.white.opacity(0.20), Color(hex: "808990").opacity(0.09), MilliColors.cyanGlow.opacity(0.09), Color.white.opacity(0.018)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.75
+                        lineWidth: 0.72
                     )
             }
-            .shadow(color: Color.black.opacity(0.40), radius: 10, y: 6)
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [Color.clear, Color.white.opacity(0.22), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: 0.7)
+                .padding(.horizontal, 16)
+            }
+            .shadow(color: Color.black.opacity(0.48), radius: 11, y: 7)
     }
 }
 
 // MARK: - Native Milli card visual
-// A lightweight native rendering keeps the dashboard cinematic without relying
-// on a raster card plate. It is decorative only and contains no account data.
+// Decorative only: no account data is encoded into the card artwork.
 
 private struct MilliDebitCardMini: View {
     var body: some View {
@@ -592,25 +689,36 @@ private struct MilliDebitCardMini: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "707880"), Color(hex: "252B30"), Color(hex: "0A0D10")],
+                        stops: [
+                            .init(color: Color(hex: "8A9298"), location: 0.00),
+                            .init(color: Color(hex: "3C4348"), location: 0.32),
+                            .init(color: Color(hex: "171C20"), location: 0.68),
+                            .init(color: Color(hex: "07090B"), location: 1.00)
+                        ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
 
             LinearGradient(
-                colors: [Color.clear, MilliColors.cyanGlow.opacity(0.90), Color.clear],
+                colors: [Color.clear, MilliColors.cyanGlow.opacity(0.92), Color.clear],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .frame(width: 150, height: 2)
+            .frame(width: 150, height: 1.6)
             .rotationEffect(.degrees(-31))
             .offset(x: -8, y: 54)
 
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 6) {
                 MilliMMark(size: 23)
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(Color.white.opacity(0.22))
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "BFC4C7"), Color(hex: "666D72")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: 17, height: 12)
                 Spacer()
                 Text("MILLI")
@@ -623,7 +731,14 @@ private struct MilliDebitCardMini: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.28), lineWidth: 0.7)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.46), Color(hex: "6D757B").opacity(0.25), MilliColors.cyanGlow.opacity(0.16)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.65
+                )
         }
     }
 }
