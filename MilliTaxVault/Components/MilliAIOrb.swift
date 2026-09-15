@@ -2,11 +2,9 @@ import SwiftUI
 import UIKit
 
 // MARK: - Milli AI Character
-// Canonical Milli companion. Approved artwork remains the primary visual source
-// of truth. A native cinematic fallback sits underneath the asset so Milli can
-// never disappear because of a bad/transparent raster export. The fallback is
-// deliberately premium: polished metal, black glass face, cyan optics, chrome
-// limbs, chest mark and grounded light — never a flat mascot or sticker.
+// Canonical Milli companion. Approved artwork remains the primary source of
+// truth. The native fallback is deliberately production-grade so Milli can
+// never disappear or collapse into a flat mascot if an asset fails to render.
 
 struct MilliAICharacterView: View {
     var size: CGFloat = 88
@@ -14,7 +12,7 @@ struct MilliAICharacterView: View {
 
     @State private var floatY: CGFloat = 0
     @State private var glowScale: CGFloat = 0.98
-    @State private var glowOpacity: Double = 0.16
+    @State private var glowOpacity: Double = 0.17
 
     private var assetName: String {
         size >= 58 ? "milli-ai-robot-large" : "milli-ai-robot"
@@ -24,29 +22,24 @@ struct MilliAICharacterView: View {
         ZStack {
             Ellipse()
                 .fill(MilliColors.cyanGlow.opacity(glowOpacity * 0.82))
-                .frame(width: size * 0.64, height: size * 0.10)
-                .blur(radius: max(7, size * 0.065))
+                .frame(width: size * 0.66, height: size * 0.09)
+                .blur(radius: max(7, size * 0.066))
                 .scaleEffect(glowScale)
-                .offset(y: size * 0.43)
+                .offset(y: size * 0.44)
 
             RadialGradient(
-                colors: [
-                    MilliColors.cyanGlow.opacity(glowOpacity * 0.30),
-                    Color.clear
-                ],
+                colors: [MilliColors.cyanGlow.opacity(glowOpacity * 0.30), Color.clear],
                 center: UnitPoint(x: 0.50, y: 0.46),
                 startRadius: 2,
-                endRadius: size * 0.58
+                endRadius: size * 0.59
             )
             .frame(width: size * 1.08, height: size * 1.08)
             .allowsHitTesting(false)
 
-            // Production-safe fallback. This guarantees a visible, on-brand
-            // Milli even when a raster asset is malformed or unexpectedly blank.
-            CinematicMilliRobotFallback(size: size * 0.93)
+            CinematicMilliRobotFallback(size: size * 0.94)
                 .offset(y: floatY)
 
-            // Approved artwork stays on top when the asset is healthy.
+            // Keep approved artwork on top whenever the raster is healthy.
             Image(assetName)
                 .resizable()
                 .interpolation(.high)
@@ -54,11 +47,7 @@ struct MilliAICharacterView: View {
                 .scaledToFit()
                 .frame(width: size, height: size)
                 .offset(y: floatY)
-                .shadow(
-                    color: MilliColors.cyanGlow.opacity(0.18),
-                    radius: max(4, size * 0.045),
-                    y: 2
-                )
+                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: max(4, size * 0.045), y: 2)
         }
         .frame(width: size, height: size)
         .drawingGroup(opaque: false, colorMode: .extendedLinear)
@@ -68,10 +57,10 @@ struct MilliAICharacterView: View {
         .onAppear {
             guard animated, !UIAccessibility.isReduceMotionEnabled else { return }
 
-            withAnimation(.easeInOut(duration: 3.1).repeatForever(autoreverses: true)) {
-                floatY = -2.5
-                glowScale = 1.025
-                glowOpacity = 0.27
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
+                floatY = -2.8
+                glowScale = 1.026
+                glowOpacity = 0.28
             }
         }
     }
@@ -85,11 +74,11 @@ private struct CinematicMilliRobotFallback: View {
     private var chrome: LinearGradient {
         LinearGradient(
             stops: [
-                .init(color: Color(hex: "F4F7F8"), location: 0.00),
-                .init(color: Color(hex: "7B858C"), location: 0.18),
-                .init(color: Color(hex: "DCE2E5"), location: 0.42),
-                .init(color: Color(hex: "3A4248"), location: 0.68),
-                .init(color: Color(hex: "AEB6BB"), location: 1.00)
+                .init(color: Color(hex: "F5F7F8"), location: 0.00),
+                .init(color: Color(hex: "7A838A"), location: 0.17),
+                .init(color: Color(hex: "DCE1E4"), location: 0.39),
+                .init(color: Color(hex: "3B4349"), location: 0.67),
+                .init(color: Color(hex: "AAB2B7"), location: 1.00)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -98,7 +87,7 @@ private struct CinematicMilliRobotFallback: View {
 
     private var darkMetal: LinearGradient {
         LinearGradient(
-            colors: [Color(hex: "2A3238"), Color(hex: "090D10"), Color.black],
+            colors: [Color(hex: "313940"), Color(hex: "0C1114"), Color(hex: "020304")],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -106,166 +95,211 @@ private struct CinematicMilliRobotFallback: View {
 
     var body: some View {
         ZStack {
-            // Legs
-            HStack(spacing: size * 0.12) {
+            // Ground contact light.
+            Ellipse()
+                .fill(MilliColors.cyanGlow.opacity(0.16))
+                .frame(width: size * 0.48, height: size * 0.055)
+                .blur(radius: size * 0.035)
+                .offset(y: size * 0.43)
+
+            // Legs and polished boots.
+            HStack(spacing: size * 0.11) {
                 leg
                 leg
             }
             .offset(y: size * 0.31)
 
-            // Arms
-            HStack(spacing: size * 0.55) {
-                arm(rotation: 16)
-                arm(rotation: -16)
-            }
-            .offset(y: size * 0.07)
+            // Right arm relaxed.
+            robotArm(raised: false)
+                .offset(x: size * 0.30, y: size * 0.07)
+                .rotationEffect(.degrees(-11))
 
-            // Torso
-            ZStack {
-                RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
-                    .fill(darkMetal)
-                    .frame(width: size * 0.46, height: size * 0.36)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.62), Color(hex: "515A60"), MilliColors.cyanGlow.opacity(0.42)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: max(0.65, size * 0.009)
-                            )
-                    }
+            // Left arm in the signature welcoming pose.
+            robotArm(raised: true)
+                .offset(x: -size * 0.29, y: size * 0.015)
+                .rotationEffect(.degrees(42))
 
-                RoundedRectangle(cornerRadius: size * 0.09, style: .continuous)
-                    .fill(Color(hex: "05080A"))
-                    .frame(width: size * 0.31, height: size * 0.25)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: size * 0.09, style: .continuous)
-                            .stroke(MilliColors.cyanGlow.opacity(0.25), lineWidth: max(0.5, size * 0.006))
-                    }
+            torso
+                .offset(y: size * 0.13)
 
-                MilliMMark(size: size * 0.17)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.46), radius: size * 0.025)
-            }
-            .offset(y: size * 0.14)
-
-            // Neck glow
             Capsule()
-                .fill(MilliColors.cyanGlow)
-                .frame(width: size * 0.20, height: size * 0.025)
-                .shadow(color: MilliColors.cyanGlow.opacity(0.72), radius: size * 0.045)
-                .offset(y: -size * 0.075)
-
-            // Head shell
-            ZStack {
-                RoundedRectangle(cornerRadius: size * 0.23, style: .continuous)
-                    .fill(chrome)
-                    .frame(width: size * 0.60, height: size * 0.43)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: size * 0.23, style: .continuous)
-                            .stroke(Color.white.opacity(0.58), lineWidth: max(0.7, size * 0.008))
-                    }
-                    .shadow(color: Color.black.opacity(0.72), radius: size * 0.045, y: size * 0.02)
-
-                RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: "10181D"), Color(hex: "020304"), Color.black],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "8AF8FF"), MilliColors.cyanGlow, MilliColors.deepCyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-                    .frame(width: size * 0.49, height: size * 0.31)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-                            .stroke(MilliColors.cyanGlow.opacity(0.20), lineWidth: max(0.5, size * 0.005))
-                    }
+                )
+                .frame(width: size * 0.18, height: size * 0.020)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.82), radius: size * 0.04)
+                .offset(y: -size * 0.065)
 
-                HStack(spacing: size * 0.17) {
-                    eye
-                    eye
-                }
-
-                // Specular visor highlight
-                Capsule()
-                    .fill(Color.white.opacity(0.17))
-                    .frame(width: size * 0.27, height: size * 0.018)
-                    .rotationEffect(.degrees(-8))
-                    .offset(x: -size * 0.06, y: -size * 0.10)
-            }
-            .offset(y: -size * 0.17)
-
-            // Ear pods
-            HStack(spacing: size * 0.56) {
-                ear
-                ear
-            }
-            .offset(y: -size * 0.15)
+            head
+                .offset(y: -size * 0.18)
         }
         .frame(width: size, height: size)
+    }
+
+    private var torso: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
+                .fill(darkMetal)
+                .frame(width: size * 0.46, height: size * 0.35)
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.58), Color(hex: "50585E"), MilliColors.cyanGlow.opacity(0.30)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: max(0.7, size * 0.008)
+                        )
+                }
+                .shadow(color: .black.opacity(0.72), radius: size * 0.045, y: size * 0.022)
+
+            RoundedRectangle(cornerRadius: size * 0.09, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "131B20"), Color(hex: "030506"), .black],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size * 0.31, height: size * 0.24)
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.09, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.22), lineWidth: max(0.5, size * 0.006))
+                }
+
+            MilliMMark(size: size * 0.18)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.48), radius: size * 0.025)
+        }
+    }
+
+    private var head: some View {
+        ZStack {
+            // Cyan rim behind the helmet gives the approved edge-lit silhouette.
+            RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
+                .stroke(MilliColors.cyanGlow.opacity(0.44), lineWidth: max(1.0, size * 0.012))
+                .frame(width: size * 0.62, height: size * 0.45)
+                .blur(radius: size * 0.010)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.48), radius: size * 0.04)
+
+            RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                .fill(chrome)
+                .frame(width: size * 0.61, height: size * 0.44)
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                        .stroke(Color.white.opacity(0.58), lineWidth: max(0.7, size * 0.008))
+                }
+                .shadow(color: .black.opacity(0.78), radius: size * 0.05, y: size * 0.025)
+
+            RoundedRectangle(cornerRadius: size * 0.19, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "172229"), Color(hex: "040607"), .black],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size * 0.50, height: size * 0.32)
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.19, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.18), lineWidth: max(0.5, size * 0.005))
+                }
+
+            HStack(spacing: size * 0.17) {
+                eye
+                eye
+            }
+
+            Capsule()
+                .fill(Color.white.opacity(0.18))
+                .frame(width: size * 0.28, height: size * 0.016)
+                .rotationEffect(.degrees(-8))
+                .offset(x: -size * 0.06, y: -size * 0.105)
+
+            HStack(spacing: size * 0.58) {
+                ear
+                ear
+            }
+        }
     }
 
     private var eye: some View {
         Capsule()
             .fill(
                 LinearGradient(
-                    colors: [Color.white, Color(hex: "8AF8FF"), MilliColors.cyanGlow],
+                    colors: [Color.white, Color(hex: "9BFCFF"), MilliColors.cyanGlow],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
-            .frame(width: size * 0.072, height: size * 0.125)
-            .shadow(color: MilliColors.cyanGlow.opacity(0.88), radius: size * 0.04)
+            .frame(width: size * 0.070, height: size * 0.124)
+            .shadow(color: MilliColors.cyanGlow.opacity(0.94), radius: size * 0.042)
     }
 
     private var ear: some View {
-        Circle()
-            .fill(darkMetal)
-            .frame(width: size * 0.13, height: size * 0.13)
-            .overlay(Circle().stroke(chrome, lineWidth: max(0.8, size * 0.01)))
-            .overlay {
-                Circle()
-                    .stroke(MilliColors.cyanGlow.opacity(0.55), lineWidth: max(0.5, size * 0.006))
-                    .padding(size * 0.025)
-            }
+        ZStack {
+            Circle()
+                .fill(darkMetal)
+                .frame(width: size * 0.13, height: size * 0.13)
+                .overlay(Circle().stroke(chrome, lineWidth: max(0.8, size * 0.010)))
+            Circle()
+                .stroke(MilliColors.cyanGlow.opacity(0.62), lineWidth: max(0.6, size * 0.006))
+                .frame(width: size * 0.082, height: size * 0.082)
+        }
     }
 
     private var leg: some View {
         VStack(spacing: -size * 0.012) {
             Capsule()
                 .fill(chrome)
-                .frame(width: size * 0.13, height: size * 0.23)
+                .frame(width: size * 0.13, height: size * 0.22)
+                .overlay(Capsule().stroke(Color.white.opacity(0.25), lineWidth: max(0.5, size * 0.005)))
             RoundedRectangle(cornerRadius: size * 0.04, style: .continuous)
                 .fill(darkMetal)
-                .frame(width: size * 0.18, height: size * 0.075)
+                .frame(width: size * 0.19, height: size * 0.078)
                 .overlay {
                     RoundedRectangle(cornerRadius: size * 0.04, style: .continuous)
-                        .stroke(Color.white.opacity(0.34), lineWidth: max(0.5, size * 0.005))
+                        .stroke(Color.white.opacity(0.32), lineWidth: max(0.5, size * 0.005))
                 }
         }
     }
 
-    private func arm(rotation: Double) -> some View {
-        VStack(spacing: -size * 0.018) {
+    private func robotArm(raised: Bool) -> some View {
+        VStack(spacing: -size * 0.016) {
             Circle()
                 .fill(chrome)
                 .frame(width: size * 0.11, height: size * 0.11)
+                .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.18), lineWidth: max(0.5, size * 0.005)))
+
             Capsule()
                 .fill(darkMetal)
-                .frame(width: size * 0.105, height: size * 0.23)
-                .overlay(Capsule().stroke(Color.white.opacity(0.26), lineWidth: max(0.5, size * 0.005)))
+                .frame(width: size * 0.105, height: size * 0.16)
+                .overlay(Capsule().stroke(Color.white.opacity(0.24), lineWidth: max(0.5, size * 0.005)))
+
             Circle()
                 .fill(chrome)
-                .frame(width: size * 0.095, height: size * 0.095)
+                .frame(width: size * 0.092, height: size * 0.092)
+
+            Capsule()
+                .fill(darkMetal)
+                .frame(width: size * 0.086, height: size * (raised ? 0.12 : 0.10))
+                .overlay(Capsule().stroke(Color.white.opacity(0.20), lineWidth: max(0.5, size * 0.005)))
+
+            Circle()
+                .fill(chrome)
+                .frame(width: size * 0.082, height: size * 0.082)
         }
-        .rotationEffect(.degrees(rotation))
     }
 }
 
 // MARK: - MilliAIOrb
-// Contextual launcher used only on secondary utility surfaces. Primary cinematic
-// screens already contain integrated Milli AI treatments and must remain clean.
+// Contextual launcher remains intentionally small. Full-body Milli belongs in
+// dedicated AI and insight surfaces; the launcher should never compete with
+// financial information or navigation hardware.
 
 struct MilliAIOrb: View {
     var onTap: () -> Void = {}
@@ -276,32 +310,32 @@ struct MilliAIOrb: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "101A20"), Color(hex: "05080A"), .black],
+                            colors: [Color(hex: "151D22"), Color(hex: "05080A"), .black],
                             center: UnitPoint(x: 0.38, y: 0.26),
                             startRadius: 1,
-                            endRadius: 30
+                            endRadius: 24
                         )
                     )
-                    .frame(width: 52, height: 52)
+                    .frame(width: 44, height: 44)
                     .overlay {
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    colors: [Color.white.opacity(0.40), MilliColors.cyanGlow.opacity(0.42), Color.white.opacity(0.05)],
+                                    colors: [Color.white.opacity(0.36), MilliColors.cyanGlow.opacity(0.38), Color.white.opacity(0.04)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 0.8
+                                lineWidth: 0.7
                             )
                     }
-                    .shadow(color: .black.opacity(0.62), radius: 8, y: 4)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.12), radius: 9)
+                    .shadow(color: .black.opacity(0.66), radius: 7, y: 4)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.10), radius: 8)
 
-                MilliAICharacterView(size: 46, animated: true)
-                    .frame(width: 46, height: 46)
+                MilliAICharacterView(size: 37, animated: true)
+                    .frame(width: 37, height: 37)
                     .clipShape(Circle())
             }
-            .frame(width: 56, height: 56)
+            .frame(width: 48, height: 48)
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
