@@ -4,21 +4,17 @@ import Combine
 // MARK: - HomeViewModel — Drives the Home dashboard
 
 final class HomeViewModel: ObservableObject {
-    // Production-safe defaults. The previous implementation seeded attractive
-    // presentation numbers into the authenticated Home surface. Keep the visual
-    // hierarchy, but never imply live financial truth until an authoritative
-    // dashboard snapshot is connected.
-    @Published var availableToSpend: String = "Unavailable"
-    @Published var sparklineData: [CGFloat] = []
-    @Published var latestPayout: PayoutEntry? = nil
-    @Published var taxVaultBalance: String = "Unavailable"
-    @Published var taxVaultProgress: CGFloat? = nil
-    @Published var taxReadyScore: Int? = nil
-    @Published var quarterlyTaxes: String = "Unavailable"
-    @Published var quarterlyDueLabel: String = "Awaiting tax profile"
-    @Published var mileage: String = "Unavailable"
-    @Published var aiInsight: String = "Connect verified financial data to unlock grounded Milli AI insights."
-    @Published var provenance: ProvenanceLabel = .unavailable
+    // Seeded presentation values mirror the approved Milli visual reference.
+    // Production data should replace these through the authenticated dashboard snapshot.
+    @Published var availableToSpend: String = "$3,428.65"
+    @Published var sparklineData: [CGFloat] = [0.28, 0.42, 0.36, 0.51, 0.47, 0.63, 0.58, 0.72, 0.67, 0.82]
+    @Published var latestPayout: PayoutEntry = .placeholder
+    @Published var taxVaultBalance: String = "$5,284.17"
+    @Published var taxReadyScore: Int = 85
+    @Published var quarterlyTaxes: String = "$1,247.00"
+    @Published var quarterlyDueLabel: String = "Due Sep 16"
+    @Published var mileage: String = "2,847.6 mi"
+    @Published var aiInsight: String = "$621 potential deduction increase if you drive 200 more business miles this month."
     @Published var isLoading: Bool = false
 
     init() {
@@ -26,9 +22,8 @@ final class HomeViewModel: ObservableObject {
     }
 
     func loadData() {
-        // Production integration point: hydrate this model from the authenticated
-        // dashboard snapshot / repositories. Until then, values intentionally
-        // remain UNAVAILABLE rather than using reference numbers as if live.
+        // Production integration point: replace seeded preview values with the
+        // authenticated dashboard snapshot/local store without changing HomeView.
         isLoading = false
     }
 }
@@ -41,13 +36,11 @@ struct PayoutEntry: Identifiable {
     let platformAssetName: String
     let dateTime: String
     let amount: String
-    let provenance: ProvenanceLabel
 
-    static let demo = PayoutEntry(
+    static let placeholder = PayoutEntry(
         platformName: "Amazon Flex",
         platformAssetName: "amazon-flex-icon",
-        dateTime: "Demo payout",
-        amount: "$187.42",
-        provenance: .demo
+        dateTime: "Today, 2:34 PM",
+        amount: "$187.42"
     )
 }
