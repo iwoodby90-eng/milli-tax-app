@@ -46,11 +46,11 @@ def balance(user_id: uuid.UUID = Depends(require_user)) -> BalanceResponse:
             cur.execute(
                 """
                 select
-                  coalesce(sum(amount_cents) filter (where status = 'settled'), 0),
-                  coalesce(sum(amount_cents) filter (where status in ('requested','processing')), 0),
-                  count(*)
-                from tax_vault_ledger
-                where user_id = %s
+                    coalesce(sum(amount_cents) filter (where status = 'settled'), 0),
+                    coalesce(sum(amount_cents) filter (where status in ('requested','processing')), 0),
+                    count(*)
+                    from tax_vault_ledger
+                    where user_id = %s
                 """,
                 (user_id,),
             )
@@ -70,7 +70,11 @@ class LedgerEntryIn(BaseModel):
     tax_year: int | None = None
     quarter: int | None = Field(default=None, ge=1, le=4)
     memo: str | None = None
-    status: str = Field(default="requested", pattern="^(requested|processing|settled)$")
+    # Only requested and processing are accepted on creation.
+    # The settled state is ONLY reachable through the authoritative
+    # update_status state machine (POST /entries/{id}/status).
+    # See issue #103: allowing settled here bypassed the state machine.
+    status: str = Field(default="requested", pattern="^(requested|processing)$")
 
 
 class LedgerEntryOut(BaseModel):
@@ -105,7 +109,7 @@ def create_entry(
                 insert into tax_vault_ledger
                     (id, user_id, entry_type, amount_cents, status, reserve_rate,
                      tax_year, quarter, memo, audit_id, settled_at)
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     entry_id,
@@ -118,7 +122,9 @@ def create_entry(
                     body.quarter,
                     body.memo,
                     audit_id,
-                    datetime.now(timezone.utc) if body.status == "settled" else None,
+                    # status can only be requested|processing here (pattern enforced above),
+                    # so settled_at is always None on creation. Settled is set by update_status.
+                    None,
                 ),
             )
         conn.commit()
@@ -141,9 +147,9 @@ def list_entries(
                 select id, entry_type, amount_cents, status, tax_year, quarter,
                        memo, audit_id, settled_at, created_at
                   from tax_vault_ledger
-                 where user_id = %s
-                 order by created_at desc
-                 limit %s
+                  where user_id = %s
+                  order by created_at desc
+                  limit %s
                 """,
                 (user_id, limit),
             )
@@ -188,8 +194,8 @@ def update_status(
                    set status = %s,
                        settled_at = case when %s = 'settled' then now() else settled_at end,
                        updated_at = now()
-                 where id = %s and user_id = %s
-                returning status
+                   where id = %s and user_id = %s
+                   returning status
                 """,
                 (body.status, body.status, entry_id, user_id),
             )
