@@ -11,7 +11,11 @@ struct TaxVaultView: View {
     @State private var showTransferSetup = false
     @State private var showNotifications = false
 
-    private let vault = TaxVaultDisplayModel.reference
+    // Until the authoritative Tax Vault repository is wired into this surface,
+    // the reference content is intentionally and visibly DEMO. Never present
+    // reference balances/activity as live financial truth.
+    private let vault = TaxVaultDisplayModel.demoReference
+    private let provenance: ProvenanceLabel = .demo
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -63,11 +67,14 @@ struct TaxVaultView: View {
                 .accessibilityLabel("Notifications")
             }
 
-            Text("Milli Tax Vault™")
-                .font(MilliFont.headlineSmall)
-                .foregroundStyle(MilliColors.textPrimary)
+            VStack(spacing: 2) {
+                Text("Milli Tax Vault™")
+                    .font(MilliFont.headlineSmall)
+                    .foregroundStyle(MilliColors.textPrimary)
+                ProvenanceTag(label: provenance)
+            }
         }
-        .frame(height: 40)
+        .frame(height: 46)
     }
 
     private var reserveHero: some View {
@@ -81,7 +88,7 @@ struct TaxVaultView: View {
                     .font(MilliFont.heroNumber)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("\(progressPercentText) of annual target")
+                Text("\(progressPercentText) of annual target · DEMO")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
@@ -115,11 +122,11 @@ struct TaxVaultView: View {
 
     private var targetRow: some View {
         HStack(spacing: 0) {
-            metric("ANNUAL TARGET", currency(vault.annualTarget), subtitle: "Tax reserve goal")
+            metric("ANNUAL TARGET", currency(vault.annualTarget), subtitle: "Demo tax reserve goal")
             Rectangle()
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 1, height: 48)
-            metric("CURRENT RESERVE RATE", "\(Int(vault.reserveRate * 100))%", subtitle: "Applied to payouts")
+            metric("CURRENT RESERVE RATE", "\(Int(vault.reserveRate * 100))%", subtitle: "Demo payout setting")
         }
         .milliCard(padding: 12)
     }
@@ -179,7 +186,7 @@ struct TaxVaultView: View {
                 Text("RECENT ACTIVITY")
                     .sectionHeaderStyle()
                 Spacer()
-                Text("AUDIT LEDGER")
+                Text("DEMO LEDGER")
                     .font(MilliFont.caption)
                     .tracking(0.5)
                     .foregroundStyle(MilliColors.textTertiary)
@@ -284,16 +291,16 @@ private struct TaxVaultDisplayModel {
         return CGFloat(min(max(balance / annualTarget, 0), 1))
     }
 
-    static var reference: TaxVaultDisplayModel {
+    static var demoReference: TaxVaultDisplayModel {
         TaxVaultDisplayModel(
             balance: 5_284.17,
             annualTarget: 22_800,
             reserveRate: 0.23,
             activity: [
-                VaultActivity(title: "Amazon Flex", dateLabel: "Today, 2:34 PM", amount: 43.11, icon: "shippingbox.fill", iconColor: MilliColors.cyanGlow),
-                VaultActivity(title: "Spark Driver", dateLabel: "Today, 10:12 AM", amount: 36.06, icon: "sparkles", iconColor: Color(hex: "4E8CFF")),
-                VaultActivity(title: "DoorDash", dateLabel: "Yesterday", amount: 21.70, icon: "bag.fill", iconColor: MilliColors.negative),
-                VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Previous quarter", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
+                VaultActivity(title: "Amazon Flex", dateLabel: "Demo payout", amount: 43.11, icon: "shippingbox.fill", iconColor: MilliColors.cyanGlow),
+                VaultActivity(title: "Spark Driver", dateLabel: "Demo payout", amount: 36.06, icon: "sparkles", iconColor: Color(hex: "4E8CFF")),
+                VaultActivity(title: "DoorDash", dateLabel: "Demo payout", amount: 21.70, icon: "bag.fill", iconColor: MilliColors.negative),
+                VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Demo payment", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
             ]
         )
     }

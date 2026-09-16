@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreLocation
+import MapKit
 import AuthenticationServices
 import StoreKit
 
@@ -12,10 +13,9 @@ enum AppState: String {
 }
 
 // MARK: - Navigation handoff
-// Milli accepts its own deep-link contract everywhere and can also parse Apple's
-// geo-navigation payload when iOS launches Milli as an eligible navigation app.
-// A handoff is retained through sign-in so the destination is already loaded
-// when the authenticated user reaches Mileage.
+// Milli accepts Apple Maps directions-request URLs, Apple's geo-navigation
+// contract where available, and Milli's own deep links. The handoff is retained
+// through authentication and consumed by the persistent Mileage cockpit.
 
 struct NavigationHandoffRequest: Identifiable, Equatable {
     let id = UUID()
@@ -33,6 +33,23 @@ struct NavigationHandoffRequest: Identifiable, Equatable {
 
 enum NavigationHandoffParser {
     static func parse(_ url: URL) -> NavigationHandoffRequest? {
+        // Registered routing apps receive a MapKit directions-request URL.
+        // Decode it with MapKit rather than reverse engineering private fields.
+        if MKDirections.Request.isDirectionsRequest(url) {
+            let directionsRequest = MKDirections.Request(contentsOf: url)
+            guard let destination = directionsRequest.destination else { return nil }
+            let coordinate = destination.placemark.coordinate
+            let validCoordinate = CLLocationCoordinate2DIsValid(coordinate)
+
+            return NavigationHandoffRequest(
+                destinationAddress: nil,
+                destinationName: destination.name,
+                latitude: validCoordinate ? coordinate.latitude : nil,
+                longitude: validCoordinate ? coordinate.longitude : nil,
+                sourceApp: "Apple Maps"
+            )
+        }
+
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
         }
@@ -45,21 +62,28 @@ enum NavigationHandoffParser {
         )
 
         let address = firstNonEmpty(
-            items["address"],
             items["destination"],
+            items["address"],
             items["daddr"],
             items["q"],
             items["query"]
         )
 
         let name = firstNonEmpty(items["name"], items["label"], items["title"])
-        let source = firstNonEmpty(items["source"], items["app"], items["provider"])
+        let source = scheme == "milli"
+            ? firstNonEmpty(items["source_app"], items["app"], items["provider"])
+            : "System Navigation"
 
         var latitude = double(items["lat"] ?? items["latitude"])
         var longitude = double(items["lon"] ?? items["lng"] ?? items["longitude"])
 
         if (latitude == nil || longitude == nil),
-           let coordinateText = firstNonEmpty(items["ll"], items["coordinate"], items["destination_coordinate"]) {
+           let coordinateText = firstNonEmpty(
+                items["coordinate"],
+                items["destination_coordinate"],
+                items["ll"],
+                coordinateCandidate(from: items["destination"])
+           ) {
             let parts = coordinateText
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -69,7 +93,6 @@ enum NavigationHandoffParser {
             }
         }
 
-        // milli://navigate/123-main-st also works without a query string.
         let pathAddress: String? = {
             guard scheme == "milli" else { return nil }
             let path = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
@@ -90,6 +113,17 @@ enum NavigationHandoffParser {
         )
     }
 
+    private static func coordinateCandidate(from value: String?) -> String? {
+        guard let value else { return nil }
+        let parts = value.split(separator: ",")
+        guard parts.count == 2,
+              Double(parts[0].trimmingCharacters(in: .whitespacesAndNewlines)) != nil,
+              Double(parts[1].trimmingCharacters(in: .whitespacesAndNewlines)) != nil else {
+            return nil
+        }
+        return value
+    }
+
     private static func firstNonEmpty(_ values: String?...) -> String? {
         values
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -106,9 +140,6 @@ enum NavigationHandoffParser {
 struct MilliApp: App {
     @State private var appState: AppState
     @State private var pendingNavigationRequest: NavigationHandoffRequest?
-    @State private var setupErrorMessage: String?
-    @State private var isCompletingSetup = false
-
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
 
@@ -153,12 +184,10 @@ struct MilliApp: App {
 
                 case .login:
                     LoginView(
-                        onSignIn: { profileIdentifier in
-                            activateLocalBackendProfile(profileIdentifier)
+                        onSignIn: { _ in
                             handleReturningSignIn()
                         },
-                        onCreateAccount: { profileIdentifier in
-                            activateLocalBackendProfile(profileIdentifier)
+                        onCreateAccount: { _ in
                             beginNewAccountSetup()
                         }
                     )
@@ -172,8 +201,10 @@ struct MilliApp: App {
                     .transition(.opacity)
 
                 case .setup:
-                    LaunchOnboardingFlowView(onComplete: {
-                        finishSetupAuthoritatively()
+                    OnboardingFlowView(onComplete: {
+                        hasCompletedSetup = true
+                        activateSelectedTrialIfNeeded()
+                        transition(to: .main)
                     })
                     .transition(.opacity)
 
@@ -192,23 +223,8 @@ struct MilliApp: App {
             .animation(.easeInOut(duration: 0.32), value: appState)
             .preferredColorScheme(.dark)
             .onOpenURL(perform: handleIncomingNavigationURL)
-            .alert(
-                "Setup couldn't finish",
-                isPresented: Binding(
-                    get: { setupErrorMessage != nil },
-                    set: { if !$0 { setupErrorMessage = nil } }
-                )
-            ) {
-                Button("OK", role: .cancel) {
-                    setupErrorMessage = nil
-                }
-            } message: {
-                Text(setupErrorMessage ?? "Milli couldn't save your Autopilot settings yet.")
-            }
             .task {
-                // Verify Apple ID credential state on app launch.
                 _ = await appleAuthManager.verifyAppleCredentialState()
-                // Update App Store entitlements on app launch.
                 await storeKitService.updateCustomerProductStatus()
             }
         }
@@ -219,8 +235,8 @@ struct MilliApp: App {
         pendingNavigationRequest = request
 
         // Never bypass authentication. If the user is already authenticated,
-        // ContentView immediately routes to Mileage. Otherwise the request waits
-        // through sign-in/onboarding and is consumed once the main shell appears.
+        // ContentView routes to Mileage immediately. Otherwise the destination
+        // remains pending until the user reaches the authenticated shell.
         if appState == .main {
             return
         }
@@ -247,7 +263,6 @@ struct MilliApp: App {
         hasCompletedSetup = false
         defaults.removeObject(forKey: "onboarding_vehicle")
         defaults.removeObject(forKey: "onboarding_taxProfile")
-        defaults.removeObject(forKey: "onboarding_bankAutopilotProfile")
         defaults.removeObject(forKey: "onboarding_plan")
         defaults.removeObject(forKey: "milliAutopilotRetirementEnabled")
         defaults.removeObject(forKey: "milliAutopilotInvestingEnabled")
@@ -258,83 +273,6 @@ struct MilliApp: App {
         MilliTrialState.resetForNewLocalAccount()
 
         transition(to: .onboarding)
-    }
-
-    /// The current backend UUID header is an interim row namespace, not
-    /// authentication. Keep it scoped per local email/password profile so a
-    /// second account on the same device can never inherit another profile's
-    /// linked Plaid rows. Sign in with Apple is additionally namespaced by the
-    /// Apple subject inside MilliBackendClient.
-    private func activateLocalBackendProfile(_ profileIdentifier: String) {
-        let normalized = profileIdentifier
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-        guard !normalized.isEmpty else { return }
-
-        let defaults = UserDefaults.standard
-        let profileKey = "milliBackendUserID.profile.\(normalized)"
-
-        let profileUUID: UUID
-        if let stored = defaults.string(forKey: profileKey),
-           let parsed = UUID(uuidString: stored) {
-            profileUUID = parsed
-        } else {
-            profileUUID = UUID()
-            defaults.set(profileUUID.uuidString, forKey: profileKey)
-        }
-
-        defaults.set(normalized, forKey: "milliBackendActiveProfile")
-        defaults.set(profileUUID.uuidString, forKey: "milliBackendUserID")
-    }
-
-    /// Do not enter the authenticated financial shell until the backend agrees
-    /// that Tax Vault Autopilot is configured. This prevents local onboarding
-    /// from claiming automation is enabled while server state remains false.
-    private func finishSetupAuthoritatively() {
-        guard !isCompletingSetup else { return }
-        isCompletingSetup = true
-
-        let reserveRate = configuredTaxReserveRate()
-
-        Task {
-            do {
-                try await MilliBackendVaultSettingsClient.shared.update(
-                    reserveRate: reserveRate,
-                    autopilotEnabled: true
-                )
-
-                await MainActor.run {
-                    hasCompletedSetup = true
-                    activateSelectedTrialIfNeeded()
-                    isCompletingSetup = false
-                    transition(to: .main)
-                }
-            } catch {
-                await MainActor.run {
-                    isCompletingSetup = false
-                    setupErrorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-
-    private func configuredTaxReserveRate() -> Double {
-        let defaults = UserDefaults.standard
-        guard let data = defaults.data(forKey: "onboarding_taxProfile"),
-              let profile = try? JSONDecoder().decode(TaxProfile.self, from: data)
-        else {
-            return 0.23
-        }
-
-        let income = profile.annualIncomeAmount ?? 55_000
-        let percent: Double
-        switch income {
-        case ..<30_000: percent = 20
-        case ..<60_000: percent = 23
-        case ..<100_000: percent = 27
-        default: percent = 30
-        }
-        return percent / 100
     }
 
     private func activateSelectedTrialIfNeeded() {

@@ -9,6 +9,7 @@ struct ContentView: View {
 
     @State private var selectedTab: MilliTab
     @State private var activeScreen: ActiveScreen
+    @State private var hasActivatedMileageCockpit: Bool
 
     init(
         pendingNavigationRequest: Binding<NavigationHandoffRequest?> = .constant(nil),
@@ -24,15 +25,33 @@ struct ContentView: View {
 
         _activeScreen = State(initialValue: initialScreen)
         _selectedTab = State(initialValue: initialScreen.debugTab)
+        _hasActivatedMileageCockpit = State(initialValue: initialScreen == .activity)
     }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             MilliColors.background.ignoresSafeArea()
 
-            screenContent
+            // All non-mileage surfaces continue to use the lightweight screen
+            // router. Mileage is hosted separately below so an active MapKit/GPS
+            // session is not destroyed merely because the user checks another tab.
+            if activeScreen != .activity {
+                screenContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity)
+            }
+
+            if hasActivatedMileageCockpit {
+                MileageTrackerView(
+                    pendingNavigationRequest: $pendingNavigationRequest,
+                    onBack: { navigateTo(.home) }
+                )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .transition(.opacity)
+                .opacity(activeScreen == .activity ? 1 : 0)
+                .allowsHitTesting(activeScreen == .activity)
+                .accessibilityHidden(activeScreen != .activity)
+                .zIndex(activeScreen == .activity ? 1 : -1)
+            }
 
             if shouldShowAIOrb {
                 HStack {
@@ -44,12 +63,14 @@ struct ContentView: View {
                     .padding(.bottom, aiBottomClearance)
                 }
                 .allowsHitTesting(true)
+                .zIndex(2)
             }
 
             MilliNavBar(selectedTab: $selectedTab) {
                 selectedTab = .home
                 navigateTo(.home)
             }
+            .zIndex(3)
             .onChange(of: selectedTab) { _, newTab in
                 withAnimation(.easeInOut(duration: 0.2)) {
                     switch newTab {
@@ -58,6 +79,7 @@ struct ContentView: View {
                     case .vault:
                         activeScreen = .vault
                     case .activity:
+                        hasActivatedMileageCockpit = true
                         activeScreen = .activity
                     case .wealth:
                         activeScreen = .wealthOverview
@@ -74,10 +96,15 @@ struct ContentView: View {
         .onChange(of: pendingNavigationRequest?.id) { _, _ in
             routePendingNavigationRequestIfNeeded()
         }
+        .onChange(of: activeScreen) { _, newScreen in
+            if newScreen == .activity {
+                hasActivatedMileageCockpit = true
+            }
+        }
     }
 
     private var shouldShowAIOrb: Bool {
-        activeScreen != .milliAI
+        activeScreen != .milliAI && activeScreen != .activity
     }
 
     private var aiBottomClearance: CGFloat {
@@ -97,7 +124,8 @@ struct ContentView: View {
         case .vault:
             PayoutsView()
         case .activity:
-            MileageView(onBack: { navigateTo(.home) })
+            // The persistent MileageTrackerView is rendered in the root ZStack.
+            Color.clear
         case .milliCents:
             MilliCentsView(onBack: { navigateTo(.home) })
         case .autopilot:
@@ -143,6 +171,7 @@ struct ContentView: View {
 
     private func routePendingNavigationRequestIfNeeded() {
         guard pendingNavigationRequest != nil else { return }
+        hasActivatedMileageCockpit = true
         withAnimation(.easeInOut(duration: 0.2)) {
             activeScreen = .activity
             selectedTab = .activity
@@ -150,6 +179,10 @@ struct ContentView: View {
     }
 
     private func navigateTo(_ screen: ActiveScreen) {
+        if screen == .activity {
+            hasActivatedMileageCockpit = true
+        }
+
         withAnimation(.easeInOut(duration: 0.2)) {
             activeScreen = screen
             if let primaryTab = screen.primaryTab {

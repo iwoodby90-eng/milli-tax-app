@@ -58,10 +58,14 @@ struct HomeView: View {
 
     private var availableHero: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("AVAILABLE TO SPEND")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.9)
-                .foregroundStyle(MilliColors.textSecondary)
+            HStack {
+                Text("AVAILABLE TO SPEND")
+                    .font(MilliFont.sectionLabel)
+                    .tracking(0.9)
+                    .foregroundStyle(MilliColors.textSecondary)
+                Spacer()
+                ProvenanceTag(label: viewModel.provenance)
+            }
 
             Text(viewModel.availableToSpend)
                 .font(MilliFont.heroBalance)
@@ -69,19 +73,31 @@ struct HomeView: View {
                 .foregroundStyle(MilliColors.textPrimary)
                 .contentTransition(.numericText())
                 .lineLimit(1)
-                .minimumScaleFactor(0.82)
+                .minimumScaleFactor(0.72)
 
-            Text("Updated just now")
+            Text(viewModel.provenance == .unavailable ? "Connect verified accounts to populate this balance" : "Authoritative financial snapshot")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
 
             ZStack(alignment: .trailing) {
-                MilliSparkline(
-                    data: viewModel.sparklineData,
-                    color: MilliColors.cyanGlow,
-                    height: 50,
-                    lineWidth: 1.8
-                )
+                if viewModel.sparklineData.isEmpty {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.white.opacity(0.025))
+                        .frame(height: 50)
+                        .overlay {
+                            Text("TREND UNAVAILABLE")
+                                .font(MilliFont.caption)
+                                .tracking(0.6)
+                                .foregroundStyle(MilliColors.textTertiary)
+                        }
+                } else {
+                    MilliSparkline(
+                        data: viewModel.sparklineData,
+                        color: MilliColors.cyanGlow,
+                        height: 50,
+                        lineWidth: 1.8
+                    )
+                }
 
                 Button {
                     navigate?(.accounts)
@@ -118,44 +134,80 @@ struct HomeView: View {
 
     // MARK: Latest payout
 
+    @ViewBuilder
     private var latestPayout: some View {
-        Button {
-            navigate?(.vault)
-        } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("LATEST PAYOUT")
-                        .font(MilliFont.sectionLabel)
-                        .tracking(0.8)
-                        .foregroundStyle(MilliColors.textSecondary)
+        if let payout = viewModel.latestPayout {
+            Button {
+                navigate?(.vault)
+            } label: {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text("LATEST PAYOUT")
+                                .font(MilliFont.sectionLabel)
+                                .tracking(0.8)
+                                .foregroundStyle(MilliColors.textSecondary)
+                            ProvenanceTag(label: payout.provenance)
+                        }
 
-                    Text(viewModel.latestPayout.amount)
-                        .font(MilliFont.numericMedium)
-                        .monospacedDigit()
-                        .foregroundStyle(MilliColors.textPrimary)
-                        .lineLimit(1)
+                        Text(payout.amount)
+                            .font(MilliFont.numericMedium)
+                            .monospacedDigit()
+                            .foregroundStyle(MilliColors.textPrimary)
+                            .lineLimit(1)
 
-                    Text("\(viewModel.latestPayout.dateTime)  •  \(viewModel.latestPayout.platformName)")
-                        .font(MilliFont.caption)
-                        .foregroundStyle(MilliColors.textTertiary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 8)
-
-                Image(viewModel.latestPayout.platformAssetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 42, height: 42)
-                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
+                        Text("\(payout.dateTime)  •  \(payout.platformName)")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                            .lineLimit(1)
                     }
+
+                    Spacer(minLength: 8)
+
+                    Image(payout.platformAssetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
+                        }
+                }
+                .milliCard()
             }
-            .milliCard()
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                navigate?(.vault)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(MilliColors.textTertiary)
+                        .frame(width: 42, height: 42)
+                        .background(Circle().fill(Color.white.opacity(0.035)))
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("LATEST PAYOUT")
+                            .font(MilliFont.sectionLabel)
+                            .tracking(0.8)
+                            .foregroundStyle(MilliColors.textSecondary)
+                        Text("No verified payout available")
+                            .font(MilliFont.bodyMedium)
+                            .foregroundStyle(MilliColors.textPrimary)
+                        Text("Connect a provider to sync payouts")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                    }
+
+                    Spacer()
+                    ProvenanceTag(label: .unavailable)
+                }
+                .milliCard()
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: Metric grid
@@ -192,7 +244,7 @@ struct HomeView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.66)
                             .allowsTightening(true)
-                        Text("23% of annual target")
+                        Text(viewModel.taxVaultProgress == nil ? "Annual target unavailable" : "Progress toward annual target")
                             .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.textTertiary)
                             .lineLimit(2)
@@ -200,7 +252,7 @@ struct HomeView: View {
                     .layoutPriority(1)
 
                     Spacer(minLength: 0)
-                    progressRing(progress: 0.23, value: nil, size: 34)
+                    progressRing(progress: viewModel.taxVaultProgress ?? 0, value: nil, size: 34)
                         .fixedSize()
                 }
             }
@@ -221,16 +273,17 @@ struct HomeView: View {
                     .minimumScaleFactor(0.82)
 
                 HStack(spacing: 8) {
+                    let score = viewModel.taxReadyScore
                     progressRing(
-                        progress: CGFloat(viewModel.taxReadyScore) / 100,
-                        value: "\(viewModel.taxReadyScore)",
+                        progress: score.map { CGFloat($0) / 100 } ?? 0,
+                        value: score.map(String.init) ?? "N/A",
                         size: 44
                     )
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Great")
+                        Text(score == nil ? "Unavailable" : "Calculated")
                             .font(MilliFont.labelLarge)
-                            .foregroundStyle(MilliColors.positive)
-                        Text("You're on track\nfor tax season")
+                            .foregroundStyle(score == nil ? MilliColors.textTertiary : MilliColors.positive)
+                        Text(score == nil ? "Complete your tax profile\nto calculate this score" : "Based on verified\nfinancial data")
                             .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.textSecondary)
                             .lineLimit(2)
@@ -287,7 +340,7 @@ struct HomeView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 HStack {
-                    Text("This quarter")
+                    Text(viewModel.mileage == "Unavailable" ? "No tracked mileage yet" : "This quarter")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                     Spacer()
@@ -307,7 +360,7 @@ struct HomeView: View {
             Circle()
                 .stroke(Color.white.opacity(0.09), lineWidth: 4)
             Circle()
-                .trim(from: 0, to: progress)
+                .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(
                     LinearGradient(
                         colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
@@ -319,7 +372,7 @@ struct HomeView: View {
                 .rotationEffect(.degrees(-90))
             if let value {
                 Text(value)
-                    .font(.custom("Sora-SemiBold", size: 12))
+                    .font(.custom("Sora-SemiBold", size: value.count > 2 ? 9 : 12))
                     .foregroundStyle(MilliColors.textPrimary)
             }
         }
@@ -342,10 +395,13 @@ struct HomeView: View {
                     }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("MILLI AI INSIGHT")
-                        .font(MilliFont.sectionLabel)
-                        .tracking(0.7)
-                        .foregroundStyle(MilliColors.cyanGlow)
+                    HStack(spacing: 6) {
+                        Text("MILLI AI INSIGHT")
+                            .font(MilliFont.sectionLabel)
+                            .tracking(0.7)
+                            .foregroundStyle(MilliColors.cyanGlow)
+                        ProvenanceTag(label: viewModel.provenance)
+                    }
                     Text(viewModel.aiInsight)
                         .font(MilliFont.bodySmall)
                         .foregroundStyle(MilliColors.textPrimary)
