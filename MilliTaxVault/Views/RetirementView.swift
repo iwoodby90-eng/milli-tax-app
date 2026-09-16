@@ -43,7 +43,7 @@ struct RetirementView: View {
     private var totalConsolidatedBalance: Double {
         let base = (profile.milliAccount?.balance ?? profile.currentBalance)
         let merged = profile.mergedAccounts.reduce(0) { $0 + $1.balance }
-        return max(base + merged, 42685.73)
+        return base + merged
     }
 
     private var projection: RetirementProjection? {
