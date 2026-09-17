@@ -19,7 +19,43 @@ services:
         sync: false
       - key: PLAID_WEBHOOK_URL
         sync: false
+      - key: PLAID_REDIRECT_URI
+        sync: false
       - key: CLIENT_API_KEY
         sync: false
       - key: DATABASE_URL
         sync: false
+      # Column BaaS
+      - key: COLUMN_API_KEY
+        sync: false
+      - key: COLUMN_BASE_URL
+        value: https://api.column.com
+      - key: COLUMN_WEBHOOK_SECRET
+        sync: false
+      # Apple IAP
+      - key: APPLE_IAP_BUNDLE_ID
+        sync: false
+      - key: APPLE_IAP_ENVIRONMENT
+        value: sandbox
+      - key: APPLE_IAP_ISSUER_ID
+        sync: false
+      - key: APPLE_IAP_KEY_ID
+        sync: false
+      - key: APPLE_IAP_PRIVATE_KEY
+        sync: false
+      # Apple Identity
+      - key: APPLE_IDENTITY_MERCHANT_ID
+        sync: false
+      - key: APPLE_IDENTITY_PRIVATE_KEY
+        sync: false
+      # Rate limiting
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: AUDIT_RETENTION_DAYS
+        value: "365"
+
+  - type: pserv
+    name: milli-postgres
+    runtime: postgresql
+    plan: starter
+    ipAllowList: []
