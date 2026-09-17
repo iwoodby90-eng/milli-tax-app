@@ -118,14 +118,16 @@ class TestIAPEndpoints:
         resp = client.post("/iap/webhook", json={})
         assert resp.status_code == 400
 
-    def test_webhook_valid_notification(self, client):
-        """Webhook with valid payload returns 200."""
+    def test_webhook_valid_notification(self, no_db_client):
+        """Webhook with valid payload returns 200. Uses no_db_client
+        because the webhook endpoint does not require a DB connection
+        to parse and acknowledge the notification."""
         payload = {
             "notificationType": "DID_RENEW",
             "data": {"transactionId": "tx_999"},
         }
         signed_payload = _make_jws(payload)
-        resp = client.post(
+        resp = no_db_client.post(
             "/iap/webhook",
             json={"signedPayload": signed_payload},
         )

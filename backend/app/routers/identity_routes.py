@@ -43,8 +43,8 @@ class ColumnKYCIn(BaseModel):
 
 class IdentityOut(BaseModel):
     id: uuid.UUID
-    verification_method: str
-    status: str
+    verification_method: Literal["apple_wallet", "column_kyc", "third_party"]
+    status: Literal["pending", "verified", "failed", "expired"]
     verified_claims: Optional[dict[str, Any]] = None
     provider_reference: Optional[str] = None
     verified_at: Optional[datetime] = None
@@ -95,7 +95,7 @@ def _verify_apple_wallet_identity(jws_token: str) -> dict[str, Any]:
     }
 
     # Filter out None values
-    claims = {k: v for k, v in claims.items() if v is not None}
+    claims = {k: v for k, v in claims.items() if v}
 
     if not claims:
         raise ValueError("No verifiable claims found in identity payload")

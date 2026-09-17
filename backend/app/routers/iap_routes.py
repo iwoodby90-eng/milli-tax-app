@@ -52,8 +52,8 @@ class IAPOut(BaseModel):
     product_id: str
     purchase_date: datetime
     expires_date: Optional[datetime] = None
-    status: str
-    environment: str
+    status: Literal["verified", "expired", "refunded", "revoked"]
+    environment: Literal["sandbox", "production"]
     audit_id: str
     created_at: datetime
 
