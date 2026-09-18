@@ -32,7 +32,7 @@ def test_health_is_ok():
 
 def test_ready_reports_dependency_truth():
     body = client.get("/ready").json()
-    assert "database" in body and "plaid" in body and "apple_auth" in body
+    assert "database" in body and "plaid" in body and "apple_auth" in body and "unit" in body
     assert body["ready"] is False
 
 
