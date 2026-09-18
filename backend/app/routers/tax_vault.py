@@ -70,11 +70,10 @@ class LedgerEntryIn(BaseModel):
     tax_year: int | None = None
     quarter: int | None = Field(default=None, ge=1, le=4)
     memo: str | None = None
-    # Only requested and processing are accepted on creation.
-    # The settled state is ONLY reachable through the authoritative
-    # update_status state machine (POST /entries/{id}/status).
-    # See issue #103: allowing settled here bypassed the state machine.
-    status: str = Field(default="requested", pattern="^(requested|processing)$")
+    # A mobile client can only request a movement. Processing/settled/failed/
+    # reversed states belong to a verified bank-provider webhook/reconciliation
+    # path and are intentionally unreachable from this public router.
+    status: str = Field(default="requested", pattern="^requested$")
 
 
 class LedgerEntryOut(BaseModel):
@@ -122,8 +121,8 @@ def create_entry(
                     body.quarter,
                     body.memo,
                     audit_id,
-                    # status can only be requested|processing here (pattern enforced above),
-                    # so settled_at is always None on creation. Settled is set by update_status.
+                    # Public entry creation is request-only. A verified provider
+                    # reconciliation path is the only authority that may settle it.
                     None,
                 ),
             )
@@ -174,36 +173,9 @@ def list_entries(
     }
 
 
-class SettleRequest(BaseModel):
-    status: str = Field(pattern="^(processing|settled|failed|reversed)$")
-
-
-@router.post("/entries/{entry_id}/status")
-def update_status(
-    entry_id: uuid.UUID,
-    body: SettleRequest,
-    user_id: uuid.UUID = Depends(require_user),
-) -> dict:
-    """Authoritative state transition. Only this call can make money 'settled'."""
-    _require_db()
-    with db.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                update tax_vault_ledger
-                   set status = %s,
-                       settled_at = case when %s = 'settled' then now() else settled_at end,
-                       updated_at = now()
-                   where id = %s and user_id = %s
-                   returning status
-                """,
-                (body.status, body.status, entry_id, user_id),
-            )
-            row = cur.fetchone()
-        conn.commit()
-    if row is None:
-        raise HTTPException(404, "ledger entry not found")
-    return {"id": str(entry_id), "status": row[0]}
+# Settlement transitions are deliberately not exposed as a client HTTP route.
+# A provider-specific, signature-verified webhook/reconciliation service must
+# perform those transitions atomically with its audit record.
 
 
 class SettingsIn(BaseModel):
