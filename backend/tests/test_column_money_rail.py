@@ -1,4 +1,4 @@
-"""Security and provider-contract tests for the Column money rail."""
+"""Security and provider-contract tests for the Plaid -> Column money rail."""
 
 import uuid
 
@@ -9,19 +9,26 @@ from app.column_client import ColumnClient, ColumnRequestFailed, ColumnUnavailab
 from app.config import get_settings
 from app.routers.column_routes import (
     AccountCreateIn,
-    CounterpartyCreateIn,
+    PlaidCounterpartyCreateIn,
     TransferCreateIn,
     _idempotency_key,
     _local_transfer_status,
 )
 
 
-def test_client_models_cannot_choose_user_or_transfer_status():
+def test_client_models_cannot_choose_financial_authority():
     assert "user_id" not in AccountCreateIn.model_fields
-    assert "user_id" not in CounterpartyCreateIn.model_fields
+    assert "column_entity_id" not in AccountCreateIn.model_fields
+
+    assert "user_id" not in PlaidCounterpartyCreateIn.model_fields
+    assert "account_number" not in PlaidCounterpartyCreateIn.model_fields
+    assert "routing_number" not in PlaidCounterpartyCreateIn.model_fields
+    assert set(PlaidCounterpartyCreateIn.model_fields) == {"request_id", "plaid_account_id"}
+
     assert "user_id" not in TransferCreateIn.model_fields
     assert "status" not in TransferCreateIn.model_fields
     assert "provider_status" not in TransferCreateIn.model_fields
+    assert "entry_class_code" not in TransferCreateIn.model_fields
 
 
 def test_transfer_idempotency_key_is_stable_and_user_scoped():
@@ -37,20 +44,25 @@ def test_transfer_idempotency_key_is_stable_and_user_scoped():
 @pytest.mark.parametrize(
     "provider_status, expected",
     [
+        ("PRE_REVIEW", "processing"),
         ("INITIATED", "processing"),
+        ("HOLD", "processing"),
+        ("PENDING_SUBMISSION", "processing"),
         ("SUBMITTED", "processing"),
+        ("SCHEDULED", "processing"),
         ("SETTLED", "settled"),
         ("COMPLETED", "settled"),
         ("RETURNED", "returned"),
         ("PENDING_RETURN", "returned"),
         ("CANCELED", "canceled"),
+        ("A_NEW_COLUMN_STATE", "processing"),
     ],
 )
-def test_provider_state_mapping(provider_status, expected):
+def test_provider_state_mapping_fails_closed(provider_status, expected):
     assert _local_transfer_status(provider_status) == expected
 
 
-def test_column_client_uses_basic_auth_integer_cents_and_idempotency(monkeypatch):
+def test_column_client_uses_basic_auth_integer_cents_sec_code_and_idempotency(monkeypatch):
     captured = {}
 
     class Response:
@@ -73,6 +85,7 @@ def test_column_client_uses_basic_auth_integer_cents_and_idempotency(monkeypatch
         transfer_type="CREDIT",
         amount_cents=18742,
         description="Tax reserve",
+        entry_class_code="PPD",
         idempotency_key="milli.ach.test",
     )
 
@@ -81,6 +94,7 @@ def test_column_client_uses_basic_auth_integer_cents_and_idempotency(monkeypatch
     assert captured["url"] == "https://api.column.com/transfers/ach"
     assert captured["data"]["amount"] == 18742
     assert isinstance(captured["data"]["amount"], int)
+    assert captured["data"]["entry_class_code"] == "PPD"
     assert captured["headers"]["Idempotency-Key"] == "milli.ach.test"
 
 
@@ -106,7 +120,7 @@ def test_counterparty_creation_does_not_send_undocumented_idempotency_header(mon
         routing_number="021000021",
         account_type="checking",
         name="Test Member",
-        description="MILLI verified counterparty",
+        description="MILLI Plaid-verified ACH account",
     )
 
     assert captured["url"] == "https://api.column.com/counterparties"
@@ -140,5 +154,19 @@ def test_column_configuration_fails_closed_on_wrong_key_mode(monkeypatch):
     try:
         with pytest.raises(ColumnUnavailable):
             ColumnClient.configured()
+    finally:
+        get_settings.cache_clear()
+
+
+def test_column_ach_configuration_requires_server_sec_policy(monkeypatch):
+    monkeypatch.setenv("COLUMN_API_KEY", "test_valid")
+    monkeypatch.setenv("COLUMN_ENV", "sandbox")
+    monkeypatch.setenv("COLUMN_BASE_URL", "https://api.column.com")
+    monkeypatch.delenv("COLUMN_ACH_CREDIT_SEC_CODE", raising=False)
+    monkeypatch.delenv("COLUMN_ACH_DEBIT_SEC_CODE", raising=False)
+    get_settings.cache_clear()
+    try:
+        assert get_settings().column_configured is True
+        assert get_settings().column_ach_configured is False
     finally:
         get_settings.cache_clear()
