@@ -134,6 +134,15 @@ fi
 
 xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
+# Visual QA must capture Milli itself, not first-launch system permission sheets.
+# Seed location authorization in the disposable CI simulator. Production builds
+# still request permission normally; this only affects the simulator used here.
+if ! xcrun simctl privacy "$SIMULATOR_UDID" grant location-always "$BUNDLE_ID"; then
+  echo "Unable to seed location-always authorization for visual QA." >&2
+  exit 1
+fi
+
+
 show_recent_app_logs() {
   echo "Recent MilliTaxVault simulator logs:" >&2
   xcrun simctl spawn "$SIMULATOR_UDID" log show \
