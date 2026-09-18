@@ -1,15 +1,7 @@
-"""Minimal, fail-closed Column API client for Milli's money rail.
+"""Fail-closed Column API client for Milli's server-side money rail.
 
-Column is a server-side provider only. The iOS app never receives the Column API
-key and never talks to Column directly.
-
-Current Column API contracts used here:
-- HTTP Basic auth with blank username and API key as password.
-- Bank accounts live at /bank-accounts.
-- Counterparties live at /counterparties.
-- ACH transfers live at /transfers/ach.
-- Transfer amounts are integer cents.
-- Idempotency-Key is supplied on Column endpoints that document support for it.
+The iOS app never receives Column credentials and never calls Column directly.
+Sensitive external-account numbers exist only transiently in backend memory.
 """
 
 from __future__ import annotations
@@ -71,9 +63,8 @@ class ColumnClient:
             raise ColumnRequestFailed("Column network request failed") from exc
 
         if response.status_code < 200 or response.status_code >= 300:
-            # Do not reflect provider response bodies; they may contain sensitive
-            # financial or compliance detail. Status code is sufficient for API
-            # handling and server-side observability.
+            # Never reflect provider response bodies. They may contain sensitive
+            # financial or compliance information.
             raise ColumnRequestFailed(
                 f"Column request failed with HTTP {response.status_code}"
             )
@@ -97,10 +88,7 @@ class ColumnClient:
         return self._request(
             "POST",
             "/bank-accounts",
-            data={
-                "entity_id": entity_id,
-                "description": description,
-            },
+            data={"entity_id": entity_id, "description": description},
             idempotency_key=idempotency_key,
         )
 
@@ -124,12 +112,10 @@ class ColumnClient:
         }
         if name:
             data["name"] = name
+        return self._request("POST", "/counterparties", data=data)
 
-        return self._request(
-            "POST",
-            "/counterparties",
-            data=data,
-        )
+    def get_counterparty(self, counterparty_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/counterparties/{counterparty_id}")
 
     def create_ach_transfer(
         self,
@@ -139,6 +125,7 @@ class ColumnClient:
         transfer_type: str,
         amount_cents: int,
         description: str,
+        entry_class_code: str,
         idempotency_key: str,
     ) -> dict[str, Any]:
         return self._request(
@@ -151,6 +138,7 @@ class ColumnClient:
                 "amount": amount_cents,
                 "currency_code": "USD",
                 "description": description,
+                "entry_class_code": entry_class_code,
             },
             idempotency_key=idempotency_key,
         )
