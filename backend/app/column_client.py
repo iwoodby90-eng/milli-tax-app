@@ -9,7 +9,7 @@ Current Column API contracts used here:
 - Counterparties live at /counterparties.
 - ACH transfers live at /transfers/ach.
 - Transfer amounts are integer cents.
-- Idempotency-Key is supplied on every money-creating request.
+- Idempotency-Key is supplied on Column endpoints that document support for it.
 """
 
 from __future__ import annotations
@@ -115,7 +115,6 @@ class ColumnClient:
         account_type: str,
         name: str | None,
         description: str,
-        idempotency_key: str,
     ) -> dict[str, Any]:
         data: dict[str, Any] = {
             "account_number": account_number,
@@ -130,7 +129,6 @@ class ColumnClient:
             "POST",
             "/counterparties",
             data=data,
-            idempotency_key=idempotency_key,
         )
 
     def create_ach_transfer(
