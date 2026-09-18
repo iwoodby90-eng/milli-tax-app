@@ -62,3 +62,11 @@ def test_link_token_unavailable_without_plaid_credentials_after_auth_override():
     response = client.post("/plaid/link-token")
     assert response.status_code == 503
     assert "Plaid" in response.json()["detail"]
+
+
+def test_unsigned_plaid_webhook_is_rejected():
+    response = client.post(
+        "/plaid/webhook",
+        json={"webhook_type": "ITEM", "webhook_code": "ERROR", "item_id": "item-x"},
+    )
+    assert response.status_code == 401
