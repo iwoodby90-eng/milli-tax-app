@@ -11,7 +11,7 @@ services:
       - key: ENVIRONMENT
         value: sandbox
 
-      # Plaid - account connectivity/data
+      # Plaid - account connectivity, Auth and transaction data
       - key: PLAID_ENV
         value: sandbox
       - key: PLAID_CLIENT_ID
@@ -27,6 +27,10 @@ services:
       - key: COLUMN_BASE_URL
         value: https://api.column.com
       - key: COLUMN_API_KEY
+        sync: false
+      - key: COLUMN_ACH_CREDIT_SEC_CODE
+        sync: false
+      - key: COLUMN_ACH_DEBIT_SEC_CODE
         sync: false
 
       # Core backend / identity
