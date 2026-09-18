@@ -40,12 +40,5 @@ create index if not exists auth_sessions_access_idx
     on auth_sessions(access_token_hash)
     where revoked_at is null;
 
-create table if not exists apple_identity_assertions (
-    jti text primary key,
-    user_id uuid not null references milli_users(id) on delete cascade,
-    expires_at timestamptz not null,
-    created_at timestamptz not null default now()
-);
-
 -- The database itself must never default a new reserve movement to settled.
 alter table tax_vault_ledger alter column status set default 'requested';
