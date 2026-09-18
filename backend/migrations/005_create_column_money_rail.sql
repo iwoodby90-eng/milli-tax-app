@@ -1,6 +1,17 @@
 -- Column money rail, bound to server-authenticated Milli users.
--- No client-supplied user UUID can own or mutate these rows.
--- Sensitive account/routing numbers are never persisted.
+-- No client-supplied user UUID, provider entity ID, or raw bank numbers are
+-- trusted as ownership authority.
+
+create table if not exists column_customer_profiles (
+    user_id uuid primary key references milli_users(id) on delete cascade,
+    column_entity_id text not null unique,
+    kyc_status text not null check (
+        kyc_status in ('pending', 'verified', 'restricted', 'rejected')
+    ),
+    verified_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
 
 create table if not exists column_bank_accounts (
     id uuid primary key,
@@ -25,13 +36,16 @@ create table if not exists column_counterparties (
     id uuid primary key,
     user_id uuid not null references milli_users(id) on delete cascade,
     client_request_id uuid not null,
+    plaid_account_id uuid not null references plaid_accounts(id) on delete restrict,
     column_counterparty_id text not null unique,
     display_name text,
     account_type text not null check (account_type in ('checking', 'savings')),
     account_last_four text not null,
     routing_last_four text not null,
     created_at timestamptz not null default now(),
-    unique (user_id, client_request_id)
+    updated_at timestamptz not null default now(),
+    unique (user_id, client_request_id),
+    unique (user_id, plaid_account_id)
 );
 
 create index if not exists column_counterparties_user_idx
@@ -46,11 +60,12 @@ create table if not exists column_ach_transfers (
     column_ach_transfer_id text not null unique,
     idempotency_key text not null unique,
     transfer_type text not null check (transfer_type in ('CREDIT', 'DEBIT')),
+    entry_class_code text not null check (entry_class_code in ('PPD', 'WEB')),
     amount_cents bigint not null check (amount_cents > 0),
     currency_code text not null default 'USD',
     provider_status text not null,
     local_status text not null check (
-        local_status in ('requested', 'processing', 'settled', 'returned', 'canceled', 'failed')
+        local_status in ('processing', 'settled', 'returned', 'canceled')
     ),
     audit_id text not null unique,
     settled_at timestamptz,
