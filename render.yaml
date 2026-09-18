@@ -19,6 +19,12 @@ services:
         sync: false
       - key: PLAID_WEBHOOK_URL
         sync: false
+      - key: UNIT_API_TOKEN
+        sync: false
+      - key: UNIT_BASE_URL
+        sync: false
+      - key: UNIT_WEBHOOK_SECRET
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: APPLE_SIGN_IN_AUDIENCE
