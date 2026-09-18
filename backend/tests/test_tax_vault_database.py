@@ -51,8 +51,8 @@ def ledger(monkeypatch):
             conn.commit()
 
 
-@pytest.mark.parametrize("initial_status", ["requested", "processing"])
-def test_create_entry_persists_and_stays_out_of_settled_balance(ledger, initial_status):
+def test_create_entry_persists_and_stays_out_of_settled_balance(ledger):
+    initial_status = "requested"
     client, conn, user_id = ledger
     response = client.post("/tax-vault/entries", json={
         "entry_type": "reserve", "amount_cents": 18742,
@@ -83,6 +83,7 @@ def test_other_authenticated_user_cannot_read_created_entry(ledger):
 
 
 @pytest.mark.parametrize("payload, status_code", [
+    ({"entry_type": "reserve", "amount_cents": 500, "status": "processing"}, 422),
     ({"entry_type": "reserve", "amount_cents": 500, "status": "settled"}, 422),
     ({"entry_type": "reserve", "amount_cents": -500}, 400),
     ({"entry_type": "withdrawal", "amount_cents": 500}, 400),
