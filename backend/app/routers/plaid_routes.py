@@ -54,7 +54,7 @@ def create_link_token(user_id: uuid.UUID = Depends(require_user)) -> LinkTokenRe
     payload = {
         "user": LinkTokenCreateRequestUser(client_user_id=str(user_id)),
         "client_name": "MILLI Tax Vault",
-        "products": [Products("transactions")],
+        "products": [Products("auth"), Products("transactions")],
         "country_codes": [CountryCode("US")],
         "language": "en",
     }
