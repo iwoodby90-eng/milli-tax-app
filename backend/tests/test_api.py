@@ -70,3 +70,14 @@ def test_unsigned_plaid_webhook_is_rejected():
         json={"webhook_type": "ITEM", "webhook_code": "ERROR", "item_id": "item-x"},
     )
     assert response.status_code == 401
+
+
+def test_security_headers_are_applied_to_public_responses():
+    response = client.get("/health")
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["referrer-policy"] == "no-referrer"
+    assert response.headers["permissions-policy"] == "camera=(), microphone=(), geolocation=()"
+    assert response.headers["cross-origin-resource-policy"] == "same-origin"
