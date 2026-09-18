@@ -1,7 +1,7 @@
 """Runtime configuration.
 
-Every secret is read from the environment. Nothing is hardcoded, and no
-credential is ever committed to the repository or shipped in the iOS app.
+Secrets are environment-only. Production financial endpoints fail closed when
+identity, database, or provider configuration is unavailable.
 """
 
 from functools import lru_cache
@@ -15,8 +15,6 @@ class Settings(BaseSettings):
 
     environment: Literal["sandbox", "production"] = "sandbox"
 
-    # Postgres. When absent, data endpoints answer 503 UNAVAILABLE rather than
-    # inventing a balance (MILLI data-truth rule).
     database_url: Optional[str] = None
 
     # Plaid
@@ -26,7 +24,18 @@ class Settings(BaseSettings):
     plaid_webhook_url: Optional[str] = None
     plaid_redirect_uri: Optional[str] = None
 
-    # Shared secret the iOS client sends as X-Milli-Client-Key.
+    # Sign in with Apple. For the native app this is normally the App ID /
+    # bundle identifier. It is intentionally required rather than guessed.
+    apple_sign_in_audience: Optional[str] = None
+
+    # Opaque server sessions. Access tokens are deliberately short lived and
+    # refresh tokens rotate whenever they are used.
+    auth_access_ttl_minutes: int = 15
+    auth_refresh_ttl_days: int = 30
+    auth_challenge_ttl_minutes: int = 10
+
+    # Legacy client key is retained only so stale Render configuration can be
+    # identified and removed. It is never accepted as user authentication.
     client_api_key: Optional[str] = None
 
     @property
@@ -36,6 +45,10 @@ class Settings(BaseSettings):
     @property
     def db_configured(self) -> bool:
         return bool(self.database_url)
+
+    @property
+    def apple_auth_configured(self) -> bool:
+        return bool(self.apple_sign_in_audience)
 
 
 @lru_cache
