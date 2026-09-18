@@ -1,0 +1,52 @@
+name: Backend validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: Backend tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: milli_test
+          POSTGRES_PASSWORD: local_ci_only
+          POSTGRES_DB: milli_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U milli_test -d milli_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Run contracts and database integration tests
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: postgresql://milli_test:local_ci_only@localhost:5432/milli_test
+        run: python -m pytest tests -q --junitxml=test-results.xml
+      - name: Preserve test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/test-results.xml
+          if-no-files-found: warn
