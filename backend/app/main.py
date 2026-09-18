@@ -1,20 +1,21 @@
 """MILLI Tax Vault API.
 
-FastAPI service backing the native iOS app. User-scoped financial endpoints use
-server-issued bearer sessions; no mobile shared secret is an auth boundary.
+Plaid is the account-data layer. Column is the banking and ACH money-movement
+layer. Every user-scoped financial endpoint is authorized by a server-issued
+session; the mobile app is never a financial authority.
 """
 
 from fastapi import FastAPI, Request
 
 from .config import get_settings
-from .routers import auth_routes, health, plaid_routes, tax_vault
+from .routers import auth_routes, column_routes, health, plaid_routes, tax_vault
 
 settings = get_settings()
 
 app = FastAPI(
     title="MILLI Tax Vault API",
-    version="0.2.0",
-    description="Authenticated bank connections and the Tax Vault reserve ledger.",
+    version="0.3.0",
+    description="Authenticated Plaid connectivity, Column money movement, and Tax Vault ledger.",
     docs_url=None if settings.environment == "production" else "/docs",
     redoc_url=None if settings.environment == "production" else "/redoc",
     openapi_url=None if settings.environment == "production" else "/openapi.json",
@@ -23,6 +24,7 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(auth_routes.router)
 app.include_router(plaid_routes.router)
+app.include_router(column_routes.router)
 app.include_router(tax_vault.router)
 
 
@@ -45,6 +47,6 @@ async def harden_responses(request: Request, call_next):
 def root() -> dict:
     return {
         "service": "milli-tax-vault-api",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "health": "/health",
     }
