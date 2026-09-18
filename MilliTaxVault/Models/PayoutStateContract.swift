@@ -64,6 +64,27 @@ public enum ProvenanceLabel: String, CaseIterable, Codable, Sendable {
     case unavailable = "UNAVAILABLE"
 }
 
+
+/// Reference/demo financial values are permitted only for deterministic DEBUG
+/// capture sessions. Release builds must never present seeded balances, scores,
+/// account numbers, or tax figures as if they belonged to the signed-in user.
+public enum ReferenceDataPolicy {
+    public static var allowsDemoReferenceData: Bool {
+        #if DEBUG
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || processInfo.environment["MILLI_SCREEN"] != nil
+            || processInfo.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
+    }
+
+    public static var provenance: ProvenanceLabel {
+        allowsDemoReferenceData ? .demo : .unavailable
+    }
+}
+
 /// Authoritative payout record as delivered by the backend. The client
 /// renders this; it never synthesizes it.
 public struct AutopilotPayout: Identifiable, Codable, Equatable, Sendable {
