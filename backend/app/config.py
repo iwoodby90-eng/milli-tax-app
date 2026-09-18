@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     plaid_webhook_url: Optional[str] = None
     plaid_redirect_uri: Optional[str] = None
 
+    # Unit BaaS. The organization token remains server-only. The base URL is
+    # explicit so sandbox/production cannot be selected accidentally.
+    unit_api_token: Optional[str] = None
+    unit_base_url: Optional[str] = None
+    unit_webhook_secret: Optional[str] = None
+
     # Sign in with Apple. For the native app this is normally the App ID /
     # bundle identifier. It is intentionally required rather than guessed.
     apple_sign_in_audience: Optional[str] = None
@@ -45,6 +51,10 @@ class Settings(BaseSettings):
     @property
     def db_configured(self) -> bool:
         return bool(self.database_url)
+
+    @property
+    def unit_configured(self) -> bool:
+        return bool(self.unit_api_token and self.unit_base_url and self.unit_webhook_secret)
 
     @property
     def apple_auth_configured(self) -> bool:
