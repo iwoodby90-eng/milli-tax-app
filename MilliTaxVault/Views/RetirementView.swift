@@ -47,10 +47,23 @@ struct RetirementView: View {
     }
 
     private var projection: RetirementProjection? {
-        RetirementProjectionCalculator.calculate(
+        guard profile.currentAge > 0,
+              profile.targetRetirementAge > profile.currentAge,
+              profile.annualIncome > 0 || totalConsolidatedBalance > 0 else {
+            return nil
+        }
+        return RetirementProjectionCalculator.calculate(
             profile: profile.snapshot,
             consolidatedBalance: totalConsolidatedBalance
         )
+    }
+
+    private var provenance: ProvenanceLabel {
+        if ReferenceDataPolicy.allowsDemoReferenceData { return .demo }
+        let hasPlanningData = profile.currentAge > 0
+            || profile.annualIncome > 0
+            || totalConsolidatedBalance > 0
+        return hasPlanningData ? .userEntered : .unavailable
     }
 
     var body: some View {
@@ -112,16 +125,20 @@ struct RetirementView: View {
 
             Spacer()
 
-            Button {
-                showInputs = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(MilliColors.cyanGlow)
-                    .frame(width: 34, height: 34)
+            HStack(spacing: 5) {
+                Button {
+                    showInputs = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit retirement inputs")
+                ProvenanceTag(label: provenance)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Edit retirement inputs")
+            .frame(width: 96, alignment: .trailing)
         }
     }
 
@@ -192,23 +209,38 @@ struct RetirementView: View {
                         .font(.custom("Inter-Regular", size: 12))
                         .foregroundStyle(MilliColors.textSecondary)
 
-                    Button {
-                        showAccountOpeningOnboarding = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Open Milli Retirement Account (Roth / SEP-IRA)")
+                    if ReferenceDataPolicy.allowsDemoReferenceData {
+                        Button {
+                            showAccountOpeningOnboarding = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Open Demo Retirement Account")
+                            }
+                            .font(.custom("Inter-SemiBold", size: 13))
+                            .foregroundStyle(MilliColors.blackGlass)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(MilliColors.cyanGlow)
+                            )
                         }
-                        .font(.custom("Inter-SemiBold", size: 13))
-                        .foregroundStyle(MilliColors.blackGlass)
+                        .buttonStyle(.plain)
+                    } else {
+                        HStack(spacing: 7) {
+                            Image(systemName: "lock.shield.fill")
+                            Text("Brokerage connection required")
+                        }
+                        .font(.custom("Inter-SemiBold", size: 12))
+                        .foregroundStyle(MilliColors.textSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(MilliColors.cyanGlow)
+                                .fill(MilliColors.graphiteSurface)
                         )
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -233,7 +265,7 @@ struct RetirementView: View {
     private var mergedAccountsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("CONNECTED & MERGED ACCOUNTS")
+                Text(ReferenceDataPolicy.allowsDemoReferenceData ? "CONNECTED & MERGED ACCOUNTS" : "RETIREMENT PLANNING ACCOUNTS")
                     .font(MilliFont.sectionLabel)
                     .tracking(0.7)
                     .foregroundStyle(MilliColors.textSecondary)
@@ -245,7 +277,7 @@ struct RetirementView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "link.badge.plus")
-                        Text("Connect Account")
+                        Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Connect Account" : "Add for Planning")
                     }
                     .font(.custom("Inter-SemiBold", size: 11))
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -262,11 +294,11 @@ struct RetirementView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect Past 401(k) or IRA Accounts")
+                            Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Connect Past 401(k) or IRA Accounts" : "Add a 401(k) or IRA for Planning")
                                 .font(.custom("Inter-SemiBold", size: 13))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text("Roll over old 401(k)s or merge balances with Milli for unified compounding.")
+                            Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Roll over old 401(k)s or merge balances with Milli for unified compounding." : "Enter an existing balance to model retirement projections. This does not initiate a rollover or connect a custodian.")
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
@@ -915,16 +947,16 @@ private struct MilliRetirementOnboardingSheet: View {
 
 @MainActor
 public final class RetirementPlanningStore: ObservableObject {
-    @Published public var currentAge: Int = 32 { didSet { persist() } }
-    @Published public var currentBalance: Double = 42685.73 { didSet { persist() } }
-    @Published public var annualIncome: Double = 75000 { didSet { persist() } }
+    @Published public var currentAge: Int = ReferenceDataPolicy.allowsDemoReferenceData ? 32 : 0 { didSet { persist() } }
+    @Published public var currentBalance: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 42685.73 : 0 { didSet { persist() } }
+    @Published public var annualIncome: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 75000 : 0 { didSet { persist() } }
     @Published public var contributionMode: RetirementContributionMode = .percentOfIncome { didSet { persist() } }
     @Published public var contributionPercent: Double = 15 { didSet { persist() } }
-    @Published public var monthlyContribution: Double = 937.50 { didSet { persist() } }
+    @Published public var monthlyContribution: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 937.50 : 0 { didSet { persist() } }
     @Published public var targetRetirementAge: Int = 62 { didSet { persist() } }
     @Published public var annualReturnPercent: Double = 7.5 { didSet { persist() } }
-    @Published public var milliAccount: MilliRetirementAccount? = MilliRetirementAccount.standard { didSet { persist() } }
-    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [
+    @Published public var milliAccount: MilliRetirementAccount? = ReferenceDataPolicy.allowsDemoReferenceData ? MilliRetirementAccount.standard : nil { didSet { persist() } }
+    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = ReferenceDataPolicy.allowsDemoReferenceData ? [
         ConnectedExternalRetirementAccount(
             id: "merged-1",
             custodianName: "Fidelity Investments",
@@ -947,8 +979,8 @@ public final class RetirementPlanningStore: ObservableObject {
             rolloverStatus: .transferInitiated,
             accountMask: "3319"
         )
-    ] { didSet { persist() } }
-    @Published public private(set) var hasVerifiedConnectedData: Bool = true
+    ] : [] { didSet { persist() } }
+    @Published public private(set) var hasVerifiedConnectedData: Bool = ReferenceDataPolicy.allowsDemoReferenceData
 
     private let defaults = UserDefaults.standard
     private let storageKey = "milli_retirement_planning_profile_v3"
@@ -974,13 +1006,16 @@ public final class RetirementPlanningStore: ObservableObject {
     }
 
     public func openMilliAccount(_ account: MilliRetirementAccount) {
+        guard ReferenceDataPolicy.allowsDemoReferenceData else { return }
         milliAccount = account
         hasVerifiedConnectedData = true
     }
 
     public func addMergedAccount(_ account: ConnectedExternalRetirementAccount) {
         mergedAccounts.append(account)
-        hasVerifiedConnectedData = true
+        if !ReferenceDataPolicy.allowsDemoReferenceData {
+            hasVerifiedConnectedData = false
+        }
     }
 
     public func persist() {
@@ -1004,7 +1039,9 @@ public final class RetirementPlanningStore: ObservableObject {
         monthlyContribution = saved.monthlyContribution
         targetRetirementAge = saved.targetRetirementAge
         annualReturnPercent = saved.annualReturnPercent
-        hasVerifiedConnectedData = saved.hasVerifiedConnectedData
+        hasVerifiedConnectedData = ReferenceDataPolicy.allowsDemoReferenceData
+            ? saved.hasVerifiedConnectedData
+            : false
     }
 }
 
