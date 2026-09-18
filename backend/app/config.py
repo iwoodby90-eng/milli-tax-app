@@ -17,12 +17,17 @@ class Settings(BaseSettings):
 
     database_url: Optional[str] = None
 
-    # Plaid
+    # Plaid: account connectivity and transaction data.
     plaid_client_id: Optional[str] = None
     plaid_secret: Optional[str] = None
     plaid_env: Literal["sandbox", "production"] = "sandbox"
     plaid_webhook_url: Optional[str] = None
     plaid_redirect_uri: Optional[str] = None
+
+    # Column: banking / ACH money movement. The API key is server-only.
+    column_api_key: Optional[str] = None
+    column_env: Literal["sandbox", "production"] = "sandbox"
+    column_base_url: str = "https://api.column.com"
 
     # Sign in with Apple. For the native app this is normally the App ID /
     # bundle identifier. It is intentionally required rather than guessed.
@@ -33,10 +38,6 @@ class Settings(BaseSettings):
     auth_access_ttl_minutes: int = 15
     auth_refresh_ttl_days: int = 30
     auth_challenge_ttl_minutes: int = 10
-
-    # Legacy client key is retained only so stale Render configuration can be
-    # identified and removed. It is never accepted as user authentication.
-    client_api_key: Optional[str] = None
 
     @property
     def plaid_configured(self) -> bool:
@@ -49,6 +50,13 @@ class Settings(BaseSettings):
     @property
     def apple_auth_configured(self) -> bool:
         return bool(self.apple_sign_in_audience)
+
+    @property
+    def column_configured(self) -> bool:
+        if not self.column_api_key or not self.column_base_url.startswith("https://"):
+            return False
+        expected_prefix = "live_" if self.column_env == "production" else "test_"
+        return self.column_api_key.startswith(expected_prefix)
 
 
 @lru_cache
