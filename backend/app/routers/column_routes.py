@@ -17,7 +17,7 @@ import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .. import db
 from ..column_client import ColumnClient, ColumnRequestFailed, ColumnUnavailable
@@ -209,7 +209,11 @@ def _plaid_ach_details(user_id: uuid.UUID, plaid_account_id: uuid.UUID) -> dict:
     }
 
 
-class AccountCreateIn(BaseModel):
+class StrictFinancialModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class AccountCreateIn(StrictFinancialModel):
     request_id: uuid.UUID
     account_type: Literal["checking", "tax_vault"] = "checking"
 
@@ -223,7 +227,7 @@ class AccountOut(BaseModel):
     currency_code: str
 
 
-class PlaidCounterpartyCreateIn(BaseModel):
+class PlaidCounterpartyCreateIn(StrictFinancialModel):
     request_id: uuid.UUID
     plaid_account_id: uuid.UUID
 
@@ -237,7 +241,7 @@ class CounterpartyOut(BaseModel):
     routing_last_four: str
 
 
-class TransferCreateIn(BaseModel):
+class TransferCreateIn(StrictFinancialModel):
     request_id: uuid.UUID
     bank_account_id: uuid.UUID
     counterparty_id: uuid.UUID
@@ -601,7 +605,6 @@ def create_counterparty_from_plaid(
 def _verify_counterparty_is_current(
     *,
     user_id: uuid.UUID,
-    local_counterparty_id: uuid.UUID,
     provider_counterparty_id: str,
     plaid_account_id: uuid.UUID,
 ) -> None:
