@@ -31,10 +31,17 @@ def ready() -> dict:
 
     apple_auth = "configured" if settings.apple_auth_configured else "unconfigured"
     plaid = "configured" if settings.plaid_configured else "unconfigured"
+    unit = "configured" if settings.unit_configured else "unconfigured"
     return {
         "database": database,
         "apple_auth": apple_auth,
         "plaid": plaid,
         "plaid_env": settings.plaid_env,
-        "ready": database == "ok" and apple_auth == "configured" and plaid == "configured",
+        "unit": unit,
+        "ready": (
+            database == "ok"
+            and apple_auth == "configured"
+            and plaid == "configured"
+            and unit == "configured"
+        ),
     }
