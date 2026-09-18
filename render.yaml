@@ -19,7 +19,7 @@ services:
         sync: false
       - key: PLAID_WEBHOOK_URL
         sync: false
-      - key: CLIENT_API_KEY
-        sync: false
       - key: DATABASE_URL
         sync: false
+      - key: APPLE_SIGN_IN_AUDIENCE
+        value: com.milli.taxvault
