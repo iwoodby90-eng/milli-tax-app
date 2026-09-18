@@ -64,7 +64,12 @@ def require_session(authorization: str = Header(default="")) -> AuthenticatedSes
             row = cur.fetchone()
             if row is not None:
                 cur.execute(
-                    "update auth_sessions set last_seen_at = now() where id = %s",
+                    """
+                    update auth_sessions
+                       set last_seen_at = now()
+                     where id = %s
+                       and (last_seen_at is null or last_seen_at < now() - interval '5 minutes')
+                    """,
                     (row[0],),
                 )
         if row is not None:
