@@ -8,8 +8,14 @@ Flow:
   4. Plaid calls POST /plaid/webhook on updates.
 """
 
+import hashlib
+import hmac
+import json
+import time
 import uuid
 from datetime import datetime, timezone
+
+import jwt
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -360,15 +366,61 @@ def _store_transactions(user_id, transactions) -> int:
     return stored
 
 
+def _verify_plaid_webhook(raw_body: bytes, signed_jwt: str | None) -> None:
+    """Verify Plaid's ES256 signature, freshness, and exact request-body hash."""
+    if not signed_jwt:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "missing Plaid-Verification signature")
+
+    try:
+        header = jwt.get_unverified_header(signed_jwt)
+    except jwt.PyJWTError as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid Plaid webhook signature header") from exc
+
+    if header.get("alg") != "ES256" or not header.get("kid"):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid Plaid webhook signing metadata")
+
+    from plaid.model.webhook_verification_key_get_request import WebhookVerificationKeyGetRequest
+
+    try:
+        key_response = _client().webhook_verification_key_get(
+            WebhookVerificationKeyGetRequest(key_id=header["kid"])
+        ).to_dict()
+        jwk = key_response["key"]
+        public_key = jwt.algorithms.ECAlgorithm.from_jwk(json.dumps(jwk))
+        claims = jwt.decode(
+            signed_jwt,
+            public_key,
+            algorithms=["ES256"],
+            options={
+                "verify_aud": False,
+                "require": ["iat", "request_body_sha256"],
+            },
+        )
+    except Exception as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Plaid webhook signature verification failed") from exc
+
+    issued_at = int(claims["iat"])
+    age = int(time.time()) - issued_at
+    if age < -60 or age > 300:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Plaid webhook signature is stale")
+
+    body_digest = hashlib.sha256(raw_body).hexdigest()
+    claimed_digest = str(claims["request_body_sha256"])
+    if not hmac.compare_digest(body_digest, claimed_digest):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Plaid webhook body hash mismatch")
+
+
 @router.post("/webhook")
 async def plaid_webhook(request: Request) -> dict:
-    """Plaid webhook receiver.
+    """Accept only cryptographically verified Plaid webhook deliveries."""
+    raw_body = await request.body()
+    _verify_plaid_webhook(raw_body, request.headers.get("Plaid-Verification"))
 
-    Acknowledged with 200 so Plaid does not retry, but nothing is treated as
-    authoritative beyond recording the item state. Data is refreshed by the
-    sync endpoints against Plaid itself.
-    """
-    body = await request.json()
+    try:
+        body = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "invalid webhook JSON") from exc
+
     webhook_type = body.get("webhook_type")
     webhook_code = body.get("webhook_code")
     item_id = body.get("item_id")
