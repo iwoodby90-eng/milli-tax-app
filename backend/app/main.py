@@ -7,7 +7,7 @@ server-issued bearer sessions; no mobile shared secret is an auth boundary.
 from fastapi import FastAPI, Request
 
 from .config import get_settings
-from .routers import auth_routes, health, plaid_routes, tax_vault
+from .routers import auth_routes, health, plaid_routes, tax_vault, unit_routes
 
 settings = get_settings()
 
@@ -24,6 +24,7 @@ app.include_router(health.router)
 app.include_router(auth_routes.router)
 app.include_router(plaid_routes.router)
 app.include_router(tax_vault.router)
+app.include_router(unit_routes.router)
 
 
 @app.middleware("http")
