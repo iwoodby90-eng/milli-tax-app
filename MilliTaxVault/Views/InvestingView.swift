@@ -1002,60 +1002,22 @@ enum BrokerageTradingError: LocalizedError {
 
 @MainActor
 final class BrokerageTradingService: ObservableObject {
-    @Published private(set) var availability: BrokerageAvailability = .checking
-    private let session: URLSession
+    // Live order entry is intentionally fail-closed until Milli has an approved
+    // broker-dealer integration and a server-side order authorization endpoint.
+    // No bearer credential is ever read from UserDefaults or embedded in iOS.
+    @Published private(set) var availability: BrokerageAvailability = .setupRequired
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init() {
         refreshAvailability()
     }
 
     func refreshAvailability() {
-        guard backendBaseURL != nil else {
-            availability = .setupRequired
-            return
-        }
-        availability = .available
+        availability = .setupRequired
     }
 
     func submit(_ order: BrokerageOrderRequest) async throws -> BrokerageOrderResponse {
-        guard let baseURL = backendBaseURL else { throw BrokerageTradingError.notConfigured }
-        guard let token = UserDefaults.standard.string(forKey: "milli_backend_access_token"), !token.isEmpty else {
-            throw BrokerageTradingError.missingSession
-        }
-
-        var request = URLRequest(url: baseURL.appending(path: "api/brokerage/orders"))
-        request.httpMethod = "POST"
-        request.timeoutInterval = 20
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(order.clientOrderID, forHTTPHeaderField: "Idempotency-Key")
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        request.httpBody = try encoder.encode(order)
-
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw BrokerageTradingError.invalidResponse }
-
-        guard (200..<300).contains(http.statusCode) else {
-            let message = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
-                ?? "The brokerage rejected this order."
-            throw BrokerageTradingError.rejected(message)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        guard let decoded = try? decoder.decode(BrokerageOrderResponse.self, from: data) else {
-            throw BrokerageTradingError.invalidResponse
-        }
-        return decoded
-    }
-
-    private var backendBaseURL: URL? {
-        guard let raw = Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String,
-              !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        return URL(string: raw)
+        _ = order
+        throw BrokerageTradingError.notConfigured
     }
 }
 
