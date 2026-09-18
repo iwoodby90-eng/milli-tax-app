@@ -228,6 +228,13 @@ struct LoginView: View {
         .scrollDismissesKeyboard(.interactively)
         .background(loginBackground)
         .preferredColorScheme(.dark)
+        .task {
+            await appleAuthManager.prepareBackendChallenge()
+            if !appleAuthManager.isBackendChallengeReady,
+               let message = appleAuthManager.authErrorMessage {
+                authenticationMessage = message
+            }
+        }
     }
 
     private var authModeControl: some View {
@@ -360,14 +367,30 @@ struct LoginView: View {
                     appleAuthManager.configureAppleRequest(request)
                 },
                 onCompletion: { result in
-                    if let user = appleAuthManager.handleAuthorizationCompletion(result: result, isSignUp: mode == .signUp) {
-                        if mode == .signUp {
-                            onCreateAccount(user.email)
-                        } else {
-                            onSignIn(user.email)
+                    guard let credential = appleAuthManager.handleAuthorizationCompletion(
+                        result: result,
+                        isSignUp: mode == .signUp
+                    ) else {
+                        if let error = appleAuthManager.authErrorMessage {
+                            authenticationMessage = error
                         }
-                    } else if let error = appleAuthManager.authErrorMessage {
-                        authenticationMessage = error
+                        return
+                    }
+
+                    Task { @MainActor in
+                        do {
+                            try await appleAuthManager.establishFinancialSession(
+                                identityToken: credential.identityToken
+                            )
+                            authenticationMessage = nil
+                            if mode == .signUp {
+                                onCreateAccount(credential.email)
+                            } else {
+                                onSignIn(credential.email)
+                            }
+                        } catch {
+                            authenticationMessage = error.localizedDescription
+                        }
                     }
                 }
             )
@@ -375,6 +398,8 @@ struct LoginView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 48)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .disabled(!appleAuthManager.isBackendChallengeReady || appleAuthManager.isProcessing)
+            .opacity(appleAuthManager.isBackendChallengeReady ? 1 : 0.58)
 
             if let onGoogleSignIn {
                 Button(action: onGoogleSignIn) {
@@ -407,7 +432,7 @@ struct LoginView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
-            Text("Secure biometric & Apple ID authentication • Onboarding data is encrypted")
+            Text("Banking access uses server-verified Apple ID • Session tokens stay in Keychain")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
         }
