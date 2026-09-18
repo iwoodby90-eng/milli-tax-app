@@ -361,7 +361,6 @@ def create_counterparty(
             account_type=body.account_type,
             name=body.name,
             description="MILLI verified counterparty",
-            idempotency_key=_idempotency_key("counterparty", user_id, body.request_id),
         )
     except ColumnRequestFailed as exc:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Column counterparty creation failed") from exc
