@@ -77,7 +77,7 @@ create table if not exists tax_vault_ledger (
     -- Signed cents: positive increases the reserve, negative decreases it.
     amount_cents bigint not null,
     iso_currency_code text not null default 'USD',
-    status text not null default 'settled' check (status in ('requested', 'processing', 'settled', 'failed', 'reversed')),
+    status text not null default 'requested' check (status in ('requested', 'processing', 'settled', 'failed', 'reversed')),
     source_transaction_id uuid references plaid_transactions(id),
     reserve_rate numeric(6,4),
     tax_year integer,
