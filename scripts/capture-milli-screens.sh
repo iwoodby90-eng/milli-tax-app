@@ -54,17 +54,18 @@ select_simulator() {
   fi
 
   xcrun simctl list devices available -j | python3 -c '
-import json, sys
+import json, os, sys
 payload = json.load(sys.stdin)
 candidates = []
+requested_name = os.environ.get("SIMULATOR_NAME")
 for runtime, devices in payload.get("devices", {}).items():
     if "iOS" not in runtime:
         continue
     for device in devices:
-        if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+        if device.get("isAvailable") and device.get("name", "").startswith("iPhone") and (not requested_name or device.get("name") == requested_name):
             candidates.append(device)
 if not candidates:
-    raise SystemExit("No available iPhone simulator found")
+    raise SystemExit(f"No available iPhone simulator found for {requested_name or chr(42)}")
 preferred = next((d for d in candidates if "Pro" in d["name"] and "Max" not in d["name"]), candidates[0])
 print(preferred["udid"])
 '
@@ -169,9 +170,18 @@ wait_and_capture() {
 
 capture_screen() {
   local screen="$1"
+  local route="$screen"
   local output="$OUTPUT_DIR/${screen}.png"
   local launch_output
   local settle_seconds="$SCREEN_SETTLE_SECONDS"
+
+  # Artifact names are user-facing; these three destinations use legacy enum
+  # names in ContentView. Passing the artifact name silently falls back to Home.
+  case "$screen" in
+    payouts) route="vault" ;;
+    mileage) route="activity" ;;
+    more) route="cockpit" ;;
+  esac
 
   if [[ "$screen" == "mileage" ]]; then
     settle_seconds="$MAP_SETTLE_SECONDS"
@@ -184,7 +194,7 @@ capture_screen() {
   # and routes directly to the requested native screen.
   launch_output="$(
     SIMCTL_CHILD_MILLI_SCREENSHOT_MODE=1 \
-    SIMCTL_CHILD_MILLI_SCREEN="$screen" \
+    SIMCTL_CHILD_MILLI_SCREEN="$route" \
     xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
   )"
 
