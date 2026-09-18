@@ -3,16 +3,22 @@ import AuthenticationServices
 import Security
 
 // MARK: - Sign in with Apple Authentication Manager
-// Handles Sign in with Apple & Sign up with Apple via AuthenticationServices.
-// Manages ASAuthorizationAppleIDCredential lifecycle, secure Keychain storage of Apple User ID,
-// credential status verification, and token revocation listeners.
+// Apple's device credential establishes identity only after Milli's backend
+// verifies the signed identity token against a one-time server nonce.
 
 @MainActor
 public final class AppleAuthManager: NSObject, ObservableObject {
     public static let shared = AppleAuthManager()
 
-    // MARK: - Published State
+    public struct CredentialEnvelope {
+        public let email: String
+        public let name: String
+        public let identityToken: String
+    }
+
     @Published public private(set) var isSignedInWithApple = false
+    @Published public private(set) var isFinancialSessionAuthenticated = false
+    @Published public private(set) var isBackendChallengeReady = false
     @Published public private(set) var currentAppleUserID: String?
     @Published public private(set) var userEmail: String?
     @Published public private(set) var userFullName: String?
@@ -21,19 +27,19 @@ public final class AppleAuthManager: NSObject, ObservableObject {
 
     private static let keychainService = "com.milli.taxvault.apple-auth"
     private static let keychainAccountKey = "milliAppleUserID"
+    private var backendChallenge: MilliBackendClient.AppleAuthChallenge?
 
     public override init() {
         super.init()
 
-        // Load existing Apple User ID from Keychain
         if let storedUserID = Self.loadAppleUserIDFromKeychain() {
-            self.currentAppleUserID = storedUserID
-            self.isSignedInWithApple = true
-            self.userEmail = UserDefaults.standard.string(forKey: "milliAppleUserEmail")
-            self.userFullName = UserDefaults.standard.string(forKey: "milliAppleUserName")
+            currentAppleUserID = storedUserID
+            isSignedInWithApple = true
+            userEmail = UserDefaults.standard.string(forKey: "milliAppleUserEmail")
+            userFullName = UserDefaults.standard.string(forKey: "milliAppleUserName")
         }
+        isFinancialSessionAuthenticated = MilliBackendClient.shared.hasFinancialSession
 
-        // Listen for Apple ID credential revocation from Settings or other devices
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleCredentialRevokedNotification),
@@ -42,22 +48,30 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         )
     }
 
-    // MARK: - Configure Apple ID Request
-    public func configureAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
-        request.requestedScopes = [.fullName, .email]
+    public func prepareBackendChallenge(force: Bool = false) async {
+        if isBackendChallengeReady && !force { return }
+        authErrorMessage = nil
+        isBackendChallengeReady = false
+        backendChallenge = nil
+
+        do {
+            backendChallenge = try await MilliBackendClient.shared.createAppleAuthChallenge()
+            isBackendChallengeReady = true
+        } catch {
+            authErrorMessage = "Secure sign-in is temporarily unavailable: \(error.localizedDescription)"
+        }
     }
 
-    // MARK: - Handle Authorization Result
-    /// Processes completion of ASAuthorization (Sign In or Sign Up)
-    /// Returns a tuple of (email, name) on successful authorization, or nil on failure/cancellation.
+    public func configureAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = backendChallenge?.nonce
+    }
+
     public func handleAuthorizationCompletion(
         result: Result<ASAuthorization, Error>,
         isSignUp: Bool
-    ) -> (email: String, name: String)? {
+    ) -> CredentialEnvelope? {
         authErrorMessage = nil
-        isProcessing = true
-
-        defer { isProcessing = false }
 
         switch result {
         case .success(let authorization):
@@ -65,23 +79,27 @@ public final class AppleAuthManager: NSObject, ObservableObject {
                 authErrorMessage = "Received invalid credential from Apple."
                 return nil
             }
+            guard let identityData = appleIDCredential.identityToken,
+                  let identityToken = String(data: identityData, encoding: .utf8),
+                  !identityToken.isEmpty
+            else {
+                authErrorMessage = "Apple did not return the identity proof required for secure sign-in."
+                return nil
+            }
 
             let userID = appleIDCredential.user
-            self.currentAppleUserID = userID
+            currentAppleUserID = userID
 
-            // Extract Name components if provided (Apple only sends name/email on FIRST authorization)
-            var resolvedName: String = ""
+            var resolvedName = ""
             if let fullName = appleIDCredential.fullName {
                 let formatter = PersonNameComponentsFormatter()
                 resolvedName = formatter.string(from: fullName).trimmingCharacters(in: .whitespacesAndNewlines)
             }
-
             if resolvedName.isEmpty {
                 resolvedName = UserDefaults.standard.string(forKey: "milliProfileName") ?? "Milli Member"
             }
 
-            // Extract Email if provided
-            var resolvedEmail: String = ""
+            var resolvedEmail = ""
             if let email = appleIDCredential.email {
                 resolvedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             } else if let storedEmail = UserDefaults.standard.string(forKey: "milliAppleUserEmail") {
@@ -92,7 +110,6 @@ public final class AppleAuthManager: NSObject, ObservableObject {
                 resolvedEmail = "\(userID.prefix(8).lowercased())@privaterelay.appleid.com"
             }
 
-            // Save to Keychain and local store
             Self.saveAppleUserIDToKeychain(userID: userID)
             let defaults = UserDefaults.standard
             defaults.set(resolvedEmail, forKey: "milliAppleUserEmail")
@@ -102,15 +119,18 @@ public final class AppleAuthManager: NSObject, ObservableObject {
             defaults.set(true, forKey: "milliHasCreatedAccount")
             defaults.set("apple", forKey: "milliAuthProvider")
 
-            self.userEmail = resolvedEmail
-            self.userFullName = resolvedName
-            self.isSignedInWithApple = true
+            userEmail = resolvedEmail
+            userFullName = resolvedName
+            isSignedInWithApple = true
 
-            return (email: resolvedEmail, name: resolvedName)
+            return CredentialEnvelope(
+                email: resolvedEmail,
+                name: resolvedName,
+                identityToken: identityToken
+            )
 
         case .failure(let error):
             if let asError = error as? ASAuthorizationError, asError.code == .canceled {
-                // User intentionally dismissed Apple sheet
                 return nil
             }
             authErrorMessage = "Sign in with Apple encountered an issue: \(error.localizedDescription)"
@@ -118,7 +138,30 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Credential State Check
+    public func establishFinancialSession(identityToken: String) async throws {
+        guard let backendChallenge else {
+            throw MilliBackendClient.ClientError.financialSignInRequired
+        }
+
+        isProcessing = true
+        defer { isProcessing = false }
+
+        do {
+            try await MilliBackendClient.shared.exchangeAppleIdentity(
+                challengeID: backendChallenge.challengeID,
+                identityToken: identityToken
+            )
+            self.backendChallenge = nil
+            isBackendChallengeReady = false
+            isFinancialSessionAuthenticated = true
+        } catch {
+            MilliBackendClient.shared.clearFinancialSession()
+            isFinancialSessionAuthenticated = false
+            await prepareBackendChallenge(force: true)
+            throw error
+        }
+    }
+
     public func verifyAppleCredentialState() async -> ASAuthorizationAppleIDProvider.CredentialState {
         guard let userID = currentAppleUserID else {
             return .notFound
@@ -129,10 +172,10 @@ public final class AppleAuthManager: NSObject, ObservableObject {
             let state = try await provider.credentialState(forUserID: userID)
             switch state {
             case .authorized:
-                self.isSignedInWithApple = true
+                isSignedInWithApple = true
             case .revoked, .notFound:
-                self.isSignedInWithApple = false
-                self.signOut()
+                isSignedInWithApple = false
+                signOut()
             case .transferred:
                 break
             @unknown default:
@@ -140,7 +183,6 @@ public final class AppleAuthManager: NSObject, ObservableObject {
             }
             return state
         } catch {
-            print("[AppleAuthManager] Credential state check failed: \(error)")
             return .notFound
         }
     }
@@ -151,16 +193,20 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Sign Out
     public func signOut() {
+        Task { @MainActor in
+            await MilliBackendClient.shared.logout()
+        }
         Self.deleteAppleUserIDFromKeychain()
         currentAppleUserID = nil
         isSignedInWithApple = false
+        isFinancialSessionAuthenticated = false
+        isBackendChallengeReady = false
+        backendChallenge = nil
         userEmail = nil
         userFullName = nil
     }
 
-    // MARK: - Keychain Security Utilities
     private static func saveAppleUserIDToKeychain(userID: String) {
         guard let data = userID.data(using: .utf8) else { return }
 
@@ -174,8 +220,7 @@ public final class AppleAuthManager: NSObject, ObservableObject {
 
         var insert = query
         insert[kSecValueData as String] = data
-        insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-
+        insert[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         SecItemAdd(insert as CFDictionary, nil)
     }
 
