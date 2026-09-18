@@ -61,9 +61,7 @@
 		A10118 /* MileageTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10118; };
 		A10200 /* MilliTaxVaultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10200; };
 		A10202 /* MilliCentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10202; };
-		A20100 /* ExpenseModels.swift in Sources */,
-				A20101 /* ExpenseStore.swift in Sources */,
-				A10203 /* ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10203; };
+		A10203 /* ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10203; };
 		A10204 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10204; };
 		A10205 /* WealthOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10205; };
 		A10206 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10206; };
@@ -93,8 +91,7 @@
 		A10800 /* MilliCentsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10800; };
 		A10801 /* MilliCentsAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10801; };
 		A10802 /* MilliMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10802; };
-		A20102 /* ExpenseStoreTests.swift in Sources */,
-				A10803 /* MilliMoneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10803; };
+		A10803 /* MilliMoneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10803; };
 		A10804 /* MilliLedgerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10804; };
 		A10805 /* MilliLedgerEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10805; };
 		A10806 /* TreasuryExecutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10806; };
@@ -513,7 +510,6 @@
 				A10044,
 				A10045,
 				A10046,
-				A10047,
 				A10048,
 				A10049,
 				A10051,
@@ -549,8 +545,9 @@
 				A10118,
 				A10107,
 				A10200,
-				A10201,
 				A10202,
+				A20100 /* ExpenseModels.swift in Sources */,
+				A20101 /* ExpenseStore.swift in Sources */,
 				A10203,
 				A10204,
 				A10205,
@@ -581,6 +578,7 @@
 				A10500 /* QuarterlyTaxEstimatorTests.swift in Sources */,
 				A10700 /* TreasuryAutopilotTests.swift in Sources */,
 				A10801 /* MilliCentsAnalyzerTests.swift in Sources */,
+				A20102 /* ExpenseStoreTests.swift in Sources */,
 				A10803 /* MilliMoneyTests.swift in Sources */,
 				A10805 /* MilliLedgerEngineTests.swift in Sources */,
 				A10807 /* TreasuryExecutionTests.swift in Sources */,
