@@ -1,8 +1,7 @@
 """Health and readiness.
 
-/health is the liveness probe Render hits: it returns 200 whenever the process
-is up. /ready reports the truth about dependencies without ever claiming a
-dependency works when it does not.
+Liveness never leaks secrets. Readiness stays false until the dependencies
+required for authenticated financial data are actually configured.
 """
 
 from fastapi import APIRouter
@@ -29,9 +28,13 @@ def ready() -> dict:
     database = "unconfigured"
     if settings.db_configured:
         database = "ok" if db.healthy() else "error"
+
+    apple_auth = "configured" if settings.apple_auth_configured else "unconfigured"
+    plaid = "configured" if settings.plaid_configured else "unconfigured"
     return {
         "database": database,
-        "plaid": "configured" if settings.plaid_configured else "unconfigured",
+        "apple_auth": apple_auth,
+        "plaid": plaid,
         "plaid_env": settings.plaid_env,
-        "ready": database == "ok" and settings.plaid_configured,
+        "ready": database == "ok" and apple_auth == "configured" and plaid == "configured",
     }
