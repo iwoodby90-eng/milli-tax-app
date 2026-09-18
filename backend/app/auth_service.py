@@ -71,7 +71,7 @@ def verify_apple_identity_token(identity_token: str) -> dict[str, Any]:
             algorithms=["RS256"],
             audience=settings.apple_sign_in_audience,
             issuer=APPLE_ISSUER,
-            options={"require": ["exp", "iat", "iss", "aud", "sub", "nonce", "jti"]},
+            options={"require": ["exp", "iat", "iss", "aud", "sub", "nonce"]},
         )
     except Exception as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Apple identity token verification failed") from exc
@@ -122,7 +122,6 @@ def exchange_apple_identity(challenge_id: uuid.UUID, identity_token: str) -> Iss
     nonce_claim = str(claims["nonce"])
     nonce_hash = hashlib.sha256(nonce_claim.encode("utf-8")).hexdigest()
     apple_subject = str(claims["sub"])
-    token_jti = str(claims["jti"])
     email = claims.get("email")
     email_verified = _as_bool(claims.get("email_verified"))
 
@@ -161,14 +160,6 @@ def exchange_apple_identity(challenge_id: uuid.UUID, identity_token: str) -> Iss
                 user_id = cur.fetchone()[0]
 
                 cur.execute(
-                    """
-                    insert into apple_identity_assertions (jti, user_id, expires_at)
-                    values (%s, %s, to_timestamp(%s))
-                    """,
-                    (token_jti, user_id, int(claims["exp"])),
-                )
-
-                cur.execute(
                     "update auth_challenges set used_at = now() where id = %s",
                     (challenge_id,),
                 )
@@ -177,7 +168,7 @@ def exchange_apple_identity(challenge_id: uuid.UUID, identity_token: str) -> Iss
             return issued
         except UniqueViolation as exc:
             conn.rollback()
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Apple identity assertion was already used") from exc
+            raise HTTPException(status.HTTP_409_CONFLICT, "authentication state conflict") from exc
 
 
 def rotate_refresh_token(refresh_token: str) -> IssuedSession:
