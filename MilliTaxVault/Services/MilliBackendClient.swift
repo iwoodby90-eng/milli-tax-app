@@ -1,14 +1,44 @@
 import Foundation
-import CryptoKit
+import Security
 
 // MARK: - MilliBackendClient
-// Native iOS client for the FastAPI service deployed on Render.
-// Plaid credentials and access tokens never enter the app; the client only
-// receives short-lived Link tokens and account snapshots from the backend.
+// Native client for Milli's FastAPI backend. The app is never an identity
+// authority: user-scoped requests require an opaque server session minted only
+// after the backend verifies a signed Apple identity token.
 
 @MainActor
 final class MilliBackendClient {
     static let shared = MilliBackendClient()
+
+    struct AppleAuthChallenge: Decodable, Equatable {
+        let challengeID: UUID
+        let nonce: String
+        let expiresAt: String
+
+        enum CodingKeys: String, CodingKey {
+            case challengeID = "challenge_id"
+            case nonce
+            case expiresAt = "expires_at"
+        }
+    }
+
+    private struct BackendSession: Decodable {
+        let userID: UUID
+        let accessToken: String
+        let refreshToken: String
+        let tokenType: String
+        let accessExpiresAt: String
+        let refreshExpiresAt: String
+
+        enum CodingKeys: String, CodingKey {
+            case userID = "user_id"
+            case accessToken = "access_token"
+            case refreshToken = "refresh_token"
+            case tokenType = "token_type"
+            case accessExpiresAt = "access_expires_at"
+            case refreshExpiresAt = "refresh_expires_at"
+        }
+    }
 
     struct PlaidLinkTokenResponse: Decodable {
         let linkToken: String
@@ -52,6 +82,7 @@ final class MilliBackendClient {
     enum ClientError: LocalizedError {
         case backendUnavailable
         case invalidResponse
+        case financialSignInRequired
         case unauthorized(String)
         case server(status: Int, message: String)
         case decoding(Error)
@@ -59,15 +90,17 @@ final class MilliBackendClient {
         var errorDescription: String? {
             switch self {
             case .backendUnavailable:
-                return "Milli couldn't reach the Render banking service. Check the backend deployment and MILLI_API_BASE_URL."
+                return "Milli couldn't reach the secure banking service."
             case .invalidResponse:
-                return "Milli received an invalid response from the banking service."
+                return "Milli received an invalid response from the secure banking service."
+            case .financialSignInRequired:
+                return "Sign in with Apple is required before Milli can access banking or money features."
             case .unauthorized(let message):
                 return message
             case .server(let status, let message):
-                return "Banking service error \(status): \(message)"
+                return "Secure banking service error \(status): \(message)"
             case .decoding:
-                return "Milli received banking data in an unexpected format."
+                return "Milli received secure banking data in an unexpected format."
             }
         }
     }
@@ -76,12 +109,82 @@ final class MilliBackendClient {
     private var resolvedBaseURL: URL?
 
     private init() {
-        let configuration = URLSessionConfiguration.default
+        let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 20
         configuration.timeoutIntervalForResource = 45
         configuration.waitsForConnectivity = true
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         session = URLSession(configuration: configuration)
     }
+
+    var hasFinancialSession: Bool {
+        MilliBackendSessionStore.refreshToken != nil
+    }
+
+    // MARK: - Authentication
+
+    func createAppleAuthChallenge() async throws -> AppleAuthChallenge {
+        try await publicRequest(method: "POST", path: "/auth/apple/challenge")
+    }
+
+    func exchangeAppleIdentity(challengeID: UUID, identityToken: String) async throws {
+        let response: BackendSession = try await publicRequest(
+            method: "POST",
+            path: "/auth/apple/exchange",
+            body: [
+                "challenge_id": challengeID.uuidString.lowercased(),
+                "identity_token": identityToken
+            ]
+        )
+        guard response.tokenType.caseInsensitiveCompare("Bearer") == .orderedSame else {
+            throw ClientError.invalidResponse
+        }
+        MilliBackendSessionStore.save(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken
+        )
+    }
+
+    func logout() async {
+        if let accessToken = MilliBackendSessionStore.accessToken {
+            _ = try? await executeRaw(
+                method: "POST",
+                path: "/auth/logout",
+                body: nil,
+                bearerToken: accessToken
+            )
+        }
+        MilliBackendSessionStore.clear()
+    }
+
+    func clearFinancialSession() {
+        MilliBackendSessionStore.clear()
+    }
+
+    private func refreshFinancialSession() async throws {
+        guard let refreshToken = MilliBackendSessionStore.refreshToken else {
+            MilliBackendSessionStore.clear()
+            throw ClientError.financialSignInRequired
+        }
+
+        do {
+            let response: BackendSession = try await publicRequest(
+                method: "POST",
+                path: "/auth/refresh",
+                body: ["refresh_token": refreshToken]
+            )
+            MilliBackendSessionStore.save(
+                accessToken: response.accessToken,
+                refreshToken: response.refreshToken
+            )
+        } catch {
+            MilliBackendSessionStore.clear()
+            throw error
+        }
+    }
+
+    // MARK: - Plaid
 
     func createPlaidLinkToken() async throws -> String {
         let response: PlaidLinkTokenResponse = try await request(
@@ -134,13 +237,80 @@ final class MilliBackendClient {
         )
     }
 
-    // MARK: - Core request
+    func updateVaultSettings(reserveRate: Double, autopilotEnabled: Bool) async throws {
+        let _: VaultSettingsResponse = try await request(
+            method: "PUT",
+            path: "/tax-vault/settings",
+            body: [
+                "reserve_rate": min(max(reserveRate, 0), 1),
+                "autopilot_enabled": autopilotEnabled
+            ]
+        )
+    }
+
+    // MARK: - Authenticated requests
 
     private func request<T: Decodable>(
         method: String,
         path: String,
+        body: [String: Any]? = nil,
+        allowRefresh: Bool = true
+    ) async throws -> T {
+        guard let accessToken = MilliBackendSessionStore.accessToken else {
+            throw ClientError.financialSignInRequired
+        }
+
+        do {
+            return try await execute(
+                method: method,
+                path: path,
+                body: body,
+                bearerToken: accessToken
+            )
+        } catch ClientError.unauthorized where allowRefresh {
+            try await refreshFinancialSession()
+            return try await request(
+                method: method,
+                path: path,
+                body: body,
+                allowRefresh: false
+            )
+        }
+    }
+
+    private func publicRequest<T: Decodable>(
+        method: String,
+        path: String,
         body: [String: Any]? = nil
     ) async throws -> T {
+        try await execute(method: method, path: path, body: body, bearerToken: nil)
+    }
+
+    private func execute<T: Decodable>(
+        method: String,
+        path: String,
+        body: [String: Any]?,
+        bearerToken: String?
+    ) async throws -> T {
+        let (data, _) = try await executeRaw(
+            method: method,
+            path: path,
+            body: body,
+            bearerToken: bearerToken
+        )
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw ClientError.decoding(error)
+        }
+    }
+
+    private func executeRaw(
+        method: String,
+        path: String,
+        body: [String: Any]?,
+        bearerToken: String?
+    ) async throws -> (Data, HTTPURLResponse) {
         let baseURL = try await resolveBaseURL()
         let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
         let url = baseURL.appending(path: cleanPath)
@@ -149,12 +319,10 @@ final class MilliBackendClient {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(stableBackendUserID().uuidString, forHTTPHeaderField: "X-Milli-User-Id")
-
-        if let clientKey = configuredClientKey, !clientKey.isEmpty {
-            request.setValue(clientKey, forHTTPHeaderField: "X-Milli-Client-Key")
+        request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
+        if let bearerToken {
+            request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
         }
-
         if let body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
@@ -178,22 +346,12 @@ final class MilliBackendClient {
                 ?? "Unknown server error"
 
             if http.statusCode == 401 {
-                if detail.localizedCaseInsensitiveContains("client key") {
-                    throw ClientError.unauthorized(
-                        "Render rejected Milli's client key. Set MILLI_CLIENT_API_KEY in the Xcode scheme to the same CLIENT_API_KEY configured on Render."
-                    )
-                }
-                throw ClientError.unauthorized("The banking service rejected this Milli session: \(detail)")
+                throw ClientError.unauthorized("Milli's secure session was rejected: \(detail)")
             }
-
             throw ClientError.server(status: http.statusCode, message: detail)
         }
 
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw ClientError.decoding(error)
-        }
+        return (data, http)
     }
 
     // MARK: - Render host discovery
@@ -208,6 +366,7 @@ final class MilliBackendClient {
             var request = URLRequest(url: healthURL)
             request.httpMethod = "GET"
             request.timeoutInterval = 12
+            request.cachePolicy = .reloadIgnoringLocalCacheData
 
             guard let (_, response) = try? await session.data(for: request),
                   let http = response as? HTTPURLResponse,
@@ -245,56 +404,64 @@ final class MilliBackendClient {
             return URL(string: trimmed)
         }
     }
+}
 
-    private var configuredClientKey: String? {
-        if let value = ProcessInfo.processInfo.environment["MILLI_CLIENT_API_KEY"], !value.isEmpty {
-            return value
-        }
-        if let value = Bundle.main.object(forInfoDictionaryKey: "MILLI_CLIENT_API_KEY") as? String, !value.isEmpty {
-            return value
-        }
-        return nil
+private enum MilliBackendSessionStore {
+    private static let service = "com.milli.taxvault.backend-session"
+    private static let accessAccount = "access-token"
+    private static let refreshAccount = "refresh-token"
+
+    static var accessToken: String? { read(account: accessAccount) }
+    static var refreshToken: String? { read(account: refreshAccount) }
+
+    static func save(accessToken: String, refreshToken: String) {
+        write(accessToken, account: accessAccount)
+        write(refreshToken, account: refreshAccount)
     }
 
-    // MARK: - Backend identity
-
-    /// The current backend contract scopes rows by UUID. Until the production
-    /// authentication service exchanges Apple's identity token for a server
-    /// session, derive a stable UUID from the Apple user id. This is an
-    /// identity namespace only, not authentication; the backend must not treat
-    /// possession of this UUID as proof of identity.
-    private func stableBackendUserID() -> UUID {
-        let defaults = UserDefaults.standard
-
-        if let appleUserID = AppleAuthManager.shared.currentAppleUserID, !appleUserID.isEmpty {
-            let uuid = deterministicUUID(namespace: "milli.apple", value: appleUserID)
-            defaults.set(uuid.uuidString, forKey: "milliBackendUserID")
-            return uuid
-        }
-
-        if let stored = defaults.string(forKey: "milliBackendUserID"),
-           let uuid = UUID(uuidString: stored) {
-            return uuid
-        }
-
-        let uuid = UUID()
-        defaults.set(uuid.uuidString, forKey: "milliBackendUserID")
-        return uuid
+    static func clear() {
+        delete(account: accessAccount)
+        delete(account: refreshAccount)
     }
 
-    private func deterministicUUID(namespace: String, value: String) -> UUID {
-        let digest = SHA256.hash(data: Data("\(namespace):\(value)".utf8))
-        var bytes = Array(digest.prefix(16))
+    private static func write(_ value: String, account: String) {
+        guard let data = value.data(using: .utf8) else { return }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
 
-        bytes[6] = (bytes[6] & 0x0F) | 0x50
-        bytes[8] = (bytes[8] & 0x3F) | 0x80
+        var insert = query
+        insert[kSecValueData as String] = data
+        insert[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        SecItemAdd(insert as CFDictionary, nil)
+    }
 
-        return UUID(uuid: (
-            bytes[0], bytes[1], bytes[2], bytes[3],
-            bytes[4], bytes[5], bytes[6], bytes[7],
-            bytes[8], bytes[9], bytes[10], bytes[11],
-            bytes[12], bytes[13], bytes[14], bytes[15]
-        ))
+    private static func read(account: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data
+        else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func delete(account: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 }
 
@@ -337,5 +504,15 @@ private struct GenericStatusResponse: Decodable {
     enum CodingKeys: String, CodingKey {
         case accountsRefreshed = "accounts_refreshed"
         case items
+    }
+}
+
+private struct VaultSettingsResponse: Decodable {
+    let reserveRate: Double
+    let autopilotEnabled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case reserveRate = "reserve_rate"
+        case autopilotEnabled = "autopilot_enabled"
     }
 }
