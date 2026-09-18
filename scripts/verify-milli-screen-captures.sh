@@ -28,10 +28,11 @@ for name in "${EXPECTED[@]}"; do
     exit 1
   fi
 
-  # A full iPhone simulator PNG with the Milli UI is normally far larger than
-  # this. Very small PNGs are commonly blank/solid launch-screen captures.
+  # Full-screen Milli references in this suite are materially larger than
+  # launch/blank frames. The previous 30 KB threshold allowed an 87 KB white
+  # Pro Max launch frame to pass, so keep this gate intentionally conservative.
   size="$(stat -f%z "$file")"
-  if (( size < 30000 )); then
+  if (( size < 250000 )); then
     echo "Screenshot looks suspiciously small ($size bytes): $file" >&2
     exit 1
   fi

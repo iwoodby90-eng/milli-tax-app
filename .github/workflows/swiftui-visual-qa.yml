@@ -2,9 +2,17 @@ name: SwiftUI Visual QA
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'MilliTaxVault/**'
+      - 'MilliTaxVault.xcodeproj/**'
+      - 'scripts/capture-milli-screens.sh'
+      - 'scripts/verify-milli-screen-captures.sh'
+      - '.github/workflows/swiftui-visual-qa.yml'
   push:
     branches:
-      - agent/milli-swiftui-master-build
+      - main
     paths:
       - 'MilliTaxVault/**'
       - 'MilliTaxVault.xcodeproj/**'
@@ -21,9 +29,19 @@ concurrency:
 
 jobs:
   capture:
-    name: Capture native Milli screens
+    name: Native visual evidence (${{ matrix.device_class }})
     runs-on: macos-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device_class: compact
+            device: iPhone 16e
+          - device_class: standard
+            device: iPhone 17
+          - device_class: promax
+            device: iPhone 17 Pro Max
 
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +51,8 @@ jobs:
 
       - name: Capture screen-by-screen references
         shell: bash
+        env:
+          SIMULATOR_NAME: ${{ matrix.device }}
         run: |
           set -euo pipefail
           OUTPUT_DIR="$RUNNER_TEMP/milli-screen-qa" bash scripts/capture-milli-screens.sh
@@ -44,9 +64,10 @@ jobs:
           bash scripts/verify-milli-screen-captures.sh "$RUNNER_TEMP/milli-screen-qa"
 
       - name: Upload visual QA screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: milli-swiftui-screen-qa
+          name: milli-swiftui-screen-qa-${{ matrix.device_class }}
           path: ${{ runner.temp }}/milli-screen-qa/*.png
           if-no-files-found: error
           retention-days: 14
