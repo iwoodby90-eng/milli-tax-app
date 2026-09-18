@@ -9,6 +9,8 @@ import Charts
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
 
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
+
     private var score: Int {
         guard !factors.isEmpty else { return 0 }
         return Int((Double(factors.reduce(0) { $0 + $1.score }) / Double(factors.count)).rounded())
@@ -22,9 +24,13 @@ struct TaxReadyScoreView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                scoreGauge
-                factorList
-                history
+                if showsReferenceData {
+                    scoreGauge
+                    factorList
+                    history
+                } else {
+                    unavailableState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -52,11 +58,36 @@ struct TaxReadyScoreView: View {
 
             Spacer()
 
-            Image(systemName: "info.circle")
-                .font(.system(size: 16))
-                .foregroundStyle(MilliColors.textSecondary)
-                .frame(width: 34, height: 34)
+            ProvenanceTag(label: ReferenceDataPolicy.provenance)
+                .frame(width: 70, alignment: .trailing)
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.07), lineWidth: 10)
+                    .frame(width: 126, height: 126)
+                Image(systemName: "checkmark.seal")
+                    .font(.system(size: 34, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Tax Ready Score is awaiting verified data")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text("Connect income, expenses, mileage, tax payments, and documents. Milli will calculate your score from those records rather than seeded reference factors.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
+        .milliCard(padding: 18)
     }
 
     private var scoreGauge: some View {
