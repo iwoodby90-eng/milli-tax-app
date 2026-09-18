@@ -267,7 +267,7 @@ final class MilliBackendClient {
                 body: body,
                 bearerToken: accessToken
             )
-        } catch ClientError.unauthorized where allowRefresh {
+        } catch ClientError.unauthorized(_) where allowRefresh {
             try await refreshFinancialSession()
             return try await request(
                 method: method,
