@@ -109,7 +109,7 @@ def create_entry(
                 insert into tax_vault_ledger
                     (id, user_id, entry_type, amount_cents, status, reserve_rate,
                      tax_year, quarter, memo, audit_id, settled_at)
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     entry_id,
