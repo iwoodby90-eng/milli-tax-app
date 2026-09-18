@@ -18,64 +18,64 @@ import SwiftUI
 // seeded items are clearly demo content that the user can delete.
 
 @MainActor
-public final class ExpenseStore: ObservableObject {
+final class ExpenseStore: ObservableObject {
 
-    @Published public private(set) var expenses: [ExpenseItem] = []
-    @Published public private(set) var receipts: [ReceiptItem] = []
+    @Published private(set) var expenses: [ExpenseItem] = []
+    @Published private(set) var receipts: [ReceiptItem] = []
 
     private let storageKeyExpenses = "milli_expenses_v1"
     private let storageKeyReceipts = "milli_receipts_v1"
     private let storageKeySeeded = "milli_expenses_seeded_v1"
 
-    public init() {
+    init() {
         loadFromStorage()
     }
 
     // MARK: - Public API
 
-    public func addExpense(_ item: ExpenseItem) {
+    func addExpense(_ item: ExpenseItem) {
         expenses.insert(item, at: 0)
         persist()
     }
 
-    public func addReceipt(_ item: ReceiptItem) {
+    func addReceipt(_ item: ReceiptItem) {
         receipts.insert(item, at: 0)
         persist()
     }
 
-    public func deleteExpense(at index: Int) {
+    func deleteExpense(at index: Int) {
         guard expenses.indices.contains(index) else { return }
         expenses.remove(at: index)
         persist()
     }
 
-    public func deleteExpense(id: UUID) {
+    func deleteExpense(id: UUID) {
         expenses.removeAll { $0.id == id }
         persist()
     }
 
-    public func deleteReceipt(id: UUID) {
+    func deleteReceipt(id: UUID) {
         receipts.removeAll { $0.id == id }
         persist()
     }
 
-    public var totalDeductions: Double {
+    var totalDeductions: Double {
         expenses.filter(\.isDeductible).reduce(0) { $0 + $1.amount }
     }
 
-    public var linkedReceiptCount: Int {
+    var linkedReceiptCount: Int {
         receipts.filter(\.isLinked).count
     }
 
     /// Clears all data and re-seeds with demo content. For testing / reset.
-    public func resetToSeed() {
+    func resetToSeed() {
         expenses = ExpenseItem.seeded
         receipts = ReceiptItem.seeded
         persist()
     }
 
     /// Clears all data completely.
-    public func clearAll() {
+    func clearAll() {
         expenses = []
         receipts = []
         persist()
