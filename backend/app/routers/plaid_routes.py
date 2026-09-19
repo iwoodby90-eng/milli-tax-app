@@ -54,7 +54,7 @@ def create_link_token(user_id: uuid.UUID = Depends(require_user)) -> LinkTokenRe
     payload = {
         "user": LinkTokenCreateRequestUser(client_user_id=str(user_id)),
         "client_name": "MILLI Tax Vault",
-        "products": [Products("transactions")],
+        "products": [Products("auth"), Products("transactions")],
         "country_codes": [CountryCode("US")],
         "language": "en",
     }
@@ -197,7 +197,8 @@ def list_accounts(user_id: uuid.UUID = Depends(require_user)) -> dict:
                 """
                 select a.account_id, a.name, a.mask, a.type, a.subtype,
                        a.available_balance, a.current_balance, a.iso_currency_code,
-                       a.balance_as_of, i.institution_name, i.status
+                       a.balance_as_of, i.institution_name, i.status,
+                       a.is_payout_source
                   from plaid_accounts a
                   join plaid_items i on i.id = a.plaid_item_id
                  where a.user_id = %s
@@ -220,6 +221,7 @@ def list_accounts(user_id: uuid.UUID = Depends(require_user)) -> dict:
             "data_state": "CACHED_LIVE" if r[5] is not None or r[6] is not None else "UNAVAILABLE",
             "institution_name": r[9],
             "item_status": r[10],
+            "is_payout_source": r[11],
         }
         for r in rows
     ]

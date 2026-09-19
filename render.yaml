@@ -10,15 +10,30 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: sandbox
+
+      # Plaid - account connectivity, Auth and transaction data
       - key: PLAID_ENV
         value: sandbox
-      # Secrets are set in the Render dashboard, never committed.
       - key: PLAID_CLIENT_ID
         sync: false
       - key: PLAID_SECRET
         sync: false
       - key: PLAID_WEBHOOK_URL
         sync: false
+
+      # Column - banking / ACH money movement
+      - key: COLUMN_ENV
+        value: sandbox
+      - key: COLUMN_BASE_URL
+        value: https://api.column.com
+      - key: COLUMN_API_KEY
+        sync: false
+      - key: COLUMN_ACH_CREDIT_SEC_CODE
+        sync: false
+      - key: COLUMN_ACH_DEBIT_SEC_CODE
+        sync: false
+
+      # Core backend / identity
       - key: DATABASE_URL
         sync: false
       - key: APPLE_SIGN_IN_AUDIENCE
