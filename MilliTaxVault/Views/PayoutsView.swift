@@ -15,7 +15,7 @@ struct PayoutsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 12) {
                 header
-                MilliMetalCard(
+                MilliAccountCard(
                     institution: bankService.connectedBank?.institutionName,
                     mask: bankService.connectedBank?.accountMask,
                     isLive: bankService.connectedBank?.isLive ?? false

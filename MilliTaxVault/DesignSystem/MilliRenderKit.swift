@@ -434,11 +434,11 @@ struct MilliActionPair: View {
     }
 }
 
-// MARK: - MilliMetalCard
-// Brushed-chrome Milli card face. Shows only verified account details;
+// MARK: - MilliAccountCard
+// Brushed-chrome Milli account card face. Shows only verified account details;
 // an unlinked card renders masked placeholders instead of invented numbers.
 
-struct MilliMetalCard: View {
+struct MilliAccountCard: View {
     var institution: String?
     var mask: String?
     var isLive: Bool = false

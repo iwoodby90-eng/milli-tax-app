@@ -43,7 +43,7 @@ struct MilliAIView: View {
             }
 
             composer
-                .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
+                .padding(.bottom, MilliSpacing.bottomNavHeight + 34)
         }
         .background { MilliAmbientBackground() }
         .onAppear {
