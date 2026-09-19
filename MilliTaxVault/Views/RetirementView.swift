@@ -13,16 +13,6 @@ public struct MilliRetirementAccount: Codable, Equatable {
     public let isApproved: Bool
     public let openingDate: Date
 
-    public static let standard = MilliRetirementAccount(
-        accountNumber: "MLI-ROTH-8492",
-        planType: "Milli Roth IRA",
-        custodian: "Apex Clearing Custody",
-        balance: 42685.73,
-        monthlyAutoDepositPercent: 15.0,
-        annualLimit: 7000.0,
-        isApproved: true,
-        openingDate: Date()
-    )
 }
 
 // MARK: - RetirementView
@@ -341,6 +331,20 @@ struct RetirementView: View {
     // MARK: - Hero Projections (Matching Reference Image 8)
     private func hero(_ projection: RetirementProjection) -> some View {
         VStack(spacing: 8) {
+            MilliGaugeRing(progress: min(profile.contributionPercent / 100, 1), size: 92, lineWidth: 8) {
+                VStack(spacing: 0) {
+                    Text("\(Int(profile.contributionPercent))%")
+                        .font(.custom("Sora-Bold", size: 20))
+                        .monospacedDigit()
+                        .foregroundStyle(MilliColors.textPrimary)
+                    Text("SAVED")
+                        .font(MilliFont.caption)
+                        .tracking(1.2)
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
+            }
+            .padding(.bottom, 2)
+
             Text("Projected retirement year")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
@@ -607,7 +611,14 @@ struct RetirementView: View {
 
     private var emptyProjectionState: some View {
         VStack(spacing: 12) {
-            Text("Set your retirement parameters to view live compounding projections.")
+            Image("retirement-hero")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 210, maxHeight: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 18)
+
+            Text("Open a Milli retirement account or connect an existing one to see live compounding projections.")
                 .font(MilliFont.bodyMedium)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -644,12 +655,12 @@ private struct MilliRetirementOnboardingSheet: View {
 
     @State private var step = 1
     @State private var planType = "Roth IRA"
-    @State private var fullName = "Alex Mercer"
-    @State private var dob = "1994-06-15"
-    @State private var ssn = "•••-••-8492"
-    @State private var annual1099Income = "75000"
+    @State private var fullName = ""
+    @State private var dob = ""
+    @State private var ssn = ""
+    @State private var annual1099Income = ""
     @State private var contributionPercent: Double = 15
-    @State private var beneficiaryName = "Sarah Mercer"
+    @State private var beneficiaryName = ""
     @State private var relationship = "Spouse"
 
     var body: some View {
@@ -874,13 +885,17 @@ private struct MilliRetirementOnboardingSheet: View {
                     accountNumber: "MLI-\(planType.prefix(4).uppercased())-\(Int.random(in: 1000...9999))",
                     planType: "Milli \(planType)",
                     custodian: "Apex Clearing Custody",
-                    balance: 42685.73,
-                    monthlyAutoDepositPercent: 15.0,
+                    balance: 0,
+                    monthlyAutoDepositPercent: contributionPercent,
                     annualLimit: planType.contains("SEP") ? 69000.0 : 7000.0,
                     isApproved: true,
                     openingDate: Date()
                 )
                 store.openMilliAccount(newAccount)
+                store.contributionPercent = contributionPercent
+                if let income = Double(annual1099Income.filter({ $0.isNumber || $0 == "." })) {
+                    store.annualIncome = income
+                }
                 dismiss()
             } label: {
                 HStack(spacing: 6) {

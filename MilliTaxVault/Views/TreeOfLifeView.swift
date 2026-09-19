@@ -164,7 +164,26 @@ struct TreeOfLifeView: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
+                Image("tree-of-life-bg")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .opacity(0.92 * reveal)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.black.opacity(0.42), Color.clear, Color.black.opacity(0.58)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    }
+                    .allowsHitTesting(false)
+
                 treeCanvas(size: geo.size)
+                    .opacity(0.38)
 
                 ForEach(Array(events.prefix(nodePositions.count).enumerated()), id: \.element.id) { index, event in
                     let position = nodePositions[index]
