@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - PayoutStateContract
-// Canonical money-movement state contract for the Stripe Treasury Autopilot UI.
+// Canonical money-movement state contract for Milli's Plaid + Column Autopilot flow.
 // Mirrors the Canonical Money-Movement State Contract v2.1 (backend authority).
 // HARD RULE: the UI renders backend/provider states only. SwiftUI never
 // determines financial truth. No view may display LIVE / POSTED / PROTECTED /
@@ -99,7 +99,7 @@ public struct AutopilotPayout: Identifiable, Codable, Equatable, Sendable {
     public var taxAllocatedCents: Int64? { nil }
 }
 
-/// MILLI Financial Account (Stripe Financial Account / Treasury) status
+/// MILLI Financial Account / Column banking status
 /// as reported by the backend.
 public enum FinancialAccountStatus: String, Codable, Sendable {
     case notOpened
@@ -117,5 +117,21 @@ public struct AutopilotConfiguration: Codable, Equatable, Sendable {
     public init(isEnabled: Bool = false, estimatedTaxRateBps: Int? = nil) {
         self.isEnabled = isEnabled
         self.estimatedTaxRateBps = estimatedTaxRateBps
+    }
+}
+
+
+/// One canonical gate for rich reference/demo presentation. Production builds
+/// can never enter this mode; only DEBUG visual-QA launches can.
+public enum MilliRuntimeMode {
+    public static var isScreenshotDemo: Bool {
+        #if DEBUG
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || processInfo.environment["MILLI_SCREEN"] != nil
+            || processInfo.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
     }
 }
