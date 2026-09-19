@@ -478,6 +478,7 @@ struct MilliPlaidAccount: Decodable, Identifiable, Equatable {
     let dataState: String
     let institutionName: String?
     let itemStatus: String?
+    let isPayoutSource: Bool?
 
     var id: String { accountID }
 
@@ -494,6 +495,7 @@ struct MilliPlaidAccount: Decodable, Identifiable, Equatable {
         case dataState = "data_state"
         case institutionName = "institution_name"
         case itemStatus = "item_status"
+        case isPayoutSource = "is_payout_source"
     }
 }
 
