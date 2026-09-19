@@ -32,8 +32,9 @@ user identity or financial settlement state.
   disabled in production and responses are non-cacheable with security headers.
 - **Anonymous surfaces are throttled:** `/auth/*` and the Plaid webhook are
   rate limited per caller, and any request body larger than 256 KiB is refused
-  before routing. The throttle is per-process defence in depth and never
-  replaces a cryptographic check.
+  before routing — by declared `Content-Length` and, for chunked requests that
+  omit it, by counting the bytes actually received. The throttle is per-process
+  defence in depth and never replaces a cryptographic check.
 
 ## Authentication flow
 

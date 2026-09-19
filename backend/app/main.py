@@ -8,6 +8,7 @@ session; the mobile app is never a financial authority.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from .body_limit import MAX_REQUEST_BYTES, BodySizeLimitMiddleware
 from .config import get_settings
 from .rate_limit import RATE_LIMITED_PREFIXES, RateLimiter
 from .routers import (
@@ -18,8 +19,6 @@ from .routers import (
     plaid_routes,
     tax_vault,
 )
-
-MAX_REQUEST_BYTES = 256 * 1024
 
 settings = get_settings()
 
@@ -41,6 +40,10 @@ app.include_router(tax_vault.router)
 
 
 _rate_limiter = RateLimiter()
+
+# Added before the header middleware so it stays inside it: a 413 raised here
+# still leaves through the same hardened response headers as every other reply.
+app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_REQUEST_BYTES)
 
 
 @app.middleware("http")

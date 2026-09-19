@@ -9,9 +9,9 @@ a single instance and never relaxes any cryptographic check.
 
 from __future__ import annotations
 
+import time
 from collections import deque
 from threading import Lock
-import time
 
 RATE_LIMITED_PREFIXES: tuple[str, ...] = ("/auth/", "/plaid/webhook")
 
@@ -28,6 +28,7 @@ class RateLimiter:
         self._max_requests = max_requests
         self._window_seconds = window_seconds
         self._hits: dict[str, deque[float]] = {}
+        self._next_prune = 0.0
         self._lock = Lock()
 
     def allow(self, key: str) -> tuple[bool, int]:
@@ -35,7 +36,9 @@ class RateLimiter:
         now = time.monotonic()
         cutoff = now - self._window_seconds
         with self._lock:
-            self._prune(cutoff)
+            if now >= self._next_prune:
+                self._prune(cutoff)
+                self._next_prune = now + self._window_seconds
             hits = self._hits.setdefault(key, deque())
             while hits and hits[0] <= cutoff:
                 hits.popleft()
@@ -45,9 +48,11 @@ class RateLimiter:
         return True, 0
 
     def _prune(self, cutoff: float) -> None:
+        """Drop keys idle for a full window; O(keys), so at most once per window."""
         for stale in [key for key, hits in self._hits.items() if not hits or hits[-1] <= cutoff]:
             del self._hits[stale]
 
     def reset(self) -> None:
         with self._lock:
             self._hits.clear()
+            self._next_prune = 0.0

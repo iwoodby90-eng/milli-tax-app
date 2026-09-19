@@ -34,6 +34,34 @@ def test_oversized_body_is_rejected_before_routing():
     assert response.headers["cache-control"] == "no-store"
 
 
+def test_chunked_body_cannot_outrun_the_limit_without_content_length():
+    def oversized_chunks():
+        for _ in range(9):
+            yield b"x" * (32 * 1024)
+
+    response = client.post(
+        "/auth/refresh",
+        content=oversized_chunks(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == 413
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_chunked_body_within_the_limit_still_reaches_the_route():
+    def small_chunks():
+        yield b'{"refresh_token": "'
+        yield b"x" * 64
+        yield b'"}'
+
+    response = client.post(
+        "/auth/refresh",
+        content=small_chunks(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code != 413
+
+
 def test_unauthenticated_auth_endpoint_is_rate_limited():
     body = {"refresh_token": "x" * 64}
     statuses = {client.post("/auth/refresh", json=body).status_code for _ in range(40)}
@@ -42,5 +70,4 @@ def test_unauthenticated_auth_endpoint_is_rate_limited():
 
 def test_authenticated_routes_are_not_rate_limited_by_the_anonymous_window():
     for _ in range(40):
-        response = client.get("/tax-vault/balance")
-    assert response.status_code != 429
+        assert client.get("/tax-vault/balance").status_code != 429
