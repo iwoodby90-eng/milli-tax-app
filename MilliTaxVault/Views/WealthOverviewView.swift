@@ -16,10 +16,14 @@ struct WealthOverviewView: View {
             VStack(spacing: 10) {
                 header
                 wealthDestinations
-                netWorthHero
-                allocationCard
-                projectionCard
-                goalsCard
+                if MilliRuntimeMode.isScreenshotDemo {
+                    netWorthHero
+                    allocationCard
+                    projectionCard
+                    goalsCard
+                } else {
+                    unavailableWealthState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -58,6 +62,28 @@ struct WealthOverviewView: View {
                 .foregroundStyle(MilliColors.cyanGlow)
                 .frame(width: 34, height: 34)
         }
+    }
+
+    private var unavailableWealthState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "chart.pie.fill")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+
+            Text("Your wealth picture starts with verified data")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Text("Milli will build net worth and projections from connected investing, retirement, savings, and cash data. Reference balances are never shown as production truth.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+
+            ProvenanceTag(label: .unavailable)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 16)
     }
 
     private var wealthDestinations: some View {
