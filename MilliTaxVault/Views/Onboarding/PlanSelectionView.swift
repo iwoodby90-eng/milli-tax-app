@@ -179,6 +179,6 @@ struct PlanSelectionView: View {
         onComplete: {},
         onBack: {}
     )
-    .background(MilliColors.obsidian.ignoresSafeArea())
+    .background { MilliAmbientBackground() }
     .preferredColorScheme(.dark)
 }
