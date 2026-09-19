@@ -79,25 +79,19 @@ public struct VerifiedPayout: Identifiable, Codable, Equatable {
 public final class BankConnectionService: ObservableObject {
     public static let shared = BankConnectionService()
 
-    @Published public var connectedBank: ConnectedBankAccount? {
-        didSet { persist() }
-    }
+    @Published public var connectedBank: ConnectedBankAccount?
     @Published public var linkedPlatforms: [GigPlatformLink] = GigPlatformLink.standardPlatforms {
         didSet { persist() }
     }
-    @Published public var payouts: [VerifiedPayout] = [] {
-        didSet { persist() }
-    }
+    @Published public var payouts: [VerifiedPayout] = []
     @Published public var isSyncing: Bool = false
     @Published public var syncMessage: String?
 
     private let backend = MilliBackendClient.shared
-    private let storageKeyBank = "milli_connected_bank_v3_plaid"
     private let storageKeyPlatforms = "milli_linked_platforms_v3"
-    private let storageKeyPayouts = "milli_verified_payouts_v3"
 
     private init() {
-        loadPersistedData()
+        loadPersistedPreferences()
     }
 
     public var totalPayoutsAmount: Double {
@@ -171,31 +165,23 @@ public final class BankConnectionService: ObservableObject {
     }
 
     private func persist() {
+        // Only user-selected payout-source filters are stored locally.
+        // Bank/account/payout snapshots are financial data and must be
+        // rehydrated from the authenticated backend instead of UserDefaults.
         let encoder = JSONEncoder()
-        if let bankData = try? encoder.encode(connectedBank) {
-            UserDefaults.standard.set(bankData, forKey: storageKeyBank)
-        }
         if let platformData = try? encoder.encode(linkedPlatforms) {
             UserDefaults.standard.set(platformData, forKey: storageKeyPlatforms)
         }
-        if let payoutData = try? encoder.encode(payouts) {
-            UserDefaults.standard.set(payoutData, forKey: storageKeyPayouts)
-        }
     }
 
-    private func loadPersistedData() {
+    private func loadPersistedPreferences() {
         let decoder = JSONDecoder()
-        if let data = UserDefaults.standard.data(forKey: storageKeyBank),
-           let bank = try? decoder.decode(ConnectedBankAccount?.self, from: data) {
-            connectedBank = bank
-        }
         if let data = UserDefaults.standard.data(forKey: storageKeyPlatforms),
            let platforms = try? decoder.decode([GigPlatformLink].self, from: data) {
             linkedPlatforms = platforms
         }
-        if let data = UserDefaults.standard.data(forKey: storageKeyPayouts),
-           let savedPayouts = try? decoder.decode([VerifiedPayout].self, from: data) {
-            payouts = savedPayouts
-        }
+
+        connectedBank = nil
+        payouts = []
     }
 }
