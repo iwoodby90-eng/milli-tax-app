@@ -1,5 +1,4 @@
 import SwiftUI
-import LinkKit
 
 // MARK: - PayoutsView
 // Banking-grade payout history backed by authenticated Plaid connectivity.
