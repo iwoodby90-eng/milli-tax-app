@@ -261,8 +261,7 @@ struct MilliApp: App {
 
         hasCompletedOnboarding = false
         hasCompletedSetup = false
-        defaults.removeObject(forKey: "onboarding_vehicle")
-        defaults.removeObject(forKey: "onboarding_taxProfile")
+        ProtectedOnboardingStore.clear()
         defaults.removeObject(forKey: "onboarding_plan")
         defaults.removeObject(forKey: "milliAutopilotRetirementEnabled")
         defaults.removeObject(forKey: "milliAutopilotInvestingEnabled")
