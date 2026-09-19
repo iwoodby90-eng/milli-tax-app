@@ -79,7 +79,10 @@ struct TaxReadyScoreView: View {
                 .foregroundStyle(MilliColors.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("Connect income, expenses, mileage, tax payments, and documents. Milli will calculate your score from those records rather than seeded reference factors.")
+            Text(
+                "Connect income, expenses, mileage, tax payments, and documents. Milli will " +
+                "calculate your score from those records rather than seeded reference factors."
+            )
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
