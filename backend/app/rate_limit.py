@@ -1,4 +1,5 @@
-"""Best-effort in-process throttling for unauthenticated endpoints.
+"""
+Best-effort in-process throttling for unauthenticated endpoints.
 
 Credential-exchange and webhook routes accept traffic before any session
 exists, so they are the only surfaces an anonymous caller can hammer. This
@@ -25,6 +26,7 @@ class RateLimiter:
         max_requests: int = DEFAULT_MAX_REQUESTS,
         window_seconds: float = DEFAULT_WINDOW_SECONDS,
     ) -> None:
+        """Allow ``max_requests`` per caller within ``window_seconds``."""
         self._max_requests = max_requests
         self._window_seconds = window_seconds
         self._hits: dict[str, deque[float]] = {}

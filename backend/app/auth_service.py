@@ -214,6 +214,26 @@ def register_email_identity(email: str, password: str) -> IssuedSession:
             raise HTTPException(status.HTTP_409_CONFLICT, "an account already exists for this email") from exc
 
 
+def _record_failed_login(cur, user_id, failures: int) -> None:
+    """Count the failure and lock the account once the ceiling is reached."""
+    attempts = failures + 1
+    lock_until = (
+        datetime.now(timezone.utc) + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
+        if attempts >= MAX_LOGIN_FAILURES
+        else None
+    )
+    cur.execute(
+        """
+        update milli_users
+           set failed_login_count = %s,
+               locked_until = %s,
+               updated_at = now()
+         where id = %s
+        """,
+        (0 if lock_until else attempts, lock_until, user_id),
+    )
+
+
 def authenticate_email_identity(email: str, password: str) -> IssuedSession:
     """Verify an email/password credential without leaking which part failed."""
     _require_db()
@@ -245,22 +265,7 @@ def authenticate_email_identity(email: str, password: str) -> IssuedSession:
                 )
 
             if not verify_password(password, stored_hash):
-                attempts = failures + 1
-                lock_until = (
-                    datetime.now(timezone.utc) + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
-                    if attempts >= MAX_LOGIN_FAILURES
-                    else None
-                )
-                cur.execute(
-                    """
-                    update milli_users
-                       set failed_login_count = %s,
-                           locked_until = %s,
-                           updated_at = now()
-                     where id = %s
-                    """,
-                    (0 if lock_until else attempts, lock_until, user_id),
-                )
+                _record_failed_login(cur, user_id, failures)
                 conn.commit()
                 raise invalid
 

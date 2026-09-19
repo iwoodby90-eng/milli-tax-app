@@ -1,4 +1,5 @@
-"""Password hashing and policy.
+"""
+Password hashing and policy.
 
 Digests are salted scrypt values from the standard library, stored as
 ``scrypt$n$r$p$salt$digest`` with base64 fields. Verification is constant time

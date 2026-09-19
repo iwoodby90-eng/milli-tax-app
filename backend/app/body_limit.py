@@ -1,4 +1,5 @@
-"""Byte-accurate request body ceiling.
+"""
+Byte-accurate request body ceiling.
 
 A declared `Content-Length` is only a claim, and a chunked request omits it
 entirely, so the header check alone can be walked past. This middleware buffers
@@ -23,6 +24,7 @@ MAX_REQUEST_BYTES = 256 * 1024
 
 class BodySizeLimitMiddleware:
     def __init__(self, app: Any, max_bytes: int = MAX_REQUEST_BYTES) -> None:
+        """Wrap ``app``, refusing bodies larger than ``max_bytes``."""
         self.app = app
         self.max_bytes = max_bytes
 
