@@ -4,7 +4,8 @@ import Security
 // MARK: - MilliBackendClient
 // Native client for Milli's FastAPI backend. The app is never an identity
 // authority: user-scoped requests require an opaque server session minted only
-// after the backend verifies a signed Apple identity token.
+// after the backend verifies a signed Apple identity token or an email and
+// password credential it stores as a salted digest.
 
 @MainActor
 final class MilliBackendClient {
@@ -135,6 +136,34 @@ final class MilliBackendClient {
             body: [
                 "challenge_id": challengeID.uuidString.lowercased(),
                 "identity_token": identityToken
+            ]
+        )
+        guard response.tokenType.caseInsensitiveCompare("Bearer") == .orderedSame else {
+            throw ClientError.invalidResponse
+        }
+        MilliBackendSessionStore.save(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken
+        )
+    }
+
+    /// Creates an email/password account. The password is sent once over TLS
+    /// and never stored on the device; only the returned session is kept.
+    func signUpWithEmail(email: String, password: String) async throws {
+        try await openEmailSession(path: "/auth/email/signup", email: email, password: password)
+    }
+
+    func signInWithEmail(email: String, password: String) async throws {
+        try await openEmailSession(path: "/auth/email/login", email: email, password: password)
+    }
+
+    private func openEmailSession(path: String, email: String, password: String) async throws {
+        let response: BackendSession = try await publicRequest(
+            method: "POST",
+            path: path,
+            body: [
+                "email": email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                "password": password
             ]
         )
         guard response.tokenType.caseInsensitiveCompare("Bearer") == .orderedSame else {
