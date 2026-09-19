@@ -32,8 +32,8 @@ enum MilliSpacing {
 
     // Fixed shell geometry. Content clearance clears both the navigation deck and
     // the floating Milli AI companion that sits directly above it.
-    static let bottomNavHeight: CGFloat = 92
-    static let bottomContentClearance: CGFloat = 172
+    static let bottomNavHeight: CGFloat = 104
+    static let bottomContentClearance: CGFloat = 196
 }
 
 // MARK: - MilliRadius

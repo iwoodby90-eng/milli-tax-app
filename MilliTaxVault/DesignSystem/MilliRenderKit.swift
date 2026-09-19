@@ -445,12 +445,11 @@ struct MilliAccountCard: View {
 
     private var chromeFace: LinearGradient {
         LinearGradient(
-            colors: [
-                MilliColors.chromeDeep,
-                MilliColors.chromeDark,
-                MilliColors.chromeMid.opacity(0.9),
-                MilliColors.chromeDark,
-                Color.black.opacity(0.92)
+            stops: [
+                .init(color: Color(hex: "1C232B"), location: 0.00),
+                .init(color: Color(hex: "0E1319"), location: 0.34),
+                .init(color: Color(hex: "151C24"), location: 0.58),
+                .init(color: Color(hex: "05080B"), location: 1.00)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -465,12 +464,17 @@ struct MilliAccountCard: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.18), Color.clear, MilliColors.cyanGlow.opacity(0.10)],
-                        startPoint: .top,
-                        endPoint: .bottom
+                        stops: [
+                            .init(color: Color.clear, location: 0.00),
+                            .init(color: Color.white.opacity(0.10), location: 0.40),
+                            .init(color: Color.white.opacity(0.02), location: 0.52),
+                            .init(color: Color.clear, location: 0.70),
+                            .init(color: MilliColors.cyanGlow.opacity(0.10), location: 1.00)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
                 )
-                .blendMode(.screen)
 
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(
@@ -504,15 +508,25 @@ struct MilliAccountCard: View {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [MilliColors.chromeLight, MilliColors.chromeMid, MilliColors.chromeLight],
+                            colors: [MilliColors.chromeLight, MilliColors.chromeMid, MilliColors.chromeDark],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 38, height: 27)
                     .overlay(
+                        VStack(spacing: 4) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Rectangle()
+                                    .fill(Color.black.opacity(0.28))
+                                    .frame(height: 0.8)
+                            }
+                        }
+                        .padding(.horizontal, 5)
+                    )
+                    .overlay(
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .stroke(Color.black.opacity(0.25), lineWidth: 0.7)
+                            .stroke(Color.white.opacity(0.35), lineWidth: 0.7)
                     )
 
                 Spacer(minLength: 10)
@@ -520,7 +534,14 @@ struct MilliAccountCard: View {
                 Text("••••  ••••  ••••  \(mask ?? "••••")")
                     .font(.custom("Sora-SemiBold", size: 17, relativeTo: .title3))
                     .tracking(1.6)
-                    .foregroundStyle(MilliColors.chromeWhite)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [MilliColors.chromeWhite, MilliColors.chromeLight],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: Color.black.opacity(0.8), radius: 2, y: 1)
 
                 Spacer(minLength: 8)
 
@@ -546,7 +567,7 @@ struct MilliAccountCard: View {
             .padding(18)
         }
         .frame(height: 196)
-        .shadow(color: Color.black.opacity(0.6), radius: 18, y: 10)
+        .shadow(color: Color.black.opacity(0.7), radius: 18, y: 10)
         .shadow(color: MilliColors.cyanGlow.opacity(isLive ? 0.18 : 0.06), radius: 22, y: 0)
         .accessibilityElement(children: .combine)
     }

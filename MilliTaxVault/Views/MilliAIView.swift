@@ -175,7 +175,12 @@ struct MilliAIView: View {
     }
 
     private func aiPortrait(size: CGFloat, animated: Bool) -> some View {
-        MilliAICharacterView(size: size, animated: animated)
+        Image("milli-ai-robot")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .shadow(color: MilliColors.cyanGlow.opacity(0.3), radius: size * 0.16)
+            .accessibilityHidden(true)
     }
 
     private var composer: some View {
