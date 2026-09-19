@@ -70,7 +70,10 @@ struct QuarterlyTaxesView: View {
                 .foregroundStyle(MilliColors.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("Complete your tax profile and connect verified income data. Milli will calculate the estimate from authenticated records instead of displaying reference numbers.")
+            Text(
+                "Complete your tax profile and connect verified income data. Milli will calculate " +
+                "the estimate from authenticated records instead of displaying reference numbers."
+            )
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
