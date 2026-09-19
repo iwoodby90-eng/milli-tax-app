@@ -8,8 +8,22 @@ import SwiftUI
 struct SavingsView: View {
     var onBack: () -> Void = {}
 
-    @State private var goals: [SavingsGoal] = MilliRuntimeMode.isScreenshotDemo ? SavingsGoal.seeded : []
+    @State private var goals: [SavingsGoal]
     @State private var showAddGoal = false
+
+    init(onBack: @escaping () -> Void = {}) {
+        self.onBack = onBack
+        _goals = State(
+            initialValue: ReferenceDataPolicy.allowsDemoReferenceData
+                ? SavingsGoal.seeded
+                : []
+        )
+    }
+
+    private var provenance: ProvenanceLabel {
+        if ReferenceDataPolicy.allowsDemoReferenceData { return .demo }
+        return goals.isEmpty ? .unavailable : .userEntered
+    }
 
     private var totalSaved: Double {
         goals.reduce(0) { $0 + $1.saved }
@@ -28,8 +42,12 @@ struct SavingsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                savingsHero
-                goalsSection
+                if goals.isEmpty {
+                    emptyGoalsState
+                } else {
+                    savingsHero
+                    goalsSection
+                }
                 addGoalButton
                 disclosure
             }
@@ -66,11 +84,35 @@ struct SavingsView: View {
 
             Spacer()
 
-            Image(systemName: "target")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
-                .frame(width: 34, height: 34)
+            ProvenanceTag(label: provenance)
+                .frame(width: 70, alignment: .trailing)
         }
+    }
+
+    private var emptyGoalsState: some View {
+        VStack(spacing: 13) {
+            ZStack {
+                Circle()
+                    .fill(MilliColors.cyanGlow.opacity(0.07))
+                    .frame(width: 60, height: 60)
+                Image(systemName: "target")
+                    .font(.system(size: 25, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Create a goal worth chasing")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Text("Savings goals begin at zero and reflect only amounts you enter or verified balances Milli connects later. No demo savings are shown in Release.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 18)
     }
 
     private var savingsHero: some View {
