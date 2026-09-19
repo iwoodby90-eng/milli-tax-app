@@ -906,10 +906,10 @@ private struct MilliRetirementOnboardingSheet: View {
                     accountNumber: "MLI-\(planType.prefix(4).uppercased())-\(Int.random(in: 1000...9999))",
                     planType: "Milli \(planType)",
                     custodian: "Apex Clearing Custody",
-                    balance: 42685.73,
-                    monthlyAutoDepositPercent: 15.0,
+                    balance: 0,
+                    monthlyAutoDepositPercent: contributionPercent,
                     annualLimit: planType.contains("SEP") ? 69000.0 : 7000.0,
-                    isApproved: true,
+                    isApproved: false,
                     openingDate: Date()
                 )
                 store.openMilliAccount(newAccount)
