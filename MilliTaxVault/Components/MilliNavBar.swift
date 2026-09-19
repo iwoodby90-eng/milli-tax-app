@@ -22,11 +22,11 @@ enum MilliTab: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .vault: return "PAYOUTS"
-        case .activity: return "MILEAGE"
-        case .wealth: return "WEALTH"
-        case .cockpit: return "MORE"
-        case .home: return "HOME"
+        case .vault: return "Payouts"
+        case .activity: return "Mileage"
+        case .wealth: return "Wealth"
+        case .cockpit: return "More"
+        case .home: return "Home"
         }
     }
 }
@@ -224,9 +224,9 @@ struct MilliNavBar: View {
                 }
 
                 Text(tab.displayName)
-                    .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
+                    .font(.custom("Inter-SemiBold", size: 10.5, relativeTo: .caption2))
                     .foregroundStyle(isSelected ? MilliColors.navTabActiveOnChrome : Color(hex: "33414D"))
-                    .tracking(0.5)
+                    .tracking(0.2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.80)
             }
@@ -235,7 +235,7 @@ struct MilliNavBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.displayName.capitalized)
+        .accessibilityLabel(tab.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
