@@ -14,12 +14,13 @@ struct ReportsView: View {
     @State private var sharePayload: ReportSharePayload?
 
     private let report = ReportDataModel.reference
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                if MilliRuntimeMode.isScreenshotDemo {
+                if showsReferenceData {
                     tabs
                     selectedContent
                     exportActions
@@ -57,42 +58,53 @@ struct ReportsView: View {
 
             Spacer()
 
-            if MilliRuntimeMode.isScreenshotDemo {
-                Button {
-                    exportPDFAndShare()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(MilliColors.textSecondary)
-                        .frame(width: 34, height: 34)
+            if showsReferenceData {
+                VStack(spacing: 2) {
+                    Button {
+                        exportPDFAndShare()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(MilliColors.textSecondary)
+                            .frame(width: 34, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Share demo report")
+                    ProvenanceTag(label: .demo)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Share current report")
+                .frame(width: 70)
             } else {
                 ProvenanceTag(label: .unavailable)
-                    .frame(width: 76, alignment: .trailing)
+                    .frame(width: 70)
             }
         }
     }
 
     private var unavailableState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
+        VStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(MilliColors.cyanGlow.opacity(0.06))
+                    .frame(width: 66, height: 66)
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 27, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
 
-            Text("Reports are waiting for verified activity")
+            Text("Reports will populate from verified activity")
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
 
-            Text("PDF and CSV exports stay locked until the report model is populated from authenticated income, expense, and mileage records.")
+            Text("Income, deductions, business mileage, and trip exports remain unavailable until Milli has authenticated financial and mileage records. Demo report data is never exportable from Release builds.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .milliCard(padding: 16)
+        .padding(.vertical, 30)
+        .milliCard(padding: 18)
     }
 
     private var tabs: some View {
