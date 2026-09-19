@@ -13,10 +13,14 @@ struct QuarterlyTaxesView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                estimateHero
-                breakdown
-                projection
-                paymentAction
+                if MilliRuntimeMode.isScreenshotDemo {
+                    estimateHero
+                    breakdown
+                    projection
+                    paymentAction
+                } else {
+                    unavailableState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -44,10 +48,15 @@ struct QuarterlyTaxesView: View {
 
             Spacer()
 
-            Text(estimate.periodLabel)
-                .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textSecondary)
-                .frame(width: 70, alignment: .trailing)
+            if MilliRuntimeMode.isScreenshotDemo {
+                ProvenanceTag(label: .demo)
+                    .frame(width: 70, alignment: .trailing)
+            } else {
+                Text("UNAVAILABLE")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+                    .frame(width: 70, alignment: .trailing)
+            }
         }
     }
 
@@ -169,6 +178,28 @@ struct QuarterlyTaxesView: View {
                 .foregroundStyle(MilliColors.textTertiary)
                 .multilineTextAlignment(.center)
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "building.columns.circle")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+
+            Text("No verified quarterly estimate yet")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Text("Connect verified income, expenses, mileage, and tax-profile data before Milli presents a quarterly payment estimate.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+
+            ProvenanceTag(label: .unavailable)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 16)
     }
 
     private func currency(_ value: Double) -> String {
