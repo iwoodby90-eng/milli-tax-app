@@ -14,12 +14,22 @@ from psycopg.errors import UniqueViolation
 
 from . import db
 from .config import get_settings
+from .passwords import (
+    hash_password,
+    normalize_email,
+    password_policy_error,
+    verify_password,
+    waste_verification_time,
+)
 from .security import token_hash, constant_time_equal
 
 
 APPLE_ISSUER = "https://appleid.apple.com"
 APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 _apple_jwks = PyJWKClient(APPLE_JWKS_URL, cache_keys=True, lifespan=3600)
+
+MAX_LOGIN_FAILURES = 10
+LOGIN_LOCKOUT_MINUTES = 15
 
 
 @dataclass(frozen=True)
@@ -31,10 +41,14 @@ class IssuedSession:
     refresh_expires_at: datetime
 
 
-def _require_auth_config() -> None:
-    settings = get_settings()
-    if not settings.db_configured:
+def _require_db() -> None:
+    if not get_settings().db_configured:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "authentication unavailable: DATABASE_URL is not configured")
+
+
+def _require_auth_config() -> None:
+    _require_db()
+    settings = get_settings()
     if not settings.apple_auth_configured:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "authentication unavailable: APPLE_SIGN_IN_AUDIENCE is not configured")
 
@@ -169,6 +183,100 @@ def exchange_apple_identity(challenge_id: uuid.UUID, identity_token: str) -> Iss
         except UniqueViolation as exc:
             conn.rollback()
             raise HTTPException(status.HTTP_409_CONFLICT, "authentication state conflict") from exc
+
+
+def register_email_identity(email: str, password: str) -> IssuedSession:
+    """Create an email/password account and open a session for it."""
+    _require_db()
+    address = normalize_email(email)
+    policy_error = password_policy_error(password)
+    if policy_error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, policy_error)
+
+    digest = hash_password(password)
+    with db.connection() as conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    insert into milli_users (id, email, password_hash, password_updated_at)
+                    values (%s, %s, %s, now())
+                    returning id
+                    """,
+                    (uuid.uuid4(), address, digest),
+                )
+                user_id = cur.fetchone()[0]
+                issued = _new_session(cur, user_id)
+            conn.commit()
+            return issued
+        except UniqueViolation as exc:
+            conn.rollback()
+            raise HTTPException(status.HTTP_409_CONFLICT, "an account already exists for this email") from exc
+
+
+def authenticate_email_identity(email: str, password: str) -> IssuedSession:
+    """Verify an email/password credential without leaking which part failed."""
+    _require_db()
+    address = normalize_email(email)
+    invalid = HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid email or password")
+
+    with db.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                select id, password_hash, failed_login_count, locked_until
+                  from milli_users
+                 where lower(email) = %s
+                   and password_hash is not null
+                 for update
+                """,
+                (address,),
+            )
+            row = cur.fetchone()
+            if row is None:
+                waste_verification_time()
+                raise invalid
+
+            user_id, stored_hash, failures, locked_until = row
+            if locked_until is not None and locked_until > datetime.now(timezone.utc):
+                raise HTTPException(
+                    status.HTTP_429_TOO_MANY_REQUESTS,
+                    "too many failed sign-in attempts; try again later",
+                )
+
+            if not verify_password(password, stored_hash):
+                attempts = failures + 1
+                lock_until = (
+                    datetime.now(timezone.utc) + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
+                    if attempts >= MAX_LOGIN_FAILURES
+                    else None
+                )
+                cur.execute(
+                    """
+                    update milli_users
+                       set failed_login_count = %s,
+                           locked_until = %s,
+                           updated_at = now()
+                     where id = %s
+                    """,
+                    (0 if lock_until else attempts, lock_until, user_id),
+                )
+                conn.commit()
+                raise invalid
+
+            cur.execute(
+                """
+                update milli_users
+                   set failed_login_count = 0,
+                       locked_until = null,
+                       updated_at = now()
+                 where id = %s
+                """,
+                (user_id,),
+            )
+            issued = _new_session(cur, user_id)
+        conn.commit()
+    return issued
 
 
 def rotate_refresh_token(refresh_token: str) -> IssuedSession:
