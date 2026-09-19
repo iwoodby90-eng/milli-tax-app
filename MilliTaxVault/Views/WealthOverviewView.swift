@@ -79,7 +79,10 @@ struct WealthOverviewView: View {
                 .foregroundStyle(MilliColors.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("Connect investing, retirement, savings, and cash accounts to build net worth and projections from real balances. Reference portfolio values stay confined to demo captures.")
+            Text(
+                "Connect investing, retirement, savings, and cash accounts to build net worth and " +
+                "projections from real balances. Reference portfolio values stay confined to demo captures."
+            )
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
