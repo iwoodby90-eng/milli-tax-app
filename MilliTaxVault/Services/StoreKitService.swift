@@ -58,7 +58,8 @@ final class StoreKitService: ObservableObject {
                     await self.updateCustomerProductStatus()
                     await transaction.finish()
                 } catch {
-                    print("[StoreKitService] Unverified transaction update: \(error.localizedDescription)")
+                    // Verification failures are intentionally not logged with
+                    // raw StoreKit error payloads in production.
                 }
             }
         }
@@ -76,7 +77,6 @@ final class StoreKitService: ObservableObject {
         } catch {
             errorMessage = "Failed to load App Store subscriptions: \(error.localizedDescription)"
             isLoading = false
-            print("[StoreKitService] Product request failed: \(error)")
         }
     }
 
@@ -146,7 +146,8 @@ final class StoreKitService: ObservableObject {
                     purchasedIDs.insert(transaction.productID)
                 }
             } catch {
-                print("[StoreKitService] Failed to verify current entitlement: \(error)")
+                // Ignore unverified entitlements without emitting receipt or
+                // transaction diagnostics to the device console.
             }
         }
 

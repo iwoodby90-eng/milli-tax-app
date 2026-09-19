@@ -68,8 +68,7 @@ public final class AppleAuthManager: NSObject, ObservableObject {
     }
 
     public func handleAuthorizationCompletion(
-        result: Result<ASAuthorization, Error>,
-        isSignUp: Bool
+        result: Result<ASAuthorization, Error>
     ) -> CredentialEnvelope? {
         authErrorMessage = nil
 
@@ -138,7 +137,7 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         }
     }
 
-    public func establishFinancialSession(identityToken: String) async throws {
+    public func establishFinancialSession(identityToken: String) async throws -> Bool {
         guard let backendChallenge else {
             throw MilliBackendClient.ClientError.financialSignInRequired
         }
@@ -147,13 +146,14 @@ public final class AppleAuthManager: NSObject, ObservableObject {
         defer { isProcessing = false }
 
         do {
-            try await MilliBackendClient.shared.exchangeAppleIdentity(
+            let isNewUser = try await MilliBackendClient.shared.exchangeAppleIdentity(
                 challengeID: backendChallenge.challengeID,
                 identityToken: identityToken
             )
             self.backendChallenge = nil
             isBackendChallengeReady = false
             isFinancialSessionAuthenticated = true
+            return isNewUser
         } catch {
             MilliBackendClient.shared.clearFinancialSession()
             isFinancialSessionAuthenticated = false

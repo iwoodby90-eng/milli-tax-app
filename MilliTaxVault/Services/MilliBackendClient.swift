@@ -29,6 +29,7 @@ final class MilliBackendClient {
         let tokenType: String
         let accessExpiresAt: String
         let refreshExpiresAt: String
+        let isNewUser: Bool
 
         enum CodingKeys: String, CodingKey {
             case userID = "user_id"
@@ -37,6 +38,7 @@ final class MilliBackendClient {
             case tokenType = "token_type"
             case accessExpiresAt = "access_expires_at"
             case refreshExpiresAt = "refresh_expires_at"
+            case isNewUser = "is_new_user"
         }
     }
 
@@ -128,7 +130,7 @@ final class MilliBackendClient {
         try await publicRequest(method: "POST", path: "/auth/apple/challenge")
     }
 
-    func exchangeAppleIdentity(challengeID: UUID, identityToken: String) async throws {
+    func exchangeAppleIdentity(challengeID: UUID, identityToken: String) async throws -> Bool {
         let response: BackendSession = try await publicRequest(
             method: "POST",
             path: "/auth/apple/exchange",
@@ -144,6 +146,7 @@ final class MilliBackendClient {
             accessToken: response.accessToken,
             refreshToken: response.refreshToken
         )
+        return response.isNewUser
     }
 
     func logout() async {
