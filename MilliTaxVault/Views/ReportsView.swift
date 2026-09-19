@@ -96,7 +96,10 @@ struct ReportsView: View {
                 .foregroundStyle(MilliColors.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("Income, deductions, business mileage, and trip exports remain unavailable until Milli has authenticated financial and mileage records. Demo report data is never exportable from Release builds.")
+            Text(
+                "Income, deductions, business mileage, and trip exports remain unavailable until Milli has " +
+                "authenticated financial and mileage records. Demo report data is never exportable from Release builds."
+            )
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
