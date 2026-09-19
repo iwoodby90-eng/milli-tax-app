@@ -110,9 +110,9 @@ struct ContentView: View {
     private var aiBottomClearance: CGFloat {
         switch activeScreen {
         case .expenses, .plans:
-            return MilliSpacing.bottomNavHeight + 52
+            return MilliSpacing.bottomNavHeight + 20
         default:
-            return MilliSpacing.bottomNavHeight + 2
+            return MilliSpacing.bottomNavHeight - 34
         }
     }
 
