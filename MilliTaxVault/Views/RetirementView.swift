@@ -676,12 +676,12 @@ private struct MilliRetirementOnboardingSheet: View {
 
     @State private var step = 1
     @State private var planType = "Roth IRA"
-    @State private var fullName = "Alex Mercer"
-    @State private var dob = "1994-06-15"
-    @State private var ssn = "•••-••-8492"
-    @State private var annual1099Income = "75000"
+    @State private var fullName = ""
+    @State private var dob = ""
+    @State private var ssn = ""
+    @State private var annual1099Income = ""
     @State private var contributionPercent: Double = 15
-    @State private var beneficiaryName = "Sarah Mercer"
+    @State private var beneficiaryName = ""
     @State private var relationship = "Spouse"
 
     var body: some View {
