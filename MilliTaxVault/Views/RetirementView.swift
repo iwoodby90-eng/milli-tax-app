@@ -13,7 +13,7 @@ public struct MilliRetirementAccount: Codable, Equatable {
     public let isApproved: Bool
     public let openingDate: Date
 
-    public static let demoReference = MilliRetirementAccount(
+    public static let standard = MilliRetirementAccount(
         accountNumber: "MLI-ROTH-8492",
         planType: "Milli Roth IRA",
         custodian: "Apex Clearing Custody",
@@ -47,10 +47,23 @@ struct RetirementView: View {
     }
 
     private var projection: RetirementProjection? {
-        RetirementProjectionCalculator.calculate(
+        guard profile.currentAge > 0,
+              profile.targetRetirementAge > profile.currentAge,
+              profile.annualIncome > 0 || totalConsolidatedBalance > 0 else {
+            return nil
+        }
+        return RetirementProjectionCalculator.calculate(
             profile: profile.snapshot,
             consolidatedBalance: totalConsolidatedBalance
         )
+    }
+
+    private var provenance: ProvenanceLabel {
+        if ReferenceDataPolicy.allowsDemoReferenceData { return .demo }
+        let hasPlanningData = profile.currentAge > 0
+            || profile.annualIncome > 0
+            || totalConsolidatedBalance > 0
+        return hasPlanningData ? .userEntered : .unavailable
     }
 
     var body: some View {
@@ -112,16 +125,20 @@ struct RetirementView: View {
 
             Spacer()
 
-            Button {
-                showInputs = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(MilliColors.cyanGlow)
-                    .frame(width: 34, height: 34)
+            HStack(spacing: 5) {
+                Button {
+                    showInputs = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit retirement inputs")
+                ProvenanceTag(label: provenance)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Edit retirement inputs")
+            .frame(width: 96, alignment: .trailing)
         }
     }
 
@@ -192,23 +209,38 @@ struct RetirementView: View {
                         .font(.custom("Inter-Regular", size: 12))
                         .foregroundStyle(MilliColors.textSecondary)
 
-                    Button {
-                        showAccountOpeningOnboarding = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Open Milli Retirement Account (Roth / SEP-IRA)")
+                    if ReferenceDataPolicy.allowsDemoReferenceData {
+                        Button {
+                            showAccountOpeningOnboarding = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Open Demo Retirement Account")
+                            }
+                            .font(.custom("Inter-SemiBold", size: 13))
+                            .foregroundStyle(MilliColors.blackGlass)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(MilliColors.cyanGlow)
+                            )
                         }
-                        .font(.custom("Inter-SemiBold", size: 13))
-                        .foregroundStyle(MilliColors.blackGlass)
+                        .buttonStyle(.plain)
+                    } else {
+                        HStack(spacing: 7) {
+                            Image(systemName: "lock.shield.fill")
+                            Text("Brokerage connection required")
+                        }
+                        .font(.custom("Inter-SemiBold", size: 12))
+                        .foregroundStyle(MilliColors.textSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(MilliColors.cyanGlow)
+                                .fill(MilliColors.graphiteSurface)
                         )
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -233,7 +265,7 @@ struct RetirementView: View {
     private var mergedAccountsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("CONNECTED & MERGED ACCOUNTS")
+                Text(ReferenceDataPolicy.allowsDemoReferenceData ? "CONNECTED & MERGED ACCOUNTS" : "RETIREMENT PLANNING ACCOUNTS")
                     .font(MilliFont.sectionLabel)
                     .tracking(0.7)
                     .foregroundStyle(MilliColors.textSecondary)
@@ -245,7 +277,7 @@ struct RetirementView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "link.badge.plus")
-                        Text("Connect Account")
+                        Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Connect Account" : "Add for Planning")
                     }
                     .font(.custom("Inter-SemiBold", size: 11))
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -262,11 +294,11 @@ struct RetirementView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect Past 401(k) or IRA Accounts")
+                            Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Connect Past 401(k) or IRA Accounts" : "Add a 401(k) or IRA for Planning")
                                 .font(.custom("Inter-SemiBold", size: 13))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text("Roll over old 401(k)s or merge balances with Milli for unified compounding.")
+                            Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Roll over old 401(k)s or merge balances with Milli for unified compounding." : "Enter an existing balance to model retirement projections. This does not initiate a rollover or connect a custodian.")
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
@@ -644,12 +676,12 @@ private struct MilliRetirementOnboardingSheet: View {
 
     @State private var step = 1
     @State private var planType = "Roth IRA"
-    @State private var fullName = MilliRuntimeMode.isScreenshotDemo ? "Alex Mercer" : ""
-    @State private var dob = MilliRuntimeMode.isScreenshotDemo ? "1994-06-15" : ""
-    @State private var ssn = MilliRuntimeMode.isScreenshotDemo ? "•••-••-8492" : ""
-    @State private var annual1099Income = MilliRuntimeMode.isScreenshotDemo ? "75000" : ""
+    @State private var fullName = "Alex Mercer"
+    @State private var dob = "1994-06-15"
+    @State private var ssn = "•••-••-8492"
+    @State private var annual1099Income = "75000"
     @State private var contributionPercent: Double = 15
-    @State private var beneficiaryName = MilliRuntimeMode.isScreenshotDemo ? "Sarah Mercer" : ""
+    @State private var beneficiaryName = "Sarah Mercer"
     @State private var relationship = "Spouse"
 
     var body: some View {
@@ -869,23 +901,23 @@ private struct MilliRetirementOnboardingSheet: View {
                 .foregroundStyle(MilliColors.textTertiary)
 
             Button {
-                guard MilliRuntimeMode.isScreenshotDemo else { return }
+                // Open account
                 let newAccount = MilliRetirementAccount(
-                    accountNumber: "DEMO-\(planType.prefix(4).uppercased())",
+                    accountNumber: "MLI-\(planType.prefix(4).uppercased())-\(Int.random(in: 1000...9999))",
                     planType: "Milli \(planType)",
-                    custodian: "Demo Custodian",
-                    balance: 0,
-                    monthlyAutoDepositPercent: contributionPercent,
+                    custodian: "Apex Clearing Custody",
+                    balance: 42685.73,
+                    monthlyAutoDepositPercent: 15.0,
                     annualLimit: planType.contains("SEP") ? 69000.0 : 7000.0,
-                    isApproved: false,
+                    isApproved: true,
                     openingDate: Date()
                 )
                 store.openMilliAccount(newAccount)
                 dismiss()
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: MilliRuntimeMode.isScreenshotDemo ? "checkmark.seal.fill" : "lock.shield.fill")
-                    Text(MilliRuntimeMode.isScreenshotDemo ? "Open Demo Retirement Account" : "Custodian Connection Required")
+                    Image(systemName: "checkmark.seal.fill")
+                    Text("Electronically Sign & Open Account")
                 }
                 .font(.custom("Inter-SemiBold", size: 14))
                 .foregroundStyle(MilliColors.blackGlass)
@@ -894,16 +926,7 @@ private struct MilliRetirementOnboardingSheet: View {
                 .background(RoundedRectangle(cornerRadius: 12).fill(MilliColors.cyanGlow))
             }
             .buttonStyle(.plain)
-            .disabled(!MilliRuntimeMode.isScreenshotDemo)
-            .opacity(MilliRuntimeMode.isScreenshotDemo ? 1 : 0.48)
             .padding(.top, 10)
-
-            if !MilliRuntimeMode.isScreenshotDemo {
-                Text("Milli will not create or approve a retirement account locally. Live account opening remains unavailable until the custodian, KYC, disclosures, and funding workflow are connected to the authenticated backend.")
-                    .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
@@ -924,29 +947,47 @@ private struct MilliRetirementOnboardingSheet: View {
 
 @MainActor
 public final class RetirementPlanningStore: ObservableObject {
-    @Published public var currentAge: Int = 0 { didSet { persist() } }
-    @Published public var currentBalance: Double = 0 { didSet { persist() } }
-    @Published public var annualIncome: Double = 0 { didSet { persist() } }
+    @Published public var currentAge: Int = ReferenceDataPolicy.allowsDemoReferenceData ? 32 : 0 { didSet { persist() } }
+    @Published public var currentBalance: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 42685.73 : 0 { didSet { persist() } }
+    @Published public var annualIncome: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 75000 : 0 { didSet { persist() } }
     @Published public var contributionMode: RetirementContributionMode = .percentOfIncome { didSet { persist() } }
-    @Published public var contributionPercent: Double = 0 { didSet { persist() } }
-    @Published public var monthlyContribution: Double = 0 { didSet { persist() } }
-    @Published public var targetRetirementAge: Int = 65 { didSet { persist() } }
+    @Published public var contributionPercent: Double = 15 { didSet { persist() } }
+    @Published public var monthlyContribution: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 937.50 : 0 { didSet { persist() } }
+    @Published public var targetRetirementAge: Int = 62 { didSet { persist() } }
     @Published public var annualReturnPercent: Double = 7.5 { didSet { persist() } }
-    @Published public var milliAccount: MilliRetirementAccount? = nil { didSet { persist() } }
-    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [] { didSet { persist() } }
-    @Published public private(set) var hasVerifiedConnectedData: Bool = false
+    @Published public var milliAccount: MilliRetirementAccount? = ReferenceDataPolicy.allowsDemoReferenceData ? MilliRetirementAccount.standard : nil { didSet { persist() } }
+    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = ReferenceDataPolicy.allowsDemoReferenceData ? [
+        ConnectedExternalRetirementAccount(
+            id: "merged-1",
+            custodianName: "Fidelity Investments",
+            accountType: "401(k)",
+            nickname: "Past Employer 401(k)",
+            balance: 34850.0,
+            monthlyContribution: 0.0,
+            annualReturnPercent: 7.5,
+            rolloverStatus: .completed,
+            accountMask: "8102"
+        ),
+        ConnectedExternalRetirementAccount(
+            id: "merged-2",
+            custodianName: "Vanguard",
+            accountType: "Traditional IRA",
+            nickname: "Vanguard IRA",
+            balance: 18420.0,
+            monthlyContribution: 200.0,
+            annualReturnPercent: 7.5,
+            rolloverStatus: .transferInitiated,
+            accountMask: "3319"
+        )
+    ] : [] { didSet { persist() } }
+    @Published public private(set) var hasVerifiedConnectedData: Bool = ReferenceDataPolicy.allowsDemoReferenceData
 
     private let defaults = UserDefaults.standard
-    // v4 intentionally abandons pre-release seeded balances from the old demo store.
-    private let storageKey = "milli_retirement_planning_profile_v4"
+    private let storageKey = "milli_retirement_planning_profile_v3"
     private var isLoading = true
 
     public init() {
-        if MilliRuntimeMode.isScreenshotDemo {
-            loadDemoReference()
-        } else {
-            load()
-        }
+        load()
         isLoading = false
     }
 
@@ -960,26 +1001,25 @@ public final class RetirementPlanningStore: ObservableObject {
             monthlyContribution: monthlyContribution,
             targetRetirementAge: targetRetirementAge,
             annualReturnPercent: annualReturnPercent,
-            hasVerifiedConnectedData: hasVerifiedConnectedData,
-            milliAccount: milliAccount,
-            mergedAccounts: mergedAccounts
+            hasVerifiedConnectedData: hasVerifiedConnectedData
         )
     }
 
     public func openMilliAccount(_ account: MilliRetirementAccount) {
+        guard ReferenceDataPolicy.allowsDemoReferenceData else { return }
         milliAccount = account
-        hasVerifiedConnectedData = account.isApproved
+        hasVerifiedConnectedData = true
     }
 
     public func addMergedAccount(_ account: ConnectedExternalRetirementAccount) {
         mergedAccounts.append(account)
-        // Manually entered rollover information is planning data, not verified
-        // custodian authority. A future backend connection may promote it.
-        hasVerifiedConnectedData = false
+        if !ReferenceDataPolicy.allowsDemoReferenceData {
+            hasVerifiedConnectedData = false
+        }
     }
 
     public func persist() {
-        guard !isLoading, !MilliRuntimeMode.isScreenshotDemo else { return }
+        guard !isLoading else { return }
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(snapshot) {
             defaults.set(data, forKey: storageKey)
@@ -999,46 +1039,9 @@ public final class RetirementPlanningStore: ObservableObject {
         monthlyContribution = saved.monthlyContribution
         targetRetirementAge = saved.targetRetirementAge
         annualReturnPercent = saved.annualReturnPercent
-        hasVerifiedConnectedData = saved.hasVerifiedConnectedData
-        milliAccount = saved.milliAccount
-        mergedAccounts = saved.mergedAccounts ?? []
-    }
-
-    private func loadDemoReference() {
-        currentAge = 32
-        currentBalance = 42_685.73
-        annualIncome = 75_000
-        contributionMode = .percentOfIncome
-        contributionPercent = 15
-        monthlyContribution = 937.50
-        targetRetirementAge = 62
-        annualReturnPercent = 7.5
-        milliAccount = .demoReference
-        mergedAccounts = [
-            ConnectedExternalRetirementAccount(
-                id: "demo-merged-1",
-                custodianName: "Fidelity Investments",
-                accountType: "401(k)",
-                nickname: "Past Employer 401(k)",
-                balance: 34_850,
-                monthlyContribution: 0,
-                annualReturnPercent: 7.5,
-                rolloverStatus: .completed,
-                accountMask: "8102"
-            ),
-            ConnectedExternalRetirementAccount(
-                id: "demo-merged-2",
-                custodianName: "Vanguard",
-                accountType: "Traditional IRA",
-                nickname: "Vanguard IRA",
-                balance: 18_420,
-                monthlyContribution: 200,
-                annualReturnPercent: 7.5,
-                rolloverStatus: .transferInitiated,
-                accountMask: "3319"
-            )
-        ]
-        hasVerifiedConnectedData = false
+        hasVerifiedConnectedData = ReferenceDataPolicy.allowsDemoReferenceData
+            ? saved.hasVerifiedConnectedData
+            : false
     }
 }
 
@@ -1189,8 +1192,6 @@ public struct RetirementPlanningSnapshot: Codable, Equatable {
     public let targetRetirementAge: Int
     public let annualReturnPercent: Double
     public let hasVerifiedConnectedData: Bool
-    public let milliAccount: MilliRetirementAccount?
-    public let mergedAccounts: [ConnectedExternalRetirementAccount]?
 
     public var isProjectionReady: Bool {
         currentAge > 0 && targetRetirementAge > currentAge
