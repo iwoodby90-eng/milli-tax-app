@@ -8,19 +8,20 @@ struct QuarterlyTaxesView: View {
     var onBack: () -> Void = {}
 
     private let estimate = QuarterlyTaxDisplayModel.reference
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                if MilliRuntimeMode.isScreenshotDemo {
+                if showsReferenceData {
                     estimateHero
                     breakdown
                     projection
-                    paymentAction
                 } else {
                     unavailableState
                 }
+                paymentAction
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -48,16 +49,36 @@ struct QuarterlyTaxesView: View {
 
             Spacer()
 
-            if MilliRuntimeMode.isScreenshotDemo {
-                ProvenanceTag(label: .demo)
-                    .frame(width: 70, alignment: .trailing)
-            } else {
-                Text("UNAVAILABLE")
-                    .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.textTertiary)
-                    .frame(width: 70, alignment: .trailing)
-            }
+            ProvenanceTag(label: ReferenceDataPolicy.provenance)
+                .frame(width: 70, alignment: .trailing)
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MilliColors.cyanGlow.opacity(0.07))
+                    .frame(width: 58, height: 58)
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Your quarterly estimate is not available yet")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text("Complete your tax profile and connect verified income data. Milli will calculate the estimate from authenticated records instead of displaying reference numbers.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 18)
     }
 
     private var estimateHero: some View {
@@ -178,28 +199,6 @@ struct QuarterlyTaxesView: View {
                 .foregroundStyle(MilliColors.textTertiary)
                 .multilineTextAlignment(.center)
         }
-    }
-
-    private var unavailableState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "building.columns.circle")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
-
-            Text("No verified quarterly estimate yet")
-                .font(MilliFont.headlineSmall)
-                .foregroundStyle(MilliColors.textPrimary)
-
-            Text("Connect verified income, expenses, mileage, and tax-profile data before Milli presents a quarterly payment estimate.")
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-                .multilineTextAlignment(.center)
-
-            ProvenanceTag(label: .unavailable)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .milliCard(padding: 16)
     }
 
     private func currency(_ value: Double) -> String {
