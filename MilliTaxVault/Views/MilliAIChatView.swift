@@ -12,17 +12,19 @@ struct MilliAIChatView: View {
         let buttonLabel: String?
     }
 
+    // The transcript starts with the greeting only. Figures come from the
+    // user's own connected data once an assistant response is grounded in it.
     let messages: [ChatMessage] = [
-        ChatMessage(isAI: true, text: "Hi! I'm Milli AI. I'm here to help you save on taxes and build wealth. What would you like to know?", buttonLabel: nil),
-        ChatMessage(isAI: false, text: "How much will I owe in taxes this year?", buttonLabel: nil),
-        ChatMessage(isAI: true, text: "Based on your income so far, I estimate you'll owe $1,247 for Q2 taxes.", buttonLabel: "View Tax Estimate"),
-        ChatMessage(isAI: false, text: "How can I reduce my taxes?", buttonLabel: nil),
-        ChatMessage(isAI: true, text: "Great question. You could save an estimated $420 by tracking more deductions.", buttonLabel: "Show Deductions"),
+        ChatMessage(
+            isAI: true,
+            text: "Hi! I'm Milli AI. Connect your bank and I'll answer questions about your taxes, deductions and payouts using your real numbers.",
+            buttonLabel: nil
+        )
     ]
 
     var body: some View {
         ZStack {
-            MilliColors.obsidian.ignoresSafeArea()
+            MilliAmbientBackground()
             VStack(spacing: 0) {
                 // Header
                 HStack {

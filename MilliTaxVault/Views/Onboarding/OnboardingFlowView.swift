@@ -376,7 +376,7 @@ struct OnboardingFlowView: View {
 
     private var setupBackground: some View {
         ZStack {
-            MilliColors.background.ignoresSafeArea()
+            MilliAmbientBackground()
             RadialGradient(
                 colors: [MilliColors.cyanGlow.opacity(0.05), .clear],
                 center: .top,

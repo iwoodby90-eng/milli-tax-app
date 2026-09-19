@@ -15,15 +15,20 @@ struct PayoutsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 12) {
                 header
+                MilliAccountCard(
+                    institution: bankService.connectedBank?.institutionName,
+                    mask: bankService.connectedBank?.accountMask,
+                    isLive: bankService.connectedBank?.isLive ?? false
+                )
+                summaryStrip
                 bankConnectionCard
-                filterControl
                 payoutList
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(item: $selectedPayout) { payout in
             // LAUNCH P0: legacy cached records render through the state
             // contract as CACHED LIVE with no authority claimed.
@@ -45,19 +50,101 @@ struct PayoutsView: View {
 
     // MARK: - Header
     private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Payouts")
+                    .font(MilliFont.screenTitle)
+                    .foregroundStyle(MilliColors.textPrimary)
+
+                Text("Track your gig earnings in one place.")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+
+            Spacer(minLength: 12)
+
+            filterMenu
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: - Filter Menu
+    private var filterMenu: some View {
+        Menu {
+            Picker("Range", selection: $selectedFilter) {
+                ForEach(PayoutFilter.allCases, id: \.self) { filter in
+                    Text(filter.title).tag(filter)
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(selectedFilter.title)
+                    .font(.custom("Inter-SemiBold", size: 12, relativeTo: .caption))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+            }
+            .foregroundStyle(MilliColors.textPrimary)
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .background(
+                Capsule()
+                    .fill(MilliColors.graphiteSurface)
+                    .overlay(Capsule().stroke(MilliColors.focusedBorder, lineWidth: 0.8))
+            )
+        }
+        .accessibilityLabel(Text("Payout range"))
+    }
+
+    // MARK: - Summary Strip
+    private var summaryStrip: some View {
+        HStack(spacing: 0) {
+            summaryTile("TOTAL PAYOUTS", currency(filteredTotal), MilliColors.textPrimary)
+            summaryDivider
+            summaryTile("PAYOUTS", "\(filteredPayouts.count)", MilliColors.textPrimary)
+            summaryDivider
+            summaryTile("PENDING", "\(pendingCount)", pendingCount > 0 ? MilliColors.warning : MilliColors.textPrimary)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                .fill(MilliColors.graphiteSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
+                        .stroke(MilliColors.focusedBorder, lineWidth: 0.75)
+                }
+        )
+    }
+
+    private var summaryDivider: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.06))
+            .frame(width: 1, height: 26)
+    }
+
+    private func summaryTile(_ label: String, _ value: String, _ tint: Color) -> some View {
         VStack(spacing: 4) {
-            Text("Payouts")
-                .font(MilliFont.screenTitle)
-                .foregroundStyle(MilliColors.textPrimary)
-            
-            Text("Total \(currency(bankService.totalPayoutsAmount))")
-                .font(MilliFont.bodyMedium)
+            Text(label)
+                .font(.custom("Inter-SemiBold", size: 9, relativeTo: .caption2))
+                .tracking(0.6)
+                .foregroundStyle(MilliColors.textTertiary)
+
+            Text(value)
+                .font(MilliFont.numericMedium)
                 .monospacedDigit()
-                .foregroundStyle(MilliColors.textSecondary)
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(MilliCardBackground(showGlow: true))
+    }
+
+    private var filteredTotal: Double {
+        filteredPayouts.reduce(0) { $0 + $1.grossAmount }
+    }
+
+    private var pendingCount: Int {
+        bankService.payouts.filter(\.isPending).count
     }
 
     // MARK: - Bank Connection Card
@@ -174,7 +261,7 @@ struct PayoutsView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect Bank via Stripe or Plaid")
+                            Text("Connect Bank via Plaid")
                                 .font(.custom("Sora-SemiBold", size: 14))
                                 .foregroundStyle(MilliColors.textPrimary)
 
@@ -215,40 +302,6 @@ struct PayoutsView: View {
                 )
             }
         }
-    }
-
-    // MARK: - Filter Control
-    private var filterControl: some View {
-        HStack(spacing: 4) {
-            ForEach(PayoutFilter.allCases, id: \.self) { filter in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        selectedFilter = filter
-                    }
-                } label: {
-                    Text(filter.title)
-                        .font(MilliFont.labelLarge)
-                        .foregroundStyle(selectedFilter == filter ? MilliColors.blackGlass : MilliColors.cyanGlow.opacity(0.84))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                        .background(
-                            Capsule()
-                                .fill(selectedFilter == filter ? MilliColors.cyanGlow : Color.clear)
-                                .shadow(
-                                    color: selectedFilter == filter ? MilliColors.cyanGlow.opacity(0.25) : .clear,
-                                    radius: 7
-                                )
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(3)
-        .background(
-            Capsule()
-                .fill(MilliColors.cardBackground)
-                .overlay(Capsule().stroke(Color.white.opacity(0.05), lineWidth: 0.7))
-        )
     }
 
     // MARK: - Payout List
@@ -440,7 +493,7 @@ struct FinancialReceiptSheet: View {
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Financial Receipt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -543,7 +596,7 @@ private struct BankConnectionSheet: View {
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Connect Bank Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -770,7 +823,7 @@ private struct GigPlatformManagerSheet: View {
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Gig Platform Connections")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

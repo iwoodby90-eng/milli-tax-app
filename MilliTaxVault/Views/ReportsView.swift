@@ -13,7 +13,16 @@ struct ReportsView: View {
     @State private var selectedTab = ReportTab.deductions
     @State private var sharePayload: ReportSharePayload?
 
-    private let report = ReportDataModel.reference
+    @StateObject private var mileageLog = MileageLogStore()
+    @ObservedObject private var expenseStore = ExpenseStore.shared
+
+    private var report: ReportDataModel {
+        ReportDataModel.live(
+            expenses: expenseStore.expenses,
+            trips: mileageLog.records,
+            snapshot: MilliFinancialSnapshot.current()
+        )
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -27,7 +36,7 @@ struct ReportsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(item: $sharePayload) { payload in
             ReportActivityView(items: [payload.url])
                 .ignoresSafeArea()
@@ -129,14 +138,6 @@ struct ReportsView: View {
                 Chart(report.months) { point in
                     LineMark(
                         x: .value("Month", point.month),
-                        y: .value("Income", point.income)
-                    )
-                    .foregroundStyle(MilliColors.silverBright)
-                    .lineStyle(StrokeStyle(lineWidth: 1.6))
-                    .interpolationMethod(.catmullRom)
-
-                    LineMark(
-                        x: .value("Month", point.month),
                         y: .value("Deductions", point.deductions)
                     )
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -155,6 +156,13 @@ struct ReportsView: View {
                     }
                 }
                 .frame(height: 180)
+                .overlay {
+                    if report.months.isEmpty {
+                        Text("Activity appears as expenses and trips are recorded")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                    }
+                }
             }
             .milliCard(padding: 14)
         }
@@ -249,6 +257,13 @@ struct ReportsView: View {
                 }
             }
             .frame(height: 170)
+            .overlay {
+                if report.months.isEmpty {
+                    Text("No deductions recorded yet")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
+            }
         }
         .milliCard(padding: 14)
     }
@@ -257,6 +272,12 @@ struct ReportsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("TOP DEDUCTION CATEGORIES")
                 .sectionHeaderStyle()
+
+            if report.categories.isEmpty {
+                Text("Log an expense and its category breakdown appears here.")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
 
             VStack(spacing: 0) {
                 ForEach(Array(report.categories.enumerated()), id: \.element.id) { index, category in
@@ -309,6 +330,12 @@ struct ReportsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("RECENT BUSINESS TRIPS")
                     .sectionHeaderStyle()
+
+                if report.trips.isEmpty {
+                    Text("Track or log a drive and it appears here with its deduction.")
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+                }
 
                 VStack(spacing: 0) {
                     ForEach(Array(report.trips.enumerated()), id: \.element.id) { index, trip in
@@ -461,33 +488,86 @@ private struct ReportDataModel {
         String(Calendar.current.component(.year, from: Date()))
     }
 
-    static let reference = ReportDataModel(
-        grossIncome: 10_011.16,
-        totalDeductions: 2_843.17,
-        businessMiles: 4_112,
-        mileageDeduction: 2_218.42,
-        estimatedTaxSavings: 894.73,
-        months: [
-            .init(month: "Jan", income: 1_420, deductions: 410),
-            .init(month: "Feb", income: 1_885, deductions: 575),
-            .init(month: "Mar", income: 2_260, deductions: 720),
-            .init(month: "Apr", income: 2_715, deductions: 940),
-            .init(month: "May", income: 1_731.16, deductions: 198.17)
-        ],
-        categories: [
-            .init(name: "Fuel", amount: 1_286.45, share: 0.452, color: MilliColors.cyanGlow, icon: "fuelpump.fill"),
-            .init(name: "Car Maintenance", amount: 642.17, share: 0.226, color: MilliColors.deepCyan, icon: "wrench.and.screwdriver.fill"),
-            .init(name: "Insurance", amount: 389.45, share: 0.137, color: MilliColors.deepCyan, icon: "shield.fill"),
-            .init(name: "Tolls & Parking", amount: 246.30, share: 0.086, color: MilliColors.warning, icon: "parkingsign.circle.fill"),
-            .init(name: "Other", amount: 278.80, share: 0.099, color: MilliColors.textSecondary, icon: "ellipsis.circle.fill")
-        ],
-        trips: [
-            .init(platform: "Spark Driver", dateLabel: "Today • 7:18 AM", miles: 12.4, deduction: 6.55),
-            .init(platform: "DoorDash", dateLabel: "Yesterday • 6:42 PM", miles: 8.7, deduction: 4.59),
-            .init(platform: "Uber", dateLabel: "Yesterday • 1:10 PM", miles: 18.2, deduction: 9.61),
-            .init(platform: "Instacart", dateLabel: "2 days ago", miles: 14.6, deduction: 7.71)
+    /// Everything here comes from verified payouts, user-entered expenses and
+    /// recorded trips. Nothing is estimated on the user's behalf.
+    @MainActor
+    static func live(
+        expenses: [ExpenseItem],
+        trips: [MileageTripRecord],
+        snapshot: MilliFinancialSnapshot
+    ) -> ReportDataModel {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: snapshot.referenceDate)
+        let yearExpenses = expenses.filter {
+            $0.isDeductible && calendar.component(.year, from: $0.date) == year
+        }
+        let yearTrips = trips.filter { calendar.component(.year, from: $0.startedAt) == year }
+
+        let expenseTotal = yearExpenses.reduce(0) { $0 + $1.amount }
+        let mileageDeduction = yearTrips.reduce(0) { $0 + $1.deductionAmount }
+        let businessMiles = yearTrips.reduce(0) { $0 + $1.distanceMiles }
+        let deductions = expenseTotal + mileageDeduction
+        let grossIncome = snapshot.grossPayouts ?? 0
+        let savings = (snapshot.effectiveRate).map { deductions * $0 } ?? 0
+
+        let monthFormatter = DateFormatter()
+        monthFormatter.dateFormat = "MMM"
+        var monthlyExpenses: [Int: Double] = [:]
+        for expense in yearExpenses {
+            monthlyExpenses[calendar.component(.month, from: expense.date), default: 0] += expense.amount
+        }
+        let months: [ReportMonth] = monthlyExpenses.keys.sorted().compactMap { month in
+            guard let date = calendar.date(from: DateComponents(year: year, month: month, day: 1)) else { return nil }
+            return ReportMonth(
+                month: monthFormatter.string(from: date),
+                income: 0,
+                deductions: monthlyExpenses[month] ?? 0
+            )
+        }
+
+        let palette: [Color] = [
+            MilliColors.cyanGlow, MilliColors.deepCyan, MilliColors.silver,
+            MilliColors.warning, MilliColors.textSecondary
         ]
-    )
+        var byCategory: [ExpenseCategory: Double] = [:]
+        for expense in yearExpenses {
+            byCategory[expense.category, default: 0] += expense.amount
+        }
+        let categories: [ReportCategory] = byCategory
+            .sorted { $0.value > $1.value }
+            .enumerated()
+            .map { index, entry in
+                ReportCategory(
+                    name: entry.key.title,
+                    amount: entry.value,
+                    share: expenseTotal > 0 ? entry.value / expenseTotal : 0,
+                    color: palette[index % palette.count],
+                    icon: entry.key.icon
+                )
+            }
+
+        let tripFormatter = DateFormatter()
+        tripFormatter.dateFormat = "MMM d • h:mm a"
+        let tripRows: [BusinessTrip] = yearTrips.prefix(12).map { trip in
+            BusinessTrip(
+                platform: trip.platform ?? trip.businessPurpose ?? "Business trip",
+                dateLabel: tripFormatter.string(from: trip.startedAt),
+                miles: trip.distanceMiles,
+                deduction: trip.deductionAmount
+            )
+        }
+
+        return ReportDataModel(
+            grossIncome: grossIncome,
+            totalDeductions: deductions,
+            businessMiles: businessMiles,
+            mileageDeduction: mileageDeduction,
+            estimatedTaxSavings: savings,
+            months: months,
+            categories: categories,
+            trips: tripRows
+        )
+    }
 }
 
 private struct ReportSharePayload: Identifiable {

@@ -74,6 +74,8 @@ enum AutopilotAllocationEngine {
 struct AutopilotSettingsView: View {
     var onBack: () -> Void = {}
 
+    @StateObject private var bankService = BankConnectionService.shared
+
     @AppStorage("milliAutopilotRetirementEnabled") private var retirementEnabled = true
     @AppStorage("milliAutopilotInvestingEnabled") private var investingEnabled = false
     @AppStorage("milliAutopilotSavingsEnabled") private var savingsEnabled = true
@@ -83,7 +85,11 @@ struct AutopilotSettingsView: View {
     @AppStorage("milliAutopilotSavingsPercent") private var savingsPercent = 3.0
 
     private let taxPercent = 23.0
-    private let examplePayout = 312.64
+    /// Preview basis: the user's most recent verified payout when one exists,
+    /// otherwise a round illustrative amount labelled as an example.
+    private var previewPayout: Double {
+        bankService.payouts.first?.grossAmount ?? 100
+    }
 
     private var allocationSettings: AutopilotAllocationSettings {
         AutopilotAllocationSettings(
@@ -98,7 +104,7 @@ struct AutopilotSettingsView: View {
     }
 
     private var allocation: AutopilotAllocationResult {
-        AutopilotAllocationEngine.allocate(payout: examplePayout, settings: allocationSettings)
+        AutopilotAllocationEngine.allocate(payout: previewPayout, settings: allocationSettings)
     }
 
     private var optionalAllocationTotal: Double {
@@ -121,7 +127,7 @@ struct AutopilotSettingsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
     }
 
     private var header: some View {
@@ -332,12 +338,12 @@ struct AutopilotSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("PAYOUT PREVIEW")
                         .sectionHeaderStyle()
-                    Text("Example payout")
+                    Text(bankService.payouts.isEmpty ? "Example payout" : "Your latest payout")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                 }
                 Spacer()
-                Text(examplePayout.formatted(.currency(code: "USD")))
+                Text(previewPayout.formatted(.currency(code: "USD")))
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)

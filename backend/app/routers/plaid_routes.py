@@ -161,6 +161,7 @@ def _sync_accounts(client, plaid_item_uuid, user_id, access_token) -> int:
                             current_balance = excluded.current_balance,
                             balance_as_of = excluded.balance_as_of,
                             updated_at = now()
+                      where plaid_accounts.user_id = excluded.user_id
                     """,
                     (
                         uuid.uuid4(),
@@ -300,14 +301,18 @@ def sync_transactions(user_id: uuid.UUID = Depends(require_user)) -> dict:
     with db.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "select id, access_token from plaid_items where user_id = %s and status = 'active'",
+                """
+                select id, access_token, transactions_cursor
+                  from plaid_items
+                 where user_id = %s and status = 'active'
+                """,
                 (user_id,),
             )
             items = cur.fetchall()
 
     inserted = 0
-    for _item_uuid, access_token in items:
-        cursor_value = None
+    for item_uuid, access_token, stored_cursor in items:
+        cursor_value = stored_cursor
         has_more = True
         while has_more:
             payload = {"access_token": access_token}
@@ -315,10 +320,48 @@ def sync_transactions(user_id: uuid.UUID = Depends(require_user)) -> dict:
                 payload["cursor"] = cursor_value
             response = client.transactions_sync(TransactionsSyncRequest(**payload)).to_dict()
             has_more = response.get("has_more", False)
-            cursor_value = response.get("next_cursor")
+            next_cursor = response.get("next_cursor")
             added = list(response.get("added", [])) + list(response.get("modified", []))
             inserted += _store_transactions(user_id, added)
+            _remove_transactions(user_id, response.get("removed", []))
+            if not next_cursor or next_cursor == cursor_value:
+                break
+            cursor_value = next_cursor
+        _persist_cursor(user_id, item_uuid, cursor_value)
     return {"transactions_upserted": inserted, "items": len(items)}
+
+
+def _persist_cursor(user_id, item_uuid, cursor_value: str | None) -> None:
+    """Store Plaid's cursor so the next sync is incremental, not a full replay."""
+    if not cursor_value:
+        return
+    with db.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                update plaid_items
+                   set transactions_cursor = %s,
+                       last_synced_at = now(),
+                       updated_at = now()
+                 where id = %s and user_id = %s
+                """,
+                (cursor_value, item_uuid, user_id),
+            )
+        conn.commit()
+
+
+def _remove_transactions(user_id, removed) -> None:
+    """Delete transactions Plaid has retracted, scoped to their owner."""
+    ids = [txn["transaction_id"] for txn in removed if txn.get("transaction_id")]
+    if not ids:
+        return
+    with db.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "delete from plaid_transactions where user_id = %s and transaction_id = any(%s)",
+                (user_id, ids),
+            )
+        conn.commit()
 
 
 def _store_transactions(user_id, transactions) -> int:
@@ -347,6 +390,7 @@ def _store_transactions(user_id, transactions) -> int:
                             name = excluded.name,
                             merchant_name = excluded.merchant_name,
                             updated_at = now()
+                      where plaid_transactions.user_id = excluded.user_id
                     """,
                     (
                         uuid.uuid4(),

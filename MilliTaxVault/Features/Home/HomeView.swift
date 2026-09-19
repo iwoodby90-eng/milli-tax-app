@@ -10,19 +10,23 @@ struct HomeView: View {
     var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                headerSection
-                availableHero
-                latestPayout
-                metricGrid
-                aiInsight
+        ZStack {
+            MilliAmbientBackground()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 10) {
+                    headerSection
+                    companionRow
+                    availableHero
+                    latestPayout
+                    metricGrid
+                    aiInsight
+                }
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.top, 8)
+                .padding(.bottom, MilliSpacing.bottomContentClearance)
             }
-            .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, 8)
-            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
         .sheet(isPresented: $showNotifications) {
             MilliDetailSheet(title: "Notifications")
                 .presentationDetents([.medium, .large])
@@ -54,6 +58,18 @@ struct HomeView: View {
         .frame(height: 46)
     }
 
+    // MARK: Companion
+
+    private var companionRow: some View {
+        MilliCompanionBanner(
+            title: "Milli AI",
+            message: viewModel.provenance == .unavailable
+                ? "Connect a bank and I'll start protecting your taxes automatically."
+                : "I'm tracking every payout and keeping your reserve on pace."
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // MARK: Available to Spend
 
     private var availableHero: some View {
@@ -70,7 +86,7 @@ struct HomeView: View {
             Text(viewModel.availableToSpend)
                 .font(MilliFont.heroBalance)
                 .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
+                .milliFigure(viewModel.availableToSpend)
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
@@ -240,7 +256,7 @@ struct HomeView: View {
                         Text(viewModel.taxVaultBalance)
                             .font(MilliFont.numericMedium)
                             .monospacedDigit()
-                            .foregroundStyle(MilliColors.textPrimary)
+                            .milliFigure(viewModel.taxVaultBalance)
                             .lineLimit(1)
                             .minimumScaleFactor(0.66)
                             .allowsTightening(true)
@@ -276,17 +292,19 @@ struct HomeView: View {
                     let score = viewModel.taxReadyScore
                     progressRing(
                         progress: score.map { CGFloat($0) / 100 } ?? 0,
-                        value: score.map(String.init) ?? "N/A",
+                        value: score.map(String.init) ?? MilliPlaceholder.value,
                         size: 44
                     )
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(score == nil ? "Unavailable" : "Calculated")
+                        Text(score == nil ? "Not calculated" : "Calculated")
                             .font(MilliFont.labelLarge)
                             .foregroundStyle(score == nil ? MilliColors.textTertiary : MilliColors.positive)
-                        Text(score == nil ? "Complete your tax profile\nto calculate this score" : "Based on verified\nfinancial data")
+                        Text(score == nil ? "Complete your tax profile" : "Based on verified data")
                             .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.textSecondary)
                             .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -306,7 +324,7 @@ struct HomeView: View {
                 Text(viewModel.quarterlyTaxes)
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                    .milliFigure(viewModel.quarterlyTaxes)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
                 HStack(spacing: 5) {
@@ -336,11 +354,11 @@ struct HomeView: View {
                 Text(viewModel.mileage)
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                    .milliFigure(viewModel.mileage)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 HStack {
-                    Text(viewModel.mileage == "Unavailable" ? "No tracked mileage yet" : "This quarter")
+                    Text(MilliPlaceholder.isPlaceholder(viewModel.mileage) ? "No tracked mileage yet" : "This quarter")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                     Spacer()

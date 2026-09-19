@@ -361,6 +361,6 @@ struct TaxProfileSetupView: View {
         onNext: {},
         onBack: {}
     )
-    .background(MilliColors.obsidian.ignoresSafeArea())
+    .background { MilliAmbientBackground() }
     .preferredColorScheme(.dark)
 }

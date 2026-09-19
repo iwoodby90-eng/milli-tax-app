@@ -43,9 +43,9 @@ struct MilliAIView: View {
             }
 
             composer
-                .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
+                .padding(.bottom, MilliSpacing.bottomNavHeight + 34)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .onAppear {
             if !UIAccessibility.isReduceMotionEnabled {
                 withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
@@ -175,7 +175,12 @@ struct MilliAIView: View {
     }
 
     private func aiPortrait(size: CGFloat, animated: Bool) -> some View {
-        MilliAICharacterView(size: size, animated: animated)
+        Image("milli-ai-robot")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .shadow(color: MilliColors.cyanGlow.opacity(0.3), radius: size * 0.16)
+            .accessibilityHidden(true)
     }
 
     private var composer: some View {

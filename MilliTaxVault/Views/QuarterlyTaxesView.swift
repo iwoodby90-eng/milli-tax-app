@@ -1,28 +1,38 @@
 import SwiftUI
 
 // MARK: - QuarterlyTaxesView
-// Native quarterly estimate breakdown and payment-readiness surface.
-// Dates and payment availability intentionally come from state rather than stale hard-coded tax dates.
+// Estimated-payment breakdown for the current federal schedule.
+//
+// Every figure comes from MilliFinancialSnapshot: the user's declared tax
+// profile through QuarterlyTaxEstimator for liability, their recorded
+// deductions, and the verified payout ledger for what is already reserved.
+// Without a tax profile the screen states what is missing instead of
+// presenting a sample estimate.
 
 struct QuarterlyTaxesView: View {
     var onBack: () -> Void = {}
 
-    private let estimate = QuarterlyTaxDisplayModel.reference
+    @StateObject private var bankService = BankConnectionService.shared
+
+    private var snapshot: MilliFinancialSnapshot { MilliFinancialSnapshot.current() }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                header
-                estimateHero
-                breakdown
-                projection
-                paymentAction
+        ZStack {
+            MilliAmbientBackground()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 12) {
+                    header
+                    estimateHero
+                    breakdown
+                    reserveProgress
+                    paymentAction
+                }
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.top, 6)
+                .padding(.bottom, MilliSpacing.bottomContentClearance)
             }
-            .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, 8)
-            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
     }
 
     private var header: some View {
@@ -35,6 +45,7 @@ struct QuarterlyTaxesView: View {
                     .background(Circle().fill(Color.white.opacity(0.035)))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Back")
 
             Spacer()
 
@@ -44,7 +55,7 @@ struct QuarterlyTaxesView: View {
 
             Spacer()
 
-            Text(estimate.periodLabel)
+            Text(snapshot.nextEstimatedPaymentPeriod ?? "")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textSecondary)
                 .frame(width: 70, alignment: .trailing)
@@ -52,34 +63,84 @@ struct QuarterlyTaxesView: View {
     }
 
     private var estimateHero: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("ESTIMATED TAXES")
-                .sectionHeaderStyle()
-            Text(currency(estimate.total))
-                .font(MilliFont.heroNumber)
-                .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
-            Text(estimate.dueLabel)
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                MilliMicroLabel(text: "Estimated payment", accent: true)
+
+                Text(MilliFigureFormat.currency(snapshot.quarterlyLiability))
+                    .font(MilliFont.heroNumber)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .milliFigure(MilliFigureFormat.currency(snapshot.quarterlyLiability))
+
+                Text(dueCaption)
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+            }
+
+            Spacer(minLength: 0)
+
+            MilliGaugeRing(
+                progress: snapshot.reserveProgress,
+                value: MilliFigureFormat.percent(snapshot.reserveProgress),
+                caption: "Funded",
+                size: 72,
+                lineWidth: 6.5
+            )
+        }
+        .milliCard(padding: 14)
+    }
+
+    private var dueCaption: String {
+        guard let due = snapshot.nextEstimatedPaymentDue else {
+            return "Add your tax profile to see the next due date"
+        }
+        return "Due \(MilliFigureFormat.date(due))"
+    }
+
+    private var breakdown: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            MilliMicroLabel(text: "Annual breakdown", accent: true)
+
+            taxRow(
+                icon: "building.columns",
+                label: "Federal income tax",
+                value: MilliFigureFormat.currency(decimalValue(\.federalIncomeTax))
+            )
+            taxRow(
+                icon: "person.crop.circle.badge.checkmark",
+                label: "Self-employment tax",
+                value: MilliFigureFormat.currency(decimalValue(\.selfEmploymentTax))
+            )
+            taxRow(
+                icon: "minus.circle",
+                label: "Qualified business income deduction",
+                value: MilliFigureFormat.currency(decimalValue(\.qbiDeduction))
+            )
+            taxRow(
+                icon: "percent",
+                label: "Effective rate",
+                value: MilliFigureFormat.percent(snapshot.effectiveRate)
+            )
+
+            if snapshot.annualEstimate == nil {
+                Text("Complete your tax profile so Milli can estimate from your own income and filing status. State tax is not modelled.")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .milliCard(padding: 14)
     }
 
-    private var breakdown: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("BREAKDOWN")
-                .sectionHeaderStyle()
-
-            taxRow(icon: "building.columns", label: "Federal", amount: estimate.federal)
-            taxRow(icon: "person.crop.circle.badge.checkmark", label: "Self-Employment", amount: estimate.selfEmployment)
-            taxRow(icon: "mappin.and.ellipse", label: estimate.stateLabel, amount: estimate.state)
-        }
-        .milliCard(padding: 14)
+    private func decimalValue(_ keyPath: KeyPath<QuarterlyTaxEstimator.Estimate, Decimal>) -> Double? {
+        guard let estimate = snapshot.annualEstimate else { return nil }
+        return NSDecimalNumber(decimal: estimate[keyPath: keyPath]).doubleValue
     }
 
-    private func taxRow(icon: String, label: String, amount: Double) -> some View {
+    private func taxRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: 9) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
@@ -90,24 +151,24 @@ struct QuarterlyTaxesView: View {
             Text(label)
                 .font(MilliFont.bodyMedium)
                 .foregroundStyle(MilliColors.textPrimary)
+                .lineLimit(2)
 
-            Spacer()
+            Spacer(minLength: 4)
 
-            Text(currency(amount))
+            Text(value)
                 .font(MilliFont.numericSmall)
                 .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
+                .milliFigure(value)
         }
     }
 
-    private var projection: some View {
+    private var reserveProgress: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("TAX PROJECTION")
-                .sectionHeaderStyle()
+            MilliMicroLabel(text: "Reserve against liability", accent: true)
 
-            projectionRow("Projected Annual", estimate.projectedAnnual, MilliColors.textPrimary)
-            projectionRow("Paid to Date", estimate.paidToDate, MilliColors.positive)
-            projectionRow("Remaining", estimate.remaining, MilliColors.cyanGlow)
+            progressRow("Annual liability", MilliFigureFormat.currency(snapshot.annualLiability), MilliColors.textPrimary)
+            progressRow("Reserved to date", MilliFigureFormat.currency(snapshot.reservedForTaxes), MilliColors.positive)
+            progressRow("Remaining", MilliFigureFormat.currency(snapshot.remainingToGoal), MilliColors.cyanGlow)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -120,25 +181,27 @@ struct QuarterlyTaxesView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geo.size.width * estimate.paidProgress)
+                        .frame(width: geo.size.width * (snapshot.reserveProgress ?? 0))
                 }
             }
             .frame(height: 5)
+            .accessibilityHidden(true)
         }
         .milliCard(padding: 14)
     }
 
-    private func projectionRow(_ label: String, _ amount: Double, _ color: Color) -> some View {
+    private func progressRow(_ label: String, _ value: String, _ color: Color) -> some View {
         HStack {
             Text(label)
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
             Spacer()
-            Text(currency(amount))
+            Text(value)
                 .font(MilliFont.numericSmall)
                 .monospacedDigit()
-                .foregroundStyle(color)
+                .foregroundStyle(MilliPlaceholder.isPlaceholder(value) ? MilliColors.textTertiary : color)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var paymentAction: some View {
@@ -154,7 +217,7 @@ struct QuarterlyTaxesView: View {
                 .frame(height: 46)
                 .background(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(MilliColors.graphiteSurface)
+                        .fill(MilliColors.elevated)
                         .overlay {
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
                                 .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
@@ -170,37 +233,8 @@ struct QuarterlyTaxesView: View {
                 .multilineTextAlignment(.center)
         }
     }
-
-    private func currency(_ value: Double) -> String {
-        value.formatted(.currency(code: "USD"))
-    }
 }
 
-private struct QuarterlyTaxDisplayModel {
-    let periodLabel: String
-    let dueLabel: String
-    let federal: Double
-    let selfEmployment: Double
-    let state: Double
-    let stateLabel: String
-    let projectedAnnual: Double
-    let paidToDate: Double
-
-    var total: Double { federal + selfEmployment + state }
-    var remaining: Double { max(projectedAnnual - paidToDate, 0) }
-    var paidProgress: CGFloat {
-        guard projectedAnnual > 0 else { return 0 }
-        return CGFloat(min(max(paidToDate / projectedAnnual, 0), 1))
-    }
-
-    static let reference = QuarterlyTaxDisplayModel(
-        periodLabel: "CURRENT",
-        dueLabel: "Next estimated payment",
-        federal: 682,
-        selfEmployment: 352,
-        state: 213,
-        stateLabel: "State",
-        projectedAnnual: 4_988,
-        paidToDate: 1_865
-    )
+#Preview {
+    QuarterlyTaxesView()
 }

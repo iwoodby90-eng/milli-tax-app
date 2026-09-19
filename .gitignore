@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+backend/test-results.xml
+
+# Secrets — never commit real provider or identity credentials
+.env
+.env.*
+!.env.example
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/

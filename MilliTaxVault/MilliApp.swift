@@ -165,10 +165,10 @@ struct MilliApp: App {
                 || environment["MILLI_SCREEN"] != nil
                 || arguments.contains("-milliScreenshotMode")
 
-            _appState = State(initialValue: screenshotMode ? .main : .login)
+            _appState = State(initialValue: screenshotMode ? .main : .splash)
         }
         #else
-        _appState = State(initialValue: .login)
+        _appState = State(initialValue: .splash)
         #endif
     }
 

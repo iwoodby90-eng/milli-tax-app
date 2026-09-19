@@ -1,20 +1,24 @@
 """Authentication endpoints.
 
-Only the Apple credential exchange creates a user session. Local/demo UI
-credentials intentionally cannot mint financial-backend authorization.
+Sessions come from an Apple credential exchange or a server-verified
+email/password credential. The client never supplies its own user id, and a
+local/demo UI credential cannot mint financial-backend authorization.
 """
 
 import uuid
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from ..auth_service import (
+    authenticate_email_identity,
     create_apple_challenge,
     exchange_apple_identity,
+    register_email_identity,
     revoke_session,
     rotate_refresh_token,
 )
+from ..passwords import MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH
 from ..security import AuthenticatedSession, require_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -29,6 +33,11 @@ class AppleChallengeOut(BaseModel):
 class AppleExchangeIn(BaseModel):
     challenge_id: uuid.UUID
     identity_token: str = Field(min_length=40)
+
+
+class EmailCredentialIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH)
 
 
 class RefreshIn(BaseModel):
@@ -67,6 +76,16 @@ def apple_challenge() -> AppleChallengeOut:
 @router.post("/apple/exchange", response_model=SessionOut)
 def apple_exchange(body: AppleExchangeIn) -> SessionOut:
     return _session_out(exchange_apple_identity(body.challenge_id, body.identity_token))
+
+
+@router.post("/email/signup", response_model=SessionOut, status_code=201)
+def email_signup(body: EmailCredentialIn) -> SessionOut:
+    return _session_out(register_email_identity(str(body.email), body.password))
+
+
+@router.post("/email/login", response_model=SessionOut)
+def email_login(body: EmailCredentialIn) -> SessionOut:
+    return _session_out(authenticate_email_identity(str(body.email), body.password))
 
 
 @router.post("/refresh", response_model=SessionOut)
