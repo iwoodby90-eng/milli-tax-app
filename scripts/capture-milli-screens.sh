@@ -177,15 +177,18 @@ wait_and_capture() {
 
   # A transient launch surface can still be a non-empty PNG. Every accepted
   # full-screen Milli reference in this suite is materially larger than a
-  # solid launch/status-bar capture, so retry once before allowing verification.
+  # solid launch/status-bar capture, so re-shoot while the frame still looks
+  # like a launch surface. Cold starts on a loaded hosted runner regularly need
+  # more than one extra settle window.
   local capture_size
-  capture_size="$(stat -f%z "$output")"
-  if (( capture_size < 250000 )); then
-    echo "Capture for '$label' looks like a launch/blank frame ($capture_size bytes); retrying after 4s."
-    sleep 4
+  for _ in {1..6}; do
+    capture_size="$(stat -f%z "$output")"
+    (( capture_size >= 250000 )) && break
+    echo "Capture for '$label' looks like a launch/blank frame ($capture_size bytes); retrying after 5s."
+    sleep 5
     xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
     test -s "$output"
-  fi
+  done
 
   echo "Captured $label -> $output"
 }
