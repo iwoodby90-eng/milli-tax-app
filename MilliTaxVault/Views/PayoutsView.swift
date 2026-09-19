@@ -201,7 +201,7 @@ struct PayoutsView: View {
                                 .font(.custom("Sora-SemiBold", size: 14))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text("Pull live direct deposits and automate tax vault allocations.")
+                            Text("Connect the account where gig payouts land. Plaid verifies the bank connection; money movement stays server-authorized.")
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
@@ -617,7 +617,7 @@ private struct GigPlatformManagerSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("CONNECTED GIG PLATFORMS")
+                    Text("GIG PAYOUT SOURCES")
                         .font(MilliFont.sectionLabel)
                         .tracking(0.7)
                         .foregroundStyle(MilliColors.textSecondary)
@@ -647,7 +647,7 @@ private struct GigPlatformManagerSheet: View {
                                         .font(.custom("Inter-SemiBold", size: 14))
                                         .foregroundStyle(MilliColors.textPrimary)
 
-                                    Text(platform.isConnected ? "Auto-syncing direct deposits" : "Disconnected")
+                                    Text(platform.isConnected ? "Included in payout detection" : "Not selected")
                                         .font(.custom("Inter-Regular", size: 11))
                                         .foregroundStyle(platform.isConnected ? MilliColors.positive : MilliColors.textTertiary)
                                 }
