@@ -104,7 +104,10 @@ struct SavingsView: View {
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
 
-            Text("Savings goals begin at zero and reflect only amounts you enter or verified balances Milli connects later. No demo savings are shown in Release.")
+            Text(
+                "Savings goals begin at zero and reflect only amounts you enter or " +
+                "verified balances Milli connects later. No demo savings are shown in Release."
+            )
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -256,7 +259,10 @@ struct SavingsView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(MilliColors.textTertiary)
                 .padding(.top, 1)
-            Text("Savings goals in this build are planning targets. Milli does not represent these goals as live deposit accounts until a production banking connection is configured.")
+            Text(
+                "Savings goals in this build are planning targets. Milli does not represent these " +
+                "goals as live deposit accounts until a production banking connection is configured."
+            )
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -486,9 +492,33 @@ private struct SavingsGoal: Identifiable {
         }
 
         return [
-            SavingsGoal(name: "Emergency Reserve", saved: 12_800, target: 18_000, monthlyTarget: 600, targetDate: date(months: 9), icon: "shield.fill", color: MilliColors.positive),
-            SavingsGoal(name: "Home Fund", saved: 18_765, target: 50_000, monthlyTarget: 1_250, targetDate: date(months: 24), icon: "house.fill", color: MilliColors.cyanGlow),
-            SavingsGoal(name: "Vehicle Upgrade", saved: 4_200, target: 18_000, monthlyTarget: 450, targetDate: date(months: 30), icon: "car.fill", color: MilliColors.warning)
+            SavingsGoal(
+                name: "Emergency Reserve",
+                saved: 12_800,
+                target: 18_000,
+                monthlyTarget: 600,
+                targetDate: date(months: 9),
+                icon: "shield.fill",
+                color: MilliColors.positive
+            ),
+            SavingsGoal(
+                name: "Home Fund",
+                saved: 18_765,
+                target: 50_000,
+                monthlyTarget: 1_250,
+                targetDate: date(months: 24),
+                icon: "house.fill",
+                color: MilliColors.cyanGlow
+            ),
+            SavingsGoal(
+                name: "Vehicle Upgrade",
+                saved: 4_200,
+                target: 18_000,
+                monthlyTarget: 450,
+                targetDate: date(months: 30),
+                icon: "car.fill",
+                color: MilliColors.warning
+            ),
         ]
     }
 }
