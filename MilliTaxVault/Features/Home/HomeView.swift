@@ -70,7 +70,7 @@ struct HomeView: View {
             Text(viewModel.availableToSpend)
                 .font(MilliFont.heroBalance)
                 .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
+                .milliFigure(viewModel.availableToSpend)
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
@@ -240,7 +240,7 @@ struct HomeView: View {
                         Text(viewModel.taxVaultBalance)
                             .font(MilliFont.numericMedium)
                             .monospacedDigit()
-                            .foregroundStyle(MilliColors.textPrimary)
+                            .milliFigure(viewModel.taxVaultBalance)
                             .lineLimit(1)
                             .minimumScaleFactor(0.66)
                             .allowsTightening(true)
@@ -276,11 +276,11 @@ struct HomeView: View {
                     let score = viewModel.taxReadyScore
                     progressRing(
                         progress: score.map { CGFloat($0) / 100 } ?? 0,
-                        value: score.map(String.init) ?? "N/A",
+                        value: score.map(String.init) ?? MilliPlaceholder.value,
                         size: 44
                     )
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(score == nil ? "Unavailable" : "Calculated")
+                        Text(score == nil ? "Not calculated" : "Calculated")
                             .font(MilliFont.labelLarge)
                             .foregroundStyle(score == nil ? MilliColors.textTertiary : MilliColors.positive)
                         Text(score == nil ? "Complete your tax profile\nto calculate this score" : "Based on verified\nfinancial data")
@@ -306,7 +306,7 @@ struct HomeView: View {
                 Text(viewModel.quarterlyTaxes)
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                    .milliFigure(viewModel.quarterlyTaxes)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
                 HStack(spacing: 5) {
@@ -336,11 +336,11 @@ struct HomeView: View {
                 Text(viewModel.mileage)
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
+                    .milliFigure(viewModel.mileage)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 HStack {
-                    Text(viewModel.mileage == "Unavailable" ? "No tracked mileage yet" : "This quarter")
+                    Text(MilliPlaceholder.isPlaceholder(viewModel.mileage) ? "No tracked mileage yet" : "This quarter")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                     Spacer()

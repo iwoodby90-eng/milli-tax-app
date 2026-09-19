@@ -188,7 +188,7 @@ struct MilliNavBar: View {
                             .fill(
                                 RadialGradient(
                                     colors: [
-                                        MilliColors.cyanGlow.opacity(0.24),
+                                        MilliColors.cyanGlow.opacity(0.42),
                                         MilliColors.cyanGlow.opacity(0.0)
                                     ],
                                     center: .center,
@@ -205,7 +205,10 @@ struct MilliNavBar: View {
                             isSelected
                                 ? AnyShapeStyle(
                                     LinearGradient(
-                                        colors: [Color.white, MilliColors.cyanGlow],
+                                        colors: [
+                                            MilliColors.navTabActiveOnChromeLift,
+                                            MilliColors.navTabActiveOnChrome
+                                        ],
                                         startPoint: .top,
                                         endPoint: .bottom
                                     )
@@ -213,16 +216,16 @@ struct MilliNavBar: View {
                                 : AnyShapeStyle(Color(hex: "263440"))
                         )
                         .shadow(
-                            color: isSelected ? MilliColors.cyanGlow.opacity(0.48) : Color.white.opacity(0.10),
-                            radius: isSelected ? 4 : 0.5,
-                            y: isSelected ? 0 : 0.5
+                            color: isSelected ? Color.white.opacity(0.62) : Color.white.opacity(0.10),
+                            radius: isSelected ? 3 : 0.5,
+                            y: isSelected ? 0.5 : 0.5
                         )
                         .frame(height: 22)
                 }
 
                 Text(tab.displayName)
                     .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "33414D"))
+                    .foregroundStyle(isSelected ? MilliColors.navTabActiveOnChrome : Color(hex: "33414D"))
                     .tracking(0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.80)

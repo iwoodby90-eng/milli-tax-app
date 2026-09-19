@@ -56,6 +56,10 @@ enum MilliColors {
     static let navBarBorder = Color.white.opacity(0.09)
     static let navTabActive = cyanGlow
     static let navTabInactive = Color(hex: "7A858D")
+    // Active states printed on the polished chrome deck need a dark cyan:
+    // cyanGlow on light metal reads at roughly 1.6:1.
+    static let navTabActiveOnChrome = Color(hex: "003A42")
+    static let navTabActiveOnChromeLift = Color(hex: "00707E")
 
     // MARK: Borders / highlights
     static let border = Color.white.opacity(0.085)
@@ -167,5 +171,31 @@ extension Color {
             blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+}
+
+// MARK: - Unavailable figures
+
+/// Presentation of a figure the app cannot source from verified data.
+///
+/// Numeric slots keep their numeric rhythm with an em dash; the provenance
+/// badge and the caption beneath carry the meaning, so an unconnected account
+/// reads as "nothing here yet" rather than as a wall of error text.
+enum MilliPlaceholder {
+    static let value = "—"
+
+    static func isPlaceholder(_ text: String) -> Bool {
+        text == value
+    }
+}
+
+extension View {
+    /// Styles a monetary or metric figure, recessing placeholders and keeping
+    /// VoiceOver on the meaning instead of reading the dash aloud.
+    func milliFigure(_ text: String) -> some View {
+        let placeholder = MilliPlaceholder.isPlaceholder(text)
+        return self
+            .foregroundStyle(placeholder ? MilliColors.textTertiary : MilliColors.textPrimary)
+            .accessibilityLabel(placeholder ? Text("Unavailable") : Text(text))
     }
 }

@@ -23,10 +23,26 @@ enum MilliBlueprint {
 
     enum Type {
         static func sora(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
-            .custom("Sora-\(weight.soraName)", size: size)
+            .custom("Sora-\(weight.soraName)", size: size, relativeTo: textStyle(for: size))
         }
         static func inter(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-            .custom("Inter-\(weight.interName)", size: size)
+            .custom("Inter-\(weight.interName)", size: size, relativeTo: textStyle(for: size))
+        }
+
+        /// Anchors every blueprint font to the closest system text style so the
+        /// whole interface responds to Dynamic Type at the same rate.
+        static func textStyle(for size: CGFloat) -> Font.TextStyle {
+            switch size {
+            case ..<12: return .caption2
+            case ..<13: return .caption
+            case ..<15: return .footnote
+            case ..<16: return .subheadline
+            case ..<18: return .body
+            case ..<21: return .title3
+            case ..<28: return .title2
+            case ..<34: return .title
+            default: return .largeTitle
+            }
         }
         // Tabular numerals on every monetary figure, percentage, running balance.
         static func monetary(_ size: CGFloat, sora: Bool = false, weight: Font.Weight = .medium) -> Font {

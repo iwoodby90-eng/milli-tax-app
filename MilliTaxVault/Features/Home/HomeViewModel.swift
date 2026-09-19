@@ -8,15 +8,15 @@ final class HomeViewModel: ObservableObject {
     // presentation numbers into the authenticated Home surface. Keep the visual
     // hierarchy, but never imply live financial truth until an authoritative
     // dashboard snapshot is connected.
-    @Published var availableToSpend: String = "Unavailable"
+    @Published var availableToSpend: String = MilliPlaceholder.value
     @Published var sparklineData: [CGFloat] = []
     @Published var latestPayout: PayoutEntry? = nil
-    @Published var taxVaultBalance: String = "Unavailable"
+    @Published var taxVaultBalance: String = MilliPlaceholder.value
     @Published var taxVaultProgress: CGFloat? = nil
     @Published var taxReadyScore: Int? = nil
-    @Published var quarterlyTaxes: String = "Unavailable"
+    @Published var quarterlyTaxes: String = MilliPlaceholder.value
     @Published var quarterlyDueLabel: String = "Awaiting tax profile"
-    @Published var mileage: String = "Unavailable"
+    @Published var mileage: String = MilliPlaceholder.value
     @Published var aiInsight: String = "Connect verified financial data to unlock grounded Milli AI insights."
     @Published var provenance: ProvenanceLabel = .unavailable
     @Published var isLoading: Bool = false

@@ -360,9 +360,9 @@ struct AccountRoutingDetailsCard: View {
                 .foregroundStyle(MilliColors.textSecondary)
 
             HStack {
-                detail("Account", accountMask.map { "•••• \($0)" } ?? "Unavailable")
+                detail("Account", accountMask.map { "•••• \($0)" } ?? MilliPlaceholder.value)
                 Spacer()
-                detail("Routing", routingNumber ?? "Unavailable")
+                detail("Routing", routingNumber ?? MilliPlaceholder.value)
             }
         }
         .padding(14)
