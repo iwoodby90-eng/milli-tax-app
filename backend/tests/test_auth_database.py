@@ -51,7 +51,7 @@ def auth_client(monkeypatch):
             conn.commit()
 
 
-def _mint_session(client, monkeypatch):
+def _mint_session(client, monkeypatch, subject=None):
     challenge = client.post("/auth/apple/challenge")
     assert challenge.status_code == 200, challenge.text
     payload = challenge.json()
@@ -59,7 +59,7 @@ def _mint_session(client, monkeypatch):
     fake_claims = {
         "iss": "https://appleid.apple.com",
         "aud": "com.milli.taxvault",
-        "sub": "apple-user-" + uuid4().hex,
+        "sub": subject or ("apple-user-" + uuid4().hex),
         "iat": int(datetime.now(timezone.utc).timestamp()),
         "exp": int((datetime.now(timezone.utc) + timedelta(minutes=5)).timestamp()),
         "nonce": payload["nonce"],
@@ -89,12 +89,26 @@ def test_legacy_client_uuid_cannot_authorize_financial_rows(auth_client):
 
 def test_verified_apple_exchange_mints_bearer_session(auth_client, monkeypatch):
     _, session = _mint_session(auth_client, monkeypatch)
+    assert session["is_new_user"] is True
     response = auth_client.get(
         "/tax-vault/balance",
         headers={"Authorization": f"Bearer {session['access_token']}"},
     )
     assert response.status_code == 200, response.text
     assert response.json()["settled_cents"] == 0
+
+
+
+
+def test_apple_exchange_routes_new_then_returning_user_from_server_truth(auth_client, monkeypatch):
+    subject = "apple-stable-" + uuid4().hex
+
+    _, first = _mint_session(auth_client, monkeypatch, subject=subject)
+    _, second = _mint_session(auth_client, monkeypatch, subject=subject)
+
+    assert first["user_id"] == second["user_id"]
+    assert first["is_new_user"] is True
+    assert second["is_new_user"] is False
 
 
 def test_auth_challenge_is_single_use(auth_client, monkeypatch):
@@ -115,6 +129,7 @@ def test_refresh_rotates_token_and_old_refresh_cannot_replay(auth_client, monkey
     rotated = auth_client.post("/auth/refresh", json={"refresh_token": first_refresh})
     assert rotated.status_code == 200, rotated.text
     rotated_session = rotated.json()
+    assert rotated_session["is_new_user"] is False
     assert rotated_session["refresh_token"] != first_refresh
     assert rotated_session["access_token"] != session["access_token"]
 
