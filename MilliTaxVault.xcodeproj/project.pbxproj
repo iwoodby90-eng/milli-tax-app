@@ -11,6 +11,7 @@
 		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
 		A10012 /* MilliTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
 		A10013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10013; };
+		A19999 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B19999; };
 		A10020 /* ChromeEmblemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
 		A10021 /* MilliNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
 		A10022 /* MilliAIOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
@@ -169,6 +170,7 @@
 		BF0007 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		BF0008 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		BF0099 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B19999 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
 		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
 		B11001 /* MilliBackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliBackendClient.swift; sourceTree = "<group>"; };
@@ -391,6 +393,7 @@
 			children = (
 				CF0002 /* Fonts */,
 				BF0099 /* Info.plist */,
+				B19999 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -625,6 +628,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10013,
+				A19999,
 				A10303,
 				AF0001,
 				AF0002,
