@@ -2,12 +2,14 @@ import SwiftUI
 import Combine
 
 // MARK: - HomeViewModel — Drives the Home dashboard
+//
+// Figures are derived by MilliFinancialSnapshot from the verified payout
+// ledger and the user's own tax profile. Nothing is seeded: an account with
+// no connected bank keeps every slot in its unavailable state, and the
+// provenance tag states where each populated figure came from.
 
+@MainActor
 final class HomeViewModel: ObservableObject {
-    // Production-safe defaults. The previous implementation seeded attractive
-    // presentation numbers into the authenticated Home surface. Keep the visual
-    // hierarchy, but never imply live financial truth until an authoritative
-    // dashboard snapshot is connected.
     @Published var availableToSpend: String = MilliPlaceholder.value
     @Published var sparklineData: [CGFloat] = []
     @Published var latestPayout: PayoutEntry? = nil
@@ -26,10 +28,60 @@ final class HomeViewModel: ObservableObject {
     }
 
     func loadData() {
-        // Production integration point: hydrate this model from the authenticated
-        // dashboard snapshot / repositories. Until then, values intentionally
-        // remain UNAVAILABLE rather than using reference numbers as if live.
+        let snapshot = MilliFinancialSnapshot.current()
+
+        availableToSpend = MilliFigureFormat.currency(snapshot.availableToSpend)
+        taxVaultBalance = MilliFigureFormat.currency(snapshot.reservedForTaxes)
+        taxVaultProgress = snapshot.reserveProgress.map { CGFloat($0) }
+        quarterlyTaxes = MilliFigureFormat.currency(snapshot.quarterlyLiability)
+        sparklineData = Self.sparkline(from: snapshot)
+        latestPayout = Self.latestPayout(from: snapshot)
+        provenance = snapshot.hasPayouts ? .cachedLive : .unavailable
+
+        if let due = snapshot.nextEstimatedPaymentDue {
+            quarterlyDueLabel = "Due \(MilliFigureFormat.date(due))"
+        } else {
+            quarterlyDueLabel = "Awaiting tax profile"
+        }
+
+        aiInsight = Self.insight(from: snapshot)
         isLoading = false
+    }
+
+    /// Cumulative available-to-spend across the payout ledger, normalized for
+    /// the sparkline. Empty until there are at least two verified payouts.
+    private static func sparkline(from snapshot: MilliFinancialSnapshot) -> [CGFloat] {
+        let ordered = Array(snapshot.payouts.reversed())
+        guard ordered.count >= 2 else { return [] }
+
+        var running = 0.0
+        return ordered.map { payout in
+            running += payout.availableToSpend
+            return CGFloat(running)
+        }
+    }
+
+    private static func latestPayout(from snapshot: MilliFinancialSnapshot) -> PayoutEntry? {
+        guard let payout = snapshot.payouts.first else { return nil }
+        return PayoutEntry(
+            platformName: payout.platform,
+            platformAssetName: payout.assetName ?? "MilliMLogo",
+            dateTime: payout.dateLabel,
+            amount: payout.grossAmount.formatted(.currency(code: "USD")),
+            provenance: .cachedLive
+        )
+    }
+
+    private static func insight(from snapshot: MilliFinancialSnapshot) -> String {
+        guard snapshot.hasPayouts else {
+            return "Connect verified financial data to unlock grounded Milli AI insights."
+        }
+        guard let progress = snapshot.reserveProgress else {
+            return "Add your tax profile so Milli can pace your reserve against a real liability."
+        }
+        return progress >= snapshot.yearProgress
+            ? "Your tax reserve is ahead of the calendar year. Keep the current rate."
+            : "Your reserve is behind the year's pace. Raising your reserve rate closes the gap."
     }
 }
 
@@ -42,12 +94,4 @@ struct PayoutEntry: Identifiable {
     let dateTime: String
     let amount: String
     let provenance: ProvenanceLabel
-
-    static let demo = PayoutEntry(
-        platformName: "Amazon Flex",
-        platformAssetName: "amazon-flex-icon",
-        dateTime: "Demo payout",
-        amount: "$187.42",
-        provenance: .demo
-    )
 }

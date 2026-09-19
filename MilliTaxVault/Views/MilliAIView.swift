@@ -45,7 +45,7 @@ struct MilliAIView: View {
             composer
                 .padding(.bottom, MilliSpacing.bottomNavHeight - 2)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .onAppear {
             if !UIAccessibility.isReduceMotionEnabled {
                 withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {

@@ -8,7 +8,9 @@ import SwiftUI
 struct SavingsView: View {
     var onBack: () -> Void = {}
 
-    @State private var goals: [SavingsGoal] = SavingsGoal.seeded
+    // Goals are user-created. Nothing is pre-populated: a sample goal would
+    // read as saved money the user does not have.
+    @State private var goals: [SavingsGoal] = []
     @State private var showAddGoal = false
 
     private var totalSaved: Double {
@@ -37,7 +39,7 @@ struct SavingsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showAddGoal) {
             AddSavingsGoalSheet { goal in
                 goals.append(goal)
@@ -436,19 +438,6 @@ private struct SavingsGoal: Identifiable {
     let icon: String
     let color: Color
 
-    static var seeded: [SavingsGoal] {
-        let calendar = Calendar.current
-        let now = Date()
-        func date(months: Int) -> Date {
-            calendar.date(byAdding: .month, value: months, to: now) ?? now
-        }
-
-        return [
-            SavingsGoal(name: "Emergency Reserve", saved: 12_800, target: 18_000, monthlyTarget: 600, targetDate: date(months: 9), icon: "shield.fill", color: MilliColors.positive),
-            SavingsGoal(name: "Home Fund", saved: 18_765, target: 50_000, monthlyTarget: 1_250, targetDate: date(months: 24), icon: "house.fill", color: MilliColors.cyanGlow),
-            SavingsGoal(name: "Vehicle Upgrade", saved: 4_200, target: 18_000, monthlyTarget: 450, targetDate: date(months: 30), icon: "car.fill", color: MilliColors.warning)
-        ]
-    }
 }
 
 // Legacy compatibility wrapper while the old segmented wealth hub is retired.

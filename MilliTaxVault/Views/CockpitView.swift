@@ -43,7 +43,7 @@ struct SubscriptionView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showBillingSetup) {
             billingSetupSheet
                 .presentationDetents([.medium, .large])

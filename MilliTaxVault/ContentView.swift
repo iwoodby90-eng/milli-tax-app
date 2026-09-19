@@ -30,7 +30,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            MilliColors.background.ignoresSafeArea()
+            MilliAmbientBackground()
 
             // All non-mileage surfaces continue to use the lightweight screen
             // router. Mileage is hosted separately below so an active MapKit/GPS

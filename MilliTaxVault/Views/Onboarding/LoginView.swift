@@ -156,14 +156,6 @@ struct LoginView: View {
                 }
 
                 HStack {
-                    #if DEBUG
-                    if mode == .signIn {
-                        Button("Use Demo Account", action: fillDemoCredentials)
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.cyanGlow)
-                    }
-                    #endif
-
                     Spacer()
 
                     if mode == .signIn, let onForgotPassword {
@@ -457,7 +449,7 @@ struct LoginView: View {
 
     private var loginBackground: some View {
         ZStack {
-            MilliColors.background.ignoresSafeArea()
+            MilliAmbientBackground()
 
             RadialGradient(
                 colors: [MilliColors.cyanGlow.opacity(0.065), Color.clear],
@@ -480,13 +472,6 @@ struct LoginView: View {
         guard canSubmit else { return }
         authenticationMessage = nil
         focusedField = nil
-
-        #if DEBUG
-        if mode == .signIn, normalizedEmail == "ian@milli.local", password == "MilliDemo2026!" {
-            onSignIn(normalizedEmail)
-            return
-        }
-        #endif
 
         if mode == .signUp, password != confirmPassword {
             authenticationMessage = "Passwords do not match."
@@ -534,15 +519,6 @@ struct LoginView: View {
             }
         }
     }
-
-    #if DEBUG
-    private func fillDemoCredentials() {
-        email = "ian@milli.local"
-        password = "MilliDemo2026!"
-        authenticationMessage = nil
-        focusedField = nil
-    }
-    #endif
 }
 
 #Preview {

@@ -23,7 +23,7 @@ struct PayoutsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(item: $selectedPayout) { payout in
             // LAUNCH P0: legacy cached records render through the state
             // contract as CACHED LIVE with no authority claimed.
@@ -488,7 +488,7 @@ struct FinancialReceiptSheet: View {
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Financial Receipt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -591,7 +591,7 @@ private struct BankConnectionSheet: View {
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Connect Bank Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -818,7 +818,7 @@ private struct GigPlatformManagerSheet: View {
                 .padding(.horizontal, MilliSpacing.screenHorizontal)
                 .padding(.vertical, 16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Gig Platform Connections")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

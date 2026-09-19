@@ -10,7 +10,8 @@ struct DocumentsView: View {
     var onBack: () -> Void = {}
 
     @State private var selectedCategory: DocumentCategory = .taxDocuments
-    @State private var documents: [MilliDocument] = MilliDocument.seeded
+    // Documents appear only once the user imports them.
+    @State private var documents: [MilliDocument] = []
     @State private var showImporter = false
     @State private var importErrorMessage: String?
 
@@ -32,7 +33,7 @@ struct DocumentsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes: [.pdf, .image, .commaSeparatedText, .plainText],
@@ -328,23 +329,6 @@ private struct MilliDocument: Identifiable {
     let isReady: Bool
     let icon: String
 
-    static var seeded: [MilliDocument] {
-        let calendar = Calendar.current
-        let now = Date()
-        func date(daysAgo: Int) -> Date {
-            calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
-        }
-
-        return [
-            MilliDocument(name: "Income Summary", detail: "PDF", date: date(daysAgo: 2), category: .taxDocuments, isReady: true, icon: "doc.richtext.fill"),
-            MilliDocument(name: "Quarterly Estimate", detail: "PDF", date: date(daysAgo: 5), category: .taxDocuments, isReady: true, icon: "doc.text.fill"),
-            MilliDocument(name: "Fuel Stop", detail: "$68.42", date: date(daysAgo: 0), category: .receipts, isReady: true, icon: "receipt.fill"),
-            MilliDocument(name: "Vehicle Service", detail: "$89.75", date: date(daysAgo: 1), category: .receipts, isReady: true, icon: "receipt.fill"),
-            MilliDocument(name: "Parking Receipt", detail: "$24.60", date: date(daysAgo: 3), category: .receipts, isReady: false, icon: "receipt.fill"),
-            MilliDocument(name: "Deduction Report", detail: "PDF", date: date(daysAgo: 1), category: .reports, isReady: true, icon: "chart.bar.doc.horizontal.fill"),
-            MilliDocument(name: "Trip Export", detail: "CSV", date: date(daysAgo: 4), category: .reports, isReady: true, icon: "tablecells.fill")
-        ]
-    }
 }
 
 // Legacy compatibility wrapper while the old duplicate dashboard is retired.

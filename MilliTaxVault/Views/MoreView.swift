@@ -43,7 +43,7 @@ struct MoreMenuView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showSettings) {
             MilliSettingsSheet()
                 .presentationDetents([.large])

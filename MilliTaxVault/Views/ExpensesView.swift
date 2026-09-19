@@ -38,7 +38,7 @@ struct ExpensesView: View {
                 .padding(.top, 8)
                 .padding(.bottom, MilliSpacing.bottomContentClearance + 48)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
 
             addButton
         }

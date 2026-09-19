@@ -36,7 +36,7 @@ struct TreeOfLifeView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showAddEvent) {
             AddLifeEventSheet { event in
                 withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {

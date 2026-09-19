@@ -124,7 +124,7 @@ struct OnboardingView: View {
 
     private var onboardingBackground: some View {
         ZStack {
-            MilliColors.background.ignoresSafeArea()
+            MilliAmbientBackground()
 
             RadialGradient(
                 colors: [MilliColors.cyanGlow.opacity(0.075), Color.clear],

@@ -136,7 +136,7 @@ struct AutopilotSetupView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
     }
 
     private var header: some View {

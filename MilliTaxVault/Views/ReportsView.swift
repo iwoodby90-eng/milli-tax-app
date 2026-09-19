@@ -27,7 +27,7 @@ struct ReportsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(item: $sharePayload) { payload in
             ReportActivityView(items: [payload.url])
                 .ignoresSafeArea()

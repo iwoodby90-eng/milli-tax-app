@@ -82,7 +82,7 @@ struct MilliCentsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showInfo) {
             MilliCentsInfoSheet()
                 .presentationDetents([.medium, .large])
@@ -691,7 +691,7 @@ private struct GigPlatformConnectSheet: View {
                 }
                 .padding(16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Platform Connections")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -738,7 +738,7 @@ private struct MilliCentsInfoSheet: View {
                 }
                 .padding(16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("About Milli Cents")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

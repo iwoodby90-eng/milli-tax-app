@@ -79,7 +79,7 @@ struct MileageTrackerView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .onAppear {
             prepareLocationIfNeeded()
             consumePendingHandoff()

@@ -74,7 +74,7 @@ struct RetirementView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showInputs) {
             RetirementInputsSheet(profile: profile)
                 .presentationDetents([.large])
@@ -915,40 +915,21 @@ private struct MilliRetirementOnboardingSheet: View {
 
 @MainActor
 public final class RetirementPlanningStore: ObservableObject {
+    // Balances and contributions start at zero and carry no verified data:
+    // they populate only from an opened Milli account or a connected external
+    // custodian. Age, target age and return rate are planning inputs the user
+    // edits, not balances, so they keep conventional starting values.
     @Published public var currentAge: Int = 32 { didSet { persist() } }
-    @Published public var currentBalance: Double = 42685.73 { didSet { persist() } }
-    @Published public var annualIncome: Double = 75000 { didSet { persist() } }
+    @Published public var currentBalance: Double = 0 { didSet { persist() } }
+    @Published public var annualIncome: Double = 0 { didSet { persist() } }
     @Published public var contributionMode: RetirementContributionMode = .percentOfIncome { didSet { persist() } }
     @Published public var contributionPercent: Double = 15 { didSet { persist() } }
-    @Published public var monthlyContribution: Double = 937.50 { didSet { persist() } }
+    @Published public var monthlyContribution: Double = 0 { didSet { persist() } }
     @Published public var targetRetirementAge: Int = 62 { didSet { persist() } }
     @Published public var annualReturnPercent: Double = 7.5 { didSet { persist() } }
-    @Published public var milliAccount: MilliRetirementAccount? = MilliRetirementAccount.standard { didSet { persist() } }
-    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [
-        ConnectedExternalRetirementAccount(
-            id: "merged-1",
-            custodianName: "Fidelity Investments",
-            accountType: "401(k)",
-            nickname: "Past Employer 401(k)",
-            balance: 34850.0,
-            monthlyContribution: 0.0,
-            annualReturnPercent: 7.5,
-            rolloverStatus: .completed,
-            accountMask: "8102"
-        ),
-        ConnectedExternalRetirementAccount(
-            id: "merged-2",
-            custodianName: "Vanguard",
-            accountType: "Traditional IRA",
-            nickname: "Vanguard IRA",
-            balance: 18420.0,
-            monthlyContribution: 200.0,
-            annualReturnPercent: 7.5,
-            rolloverStatus: .transferInitiated,
-            accountMask: "3319"
-        )
-    ] { didSet { persist() } }
-    @Published public private(set) var hasVerifiedConnectedData: Bool = true
+    @Published public var milliAccount: MilliRetirementAccount? = nil { didSet { persist() } }
+    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [] { didSet { persist() } }
+    @Published public private(set) var hasVerifiedConnectedData: Bool = false
 
     private let defaults = UserDefaults.standard
     private let storageKey = "milli_retirement_planning_profile_v3"
@@ -1031,6 +1012,10 @@ public enum RetirementProjectionCalculator {
         let currentYear = calendar.component(.year, from: Date())
         let yearsToRetirement = profile.targetRetirementAge - profile.currentAge
         guard yearsToRetirement > 0 else { return nil }
+
+        // A projection needs something real to grow: either a balance on
+        // record or an income the contribution rate applies to.
+        guard consolidatedBalance > 0 || profile.annualIncome > 0 else { return nil }
 
         let retirementYear = currentYear + yearsToRetirement
         let monthlyContribution = profile.annualIncome * (profile.contributionPercent / 100) / 12
@@ -1125,7 +1110,7 @@ private struct RetirementInputsSheet: View {
                 }
                 .padding(16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Retirement Assumptions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -10,19 +10,23 @@ struct HomeView: View {
     var navigate: ((ActiveScreen) -> Void)?
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                headerSection
-                availableHero
-                latestPayout
-                metricGrid
-                aiInsight
+        ZStack {
+            MilliAmbientBackground()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 10) {
+                    headerSection
+                    companionRow
+                    availableHero
+                    latestPayout
+                    metricGrid
+                    aiInsight
+                }
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.top, 8)
+                .padding(.bottom, MilliSpacing.bottomContentClearance)
             }
-            .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, 8)
-            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
         .sheet(isPresented: $showNotifications) {
             MilliDetailSheet(title: "Notifications")
                 .presentationDetents([.medium, .large])
@@ -52,6 +56,18 @@ struct HomeView: View {
             MilliWordmark()
         }
         .frame(height: 46)
+    }
+
+    // MARK: Companion
+
+    private var companionRow: some View {
+        MilliCompanionBanner(
+            title: "Milli AI",
+            message: viewModel.provenance == .unavailable
+                ? "Connect a bank and I'll start protecting your taxes automatically."
+                : "I'm tracking every payout and keeping your reserve on pace."
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Available to Spend
