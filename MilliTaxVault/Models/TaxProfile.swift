@@ -146,3 +146,60 @@ struct MilliTrialState {
         defaults.removeObject(forKey: endsAtKey)
     }
 }
+
+
+// MARK: - Protected onboarding profile storage
+
+enum ProtectedOnboardingStore {
+    private static let directoryName = "OnboardingProfileV2"
+
+    @discardableResult
+    static func save<T: Encodable>(_ value: T, as name: String) -> Bool {
+        guard ["vehicle", "tax-profile", "bank-autopilot"].contains(name),
+              let data = try? JSONEncoder().encode(value)
+        else {
+            return false
+        }
+
+        let url = directoryURL()
+            .appendingPathComponent("\(name).json", isDirectory: false)
+
+        do {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(
+                to: url,
+                options: [.atomic, .completeFileProtection]
+            )
+            return true
+        } catch {
+            // Never downgrade profile/tax/bank metadata into UserDefaults.
+            return false
+        }
+    }
+
+    static func clear() {
+        try? FileManager.default.removeItem(at: directoryURL())
+        purgeLegacyPreferences()
+    }
+
+    static func purgeLegacyPreferences() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "onboarding_vehicle")
+        defaults.removeObject(forKey: "onboarding_taxProfile")
+        defaults.removeObject(forKey: "onboarding_bankAutopilotProfile")
+    }
+
+    private static func directoryURL() -> URL {
+        let root = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? FileManager.default.temporaryDirectory
+
+        return root
+            .appendingPathComponent("Milli", isDirectory: true)
+            .appendingPathComponent(directoryName, isDirectory: true)
+    }
+}

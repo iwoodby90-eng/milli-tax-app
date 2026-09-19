@@ -3,32 +3,31 @@ import Combine
 import SwiftUI
 
 // MARK: - ExpenseStore
-// Persistent expense and receipt store for MILLI (D5 sprint feature).
+// App-private persistence for user-entered expenses and receipts.
 //
-// Follows the same UserDefaults persistence pattern as BankConnectionService:
-//   - Codable models (ExpenseItem, ReceiptItem) are encoded/decoded to UserDefaults.
-//   - The store is @MainActor ObservableObject so SwiftUI views can observe it.
-//   - Seeded demo data is used ONLY on first launch; once the user adds or
-//     removes an item, the persisted state is authoritative.
-//   - All amounts are Double (display-layer currency). The store does not
-//     fabricate financial truth — it persists user-entered data only.
-//
-// Data-truth rule: seeded data carries no provenance label because the
-// ExpensesView is a local tracking tool, not a live financial feed. The
-// seeded items are clearly demo content that the user can delete.
+// Security rules:
+// - production never seeds plausible financial records;
+// - expense/receipt data is never stored in UserDefaults;
+// - the on-device snapshot uses complete file protection;
+// - deterministic demo content exists only in explicit DEBUG screenshot mode.
+
+private struct ExpenseStoreSnapshot: Codable {
+    let expenses: [ExpenseItem]
+    let receipts: [ReceiptItem]
+}
 
 @MainActor
 final class ExpenseStore: ObservableObject {
-
     @Published private(set) var expenses: [ExpenseItem] = []
     @Published private(set) var receipts: [ReceiptItem] = []
 
-    private let storageKeyExpenses = "milli_expenses_v1"
-    private let storageKeyReceipts = "milli_receipts_v1"
-    private let storageKeySeeded = "milli_expenses_seeded_v1"
+    private let storageURL: URL
+    private let demoSeedEnabled: Bool
 
-    init() {
-        loadFromStorage()
+    init(storageURL: URL? = nil, demoSeed: Bool? = nil) {
+        self.storageURL = storageURL ?? Self.defaultStorageURL()
+        self.demoSeedEnabled = demoSeed ?? Self.defaultDemoSeedEnabled()
+        load()
     }
 
     // MARK: - Public API
@@ -67,53 +66,89 @@ final class ExpenseStore: ObservableObject {
         receipts.filter(\.isLinked).count
     }
 
-    /// Clears all data and re-seeds with demo content. For testing / reset.
+    /// Explicit demo helper for DEBUG/test surfaces. Production initialization
+    /// never calls this automatically.
     func resetToSeed() {
         expenses = ExpenseItem.seeded
         receipts = ReceiptItem.seeded
-        persist()
+        if !demoSeedEnabled {
+            persist()
+        }
     }
 
-    /// Clears all data completely.
     func clearAll() {
         expenses = []
         receipts = []
         persist()
     }
 
-    // MARK: - Persistence
+    // MARK: - Protected persistence
 
-    private func loadFromStorage() {
-        let defaults = UserDefaults.standard
-        let hasSeeded = defaults.bool(forKey: storageKeySeeded)
-
-        if !hasSeeded {
-            // First launch: seed with demo content.
+    private func load() {
+        if demoSeedEnabled {
             expenses = ExpenseItem.seeded
             receipts = ReceiptItem.seeded
-            persist()
-            defaults.set(true, forKey: storageKeySeeded)
             return
         }
 
-        let decoder = JSONDecoder()
-        if let data = defaults.data(forKey: storageKeyExpenses),
-           let saved = try? decoder.decode([ExpenseItem].self, from: data) {
-            expenses = saved
+        guard let data = try? Data(contentsOf: storageURL),
+              let snapshot = try? JSONDecoder().decode(ExpenseStoreSnapshot.self, from: data)
+        else {
+            expenses = []
+            receipts = []
+            return
         }
-        if let data = defaults.data(forKey: storageKeyReceipts),
-           let saved = try? decoder.decode([ReceiptItem].self, from: data) {
-            receipts = saved
-        }
+
+        expenses = snapshot.expenses
+        receipts = snapshot.receipts
     }
 
     private func persist() {
-        let encoder = JSONEncoder()
-        if let data = try? encoder.encode(expenses) {
-            UserDefaults.standard.set(data, forKey: storageKeyExpenses)
+        // Screenshot/demo data must never be written into a customer's store.
+        guard !demoSeedEnabled else { return }
+
+        let snapshot = ExpenseStoreSnapshot(
+            expenses: expenses,
+            receipts: receipts
+        )
+
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+
+        do {
+            let directory = storageURL.deletingLastPathComponent()
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true
+            )
+            try data.write(
+                to: storageURL,
+                options: [.atomic, .completeFileProtection]
+            )
+        } catch {
+            // Fail closed: keep the in-memory edits for this session but never
+            // downgrade protected financial data into UserDefaults/plaintext.
         }
-        if let data = try? encoder.encode(receipts) {
-            UserDefaults.standard.set(data, forKey: storageKeyReceipts)
-        }
+    }
+
+    private static func defaultStorageURL() -> URL {
+        let root = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? FileManager.default.temporaryDirectory
+
+        return root
+            .appendingPathComponent("Milli", isDirectory: true)
+            .appendingPathComponent("expense-store-v2.json", isDirectory: false)
+    }
+
+    private static func defaultDemoSeedEnabled() -> Bool {
+        #if DEBUG
+        let info = ProcessInfo.processInfo
+        return info.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || info.environment["MILLI_SCREEN"] != nil
+            || info.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
     }
 }

@@ -2,27 +2,36 @@ import XCTest
 @testable import MilliTaxVault
 
 // MARK: - ExpenseStoreTests
-// D5 sprint feature: ExpenseStore persistence and CRUD invariants.
-// Tests run against an isolated UserDefaults suite to avoid polluting app state.
+// Financial records persist in an app-private file, never UserDefaults.
+// Tests inject a temporary URL so they cannot touch real app state.
 
 @MainActor
 final class ExpenseStoreTests: XCTestCase {
-
-    private var defaults: UserDefaults!
+    private var directoryURL: URL!
+    private var storageURL: URL!
 
     override func setUp() async throws {
         try await super.setUp()
-        // Use a unique suite per test instance to isolate state.
-        let suiteName = "milli-test-\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)!
-        // We'll inject this by swizzling the standard — but since ExpenseStore
-        // uses UserDefaults.standard internally, we test behavior instead:
-        // clear any existing data, then verify CRUD operations work.
+        directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("milli-expense-test-\(UUID().uuidString)", isDirectory: true)
+        storageURL = directoryURL.appendingPathComponent("expense-store.json")
+        try FileManager.default.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
     }
 
     override func tearDown() async throws {
-        defaults = nil
+        if let directoryURL {
+            try? FileManager.default.removeItem(at: directoryURL)
+        }
+        directoryURL = nil
+        storageURL = nil
         try await super.tearDown()
+    }
+
+    private func makeStore(demoSeed: Bool = false) -> ExpenseStore {
+        ExpenseStore(storageURL: storageURL, demoSeed: demoSeed)
     }
 
     // MARK: - Model tests
@@ -60,7 +69,6 @@ final class ExpenseStoreTests: XCTestCase {
     }
 
     func testExpenseCategoryAllCasesCovered() {
-        // Ensure all 7 categories are present and identifiable.
         let categories = ExpenseCategory.allCases
         XCTAssertEqual(categories.count, 7)
         let rawValues = Set(categories.map(\.rawValue))
@@ -73,11 +81,25 @@ final class ExpenseStoreTests: XCTestCase {
         XCTAssertTrue(rawValues.contains("other"))
     }
 
-    // MARK: - Store CRUD tests
+    // MARK: - Data truth
+
+    func testProductionStoreStartsEmptyWithoutProtectedSnapshot() {
+        let store = makeStore()
+        XCTAssertTrue(store.expenses.isEmpty)
+        XCTAssertTrue(store.receipts.isEmpty)
+    }
+
+    func testExplicitDemoStoreCanLoadReferenceDataWithoutWritingIt() {
+        let store = makeStore(demoSeed: true)
+        XCTAssertEqual(store.expenses.count, ExpenseItem.seeded.count)
+        XCTAssertEqual(store.receipts.count, ReceiptItem.seeded.count)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
+    }
+
+    // MARK: - Store CRUD
 
     func testAddExpenseInsertsAtFront() {
-        let store = ExpenseStore()
-        let initialCount = store.expenses.count
+        let store = makeStore()
         let newItem = ExpenseItem(
             merchant: "Test Expense",
             category: .supplies,
@@ -86,13 +108,12 @@ final class ExpenseStoreTests: XCTestCase {
             isDeductible: true
         )
         store.addExpense(newItem)
-        XCTAssertEqual(store.expenses.count, initialCount + 1)
+        XCTAssertEqual(store.expenses.count, 1)
         XCTAssertEqual(store.expenses.first?.merchant, "Test Expense")
     }
 
     func testAddReceiptInsertsAtFront() {
-        let store = ExpenseStore()
-        let initialCount = store.receipts.count
+        let store = makeStore()
         let newItem = ReceiptItem(
             merchant: "Test Receipt",
             date: Date(),
@@ -100,12 +121,12 @@ final class ExpenseStoreTests: XCTestCase {
             isLinked: false
         )
         store.addReceipt(newItem)
-        XCTAssertEqual(store.receipts.count, initialCount + 1)
+        XCTAssertEqual(store.receipts.count, 1)
         XCTAssertEqual(store.receipts.first?.merchant, "Test Receipt")
     }
 
     func testDeleteExpenseByID() {
-        let store = ExpenseStore()
+        let store = makeStore()
         let item = ExpenseItem(
             merchant: "Delete Me",
             category: .other,
@@ -114,14 +135,12 @@ final class ExpenseStoreTests: XCTestCase {
             isDeductible: false
         )
         store.addExpense(item)
-        let countBefore = store.expenses.count
         store.deleteExpense(id: item.id)
-        XCTAssertEqual(store.expenses.count, countBefore - 1)
         XCTAssertFalse(store.expenses.contains { $0.id == item.id })
     }
 
     func testDeleteReceiptByID() {
-        let store = ExpenseStore()
+        let store = makeStore()
         let item = ReceiptItem(
             merchant: "Delete Me",
             date: Date(),
@@ -129,17 +148,14 @@ final class ExpenseStoreTests: XCTestCase {
             isLinked: true
         )
         store.addReceipt(item)
-        let countBefore = store.receipts.count
         store.deleteReceipt(id: item.id)
-        XCTAssertEqual(store.receipts.count, countBefore - 1)
         XCTAssertFalse(store.receipts.contains { $0.id == item.id })
     }
 
     // MARK: - Derived values
 
     func testTotalDeductionsOnlyCountsDeductible() {
-        let store = ExpenseStore()
-        store.clearAll()
+        let store = makeStore()
         store.addExpense(ExpenseItem(merchant: "A", category: .fuel, date: Date(), amount: 100, isDeductible: true))
         store.addExpense(ExpenseItem(merchant: "B", category: .other, date: Date(), amount: 50, isDeductible: false))
         store.addExpense(ExpenseItem(merchant: "C", category: .supplies, date: Date(), amount: 25, isDeductible: true))
@@ -147,70 +163,67 @@ final class ExpenseStoreTests: XCTestCase {
     }
 
     func testLinkedReceiptCount() {
-        let store = ExpenseStore()
-        store.clearAll()
+        let store = makeStore()
         store.addReceipt(ReceiptItem(merchant: "A", date: Date(), amount: 10, isLinked: true))
         store.addReceipt(ReceiptItem(merchant: "B", date: Date(), amount: 20, isLinked: false))
         store.addReceipt(ReceiptItem(merchant: "C", date: Date(), amount: 30, isLinked: true))
         XCTAssertEqual(store.linkedReceiptCount, 2)
     }
 
-    // MARK: - Reset and clear
+    // MARK: - Persistence
 
     func testClearAllEmptiesBothArrays() {
-        let store = ExpenseStore()
+        let store = makeStore()
+        store.addExpense(ExpenseItem(merchant: "A", category: .fuel, date: Date(), amount: 10, isDeductible: true))
+        store.addReceipt(ReceiptItem(merchant: "A", date: Date(), amount: 10, isLinked: true))
         store.clearAll()
         XCTAssertTrue(store.expenses.isEmpty)
         XCTAssertTrue(store.receipts.isEmpty)
-        XCTAssertEqual(store.totalDeductions, 0)
-        XCTAssertEqual(store.linkedReceiptCount, 0)
     }
 
-    func testResetToSeedPopulatesData() {
-        let store = ExpenseStore()
-        store.clearAll()
+    func testResetToSeedIsExplicitOnly() {
+        let store = makeStore()
         XCTAssertTrue(store.expenses.isEmpty)
         store.resetToSeed()
-        XCTAssertFalse(store.expenses.isEmpty)
-        XCTAssertFalse(store.receipts.isEmpty)
         XCTAssertEqual(store.expenses.count, ExpenseItem.seeded.count)
         XCTAssertEqual(store.receipts.count, ReceiptItem.seeded.count)
     }
 
-    // MARK: - Persistence across instances
-
-    func testPersistenceSurvivesNewInstance() {
-        let store1 = ExpenseStore()
-        store1.clearAll()
-        let item = ExpenseItem(merchant: "Persistent", category: .fuel, date: Date(), amount: 42.00, isDeductible: true)
+    func testProtectedFilePersistenceSurvivesNewInstance() {
+        let store1 = makeStore()
+        let item = ExpenseItem(
+            merchant: "Persistent",
+            category: .fuel,
+            date: Date(),
+            amount: 42.00,
+            isDeductible: true
+        )
         store1.addExpense(item)
 
-        // Create a new store instance — it should load from UserDefaults.
-        let store2 = ExpenseStore()
-        XCTAssertTrue(store2.expenses.contains { $0.merchant == "Persistent" })
+        XCTAssertTrue(FileManager.default.fileExists(atPath: storageURL.path))
 
-        // Cleanup
-        store2.clearAll()
+        let store2 = makeStore()
+        XCTAssertTrue(store2.expenses.contains { $0.merchant == "Persistent" })
     }
 
     // MARK: - Edge cases
 
     func testDeleteNonExistentIDIsNoOp() {
-        let store = ExpenseStore()
+        let store = makeStore()
         let countBefore = store.expenses.count
         store.deleteExpense(id: UUID())
         XCTAssertEqual(store.expenses.count, countBefore)
     }
 
     func testDeleteReceiptNonExistentIDIsNoOp() {
-        let store = ExpenseStore()
+        let store = makeStore()
         let countBefore = store.receipts.count
         store.deleteReceipt(id: UUID())
         XCTAssertEqual(store.receipts.count, countBefore)
     }
 
     func testDeleteExpenseAtInvalidIndexIsNoOp() {
-        let store = ExpenseStore()
+        let store = makeStore()
         let countBefore = store.expenses.count
         store.deleteExpense(at: 999)
         XCTAssertEqual(store.expenses.count, countBefore)

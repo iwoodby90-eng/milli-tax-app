@@ -396,15 +396,14 @@ struct OnboardingFlowView: View {
     private func saveAndComplete() {
         guard bankProfile.isReadyForAutopilot else { return }
 
-        if let vehicleData = try? JSONEncoder().encode(vehicle) {
-            UserDefaults.standard.set(vehicleData, forKey: "onboarding_vehicle")
+        guard ProtectedOnboardingStore.save(vehicle, as: "vehicle"),
+              ProtectedOnboardingStore.save(taxProfile, as: "tax-profile"),
+              ProtectedOnboardingStore.save(bankProfile, as: "bank-autopilot")
+        else {
+            return
         }
-        if let taxData = try? JSONEncoder().encode(taxProfile) {
-            UserDefaults.standard.set(taxData, forKey: "onboarding_taxProfile")
-        }
-        if let bankData = try? JSONEncoder().encode(bankProfile) {
-            UserDefaults.standard.set(bankData, forKey: "onboarding_bankAutopilotProfile")
-        }
+
+        ProtectedOnboardingStore.purgeLegacyPreferences()
         UserDefaults.standard.set(selectedPlan.rawValue, forKey: "onboarding_plan")
 
         UserDefaults.standard.set(retirementEnabled, forKey: "milliAutopilotRetirementEnabled")
