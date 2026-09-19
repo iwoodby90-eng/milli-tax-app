@@ -1003,7 +1003,9 @@ public final class RetirementPlanningStore: ObservableObject {
             monthlyContribution: monthlyContribution,
             targetRetirementAge: targetRetirementAge,
             annualReturnPercent: annualReturnPercent,
-            hasVerifiedConnectedData: hasVerifiedConnectedData
+            hasVerifiedConnectedData: hasVerifiedConnectedData,
+            milliAccount: milliAccount,
+            mergedAccounts: mergedAccounts
         )
     }
 
@@ -1041,9 +1043,9 @@ public final class RetirementPlanningStore: ObservableObject {
         monthlyContribution = saved.monthlyContribution
         targetRetirementAge = saved.targetRetirementAge
         annualReturnPercent = saved.annualReturnPercent
-        hasVerifiedConnectedData = ReferenceDataPolicy.allowsDemoReferenceData
-            ? saved.hasVerifiedConnectedData
-            : false
+        hasVerifiedConnectedData = false
+        milliAccount = saved.milliAccount
+        mergedAccounts = saved.mergedAccounts ?? []
     }
 }
 
@@ -1194,6 +1196,8 @@ public struct RetirementPlanningSnapshot: Codable, Equatable {
     public let targetRetirementAge: Int
     public let annualReturnPercent: Double
     public let hasVerifiedConnectedData: Bool
+    public let milliAccount: MilliRetirementAccount?
+    public let mergedAccounts: [ConnectedExternalRetirementAccount]?
 
     public var isProjectionReady: Bool {
         currentAge > 0 && targetRetirementAge > currentAge
