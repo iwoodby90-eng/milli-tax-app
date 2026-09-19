@@ -73,6 +73,7 @@
 		A10302 /* AppleAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10302; };
 		A11001 /* MilliBackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11001; };
 		A11002 /* PlaidLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11002; };
+		A11003 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = X11002 /* LinkKit */; };
 		A10304 /* BankConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10304; };
 		A10303 /* MilliSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B10303; };
 		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
@@ -435,6 +436,7 @@
 			buildConfigurationList = E10003;
 			buildPhases = (
 				D10002 /* Sources */,
+				D10004 /* Frameworks */,
 				D10003 /* Resources */,
 			);
 			buildRules = (
@@ -442,6 +444,9 @@
 			dependencies = (
 			);
 			name = MilliTaxVault;
+			packageProductDependencies = (
+				X11002 /* LinkKit */,
+			);
 			productName = MilliTaxVault;
 			productReference = B10099 /* MilliTaxVault.app */;
 			productType = "com.apple.product-type.application";
@@ -487,6 +492,9 @@
 			productRefGroup = C10099 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				X11001 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */,
+			);
 			targets = (
 				D10001 /* MilliTaxVault */,
 				D10500 /* MilliTaxVaultTests */,
@@ -596,6 +604,14 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		D10004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A11003 /* LinkKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D10503 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -642,6 +658,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		X11001 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/plaid/plaid-link-ios-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		X11002 /* LinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = X11001 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */;
+			productName = LinkKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E10004 /* Debug */ = {
