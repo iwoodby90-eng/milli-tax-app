@@ -19,9 +19,13 @@ struct ReportsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                tabs
-                selectedContent
-                exportActions
+                if MilliRuntimeMode.isScreenshotDemo {
+                    tabs
+                    selectedContent
+                    exportActions
+                } else {
+                    unavailableState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -53,17 +57,42 @@ struct ReportsView: View {
 
             Spacer()
 
-            Button {
-                exportPDFAndShare()
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .frame(width: 34, height: 34)
+            if MilliRuntimeMode.isScreenshotDemo {
+                Button {
+                    exportPDFAndShare()
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Share current report")
+            } else {
+                ProvenanceTag(label: .unavailable)
+                    .frame(width: 76, alignment: .trailing)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Share current report")
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+
+            Text("Reports are waiting for verified activity")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Text("PDF and CSV exports stay locked until the report model is populated from authenticated income, expense, and mileage records.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 16)
     }
 
     private var tabs: some View {
