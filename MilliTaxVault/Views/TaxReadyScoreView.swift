@@ -22,9 +22,13 @@ struct TaxReadyScoreView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                scoreGauge
-                factorList
-                history
+                if MilliRuntimeMode.isScreenshotDemo {
+                    scoreGauge
+                    factorList
+                    history
+                } else {
+                    unavailableScoreState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -57,6 +61,28 @@ struct TaxReadyScoreView: View {
                 .foregroundStyle(MilliColors.textSecondary)
                 .frame(width: 34, height: 34)
         }
+    }
+
+    private var unavailableScoreState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "checkmark.seal")
+                .font(.system(size: 30, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+
+            Text("Tax Ready Score™ unavailable")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+
+            Text("The score appears only after verified income, expense, mileage, quarterly-tax, and document signals are available.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+
+            ProvenanceTag(label: .unavailable)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 16)
     }
 
     private var scoreGauge: some View {
