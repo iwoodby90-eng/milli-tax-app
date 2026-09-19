@@ -256,7 +256,7 @@ struct PayoutsView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect Bank via Stripe or Plaid")
+                            Text("Connect Bank via Plaid")
                                 .font(.custom("Sora-SemiBold", size: 14))
                                 .foregroundStyle(MilliColors.textPrimary)
 
