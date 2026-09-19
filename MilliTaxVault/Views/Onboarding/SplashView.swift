@@ -20,15 +20,10 @@ struct SplashView: View {
             VStack(spacing: 18) {
                 Spacer(minLength: 0)
 
-                MilliWordmark(fontSize: 52, tracking: 9)
+                MilliWordmark(fontSize: 52, showsTagline: true)
                     .opacity(wordmarkOpacity)
 
                 VStack(spacing: 10) {
-                    Text("Money, Made Intelligent.")
-                        .font(.custom("Inter-Medium", size: 14, relativeTo: .subheadline))
-                        .tracking(2.2)
-                        .foregroundStyle(MilliColors.silver)
-
                     Capsule(style: .continuous)
                         .fill(
                             LinearGradient(
