@@ -29,6 +29,7 @@ class IssuedSession:
     refresh_token: str
     access_expires_at: datetime
     refresh_expires_at: datetime
+    is_new_user: bool = False
 
 
 def _require_auth_config() -> None:
@@ -89,7 +90,7 @@ def _as_bool(value: Any) -> bool:
     return False
 
 
-def _new_session(cur, user_id: uuid.UUID) -> IssuedSession:
+def _new_session(cur, user_id: uuid.UUID, *, is_new_user: bool = False) -> IssuedSession:
     settings = get_settings()
     now = datetime.now(timezone.utc)
     access_expires = now + timedelta(minutes=settings.auth_access_ttl_minutes)
@@ -113,7 +114,14 @@ def _new_session(cur, user_id: uuid.UUID) -> IssuedSession:
             refresh_expires,
         ),
     )
-    return IssuedSession(user_id, access_token, refresh_token, access_expires, refresh_expires)
+    return IssuedSession(
+        user_id=user_id,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        access_expires_at=access_expires,
+        refresh_expires_at=refresh_expires,
+        is_new_user=is_new_user,
+    )
 
 
 def exchange_apple_identity(challenge_id: uuid.UUID, identity_token: str) -> IssuedSession:
@@ -147,23 +155,44 @@ def exchange_apple_identity(challenge_id: uuid.UUID, identity_token: str) -> Iss
 
                 cur.execute(
                     """
-                    insert into milli_users (id, apple_subject, email, email_verified)
-                    values (%s, %s, %s, %s)
-                    on conflict (apple_subject) do update
-                       set email = coalesce(excluded.email, milli_users.email),
-                           email_verified = excluded.email_verified or milli_users.email_verified,
-                           updated_at = now()
-                    returning id
+                    select id
+                      from milli_users
+                     where apple_subject = %s
+                     for update
                     """,
-                    (uuid.uuid4(), apple_subject, email, email_verified),
+                    (apple_subject,),
                 )
-                user_id = cur.fetchone()[0]
+                existing_user = cur.fetchone()
+
+                if existing_user is None:
+                    user_id = uuid.uuid4()
+                    cur.execute(
+                        """
+                        insert into milli_users (id, apple_subject, email, email_verified)
+                        values (%s, %s, %s, %s)
+                        """,
+                        (user_id, apple_subject, email, email_verified),
+                    )
+                    is_new_user = True
+                else:
+                    user_id = existing_user[0]
+                    cur.execute(
+                        """
+                        update milli_users
+                           set email = coalesce(%s, email),
+                               email_verified = %s or email_verified,
+                               updated_at = now()
+                         where id = %s
+                        """,
+                        (email, email_verified, user_id),
+                    )
+                    is_new_user = False
 
                 cur.execute(
                     "update auth_challenges set used_at = now() where id = %s",
                     (challenge_id,),
                 )
-                issued = _new_session(cur, user_id)
+                issued = _new_session(cur, user_id, is_new_user=is_new_user)
             conn.commit()
             return issued
         except UniqueViolation as exc:
