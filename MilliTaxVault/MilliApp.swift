@@ -3,6 +3,7 @@ import CoreLocation
 import MapKit
 import AuthenticationServices
 import StoreKit
+import LocalAuthentication
 
 enum AppState: String {
     case splash
@@ -136,12 +137,124 @@ enum NavigationHandoffParser {
     }
 }
 
+// MARK: - Device-owner authentication
+// App Lock uses Apple's LocalAuthentication framework. The app never receives,
+// stores, or compares biometric data; iOS returns only the authentication result.
+enum MilliDeviceAuthentication {
+    enum AuthenticationError: LocalizedError {
+        case unavailable(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .unavailable(let message):
+                return message
+            }
+        }
+    }
+
+    static func authenticate(reason: String) async throws -> Bool {
+        let context = LAContext()
+        context.localizedCancelTitle = "Cancel"
+        context.localizedFallbackTitle = "Use Passcode"
+
+        var evaluationError: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &evaluationError) else {
+            throw AuthenticationError.unavailable(
+                evaluationError?.localizedDescription
+                    ?? "Device authentication is not available on this iPhone."
+            )
+        }
+
+        return try await context.evaluatePolicy(
+            .deviceOwnerAuthentication,
+            localizedReason: reason
+        )
+    }
+}
+
+private struct MilliPrivacyShield: View {
+    let isLocked: Bool
+    let isAuthenticating: Bool
+    let errorMessage: String?
+    let onUnlock: () -> Void
+
+    var body: some View {
+        ZStack {
+            MilliColors.background.ignoresSafeArea()
+
+            RadialGradient(
+                colors: [MilliColors.cyanGlow.opacity(0.12), Color.clear],
+                center: .top,
+                startRadius: 10,
+                endRadius: 360
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 14) {
+                ChromeEmblemView(size: 72)
+
+                MilliWordmark(fontSize: 30, tracking: 5.8)
+
+                HStack(spacing: 7) {
+                    Image(systemName: "lock.shield.fill")
+                        .foregroundStyle(MilliColors.cyanGlow)
+                    Text(isLocked ? "Financial information locked" : "Financial information protected")
+                        .font(MilliFont.bodyMedium)
+                        .foregroundStyle(MilliColors.textSecondary)
+                }
+
+                if isLocked {
+                    Button(action: onUnlock) {
+                        HStack(spacing: 8) {
+                            if isAuthenticating {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .tint(MilliColors.blackGlass)
+                            } else {
+                                Image(systemName: "faceid")
+                            }
+                            Text(isAuthenticating ? "Authenticating…" : "Unlock Milli")
+                        }
+                        .font(MilliFont.headlineSmall)
+                        .foregroundStyle(MilliColors.blackGlass)
+                        .frame(width: 210, height: 46)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(MilliColors.cyanGlow)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isAuthenticating)
+
+                    if let errorMessage, !errorMessage.isEmpty {
+                        Text(errorMessage)
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 280)
+                    }
+                }
+            }
+            .padding(28)
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
 @main
 struct MilliApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var appState: AppState
     @State private var pendingNavigationRequest: NavigationHandoffRequest?
+    @State private var privacyShieldVisible = false
+    @State private var appLocked = false
+    @State private var isAuthenticatingDevice = false
+    @State private var appLockErrorMessage: String?
+
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
+    @AppStorage("milliBiometricUnlock") private var appLockEnabled = false
 
     @StateObject private var appleAuthManager = AppleAuthManager.shared
     @StateObject private var storeKitService = StoreKitService.shared
@@ -217,6 +330,19 @@ struct MilliApp: App {
                     )
                     .transition(.opacity)
                 }
+
+                if privacyShieldVisible || appLocked {
+                    MilliPrivacyShield(
+                        isLocked: appLocked,
+                        isAuthenticating: isAuthenticatingDevice,
+                        errorMessage: appLockErrorMessage,
+                        onUnlock: {
+                            Task { await unlockIfNeeded() }
+                        }
+                    )
+                    .transition(.opacity)
+                    .zIndex(1000)
+                }
             }
             .environmentObject(appleAuthManager)
             .environmentObject(storeKitService)
@@ -227,6 +353,84 @@ struct MilliApp: App {
                 _ = await appleAuthManager.verifyAppleCredentialState()
                 await storeKitService.updateCustomerProductStatus()
             }
+            .onChange(of: scenePhase) { _, newPhase in
+                handleScenePhase(newPhase)
+            }
+            .onChange(of: appLockEnabled) { _, enabled in
+                if !enabled {
+                    appLocked = false
+                    appLockErrorMessage = nil
+                    if scenePhase == .active {
+                        privacyShieldVisible = false
+                    }
+                }
+            }
+        }
+    }
+
+    private var isAutomatedScreenshotMode: Bool {
+        #if DEBUG
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || processInfo.environment["MILLI_SCREEN"] != nil
+            || processInfo.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
+    }
+
+    private func handleScenePhase(_ phase: ScenePhase) {
+        guard !isAutomatedScreenshotMode else {
+            privacyShieldVisible = false
+            appLocked = false
+            return
+        }
+
+        switch phase {
+        case .background, .inactive:
+            // Always protect the app-switcher snapshot, even when optional App
+            // Lock is disabled.
+            privacyShieldVisible = true
+            if appLockEnabled, appState == .main {
+                appLocked = true
+            }
+        case .active:
+            if appLocked, appLockEnabled, appState == .main {
+                Task { await unlockIfNeeded() }
+            } else {
+                privacyShieldVisible = false
+            }
+        @unknown default:
+            privacyShieldVisible = true
+        }
+    }
+
+    @MainActor
+    private func unlockIfNeeded() async {
+        guard appLocked, appLockEnabled, !isAuthenticatingDevice else {
+            if !appLockEnabled {
+                appLocked = false
+                privacyShieldVisible = false
+            }
+            return
+        }
+
+        isAuthenticatingDevice = true
+        appLockErrorMessage = nil
+        defer { isAuthenticatingDevice = false }
+
+        do {
+            let authenticated = try await MilliDeviceAuthentication.authenticate(
+                reason: "Unlock Milli to view your financial information."
+            )
+            if authenticated {
+                appLocked = false
+                privacyShieldVisible = false
+                appLockErrorMessage = nil
+            }
+        } catch {
+            appLockErrorMessage = error.localizedDescription
+            privacyShieldVisible = true
         }
     }
 
@@ -283,6 +487,10 @@ struct MilliApp: App {
     }
 
     private func transition(to state: AppState) {
+        if state == .login {
+            appLocked = false
+            appLockErrorMessage = nil
+        }
         withAnimation(.easeInOut(duration: 0.32)) {
             appState = state
         }
