@@ -13,7 +13,7 @@ public struct MilliRetirementAccount: Codable, Equatable {
     public let isApproved: Bool
     public let openingDate: Date
 
-    public static let standard = MilliRetirementAccount(
+    public static let demoReference = MilliRetirementAccount(
         accountNumber: "MLI-ROTH-8492",
         planType: "Milli Roth IRA",
         custodian: "Apex Clearing Custody",
@@ -644,12 +644,12 @@ private struct MilliRetirementOnboardingSheet: View {
 
     @State private var step = 1
     @State private var planType = "Roth IRA"
-    @State private var fullName = "Alex Mercer"
-    @State private var dob = "1994-06-15"
-    @State private var ssn = "•••-••-8492"
-    @State private var annual1099Income = "75000"
+    @State private var fullName = MilliRuntimeMode.isScreenshotDemo ? "Alex Mercer" : ""
+    @State private var dob = MilliRuntimeMode.isScreenshotDemo ? "1994-06-15" : ""
+    @State private var ssn = MilliRuntimeMode.isScreenshotDemo ? "•••-••-8492" : ""
+    @State private var annual1099Income = MilliRuntimeMode.isScreenshotDemo ? "75000" : ""
     @State private var contributionPercent: Double = 15
-    @State private var beneficiaryName = "Sarah Mercer"
+    @State private var beneficiaryName = MilliRuntimeMode.isScreenshotDemo ? "Sarah Mercer" : ""
     @State private var relationship = "Spouse"
 
     var body: some View {
@@ -869,23 +869,23 @@ private struct MilliRetirementOnboardingSheet: View {
                 .foregroundStyle(MilliColors.textTertiary)
 
             Button {
-                // Open account
+                guard MilliRuntimeMode.isScreenshotDemo else { return }
                 let newAccount = MilliRetirementAccount(
-                    accountNumber: "MLI-\(planType.prefix(4).uppercased())-\(Int.random(in: 1000...9999))",
+                    accountNumber: "DEMO-\(planType.prefix(4).uppercased())",
                     planType: "Milli \(planType)",
-                    custodian: "Apex Clearing Custody",
-                    balance: 42685.73,
-                    monthlyAutoDepositPercent: 15.0,
+                    custodian: "Demo Custodian",
+                    balance: 0,
+                    monthlyAutoDepositPercent: contributionPercent,
                     annualLimit: planType.contains("SEP") ? 69000.0 : 7000.0,
-                    isApproved: true,
+                    isApproved: false,
                     openingDate: Date()
                 )
                 store.openMilliAccount(newAccount)
                 dismiss()
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "checkmark.seal.fill")
-                    Text("Electronically Sign & Open Account")
+                    Image(systemName: MilliRuntimeMode.isScreenshotDemo ? "checkmark.seal.fill" : "lock.shield.fill")
+                    Text(MilliRuntimeMode.isScreenshotDemo ? "Open Demo Retirement Account" : "Custodian Connection Required")
                 }
                 .font(.custom("Inter-SemiBold", size: 14))
                 .foregroundStyle(MilliColors.blackGlass)
@@ -894,7 +894,16 @@ private struct MilliRetirementOnboardingSheet: View {
                 .background(RoundedRectangle(cornerRadius: 12).fill(MilliColors.cyanGlow))
             }
             .buttonStyle(.plain)
+            .disabled(!MilliRuntimeMode.isScreenshotDemo)
+            .opacity(MilliRuntimeMode.isScreenshotDemo ? 1 : 0.48)
             .padding(.top, 10)
+
+            if !MilliRuntimeMode.isScreenshotDemo {
+                Text("Milli will not create or approve a retirement account locally. Live account opening remains unavailable until the custodian, KYC, disclosures, and funding workflow are connected to the authenticated backend.")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -915,47 +924,29 @@ private struct MilliRetirementOnboardingSheet: View {
 
 @MainActor
 public final class RetirementPlanningStore: ObservableObject {
-    @Published public var currentAge: Int = 32 { didSet { persist() } }
-    @Published public var currentBalance: Double = 42685.73 { didSet { persist() } }
-    @Published public var annualIncome: Double = 75000 { didSet { persist() } }
+    @Published public var currentAge: Int = 0 { didSet { persist() } }
+    @Published public var currentBalance: Double = 0 { didSet { persist() } }
+    @Published public var annualIncome: Double = 0 { didSet { persist() } }
     @Published public var contributionMode: RetirementContributionMode = .percentOfIncome { didSet { persist() } }
-    @Published public var contributionPercent: Double = 15 { didSet { persist() } }
-    @Published public var monthlyContribution: Double = 937.50 { didSet { persist() } }
-    @Published public var targetRetirementAge: Int = 62 { didSet { persist() } }
+    @Published public var contributionPercent: Double = 0 { didSet { persist() } }
+    @Published public var monthlyContribution: Double = 0 { didSet { persist() } }
+    @Published public var targetRetirementAge: Int = 65 { didSet { persist() } }
     @Published public var annualReturnPercent: Double = 7.5 { didSet { persist() } }
-    @Published public var milliAccount: MilliRetirementAccount? = MilliRetirementAccount.standard { didSet { persist() } }
-    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [
-        ConnectedExternalRetirementAccount(
-            id: "merged-1",
-            custodianName: "Fidelity Investments",
-            accountType: "401(k)",
-            nickname: "Past Employer 401(k)",
-            balance: 34850.0,
-            monthlyContribution: 0.0,
-            annualReturnPercent: 7.5,
-            rolloverStatus: .completed,
-            accountMask: "8102"
-        ),
-        ConnectedExternalRetirementAccount(
-            id: "merged-2",
-            custodianName: "Vanguard",
-            accountType: "Traditional IRA",
-            nickname: "Vanguard IRA",
-            balance: 18420.0,
-            monthlyContribution: 200.0,
-            annualReturnPercent: 7.5,
-            rolloverStatus: .transferInitiated,
-            accountMask: "3319"
-        )
-    ] { didSet { persist() } }
-    @Published public private(set) var hasVerifiedConnectedData: Bool = true
+    @Published public var milliAccount: MilliRetirementAccount? = nil { didSet { persist() } }
+    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [] { didSet { persist() } }
+    @Published public private(set) var hasVerifiedConnectedData: Bool = false
 
     private let defaults = UserDefaults.standard
-    private let storageKey = "milli_retirement_planning_profile_v3"
+    // v4 intentionally abandons pre-release seeded balances from the old demo store.
+    private let storageKey = "milli_retirement_planning_profile_v4"
     private var isLoading = true
 
     public init() {
-        load()
+        if MilliRuntimeMode.isScreenshotDemo {
+            loadDemoReference()
+        } else {
+            load()
+        }
         isLoading = false
     }
 
@@ -969,22 +960,26 @@ public final class RetirementPlanningStore: ObservableObject {
             monthlyContribution: monthlyContribution,
             targetRetirementAge: targetRetirementAge,
             annualReturnPercent: annualReturnPercent,
-            hasVerifiedConnectedData: hasVerifiedConnectedData
+            hasVerifiedConnectedData: hasVerifiedConnectedData,
+            milliAccount: milliAccount,
+            mergedAccounts: mergedAccounts
         )
     }
 
     public func openMilliAccount(_ account: MilliRetirementAccount) {
         milliAccount = account
-        hasVerifiedConnectedData = true
+        hasVerifiedConnectedData = account.isApproved
     }
 
     public func addMergedAccount(_ account: ConnectedExternalRetirementAccount) {
         mergedAccounts.append(account)
-        hasVerifiedConnectedData = true
+        // Manually entered rollover information is planning data, not verified
+        // custodian authority. A future backend connection may promote it.
+        hasVerifiedConnectedData = false
     }
 
     public func persist() {
-        guard !isLoading else { return }
+        guard !isLoading, !MilliRuntimeMode.isScreenshotDemo else { return }
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(snapshot) {
             defaults.set(data, forKey: storageKey)
@@ -1005,6 +1000,45 @@ public final class RetirementPlanningStore: ObservableObject {
         targetRetirementAge = saved.targetRetirementAge
         annualReturnPercent = saved.annualReturnPercent
         hasVerifiedConnectedData = saved.hasVerifiedConnectedData
+        milliAccount = saved.milliAccount
+        mergedAccounts = saved.mergedAccounts ?? []
+    }
+
+    private func loadDemoReference() {
+        currentAge = 32
+        currentBalance = 42_685.73
+        annualIncome = 75_000
+        contributionMode = .percentOfIncome
+        contributionPercent = 15
+        monthlyContribution = 937.50
+        targetRetirementAge = 62
+        annualReturnPercent = 7.5
+        milliAccount = .demoReference
+        mergedAccounts = [
+            ConnectedExternalRetirementAccount(
+                id: "demo-merged-1",
+                custodianName: "Fidelity Investments",
+                accountType: "401(k)",
+                nickname: "Past Employer 401(k)",
+                balance: 34_850,
+                monthlyContribution: 0,
+                annualReturnPercent: 7.5,
+                rolloverStatus: .completed,
+                accountMask: "8102"
+            ),
+            ConnectedExternalRetirementAccount(
+                id: "demo-merged-2",
+                custodianName: "Vanguard",
+                accountType: "Traditional IRA",
+                nickname: "Vanguard IRA",
+                balance: 18_420,
+                monthlyContribution: 200,
+                annualReturnPercent: 7.5,
+                rolloverStatus: .transferInitiated,
+                accountMask: "3319"
+            )
+        ]
+        hasVerifiedConnectedData = false
     }
 }
 
@@ -1155,6 +1189,8 @@ public struct RetirementPlanningSnapshot: Codable, Equatable {
     public let targetRetirementAge: Int
     public let annualReturnPercent: Double
     public let hasVerifiedConnectedData: Bool
+    public let milliAccount: MilliRetirementAccount?
+    public let mergedAccounts: [ConnectedExternalRetirementAccount]?
 
     public var isProjectionReady: Bool {
         currentAge > 0 && targetRetirementAge > currentAge
