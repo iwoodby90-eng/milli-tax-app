@@ -42,6 +42,7 @@ class SessionOut(BaseModel):
     token_type: str = "Bearer"
     access_expires_at: str
     refresh_expires_at: str
+    is_new_user: bool = False
 
 
 def _session_out(issued) -> SessionOut:
@@ -51,6 +52,7 @@ def _session_out(issued) -> SessionOut:
         refresh_token=issued.refresh_token,
         access_expires_at=issued.access_expires_at.isoformat(),
         refresh_expires_at=issued.refresh_expires_at.isoformat(),
+        is_new_user=issued.is_new_user,
     )
 
 
