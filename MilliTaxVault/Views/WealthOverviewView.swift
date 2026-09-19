@@ -10,19 +10,20 @@ struct WealthOverviewView: View {
     var navigate: ((ActiveScreen) -> Void)? = nil
 
     private let model = WealthOverviewModel.reference
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
                 wealthDestinations
-                if MilliRuntimeMode.isScreenshotDemo {
+                if showsReferenceData {
                     netWorthHero
                     allocationCard
                     projectionCard
                     goalsCard
                 } else {
-                    unavailableWealthState
+                    unavailableDataCard
                 }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
@@ -57,33 +58,36 @@ struct WealthOverviewView: View {
 
             Spacer()
 
-            Image(systemName: "chart.pie.fill")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
-                .frame(width: 34, height: 34)
+            ProvenanceTag(label: ReferenceDataPolicy.provenance)
+                .frame(width: 70, alignment: .trailing)
         }
     }
 
-    private var unavailableWealthState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "chart.pie.fill")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
+    private var unavailableDataCard: some View {
+        VStack(spacing: 13) {
+            ZStack {
+                Circle()
+                    .fill(MilliColors.cyanGlow.opacity(0.07))
+                    .frame(width: 62, height: 62)
+                Image(systemName: "chart.pie")
+                    .font(.system(size: 26, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
 
-            Text("Your wealth picture starts with verified data")
+            Text("Your wealth picture starts with verified accounts")
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
 
-            Text("Milli will build net worth and projections from connected investing, retirement, savings, and cash data. Reference balances are never shown as production truth.")
+            Text("Connect investing, retirement, savings, and cash accounts to build net worth and projections from real balances. Reference portfolio values stay confined to demo captures.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
-
-            ProvenanceTag(label: .unavailable)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-        .milliCard(padding: 16)
+        .milliCard(padding: 18)
     }
 
     private var wealthDestinations: some View {
