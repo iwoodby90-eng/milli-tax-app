@@ -8,7 +8,7 @@ import SwiftUI
 struct SavingsView: View {
     var onBack: () -> Void = {}
 
-    @State private var goals: [SavingsGoal] = SavingsGoal.seeded
+    @State private var goals: [SavingsGoal] = MilliRuntimeMode.isScreenshotDemo ? SavingsGoal.seeded : []
     @State private var showAddGoal = false
 
     private var totalSaved: Double {
