@@ -8,14 +8,19 @@ struct QuarterlyTaxesView: View {
     var onBack: () -> Void = {}
 
     private let estimate = QuarterlyTaxDisplayModel.reference
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                estimateHero
-                breakdown
-                projection
+                if showsReferenceData {
+                    estimateHero
+                    breakdown
+                    projection
+                } else {
+                    unavailableState
+                }
                 paymentAction
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
@@ -44,11 +49,36 @@ struct QuarterlyTaxesView: View {
 
             Spacer()
 
-            Text(estimate.periodLabel)
-                .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textSecondary)
+            ProvenanceTag(label: ReferenceDataPolicy.provenance)
                 .frame(width: 70, alignment: .trailing)
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MilliColors.cyanGlow.opacity(0.07))
+                    .frame(width: 58, height: 58)
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Your quarterly estimate is not available yet")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text("Complete your tax profile and connect verified income data. Milli will calculate the estimate from authenticated records instead of displaying reference numbers.")
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .milliCard(padding: 18)
     }
 
     private var estimateHero: some View {

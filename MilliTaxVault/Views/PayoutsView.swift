@@ -1,14 +1,14 @@
 import SwiftUI
 
 // MARK: - PayoutsView
-// Banking-grade payout history powered by live Stripe Financial Connections & Plaid Link bank aggregation.
-// Automatically pulls real-time direct deposits and gig payouts with verified financial receipts.
+// Banking-grade payout history backed by authenticated Plaid connectivity.
+// Column remains server-side and owns banking / ACH money movement.
 
 struct PayoutsView: View {
     @StateObject private var bankService = BankConnectionService.shared
+    @StateObject private var plaid = PlaidLinkCoordinator()
     @State private var selectedFilter: PayoutFilter = .all
     @State private var selectedPayout: VerifiedPayout?
-    @State private var showBankConnectSheet = false
     @State private var showManagePlatformsSheet = false
 
     var body: some View {
@@ -16,6 +16,9 @@ struct PayoutsView: View {
             VStack(spacing: 12) {
                 header
                 bankConnectionCard
+                if plaid.requiresPayoutAccountSelection {
+                    payoutAccountSelection
+                }
                 filterControl
                 payoutList
             }
@@ -31,15 +34,45 @@ struct PayoutsView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showBankConnectSheet) {
-            BankConnectionSheet(service: bankService)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+        .sheet(isPresented: $plaid.isPresentingLink) {
+            if let session = plaid.linkSession {
+                session.sheet()
+            } else {
+                ProgressView("Opening Plaid…")
+                    .tint(MilliColors.cyanGlow)
+                    .preferredColorScheme(.dark)
+            }
         }
         .sheet(isPresented: $showManagePlatformsSheet) {
             GigPlatformManagerSheet(service: bankService)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .task {
+            await bankService.refreshConnectionFromBackend()
+        }
+        .onChange(of: plaid.connectedAccount?.id) { _, _ in
+            guard let account = plaid.connectedAccount else { return }
+            bankService.adoptPlaidAccount(account)
+        }
+        .alert(
+            "Bank connection issue",
+            isPresented: Binding(
+                get: { plaid.errorMessage != nil || bankService.syncMessage != nil },
+                set: { visible in
+                    if !visible {
+                        plaid.errorMessage = nil
+                        bankService.syncMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                plaid.errorMessage = nil
+                bankService.syncMessage = nil
+            }
+        } message: {
+            Text(plaid.errorMessage ?? bankService.syncMessage ?? "Milli couldn't refresh the secure bank connection.")
         }
     }
 
@@ -72,7 +105,7 @@ struct PayoutsView: View {
                             .frame(width: 42, height: 42)
                             .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.35), lineWidth: 1))
 
-                        Image(systemName: bank.provider.iconName)
+                        Image(systemName: "building.columns.fill")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(MilliColors.cyanGlow)
                     }
@@ -89,9 +122,7 @@ struct PayoutsView: View {
                         }
 
                         HStack(spacing: 6) {
-                            // LAUNCH P0: no "STRIPE SECURED" claim without a
-                            // live provider connection; show CACHED instead.
-                            Text(bank.isLive ? bank.provider.badgeTitle : "CACHED LIVE")
+                            Text(bank.isLive ? "PLAID LIVE" : "CACHED LIVE")
                                 .font(.custom("Inter-Bold", size: 9))
                                 .tracking(0.4)
                                 .foregroundStyle(bank.isLive ? MilliColors.positive : MilliColors.textTertiary)
@@ -131,17 +162,9 @@ struct PayoutsView: View {
                         }
 
                         Button {
-                            showBankConnectSheet = true
+                            plaid.begin()
                         } label: {
-                            Label("Switch Bank Account", systemImage: "arrow.left.arrow.right")
-                        }
-
-                        Divider()
-
-                        Button(role: .destructive) {
-                            bankService.disconnectBank()
-                        } label: {
-                            Label("Disconnect Bank", systemImage: "xmark.circle")
+                            Label("Connect / Switch Bank", systemImage: "arrow.left.arrow.right")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle.fill")
@@ -174,11 +197,11 @@ struct PayoutsView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect Bank via Stripe or Plaid")
+                            Text("Connect Bank Securely with Plaid")
                                 .font(.custom("Sora-SemiBold", size: 14))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text("Pull live direct deposits and automate tax vault allocations.")
+                            Text("Connect the account where gig payouts land. Plaid verifies the bank connection; money movement stays server-authorized.")
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
@@ -187,11 +210,11 @@ struct PayoutsView: View {
                     }
 
                     Button {
-                        showBankConnectSheet = true
+                        plaid.begin()
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "building.columns.fill")
-                            Text("Connect Bank Account")
+                            Text(plaid.isLoading ? "Preparing Plaid…" : "Connect Bank Account")
                         }
                         .font(.custom("Inter-SemiBold", size: 13))
                         .foregroundStyle(MilliColors.blackGlass)
@@ -203,6 +226,7 @@ struct PayoutsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .disabled(plaid.isLoading || plaid.isPresentingLink)
                 }
                 .padding(14)
                 .background(
@@ -215,6 +239,67 @@ struct PayoutsView: View {
                 )
             }
         }
+    }
+
+    private var payoutAccountSelection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("CHOOSE PAYOUT ACCOUNT")
+                .sectionHeaderStyle()
+
+            Text("Plaid returned more than one account. Milli will not guess where your gig payouts land.")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textSecondary)
+
+            ForEach(plaid.availableAccounts) { account in
+                Button {
+                    Task {
+                        await plaid.selectPayoutAccount(account)
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "creditcard.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(MilliColors.cyanGlow)
+                            .frame(width: 30, height: 30)
+                            .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(account.name ?? "Linked account")
+                                .font(MilliFont.bodyMedium)
+                                .foregroundStyle(MilliColors.textPrimary)
+                            HStack(spacing: 5) {
+                                if let institution = account.institutionName, !institution.isEmpty {
+                                    Text(institution)
+                                }
+                                if let mask = account.mask, !mask.isEmpty {
+                                    Text("•••• \(mask)")
+                                }
+                            }
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                        }
+
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MilliColors.cyanGlow)
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(minHeight: 48)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white.opacity(0.025))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
+                            }
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(plaid.isLoading)
+            }
+        }
+        .milliCard(padding: 12)
     }
 
     // MARK: - Filter Control
@@ -265,7 +350,7 @@ struct PayoutsView: View {
                 
                 if bankService.connectedBank == nil {
                     Button("Connect Bank to Sync Payouts") {
-                        showBankConnectSheet = true
+                        plaid.begin()
                     }
                     .font(.custom("Inter-Medium", size: 12))
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -522,185 +607,6 @@ struct FinancialReceiptSheet: View {
     }
 }
 
-// MARK: - Bank Connection Sheet
-
-private struct BankConnectionSheet: View {
-    @ObservedObject var service: BankConnectionService
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedProvider: BankConnectionProvider = .stripeFinancialConnections
-    @State private var selectedInstitution: BankInstitution = BankInstitution.standardInstitutions[0]
-    @State private var accountMask: String = "4821"
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    providerSelector
-                    institutionList
-                    accountNumberField
-                    connectButton
-                }
-                .padding(.horizontal, MilliSpacing.screenHorizontal)
-                .padding(.vertical, 16)
-            }
-            .background(MilliColors.background.ignoresSafeArea())
-            .navigationTitle("Connect Bank Account")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(MilliColors.cyanGlow)
-                }
-            }
-        }
-    }
-
-    private var providerSelector: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("CONNECTION METHOD")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.7)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            HStack(spacing: 8) {
-                ForEach(BankConnectionProvider.allCases) { provider in
-                    Button {
-                        selectedProvider = provider
-                    } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: provider.iconName)
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(selectedProvider == provider ? MilliColors.cyanGlow : MilliColors.textSecondary)
-
-                            Text(provider.rawValue)
-                                .font(.custom("Inter-Medium", size: 11))
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(selectedProvider == provider ? MilliColors.textPrimary : MilliColors.textTertiary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            Group {
-                                if selectedProvider == provider {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(MilliColors.cardBackground)
-                                } else {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(MilliColors.graphiteSurface)
-                                }
-                            }
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(selectedProvider == provider ? MilliColors.cyanGlow : Color.white.opacity(0.06), lineWidth: 1)
-                            )
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private var institutionList: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("SELECT FINANCIAL INSTITUTION")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.7)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            VStack(spacing: 6) {
-                ForEach(BankInstitution.standardInstitutions) { inst in
-                    Button {
-                        selectedInstitution = inst
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: inst.logoIcon)
-                                .font(.system(size: 16))
-                                .foregroundStyle(selectedInstitution == inst ? MilliColors.cyanGlow : MilliColors.textSecondary)
-                                .frame(width: 28, height: 28)
-                                .background(Circle().fill(Color.white.opacity(0.04)))
-
-                            Text(inst.name)
-                                .font(.custom("Inter-Medium", size: 14))
-                                .foregroundStyle(MilliColors.textPrimary)
-
-                            Spacer()
-
-                            if selectedInstitution == inst {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(MilliColors.cyanGlow)
-                            }
-                        }
-                        .padding(12)
-                        .background(
-                            Group {
-                                if selectedInstitution == inst {
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(MilliColors.cardBackground)
-                                } else {
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(MilliColors.graphiteSurface)
-                                }
-                            }
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(selectedInstitution == inst ? MilliColors.cyanGlow.opacity(0.4) : Color.white.opacity(0.04), lineWidth: 0.8)
-                            )
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private var accountNumberField: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("LAST 4 DIGITS OF ACCOUNT")
-                .font(MilliFont.sectionLabel)
-                .tracking(0.7)
-                .foregroundStyle(MilliColors.textSecondary)
-
-            TextField("4821", text: $accountMask)
-                .keyboardType(.numberPad)
-                .font(.custom("Sora-SemiBold", size: 16))
-                .foregroundStyle(MilliColors.textPrimary)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(MilliColors.graphiteSurface)
-                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
-                )
-        }
-    }
-
-    private var connectButton: some View {
-        Button {
-            service.connectBank(institution: selectedInstitution, provider: selectedProvider, accountMask: accountMask.isEmpty ? "4821" : accountMask)
-            dismiss()
-        } label: {
-            HStack(spacing: 8) {
-                if service.isConnecting {
-                    ProgressView()
-                } else {
-                    Image(systemName: "lock.shield.fill")
-                    Text("Authenticate & Connect via \(selectedProvider == .stripeFinancialConnections ? "Stripe" : "Plaid")")
-                }
-            }
-            .font(.custom("Inter-SemiBold", size: 14))
-            .foregroundStyle(MilliColors.blackGlass)
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(MilliColors.cyanGlow)
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(service.isConnecting)
-    }
-}
-
 // MARK: - Gig Platform Manager Sheet
 
 private struct GigPlatformManagerSheet: View {
@@ -711,7 +617,7 @@ private struct GigPlatformManagerSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("CONNECTED GIG PLATFORMS")
+                    Text("GIG PAYOUT SOURCES")
                         .font(MilliFont.sectionLabel)
                         .tracking(0.7)
                         .foregroundStyle(MilliColors.textSecondary)
@@ -741,7 +647,7 @@ private struct GigPlatformManagerSheet: View {
                                         .font(.custom("Inter-SemiBold", size: 14))
                                         .foregroundStyle(MilliColors.textPrimary)
 
-                                    Text(platform.isConnected ? "Auto-syncing direct deposits" : "Disconnected")
+                                    Text(platform.isConnected ? "Included in payout detection" : "Not selected")
                                         .font(.custom("Inter-Regular", size: 11))
                                         .foregroundStyle(platform.isConnected ? MilliColors.positive : MilliColors.textTertiary)
                                 }

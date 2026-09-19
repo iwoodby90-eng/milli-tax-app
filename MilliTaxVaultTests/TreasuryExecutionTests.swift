@@ -28,7 +28,7 @@ final class TreasuryExecutionTests: XCTestCase {
 
             switch behavior {
             case .succeed:
-                return "stripe_\(reference)"
+                return "column_\(reference)"
             case .transportError:
                 throw URLError(.notConnectedToInternet)
             }

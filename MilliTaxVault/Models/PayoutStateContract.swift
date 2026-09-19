@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - PayoutStateContract
-// Canonical money-movement state contract for the Stripe Treasury Autopilot UI.
+// Canonical money-movement state contract for Milli's Plaid + Column Autopilot flow.
 // Mirrors the Canonical Money-Movement State Contract v2.1 (backend authority).
 // HARD RULE: the UI renders backend/provider states only. SwiftUI never
 // determines financial truth. No view may display LIVE / POSTED / PROTECTED /
@@ -64,6 +64,27 @@ public enum ProvenanceLabel: String, CaseIterable, Codable, Sendable {
     case unavailable = "UNAVAILABLE"
 }
 
+
+/// Reference/demo financial values are permitted only for deterministic DEBUG
+/// capture sessions. Release builds must never present seeded balances, scores,
+/// account numbers, or tax figures as if they belonged to the signed-in user.
+public enum ReferenceDataPolicy {
+    public static var allowsDemoReferenceData: Bool {
+        #if DEBUG
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["MILLI_SCREENSHOT_MODE"] == "1"
+            || processInfo.environment["MILLI_SCREEN"] != nil
+            || processInfo.arguments.contains("-milliScreenshotMode")
+        #else
+        return false
+        #endif
+    }
+
+    public static var provenance: ProvenanceLabel {
+        allowsDemoReferenceData ? .demo : .unavailable
+    }
+}
+
 /// Authoritative payout record as delivered by the backend. The client
 /// renders this; it never synthesizes it.
 public struct AutopilotPayout: Identifiable, Codable, Equatable, Sendable {
@@ -99,7 +120,7 @@ public struct AutopilotPayout: Identifiable, Codable, Equatable, Sendable {
     public var taxAllocatedCents: Int64? { nil }
 }
 
-/// MILLI Financial Account (Stripe Financial Account / Treasury) status
+/// MILLI Financial Account / Column banking status
 /// as reported by the backend.
 public enum FinancialAccountStatus: String, Codable, Sendable {
     case notOpened
