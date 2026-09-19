@@ -9,6 +9,8 @@ import Charts
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
 
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
+
     private var score: Int {
         guard !factors.isEmpty else { return 0 }
         return Int((Double(factors.reduce(0) { $0 + $1.score }) / Double(factors.count)).rounded())
@@ -22,12 +24,12 @@ struct TaxReadyScoreView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                if MilliRuntimeMode.isScreenshotDemo {
+                if showsReferenceData {
                     scoreGauge
                     factorList
                     history
                 } else {
-                    unavailableScoreState
+                    unavailableState
                 }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
@@ -56,33 +58,36 @@ struct TaxReadyScoreView: View {
 
             Spacer()
 
-            Image(systemName: "info.circle")
-                .font(.system(size: 16))
-                .foregroundStyle(MilliColors.textSecondary)
-                .frame(width: 34, height: 34)
+            ProvenanceTag(label: ReferenceDataPolicy.provenance)
+                .frame(width: 70, alignment: .trailing)
         }
     }
 
-    private var unavailableScoreState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "checkmark.seal")
-                .font(.system(size: 30, weight: .medium))
-                .foregroundStyle(MilliColors.cyanGlow)
+    private var unavailableState: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.07), lineWidth: 10)
+                    .frame(width: 126, height: 126)
+                Image(systemName: "checkmark.seal")
+                    .font(.system(size: 34, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
 
-            Text("Tax Ready Score™ unavailable")
+            Text("Tax Ready Score is awaiting verified data")
                 .font(MilliFont.headlineSmall)
                 .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
 
-            Text("The score appears only after verified income, expense, mileage, quarterly-tax, and document signals are available.")
+            Text("Connect income, expenses, mileage, tax payments, and documents. Milli will calculate your score from those records rather than seeded reference factors.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
-
-            ProvenanceTag(label: .unavailable)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .milliCard(padding: 16)
+        .padding(.vertical, 26)
+        .milliCard(padding: 18)
     }
 
     private var scoreGauge: some View {
