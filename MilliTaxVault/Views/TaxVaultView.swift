@@ -128,10 +128,10 @@ struct TaxVaultView: View {
         return "Withheld from \(snapshot.payouts.count) verified payouts"
     }
 
-    // MARK: Quarterly + reserve two-up
+    // MARK: Quarterly + reserve stack
 
     private var twoUpRow: some View {
-        HStack(alignment: .top, spacing: MilliSpacing.gridGap) {
+        VStack(spacing: MilliSpacing.gridGap) {
             quarterlyCard
             reserveCard
         }

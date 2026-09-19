@@ -299,10 +299,12 @@ struct HomeView: View {
                         Text(score == nil ? "Not calculated" : "Calculated")
                             .font(MilliFont.labelLarge)
                             .foregroundStyle(score == nil ? MilliColors.textTertiary : MilliColors.positive)
-                        Text(score == nil ? "Complete your tax profile\nto calculate this score" : "Based on verified\nfinancial data")
+                        Text(score == nil ? "Complete your tax profile" : "Based on verified data")
                             .font(MilliFont.caption)
                             .foregroundStyle(MilliColors.textSecondary)
                             .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
