@@ -1,7 +1,8 @@
 """Health and readiness.
 
 Liveness never leaks secrets. Readiness stays false until the dependencies
-required for authenticated financial data are actually configured.
+required for authenticated financial data and compliant money movement are
+actually configured.
 """
 
 from fastapi import APIRouter
@@ -31,10 +32,21 @@ def ready() -> dict:
 
     apple_auth = "configured" if settings.apple_auth_configured else "unconfigured"
     plaid = "configured" if settings.plaid_configured else "unconfigured"
+    column = "configured" if settings.column_configured else "unconfigured"
+    column_ach = "configured" if settings.column_ach_configured else "unconfigured"
+
     return {
         "database": database,
         "apple_auth": apple_auth,
         "plaid": plaid,
         "plaid_env": settings.plaid_env,
-        "ready": database == "ok" and apple_auth == "configured" and plaid == "configured",
+        "column": column,
+        "column_env": settings.column_env,
+        "column_ach": column_ach,
+        "ready": (
+            database == "ok"
+            and apple_auth == "configured"
+            and plaid == "configured"
+            and column_ach == "configured"
+        ),
     }
