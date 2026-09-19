@@ -683,7 +683,6 @@ def create_transfer(
 
     _verify_counterparty_is_current(
         user_id=user_id,
-        local_counterparty_id=body.counterparty_id,
         provider_counterparty_id=counterparty[0],
         plaid_account_id=counterparty[1],
     )
