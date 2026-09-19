@@ -15,6 +15,11 @@ struct PayoutsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 12) {
                 header
+                MilliMetalCard(
+                    institution: bankService.connectedBank?.institutionName,
+                    mask: bankService.connectedBank?.accountMask,
+                    isLive: bankService.connectedBank?.isLive ?? false
+                )
                 summaryStrip
                 bankConnectionCard
                 payoutList

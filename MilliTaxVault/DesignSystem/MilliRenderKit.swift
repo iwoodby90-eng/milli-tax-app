@@ -433,3 +433,121 @@ struct MilliActionPair: View {
         .accessibilityLabel("\(title). \(caption)")
     }
 }
+
+// MARK: - MilliMetalCard
+// Brushed-chrome Milli card face. Shows only verified account details;
+// an unlinked card renders masked placeholders instead of invented numbers.
+
+struct MilliMetalCard: View {
+    var institution: String?
+    var mask: String?
+    var isLive: Bool = false
+
+    private var chromeFace: LinearGradient {
+        LinearGradient(
+            colors: [
+                MilliColors.chromeDeep,
+                MilliColors.chromeDark,
+                MilliColors.chromeMid.opacity(0.9),
+                MilliColors.chromeDark,
+                Color.black.opacity(0.92)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(chromeFace)
+
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.clear, MilliColors.cyanGlow.opacity(0.10)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .blendMode(.screen)
+
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.45), Color.white.opacity(0.06)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.9
+                )
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
+                    MilliWordmark(fontSize: 21, tracking: 5)
+                    Spacer()
+                    Text(isLive ? "LIVE" : "NOT LINKED")
+                        .font(.custom("Inter-SemiBold", size: 8.5, relativeTo: .caption2))
+                        .tracking(1.1)
+                        .foregroundStyle(isLive ? MilliColors.cyanGlow : MilliColors.chromeLight.opacity(0.7))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.35))
+                                .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 0.6))
+                        )
+                }
+
+                Spacer(minLength: 10)
+
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [MilliColors.chromeLight, MilliColors.chromeMid, MilliColors.chromeLight],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 38, height: 27)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(Color.black.opacity(0.25), lineWidth: 0.7)
+                    )
+
+                Spacer(minLength: 10)
+
+                Text("••••  ••••  ••••  \(mask ?? "••••")")
+                    .font(.custom("Sora-SemiBold", size: 17, relativeTo: .title3))
+                    .tracking(1.6)
+                    .foregroundStyle(MilliColors.chromeWhite)
+
+                Spacer(minLength: 8)
+
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ACCOUNT")
+                            .font(.custom("Inter-SemiBold", size: 8, relativeTo: .caption2))
+                            .tracking(1)
+                            .foregroundStyle(MilliColors.chromeLight.opacity(0.65))
+                        Text(institution ?? "Connect a bank to activate")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.chromeWhite.opacity(0.92))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    Spacer()
+                    Text("VISA")
+                        .font(.custom("Sora-Bold", size: 15, relativeTo: .headline))
+                        .tracking(1.4)
+                        .foregroundStyle(MilliColors.chromeWhite.opacity(0.9))
+                }
+            }
+            .padding(18)
+        }
+        .frame(height: 196)
+        .shadow(color: Color.black.opacity(0.6), radius: 18, y: 10)
+        .shadow(color: MilliColors.cyanGlow.opacity(isLive ? 0.18 : 0.06), radius: 22, y: 0)
+        .accessibilityElement(children: .combine)
+    }
+}
