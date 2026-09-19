@@ -385,9 +385,11 @@ final class MilliBackendClient {
     private var candidateBaseURLs: [URL] {
         var values: [String] = []
 
+        #if DEBUG
         if let environmentURL = ProcessInfo.processInfo.environment["MILLI_API_BASE_URL"] {
             values.append(environmentURL)
         }
+        #endif
 
         if let plistURL = Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String {
             values.append(plistURL)
@@ -401,7 +403,13 @@ final class MilliBackendClient {
             let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             guard !trimmed.isEmpty, seen.insert(trimmed).inserted else { return nil }
-            return URL(string: trimmed)
+            // Banking traffic is HTTPS-only: a cleartext or non-web override is
+            // never a usable Milli backend.
+            guard let url = URL(string: trimmed),
+                  url.scheme?.lowercased() == "https",
+                  let host = url.host, !host.isEmpty
+            else { return nil }
+            return url
         }
     }
 }

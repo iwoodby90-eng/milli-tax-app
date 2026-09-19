@@ -30,6 +30,10 @@ user identity or financial settlement state.
   come from authoritative backend/provider reconciliation.
 - **Production API surface is reduced:** FastAPI docs/OpenAPI endpoints are
   disabled in production and responses are non-cacheable with security headers.
+- **Anonymous surfaces are throttled:** `/auth/*` and the Plaid webhook are
+  rate limited per caller, and any request body larger than 256 KiB is refused
+  before routing. The throttle is per-process defence in depth and never
+  replaces a cryptographic check.
 
 ## Authentication flow
 
@@ -64,6 +68,7 @@ user identity or financial settlement state.
 | GET | `/tax-vault/balance` | Derived settled/pending reserve |
 | POST | `/tax-vault/entries` | Record a requested reserve movement |
 | GET | `/tax-vault/entries` | Auditable user-scoped ledger history |
+| GET/PUT | `/plaid/payout-source` | User-selected account where gig payouts land |
 | GET/PUT | `/tax-vault/settings` | Authenticated Autopilot reserve settings |
 
 ## Local run
@@ -85,6 +90,8 @@ psql "$DATABASE_URL" -f migrations/001_create_mileage_logs.sql
 psql "$DATABASE_URL" -f migrations/002_create_brokerage_trading.sql
 psql "$DATABASE_URL" -f migrations/003_create_plaid_and_tax_vault.sql
 psql "$DATABASE_URL" -f migrations/004_create_server_auth.sql
+psql "$DATABASE_URL" -f migrations/005_create_column_money_rail.sql
+psql "$DATABASE_URL" -f migrations/006_add_plaid_transactions_cursor.sql
 ```
 
 ## Deploy (Render)

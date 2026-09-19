@@ -6,9 +6,20 @@ session; the mobile app is never a financial authority.
 """
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from .config import get_settings
-from .routers import auth_routes, column_routes, health, plaid_routes, tax_vault
+from .rate_limit import RATE_LIMITED_PREFIXES, RateLimiter
+from .routers import (
+    auth_routes,
+    column_routes,
+    health,
+    payout_source,
+    plaid_routes,
+    tax_vault,
+)
+
+MAX_REQUEST_BYTES = 256 * 1024
 
 settings = get_settings()
 
@@ -24,13 +35,18 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(auth_routes.router)
 app.include_router(plaid_routes.router)
+app.include_router(payout_source.router)
 app.include_router(column_routes.router)
 app.include_router(tax_vault.router)
 
 
+_rate_limiter = RateLimiter()
+
+
 @app.middleware("http")
 async def harden_responses(request: Request, call_next):
-    response = await call_next(request)
+    rejection = _reject_oversized_body(request) or _reject_rate_limited(request)
+    response = rejection or await call_next(request)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -41,6 +57,35 @@ async def harden_responses(request: Request, call_next):
     if settings.environment == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
+
+
+def _reject_oversized_body(request: Request) -> JSONResponse | None:
+    """Refuse bodies no legitimate Milli request produces, before parsing them."""
+    declared = request.headers.get("content-length")
+    if declared is None:
+        return None
+    try:
+        length = int(declared)
+    except ValueError:
+        return JSONResponse({"detail": "invalid Content-Length"}, status_code=400)
+    if length > MAX_REQUEST_BYTES:
+        return JSONResponse({"detail": "request body too large"}, status_code=413)
+    return None
+
+
+def _reject_rate_limited(request: Request) -> JSONResponse | None:
+    path = request.url.path
+    if not any(path.startswith(prefix) for prefix in RATE_LIMITED_PREFIXES):
+        return None
+    client = request.client.host if request.client else "unknown"
+    allowed, retry_after = _rate_limiter.allow(f"{client}:{path}")
+    if allowed:
+        return None
+    return JSONResponse(
+        {"detail": "too many requests"},
+        status_code=429,
+        headers={"Retry-After": str(retry_after)},
+    )
 
 
 @app.get("/")
