@@ -201,7 +201,10 @@ struct PayoutsView: View {
                                 .font(.custom("Sora-SemiBold", size: 14))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text("Connect the account where gig payouts land. Plaid verifies the bank connection; money movement stays server-authorized.")
+                            Text(
+                                "Connect the account where gig payouts land. Plaid verifies " +
+                                "the bank connection; money movement stays server-authorized."
+                            )
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
