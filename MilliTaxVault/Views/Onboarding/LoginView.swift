@@ -123,16 +123,7 @@ struct LoginView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            MilliColors.cardBackground,
-                            MilliColors.graphiteSurface
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(MilliColors.graphiteSurface)
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(MilliColors.cyanGlow.opacity(0.22), lineWidth: 0.8)
