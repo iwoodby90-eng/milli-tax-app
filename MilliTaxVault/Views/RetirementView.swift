@@ -983,11 +983,13 @@ public final class RetirementPlanningStore: ObservableObject {
     @Published public private(set) var hasVerifiedConnectedData: Bool = ReferenceDataPolicy.allowsDemoReferenceData
 
     private let defaults = UserDefaults.standard
-    private let storageKey = "milli_retirement_planning_profile_v3"
+    private let storageKey = "milli_retirement_planning_profile_v4"
     private var isLoading = true
 
     public init() {
-        load()
+        if !ReferenceDataPolicy.allowsDemoReferenceData {
+            load()
+        }
         isLoading = false
     }
 
@@ -1019,7 +1021,7 @@ public final class RetirementPlanningStore: ObservableObject {
     }
 
     public func persist() {
-        guard !isLoading else { return }
+        guard !isLoading, !ReferenceDataPolicy.allowsDemoReferenceData else { return }
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(snapshot) {
             defaults.set(data, forKey: storageKey)
