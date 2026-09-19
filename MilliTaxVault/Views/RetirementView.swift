@@ -205,7 +205,10 @@ struct RetirementView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Open your tax-advantaged retirement account in 2 minutes. Automated daily contributions from gig payouts with zero management fees.")
+                    Text(
+                        "Open your tax-advantaged retirement account in 2 minutes. " +
+                        "Automated daily contributions from gig payouts with zero management fees."
+                    )
                         .font(.custom("Inter-Regular", size: 12))
                         .foregroundStyle(MilliColors.textSecondary)
 
@@ -294,11 +297,20 @@ struct RetirementView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Connect Past 401(k) or IRA Accounts" : "Add a 401(k) or IRA for Planning")
+                            Text(
+                                ReferenceDataPolicy.allowsDemoReferenceData
+                                    ? "Connect Past 401(k) or IRA Accounts"
+                                    : "Add a 401(k) or IRA for Planning"
+                            )
                                 .font(.custom("Inter-SemiBold", size: 13))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Roll over old 401(k)s or merge balances with Milli for unified compounding." : "Enter an existing balance to model retirement projections. This does not initiate a rollover or connect a custodian.")
+                            Text(
+                                ReferenceDataPolicy.allowsDemoReferenceData
+                                    ? "Roll over old 401(k)s or merge balances with Milli for unified compounding."
+                                    : "Enter an existing balance to model retirement projections. " +
+                                      "This does not initiate a rollover or connect a custodian."
+                            )
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
@@ -630,7 +642,10 @@ struct RetirementView: View {
             Image(systemName: "info.circle.fill")
                 .font(.system(size: 14))
                 .foregroundStyle(MilliColors.textTertiary)
-            Text("Projections assume a 7.5% annual return compounding monthly across broad-market index allocations. Past performance is no guarantee of future results.")
+            Text(
+                "Projections assume a 7.5% annual return compounding monthly across " +
+                "broad-market index allocations. Past performance is no guarantee of future results."
+            )
                 .font(.custom("Inter-Regular", size: 11))
                 .foregroundStyle(MilliColors.textTertiary)
         }
@@ -896,7 +911,10 @@ private struct MilliRetirementOnboardingSheet: View {
             .background(MilliColors.graphiteSurface)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            Text("By opening this account, you agree to Apex Clearing custodial terms, automated ACH deposits from verified gig payouts, and electronic signature disclosures.")
+            Text(
+                "By opening this account, you agree to Apex Clearing custodial terms, automated " +
+                "ACH deposits from verified gig payouts, and electronic signature disclosures."
+            )
                 .font(.custom("Inter-Regular", size: 11))
                 .foregroundStyle(MilliColors.textTertiary)
 
@@ -955,7 +973,10 @@ public final class RetirementPlanningStore: ObservableObject {
     @Published public var monthlyContribution: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 937.50 : 0 { didSet { persist() } }
     @Published public var targetRetirementAge: Int = 62 { didSet { persist() } }
     @Published public var annualReturnPercent: Double = 7.5 { didSet { persist() } }
-    @Published public var milliAccount: MilliRetirementAccount? = ReferenceDataPolicy.allowsDemoReferenceData ? MilliRetirementAccount.standard : nil { didSet { persist() } }
+    @Published public var milliAccount: MilliRetirementAccount? =
+        ReferenceDataPolicy.allowsDemoReferenceData ? MilliRetirementAccount.standard : nil {
+            didSet { persist() }
+        }
     @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = ReferenceDataPolicy.allowsDemoReferenceData ? [
         ConnectedExternalRetirementAccount(
             id: "merged-1",
