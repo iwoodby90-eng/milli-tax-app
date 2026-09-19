@@ -34,8 +34,22 @@ public struct GigPlatformLink: Identifiable, Codable, Equatable {
     public static let standardPlatforms: [GigPlatformLink] = [
         .init(id: "doordash", name: "DoorDash", assetName: "doordash-icon", primaryColorHex: "FF3008", isConnected: false, autoSyncPayouts: false),
         .init(id: "uber", name: "Uber / Uber Eats", assetName: "uber-icon", primaryColorHex: "000000", isConnected: false, autoSyncPayouts: false),
-        .init(id: "spark", name: "Spark Driver", assetName: "spark-driver-icon", primaryColorHex: "0071DC", isConnected: false, autoSyncPayouts: false),
-        .init(id: "amazonflex", name: "Amazon Flex", assetName: "amazon-flex-icon", primaryColorHex: "FF9900", isConnected: false, autoSyncPayouts: false),
+        .init(
+            id: "spark",
+            name: "Spark Driver",
+            assetName: "spark-driver-icon",
+            primaryColorHex: "0071DC",
+            isConnected: false,
+            autoSyncPayouts: false
+        ),
+        .init(
+            id: "amazonflex",
+            name: "Amazon Flex",
+            assetName: "amazon-flex-icon",
+            primaryColorHex: "FF9900",
+            isConnected: false,
+            autoSyncPayouts: false
+        ),
         .init(id: "instacart", name: "Instacart", assetName: "instacart-icon", primaryColorHex: "16844A", isConnected: false, autoSyncPayouts: false),
         .init(id: "grubhub", name: "Grubhub", assetName: nil, primaryColorHex: "C44724", isConnected: false, autoSyncPayouts: false),
         .init(id: "lyft", name: "Lyft Driver", assetName: nil, primaryColorHex: "FF00BF", isConnected: false, autoSyncPayouts: false)
