@@ -1,12 +1,10 @@
-"""
-Best-effort in-process throttling for unauthenticated endpoints.
+"""Best-effort in-process throttling for unauthenticated endpoints."""
 
-Credential-exchange and webhook routes accept traffic before any session
-exists, so they are the only surfaces an anonymous caller can hammer. This
-limiter is per-process and therefore a defence-in-depth measure, not a
-substitute for an edge/WAF limit: it bounds abuse from a single caller against
-a single instance and never relaxes any cryptographic check.
-"""
+# Credential-exchange and webhook routes accept traffic before any session
+# exists, so they are the only surfaces an anonymous caller can hammer. This
+# limiter is per-process and therefore a defence-in-depth measure, not a
+# substitute for an edge/WAF limit: it bounds abuse from a single caller
+# against a single instance and never relaxes any cryptographic check.
 
 from __future__ import annotations
 

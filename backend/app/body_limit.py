@@ -1,11 +1,9 @@
-"""
-Byte-accurate request body ceiling.
+"""Byte-accurate request body ceiling."""
 
-A declared `Content-Length` is only a claim, and a chunked request omits it
-entirely, so the header check alone can be walked past. This middleware buffers
-a header-less body up to the ceiling and refuses it the moment the real byte
-count exceeds the limit, before any route sees the request.
-"""
+# A declared `Content-Length` is only a claim, and a chunked request omits it
+# entirely, so the header check alone can be walked past. This middleware
+# buffers a header-less body up to the ceiling and refuses it the moment the
+# real byte count exceeds the limit, before any route sees the request.
 
 from __future__ import annotations
 
