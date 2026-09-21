@@ -124,50 +124,43 @@ struct OnboardingFlowView: View {
             Spacer(minLength: 26)
 
             ZStack {
-                Circle()
-                    .fill(MilliColors.cyanGlow.opacity(0.055))
-                    .frame(width: 156, height: 156)
-                    .blur(radius: 16)
+                RadialGradient(
+                    colors: [MilliColors.cyanGlow.opacity(0.14), .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 150
+                )
+                .frame(width: 310, height: 220)
+                .blur(radius: 8)
 
-                Circle()
-                    .fill(Color.black.opacity(0.80))
-                    .frame(width: 126, height: 126)
-                    .overlay {
-                        Circle()
-                            .stroke(
-                                AngularGradient(
-                                    colors: [MilliColors.chromeDark, MilliColors.chromeWhite, MilliColors.chromeMid, MilliColors.chromeWhite, MilliColors.chromeDark],
-                                    center: .center
-                                ),
-                                lineWidth: 5
-                            )
-                    }
+                HStack(alignment: .bottom, spacing: -14) {
+                    Image("milli-ai-robot-large")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 166, height: 190)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.30), radius: 14, y: 7)
 
-                Circle()
-                    .stroke(MilliColors.cyanGlow.opacity(0.70), style: StrokeStyle(lineWidth: 2, dash: [3, 4]))
-                    .frame(width: 104, height: 104)
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.34), radius: 7)
-
-                Image("MilliMLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 70, height: 70)
-                    .blendMode(.screen)
+                    MilliMetalCard(size: CGSize(width: 144, height: 92))
+                        .rotationEffect(.degrees(-9))
+                        .offset(x: -8, y: -8)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 12, y: 8)
+                }
             }
+            .frame(height: 210)
 
             VStack(spacing: 10) {
-                Text("BUILD YOUR FINANCIAL PROFILE")
+                Text("WELCOME TO MILLI")
                     .font(MilliFont.sectionLabel)
                     .tracking(1.0)
                     .foregroundStyle(MilliColors.cyanGlow)
 
-                Text("Set Milli up around\nhow you actually work.")
+                Text("Your money,\nmade intelligent.")
                     .font(.custom("Sora-Bold", size: 31, relativeTo: .largeTitle))
                     .foregroundStyle(MilliColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(-1)
 
-                Text("We'll configure your vehicle, tax profile, connected payout account, gig sources, product tier, and Autopilot preferences before you enter Milli.")
+                Text("Set up taxes, mileage, payout detection, planning, and Autopilot around the way you actually work.")
                     .font(MilliFont.bodyMedium)
                     .foregroundStyle(MilliColors.textSecondary)
                     .multilineTextAlignment(.center)
