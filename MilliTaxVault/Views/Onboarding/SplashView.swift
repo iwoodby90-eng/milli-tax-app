@@ -3,61 +3,68 @@ import SwiftUI
 struct SplashView: View {
     var onComplete: () -> Void
 
-    @State private var emblemScale: CGFloat = 0.82
+    @State private var contentScale: CGFloat = 0.94
     @State private var contentOpacity: Double = 0
 
     var body: some View {
         ZStack {
+            MilliColors.obsidian.ignoresSafeArea()
+
+            RadialGradient(
+                colors: [MilliColors.cyanGlow.opacity(0.10), .clear],
+                center: UnitPoint(x: 0.5, y: 0.56),
+                startRadius: 0,
+                endRadius: 310
+            )
+            .ignoresSafeArea()
+
             LinearGradient(
-                colors: [MilliColors.cardBackground, MilliColors.obsidian, MilliColors.cardBackground],
+                colors: [Color.white.opacity(0.018), .clear, Color.black.opacity(0.22)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 24) {
+            VStack(spacing: 18) {
                 Spacer()
 
-                ChromeEmblemView(size: 136)
-                    .scaleEffect(emblemScale)
+                MilliWordmark(fontSize: 54)
+                    .frame(maxWidth: 300)
 
-                VStack(spacing: 14) {
-                    Image("milli_wordmark")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 290)
-                        .accessibilityHidden(true)
+                Text("Money, Made Intelligent.")
+                    .font(.custom("Inter-Medium", size: 15, relativeTo: .subheadline))
+                    .tracking(1.25)
+                    .foregroundStyle(MilliColors.silver)
 
-                    Text("Money, Made Intelligent.")
-                        .font(.custom("Inter-Medium", size: 15, relativeTo: .subheadline))
-                        .tracking(0.5)
-                        .foregroundStyle(MilliColors.silver)
-
-                    Capsule(style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.clear, MilliColors.cyanGlow, Color.clear],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, MilliColors.cyanGlow, .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .frame(width: 96, height: 1.5)
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.45), radius: 4)
-                }
-                .opacity(contentOpacity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("MILLI. Money, Made Intelligent.")
+                    )
+                    .frame(width: 138, height: 1.2)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.50), radius: 5)
+
+                Image("milli-ai-robot-large")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 285, maxHeight: 360)
+                    .padding(.top, 20)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 20, y: 12)
 
                 Spacer()
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 30)
+            .scaleEffect(contentScale)
+            .opacity(contentOpacity)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("MILLI. Money, Made Intelligent.")
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.55)) {
-                emblemScale = 1
-            }
-
-            withAnimation(.easeInOut(duration: 0.5).delay(0.28)) {
+            withAnimation(.easeOut(duration: 0.65)) {
+                contentScale = 1
                 contentOpacity = 1
             }
 
@@ -70,4 +77,5 @@ struct SplashView: View {
 
 #Preview {
     SplashView(onComplete: {})
+        .preferredColorScheme(.dark)
 }
