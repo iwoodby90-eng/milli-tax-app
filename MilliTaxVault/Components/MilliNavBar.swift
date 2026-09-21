@@ -12,9 +12,9 @@ enum MilliTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .vault: return "dollarsign.arrow.circlepath"
+        case .vault: return "creditcard.fill"
         case .activity: return "location.north.fill"
-        case .wealth: return "chart.line.uptrend.xyaxis"
+        case .wealth: return "dollarsign.circle.fill"
         case .cockpit: return "ellipsis"
         case .home: return ""
         }
@@ -22,11 +22,11 @@ enum MilliTab: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .vault: return "PAYOUTS"
-        case .activity: return "MILEAGE"
-        case .wealth: return "WEALTH"
-        case .cockpit: return "MORE"
-        case .home: return "HOME"
+        case .vault: return "Payouts"
+        case .activity: return "Mileage"
+        case .wealth: return "Wealth"
+        case .cockpit: return "More"
+        case .home: return "Home"
         }
     }
 }
@@ -210,7 +210,7 @@ struct MilliNavBar: View {
                                         endPoint: .bottom
                                     )
                                 )
-                                : AnyShapeStyle(Color(hex: "263440"))
+                                : AnyShapeStyle(MilliColors.chromeDark)
                         )
                         .shadow(
                             color: isSelected ? MilliColors.cyanGlow.opacity(0.48) : Color.white.opacity(0.10),
@@ -221,8 +221,8 @@ struct MilliNavBar: View {
                 }
 
                 Text(tab.displayName)
-                    .font(.custom("Inter-SemiBold", size: 9.5, relativeTo: .caption2))
-                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : Color(hex: "33414D"))
+                    .font(.custom("Inter-Medium", size: 10.5, relativeTo: .caption2))
+                    .foregroundStyle(isSelected ? MilliColors.cyanGlow : MilliColors.chromeMid)
                     .tracking(0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.80)
