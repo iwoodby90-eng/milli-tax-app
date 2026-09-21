@@ -181,7 +181,7 @@ struct HomeView: View {
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textSecondary)
                 } else {
-                    Image(systemName: "wallet.pass.fill")
+                    Image(systemName: "creditcard.fill")
                         .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(MilliColors.chromeMid)
                         .frame(height: 28)
