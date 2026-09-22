@@ -64,6 +64,7 @@ struct LoginView: View {
                 authModeControl
                     .padding(.bottom, 18)
 
+                #if DEBUG
                 VStack(spacing: 12) {
                     if mode == .signUp {
                         credentialField(
@@ -163,6 +164,9 @@ struct LoginView: View {
                     }
                 }
                 .padding(.top, 8)
+                #else
+                productionIdentityCard
+                #endif
 
                 if let authenticationMessage {
                     HStack(alignment: .top, spacing: 8) {
@@ -182,6 +186,7 @@ struct LoginView: View {
                     .accessibilityLabel(authenticationMessage)
                 }
 
+                #if DEBUG
                 Button(action: submit) {
                     HStack(spacing: 8) {
                         Text(mode == .signIn ? "SIGN IN" : "CREATE ACCOUNT")
@@ -215,6 +220,7 @@ struct LoginView: View {
                 .buttonStyle(.plain)
                 .disabled(!canSubmit)
                 .padding(.top, 18)
+                #endif
 
                 alternativeSignIn
                     .padding(.top, 20)
@@ -351,14 +357,39 @@ struct LoginView: View {
         }
     }
 
+    private var productionIdentityCard: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 9) {
+                Image(systemName: "checkmark.shield.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(MilliColors.cyanGlow)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Verified identity, not a local password")
+                        .font(MilliFont.headlineSmall)
+                        .foregroundStyle(MilliColors.textPrimary)
+                    Text("Production banking access starts only after Apple identity verification and a server-issued Milli session.")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .milliCard(padding: 13)
+    }
+
     @ViewBuilder
     private var alternativeSignIn: some View {
         VStack(spacing: 12) {
+            #if DEBUG
             HStack(spacing: 12) {
                 Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
                 Text("OR").font(MilliFont.sectionLabel).foregroundStyle(MilliColors.textTertiary)
                 Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
             }
+            #endif
 
             // Native Sign In / Sign Up with Apple
             SignInWithAppleButton(
@@ -432,7 +463,7 @@ struct LoginView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
-            Text("Banking access uses server-verified Apple ID • Session tokens stay in Keychain")
+            Text("Apple identity is verified by Milli's server • Session tokens stay device-only in Keychain")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
         }
@@ -460,6 +491,7 @@ struct LoginView: View {
         }
     }
 
+    #if DEBUG
     private func submit() {
         guard canSubmit else { return }
         authenticationMessage = nil
@@ -517,7 +549,6 @@ struct LoginView: View {
         onCreateAccount(normalizedEmail)
     }
 
-    #if DEBUG
     private func fillDemoCredentials() {
         email = "ian@milli.local"
         password = "MilliDemo2026!"
@@ -527,6 +558,7 @@ struct LoginView: View {
     #endif
 }
 
+#if DEBUG
 private enum MilliLocalCredentialStore {
     private static let service = "com.milli.taxvault.local-auth"
 
@@ -568,6 +600,7 @@ private enum MilliLocalCredentialStore {
         return storedPassword == password
     }
 }
+#endif
 
 #Preview {
     LoginView(onSignIn: { _ in }, onCreateAccount: { _ in })
