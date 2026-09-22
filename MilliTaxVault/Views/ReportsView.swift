@@ -605,6 +605,37 @@ private struct ReportDataModel {
     }
 }
 
+
+private extension ReportDataModel {
+    static let reference = ReportDataModel(
+        grossIncome: 10_011.16,
+        totalDeductions: 2_843.17,
+        businessMiles: 4_112,
+        mileageDeduction: 2_218.42,
+        estimatedTaxSavings: 894.73,
+        months: [
+            .init(month: "Jan", income: 1_420, deductions: 410),
+            .init(month: "Feb", income: 1_885, deductions: 575),
+            .init(month: "Mar", income: 2_260, deductions: 720),
+            .init(month: "Apr", income: 2_715, deductions: 940),
+            .init(month: "May", income: 1_731.16, deductions: 198.17)
+        ],
+        categories: [
+            .init(name: "Fuel", amount: 1_286.45, share: 0.452, color: MilliColors.cyanGlow, icon: "fuelpump.fill"),
+            .init(name: "Car Maintenance", amount: 642.17, share: 0.226, color: MilliColors.deepCyan, icon: "wrench.and.screwdriver.fill"),
+            .init(name: "Insurance", amount: 389.45, share: 0.137, color: MilliColors.deepCyan, icon: "shield.fill"),
+            .init(name: "Tolls & Parking", amount: 246.30, share: 0.086, color: MilliColors.warning, icon: "parkingsign.circle.fill"),
+            .init(name: "Other", amount: 278.80, share: 0.099, color: MilliColors.textSecondary, icon: "ellipsis.circle.fill")
+        ],
+        trips: [
+            .init(platform: "Spark Driver", dateLabel: "Today • 7:18 AM", miles: 12.4, deduction: 6.55),
+            .init(platform: "DoorDash", dateLabel: "Yesterday • 6:42 PM", miles: 8.7, deduction: 4.59),
+            .init(platform: "Uber", dateLabel: "Yesterday • 1:10 PM", miles: 18.2, deduction: 9.61),
+            .init(platform: "Instacart", dateLabel: "2 days ago", miles: 14.6, deduction: 7.71)
+        ]
+    )
+}
+
 private struct ReportSharePayload: Identifiable {
     let id = UUID()
     let url: URL

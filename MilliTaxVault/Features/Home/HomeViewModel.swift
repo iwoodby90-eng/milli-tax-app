@@ -48,15 +48,24 @@ final class HomeViewModel: ObservableObject {
         isLoading = false
     }
 
-    /// Cumulative available-to-spend across the payout ledger, normalized for
-    /// the sparkline. Empty until there are at least two verified payouts.
+    /// Cumulative available-to-spend across the payout ledger. The chart stays
+    /// empty until every payout has an authoritative backend allocation amount.
     private static func sparkline(from snapshot: MilliFinancialSnapshot) -> [CGFloat] {
         let ordered = Array(snapshot.payouts.reversed())
         guard ordered.count >= 2 else { return [] }
 
+        let rows = ordered.compactMap { payout -> Double? in
+            guard let allocatedCents = payout.stateContractProjection.taxAllocatedCents else {
+                return nil
+            }
+            let allocated = Double(allocatedCents) / 100.0
+            return payout.grossAmount - allocated
+        }
+        guard rows.count == ordered.count else { return [] }
+
         var running = 0.0
-        return ordered.map { payout in
-            running += payout.availableToSpend
+        return rows.map { spendable in
+            running += spendable
             return CGFloat(running)
         }
     }
