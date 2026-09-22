@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - TreasuryAutopilotStore
-// Read-only projection of backend/provider state for the Stripe Treasury
+// Read-only projection of backend/provider state for the Column
 // Autopilot UI. This store NEVER fabricates financial data: with no backend
 // connected it reports an empty, honestly-labeled state. Demo content exists
 // only behind the explicit demo provider and is visibly labeled DEMO.

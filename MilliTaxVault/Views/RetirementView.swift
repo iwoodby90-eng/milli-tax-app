@@ -43,10 +43,23 @@ struct RetirementView: View {
     }
 
     private var projection: RetirementProjection? {
-        RetirementProjectionCalculator.calculate(
+        guard profile.currentAge > 0,
+              profile.targetRetirementAge > profile.currentAge,
+              profile.annualIncome > 0 || totalConsolidatedBalance > 0 else {
+            return nil
+        }
+        return RetirementProjectionCalculator.calculate(
             profile: profile.snapshot,
             consolidatedBalance: totalConsolidatedBalance
         )
+    }
+
+    private var provenance: ProvenanceLabel {
+        if ReferenceDataPolicy.allowsDemoReferenceData { return .demo }
+        let hasPlanningData = profile.currentAge > 0
+            || profile.annualIncome > 0
+            || totalConsolidatedBalance > 0
+        return hasPlanningData ? .userEntered : .unavailable
     }
 
     var body: some View {
@@ -108,16 +121,20 @@ struct RetirementView: View {
 
             Spacer()
 
-            Button {
-                showInputs = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(MilliColors.cyanGlow)
-                    .frame(width: 34, height: 34)
+            HStack(spacing: 5) {
+                Button {
+                    showInputs = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit retirement inputs")
+                ProvenanceTag(label: provenance)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Edit retirement inputs")
+            .frame(width: 96, alignment: .trailing)
         }
     }
 
@@ -184,27 +201,45 @@ struct RetirementView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Open your tax-advantaged retirement account in 2 minutes. Automated daily contributions from gig payouts with zero management fees.")
+                    Text(
+                        "Open your tax-advantaged retirement account in 2 minutes. " +
+                        "Automated daily contributions from gig payouts with zero management fees."
+                    )
                         .font(.custom("Inter-Regular", size: 12))
                         .foregroundStyle(MilliColors.textSecondary)
 
-                    Button {
-                        showAccountOpeningOnboarding = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Open Milli Retirement Account (Roth / SEP-IRA)")
+                    if ReferenceDataPolicy.allowsDemoReferenceData {
+                        Button {
+                            showAccountOpeningOnboarding = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Open Demo Retirement Account")
+                            }
+                            .font(.custom("Inter-SemiBold", size: 13))
+                            .foregroundStyle(MilliColors.blackGlass)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(MilliColors.cyanGlow)
+                            )
                         }
-                        .font(.custom("Inter-SemiBold", size: 13))
-                        .foregroundStyle(MilliColors.blackGlass)
+                        .buttonStyle(.plain)
+                    } else {
+                        HStack(spacing: 7) {
+                            Image(systemName: "lock.shield.fill")
+                            Text("Brokerage connection required")
+                        }
+                        .font(.custom("Inter-SemiBold", size: 12))
+                        .foregroundStyle(MilliColors.textSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(MilliColors.cyanGlow)
+                                .fill(MilliColors.graphiteSurface)
                         )
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -229,7 +264,7 @@ struct RetirementView: View {
     private var mergedAccountsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("CONNECTED & MERGED ACCOUNTS")
+                Text(ReferenceDataPolicy.allowsDemoReferenceData ? "CONNECTED & MERGED ACCOUNTS" : "RETIREMENT PLANNING ACCOUNTS")
                     .font(MilliFont.sectionLabel)
                     .tracking(0.7)
                     .foregroundStyle(MilliColors.textSecondary)
@@ -241,7 +276,7 @@ struct RetirementView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "link.badge.plus")
-                        Text("Connect Account")
+                        Text(ReferenceDataPolicy.allowsDemoReferenceData ? "Connect Account" : "Add for Planning")
                     }
                     .font(.custom("Inter-SemiBold", size: 11))
                     .foregroundStyle(MilliColors.cyanGlow)
@@ -258,11 +293,20 @@ struct RetirementView: View {
                             .foregroundStyle(MilliColors.cyanGlow)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Connect Past 401(k) or IRA Accounts")
+                            Text(
+                                ReferenceDataPolicy.allowsDemoReferenceData
+                                    ? "Connect Past 401(k) or IRA Accounts"
+                                    : "Add a 401(k) or IRA for Planning"
+                            )
                                 .font(.custom("Inter-SemiBold", size: 13))
                                 .foregroundStyle(MilliColors.textPrimary)
 
-                            Text("Roll over old 401(k)s or merge balances with Milli for unified compounding.")
+                            Text(
+                                ReferenceDataPolicy.allowsDemoReferenceData
+                                    ? "Roll over old 401(k)s or merge balances with Milli for unified compounding."
+                                    : "Enter an existing balance to model retirement projections. " +
+                                      "This does not initiate a rollover or connect a custodian."
+                            )
                                 .font(.custom("Inter-Regular", size: 11))
                                 .foregroundStyle(MilliColors.textSecondary)
                         }
@@ -608,7 +652,10 @@ struct RetirementView: View {
             Image(systemName: "info.circle.fill")
                 .font(.system(size: 14))
                 .foregroundStyle(MilliColors.textTertiary)
-            Text("Projections assume a 7.5% annual return compounding monthly across broad-market index allocations. Past performance is no guarantee of future results.")
+            Text(
+                "Projections assume a 7.5% annual return compounding monthly across " +
+                "broad-market index allocations. Past performance is no guarantee of future results."
+            )
                 .font(.custom("Inter-Regular", size: 11))
                 .foregroundStyle(MilliColors.textTertiary)
         }
@@ -1006,7 +1053,10 @@ private struct MilliRetirementOnboardingSheet: View {
             .background(MilliColors.graphiteSurface)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            Text("By opening this account, you agree to Apex Clearing custodial terms, automated ACH deposits from verified gig payouts, and electronic signature disclosures.")
+            Text(
+                "By opening this account, you agree to Apex Clearing custodial terms, automated " +
+                "ACH deposits from verified gig payouts, and electronic signature disclosures."
+            )
                 .font(.custom("Inter-Regular", size: 11))
                 .foregroundStyle(MilliColors.textTertiary)
 
@@ -1061,28 +1111,52 @@ private struct MilliRetirementOnboardingSheet: View {
 
 @MainActor
 public final class RetirementPlanningStore: ObservableObject {
-    // Balances and contributions start at zero and carry no verified data:
-    // they populate only from an opened Milli account or a connected external
-    // custodian. Age, target age and return rate are planning inputs the user
-    // edits, not balances, so they keep conventional starting values.
-    @Published public var currentAge: Int = 32 { didSet { persist() } }
-    @Published public var currentBalance: Double = 0 { didSet { persist() } }
-    @Published public var annualIncome: Double = 0 { didSet { persist() } }
+    @Published public var currentAge: Int = ReferenceDataPolicy.allowsDemoReferenceData ? 32 : 0 { didSet { persist() } }
+    @Published public var currentBalance: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 42685.73 : 0 { didSet { persist() } }
+    @Published public var annualIncome: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 75000 : 0 { didSet { persist() } }
     @Published public var contributionMode: RetirementContributionMode = .percentOfIncome { didSet { persist() } }
     @Published public var contributionPercent: Double = 15 { didSet { persist() } }
-    @Published public var monthlyContribution: Double = 0 { didSet { persist() } }
+    @Published public var monthlyContribution: Double = ReferenceDataPolicy.allowsDemoReferenceData ? 937.50 : 0 { didSet { persist() } }
     @Published public var targetRetirementAge: Int = 62 { didSet { persist() } }
     @Published public var annualReturnPercent: Double = 7.5 { didSet { persist() } }
-    @Published public var milliAccount: MilliRetirementAccount? = nil { didSet { persist() } }
-    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = [] { didSet { persist() } }
-    @Published public private(set) var hasVerifiedConnectedData: Bool = false
+    @Published public var milliAccount: MilliRetirementAccount? =
+        ReferenceDataPolicy.allowsDemoReferenceData ? MilliRetirementAccount.standard : nil {
+            didSet { persist() }
+        }
+    @Published public var mergedAccounts: [ConnectedExternalRetirementAccount] = ReferenceDataPolicy.allowsDemoReferenceData ? [
+        ConnectedExternalRetirementAccount(
+            id: "merged-1",
+            custodianName: "Fidelity Investments",
+            accountType: "401(k)",
+            nickname: "Past Employer 401(k)",
+            balance: 34850.0,
+            monthlyContribution: 0.0,
+            annualReturnPercent: 7.5,
+            rolloverStatus: .completed,
+            accountMask: "8102"
+        ),
+        ConnectedExternalRetirementAccount(
+            id: "merged-2",
+            custodianName: "Vanguard",
+            accountType: "Traditional IRA",
+            nickname: "Vanguard IRA",
+            balance: 18420.0,
+            monthlyContribution: 200.0,
+            annualReturnPercent: 7.5,
+            rolloverStatus: .transferInitiated,
+            accountMask: "3319"
+        )
+    ] : [] { didSet { persist() } }
+    @Published public private(set) var hasVerifiedConnectedData: Bool = ReferenceDataPolicy.allowsDemoReferenceData
 
     private let defaults = UserDefaults.standard
-    private let storageKey = "milli_retirement_planning_profile_v3"
+    private let storageKey = "milli_retirement_planning_profile_v4"
     private var isLoading = true
 
     public init() {
-        load()
+        if !ReferenceDataPolicy.allowsDemoReferenceData {
+            load()
+        }
         isLoading = false
     }
 
@@ -1096,22 +1170,27 @@ public final class RetirementPlanningStore: ObservableObject {
             monthlyContribution: monthlyContribution,
             targetRetirementAge: targetRetirementAge,
             annualReturnPercent: annualReturnPercent,
-            hasVerifiedConnectedData: hasVerifiedConnectedData
+            hasVerifiedConnectedData: hasVerifiedConnectedData,
+            milliAccount: milliAccount,
+            mergedAccounts: mergedAccounts
         )
     }
 
     public func openMilliAccount(_ account: MilliRetirementAccount) {
+        guard ReferenceDataPolicy.allowsDemoReferenceData else { return }
         milliAccount = account
         hasVerifiedConnectedData = true
     }
 
     public func addMergedAccount(_ account: ConnectedExternalRetirementAccount) {
         mergedAccounts.append(account)
-        hasVerifiedConnectedData = true
+        if !ReferenceDataPolicy.allowsDemoReferenceData {
+            hasVerifiedConnectedData = false
+        }
     }
 
     public func persist() {
-        guard !isLoading else { return }
+        guard !isLoading, !ReferenceDataPolicy.allowsDemoReferenceData else { return }
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(snapshot) {
             defaults.set(data, forKey: storageKey)
@@ -1131,7 +1210,9 @@ public final class RetirementPlanningStore: ObservableObject {
         monthlyContribution = saved.monthlyContribution
         targetRetirementAge = saved.targetRetirementAge
         annualReturnPercent = saved.annualReturnPercent
-        hasVerifiedConnectedData = saved.hasVerifiedConnectedData
+        hasVerifiedConnectedData = false
+        milliAccount = saved.milliAccount
+        mergedAccounts = saved.mergedAccounts ?? []
     }
 }
 
@@ -1302,6 +1383,8 @@ public struct RetirementPlanningSnapshot: Codable, Equatable {
     public let targetRetirementAge: Int
     public let annualReturnPercent: Double
     public let hasVerifiedConnectedData: Bool
+    public let milliAccount: MilliRetirementAccount?
+    public let mergedAccounts: [ConnectedExternalRetirementAccount]?
 
     public var isProjectionReady: Bool {
         currentAge > 0 && targetRetirementAge > currentAge

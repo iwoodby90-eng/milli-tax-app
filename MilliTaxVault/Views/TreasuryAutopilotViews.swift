@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - Treasury Autopilot UI (Launch P0)
-// Authoritative user experience for the Stripe Treasury Autopilot flow.
+// Authoritative user experience for the Column Autopilot flow.
 // SwiftUI does not determine financial truth: every state shown here is
 // rendered from the backend/provider state contract (PayoutStateContract).
 // Canonical nav is untouched — this module lives above it.

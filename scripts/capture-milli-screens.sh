@@ -175,22 +175,36 @@ wait_and_capture() {
   xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
   test -s "$output"
 
-  # A transient launch surface can still be a non-empty PNG. Every accepted
-  # full-screen Milli reference in this suite is materially larger than a
-  # solid launch/status-bar capture, so re-shoot while the frame still looks
-  # like a launch surface. Cold starts on a loaded hosted runner regularly need
-  # more than one extra settle window.
+  # A transient launch surface can still be a non-empty PNG. Pro Max hosted
+  # simulators can remain on the native launch surface longer than compact and
+  # standard devices, so retry deterministically until real app content is
+  # present instead of accepting the first non-empty frame.
   local capture_size
-  for _ in {1..6}; do
-    capture_size="$(stat -f%z "$output")"
-    (( capture_size >= 250000 )) && break
-    echo "Capture for '$label' looks like a launch/blank frame ($capture_size bytes); retrying after 5s."
-    sleep 5
+  local capture_attempt=1
+  capture_size="$(stat -f%z "$output")"
+  while (( capture_size < 250000 && capture_attempt < 5 )); do
+    echo "Capture for '$label' looks like a launch/blank frame ($capture_size bytes); retrying after 4s (attempt $((capture_attempt + 1))/5)."
+    sleep 4
+
+    if [[ "$pid" =~ ^[0-9]+$ ]] && ! ps -p "$pid" >/dev/null 2>&1; then
+      echo "MilliTaxVault exited while waiting for '$label' (pid $pid)." >&2
+      show_recent_app_logs
+      exit 1
+    fi
+
     xcrun simctl io "$SIMULATOR_UDID" screenshot "$output" >/dev/null
     test -s "$output"
+    capture_size="$(stat -f%z "$output")"
+    capture_attempt=$((capture_attempt + 1))
   done
 
-  echo "Captured $label -> $output"
+  if (( capture_size < 250000 )); then
+    echo "Capture for '$label' remained a launch/blank frame after $capture_attempt attempts ($capture_size bytes)." >&2
+    show_recent_app_logs
+    exit 1
+  fi
+
+  echo "Captured $label -> $output ($capture_size bytes)"
 }
 
 capture_screen() {

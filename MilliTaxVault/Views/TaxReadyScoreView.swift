@@ -9,82 +9,7 @@ import SwiftUI
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
 
-    @StateObject private var bankService = BankConnectionService.shared
-    @StateObject private var expenseStore = ExpenseStore.shared
-    @StateObject private var mileageLog = MileageLogStore()
-
-    private var snapshot: MilliFinancialSnapshot {
-        MilliFinancialSnapshot.current()
-    }
-
-    private var factors: [ReadinessFactor] {
-        let current = snapshot
-        let reservePace: ReadinessFactor.State
-        if let progress = current.reserveProgress {
-            reservePace = progress >= current.yearProgress ? .complete : .attention
-        } else {
-            reservePace = .pending
-        }
-
-        return [
-            ReadinessFactor(
-                name: "Bank Connected",
-                icon: "building.columns.fill",
-                state: current.isBankConnected ? .complete : .pending,
-                detail: current.isBankConnected
-                    ? "Payouts syncing through Plaid"
-                    : "Connect a bank to track income"
-            ),
-            ReadinessFactor(
-                name: "Tax Profile",
-                icon: "person.text.rectangle.fill",
-                state: current.taxProfile == nil ? .pending : .complete,
-                detail: current.taxProfile == nil
-                    ? "Add filing status and annual income"
-                    : "Filing status and income on file"
-            ),
-            ReadinessFactor(
-                name: "Deductible Expenses",
-                icon: "receipt.fill",
-                state: expenseStore.expenses.isEmpty ? .pending : .complete,
-                detail: expenseStore.expenses.isEmpty
-                    ? "No expenses recorded yet"
-                    : "\(expenseStore.expenses.count) recorded"
-            ),
-            ReadinessFactor(
-                name: "Mileage Tracking",
-                icon: "car.fill",
-                state: mileageLog.records.isEmpty ? .pending : .complete,
-                detail: mileageLog.records.isEmpty
-                    ? "No trips logged yet"
-                    : "\(mileageLog.records.count) trips logged"
-            ),
-            ReadinessFactor(
-                name: "Reserve On Pace",
-                icon: "shield.lefthalf.filled",
-                state: reservePace,
-                detail: reserveDetail(for: reservePace, snapshot: current)
-            )
-        ]
-    }
-
-    private func reserveDetail(
-        for state: ReadinessFactor.State,
-        snapshot: MilliFinancialSnapshot
-    ) -> String {
-        switch state {
-        case .pending:
-            return "Needs connected payouts and a tax profile"
-        case .complete:
-            return "\(MilliFigureFormat.percent(snapshot.reserveProgress)) of estimated liability reserved"
-        case .attention:
-            return "\(MilliFigureFormat.percent(snapshot.reserveProgress)) reserved, behind the year's pace"
-        }
-    }
-
-    private var completedCount: Int {
-        factors.filter { $0.state == .complete }.count
-    }
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
 
     private var score: Int {
         guard !factors.isEmpty else { return 0 }
@@ -99,9 +24,13 @@ struct TaxReadyScoreView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                scoreGauge
-                factorList
-                methodology
+                if showsReferenceData {
+                    scoreGauge
+                    factorList
+                    history
+                } else {
+                    unavailableState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -129,11 +58,39 @@ struct TaxReadyScoreView: View {
 
             Spacer()
 
-            Image(systemName: "info.circle")
-                .font(.system(size: 16))
-                .foregroundStyle(MilliColors.textSecondary)
-                .frame(width: 34, height: 34)
+            ProvenanceTag(label: ReferenceDataPolicy.provenance)
+                .frame(width: 70, alignment: .trailing)
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.07), lineWidth: 10)
+                    .frame(width: 126, height: 126)
+                Image(systemName: "checkmark.seal")
+                    .font(.system(size: 34, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Tax Ready Score is awaiting verified data")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text(
+                "Connect income, expenses, mileage, tax payments, and documents. Milli will " +
+                "calculate your score from those records rather than seeded reference factors."
+            )
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
+        .milliCard(padding: 18)
     }
 
     private var scoreGauge: some View {

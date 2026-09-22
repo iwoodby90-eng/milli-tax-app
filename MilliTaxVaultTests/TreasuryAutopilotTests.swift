@@ -2,7 +2,7 @@ import XCTest
 @testable import MilliTaxVault
 
 // MARK: - TreasuryAutopilotTests
-// Launch P0 evidence: state-contract invariants for the Stripe Treasury
+// Launch P0 evidence: state-contract invariants for the Column
 // Autopilot UI. SwiftUI does not determine financial truth.
 
 final class TreasuryAutopilotTests: XCTestCase {

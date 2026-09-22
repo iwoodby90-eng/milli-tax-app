@@ -21,7 +21,7 @@ jobs:
   native-build:
     name: Native SwiftUI Xcode build
     runs-on: macos-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +38,17 @@ jobs:
           -scheme MilliTaxVault
           -sdk iphonesimulator
           -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
+
+      - name: Compile Release configuration
+        run: >-
+          xcodebuild
+          -project MilliTaxVault.xcodeproj
+          -scheme MilliTaxVault
+          -sdk iphonesimulator
+          -configuration Release
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
           build

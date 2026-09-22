@@ -13,24 +13,20 @@ struct ReportsView: View {
     @State private var selectedTab = ReportTab.deductions
     @State private var sharePayload: ReportSharePayload?
 
-    @StateObject private var mileageLog = MileageLogStore()
-    @ObservedObject private var expenseStore = ExpenseStore.shared
-
-    private var report: ReportDataModel {
-        ReportDataModel.live(
-            expenses: expenseStore.expenses,
-            trips: mileageLog.records,
-            snapshot: MilliFinancialSnapshot.current()
-        )
-    }
+    private let report = ReportDataModel.reference
+    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
-                tabs
-                selectedContent
-                exportActions
+                if showsReferenceData {
+                    tabs
+                    selectedContent
+                    exportActions
+                } else {
+                    unavailableState
+                }
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -62,17 +58,56 @@ struct ReportsView: View {
 
             Spacer()
 
-            Button {
-                exportPDFAndShare()
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(MilliColors.textSecondary)
-                    .frame(width: 34, height: 34)
+            if showsReferenceData {
+                VStack(spacing: 2) {
+                    Button {
+                        exportPDFAndShare()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(MilliColors.textSecondary)
+                            .frame(width: 34, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Share demo report")
+                    ProvenanceTag(label: .demo)
+                }
+                .frame(width: 70)
+            } else {
+                ProvenanceTag(label: .unavailable)
+                    .frame(width: 70)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Share current report")
         }
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(MilliColors.cyanGlow.opacity(0.06))
+                    .frame(width: 66, height: 66)
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 27, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+
+            Text("Reports will populate from verified activity")
+                .font(MilliFont.headlineSmall)
+                .foregroundStyle(MilliColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text(
+                "Income, deductions, business mileage, and trip exports remain unavailable until Milli has " +
+                "authenticated financial and mileage records. Demo report data is never exportable from Release builds."
+            )
+                .font(MilliFont.bodySmall)
+                .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+        .milliCard(padding: 18)
     }
 
     private var tabs: some View {
