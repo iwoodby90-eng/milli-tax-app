@@ -132,6 +132,8 @@ private struct MilliSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @AppStorage("milliBiometricUnlock") private var biometricUnlock = false
+    @State private var isVerifyingAppLock = false
+    @State private var securityMessage: String?
     @AppStorage("milliNotifications") private var notifications = true
     @AppStorage("milliAutopilotReceipts") private var autopilotReceipts = true
     @AppStorage("milliReduceDecorativeMotion") private var reduceDecorativeMotion = false
@@ -143,17 +145,7 @@ private struct MilliSettingsSheet: View {
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 12) {
-                        settingsSection(
-                            title: "SECURITY",
-                            rows: [
-                                MilliSettingRow(
-                                    icon: "faceid",
-                                    title: "Biometric Unlock",
-                                    subtitle: "Require device authentication before opening Milli",
-                                    binding: $biometricUnlock
-                                )
-                            ]
-                        )
+                        securitySection
 
                         settingsSection(
                             title: "AUTOPILOT",
@@ -222,6 +214,89 @@ private struct MilliSettingsSheet: View {
             }
         }
         .preferredColorScheme(.dark)
+        .alert(
+            "App Lock",
+            isPresented: Binding(
+                get: { securityMessage != nil },
+                set: { visible in
+                    if !visible { securityMessage = nil }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { securityMessage = nil }
+        } message: {
+            Text(securityMessage ?? "")
+        }
+    }
+
+    private var securitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SECURITY")
+                .sectionHeaderStyle()
+
+            Toggle(isOn: appLockBinding) {
+                HStack(spacing: 10) {
+                    Image(systemName: "faceid")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(MilliColors.cyanGlow)
+                        .frame(width: 30, height: 30)
+                        .background(Circle().fill(MilliColors.cyanGlow.opacity(0.08)))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Face ID / Device Lock")
+                            .font(MilliFont.bodyMedium)
+                            .foregroundStyle(MilliColors.textPrimary)
+                        Text("Lock Milli when it leaves the foreground. Unlock with Face ID, Touch ID, or your device passcode.")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if isVerifyingAppLock {
+                        Spacer()
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(MilliColors.cyanGlow)
+                    }
+                }
+            }
+            .tint(MilliColors.cyanGlow)
+            .disabled(isVerifyingAppLock)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(MilliCardBackground(showGlow: true))
+        }
+    }
+
+    private var appLockBinding: Binding<Bool> {
+        Binding(
+            get: { biometricUnlock },
+            set: { requested in
+                guard requested else {
+                    biometricUnlock = false
+                    securityMessage = nil
+                    return
+                }
+
+                isVerifyingAppLock = true
+                Task { @MainActor in
+                    defer { isVerifyingAppLock = false }
+
+                    do {
+                        let authenticated = try await MilliDeviceAuthentication.authenticate(
+                            reason: "Confirm your identity to enable Milli App Lock."
+                        )
+                        biometricUnlock = authenticated
+                        if !authenticated {
+                            securityMessage = "App Lock was not enabled because device authentication was not completed."
+                        }
+                    } catch {
+                        biometricUnlock = false
+                        securityMessage = error.localizedDescription
+                    }
+                }
+            }
+        )
     }
 
     private func settingsSection(title: String, rows: [MilliSettingRow]) -> some View {
