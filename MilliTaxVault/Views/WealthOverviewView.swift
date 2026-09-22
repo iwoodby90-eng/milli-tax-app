@@ -381,6 +381,59 @@ private struct WealthAllocation: Identifiable {
     }
 }
 
+
+private struct WealthAllocation: Identifiable {
+    let id = UUID()
+    let name: String
+    let value: Double
+    let color: Color
+
+    func share(of total: Double) -> Double {
+        guard total > 0 else { return 0 }
+        return value / total
+    }
+}
+
+private struct WealthTrendPoint: Identifiable {
+    let id = UUID()
+    let month: String
+    let value: Double
+}
+
+private struct WealthOverviewModel {
+    let allocations: [WealthAllocation]
+    let monthlyChange: Double
+    let retirementProjection: Double
+    let futureNetWorth: Double
+    let monthlyContributions: Double
+    let trend: [WealthTrendPoint]
+
+    var totalNetWorth: Double {
+        allocations.reduce(0) { $0 + $1.value }
+    }
+
+    static let reference = WealthOverviewModel(
+        allocations: [
+            .init(name: "Investments", value: 42_685, color: MilliColors.cyanGlow),
+            .init(name: "Retirement", value: 148_320, color: Color(hex: "3276D9")),
+            .init(name: "Savings", value: 18_765, color: MilliColors.deepCyan),
+            .init(name: "Cash", value: 14_790, color: MilliColors.silver)
+        ],
+        monthlyChange: 7_250,
+        retirementProjection: 1_623_587,
+        futureNetWorth: 2_467_892,
+        monthlyContributions: 2_850,
+        trend: [
+            .init(month: "Mar", value: 186_900),
+            .init(month: "Apr", value: 190_750),
+            .init(month: "May", value: 198_300),
+            .init(month: "Jun", value: 204_810),
+            .init(month: "Jul", value: 217_310),
+            .init(month: "Aug", value: 224_560)
+        ]
+    )
+}
+
 #Preview {
     WealthOverviewView()
         .preferredColorScheme(.dark)
