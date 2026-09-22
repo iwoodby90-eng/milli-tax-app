@@ -72,6 +72,8 @@
 		A10301 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10301; };
 		A10302 /* AppleAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10302; };
 		A11001 /* MilliBackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11001; };
+		A11002 /* PlaidLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11002; };
+		A11003 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = X11002 /* LinkKit */; };
 		A10304 /* BankConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10304; };
 		A10303 /* MilliSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B10303; };
 		AF0001 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BF0001; };
@@ -172,6 +174,7 @@
 		B10301 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
 		B10302 /* AppleAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleAuthManager.swift; sourceTree = "<group>"; };
 		B11001 /* MilliBackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliBackendClient.swift; sourceTree = "<group>"; };
+		B11002 /* PlaidLinkCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkCoordinator.swift; sourceTree = "<group>"; };
 		B10304 /* BankConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankConnectionService.swift; sourceTree = "<group>"; };
 		B10303 /* MilliSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MilliSubscriptions.storekit; sourceTree = "<group>"; };
 		B10075 /* MilliMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliMetricCard.swift; sourceTree = "<group>"; };
@@ -236,6 +239,7 @@
 				B10301 /* StoreKitService.swift */,
 				B10302 /* AppleAuthManager.swift */,
 				B11001 /* MilliBackendClient.swift */,
+				B11002 /* PlaidLinkCoordinator.swift */,
 				B10304 /* BankConnectionService.swift */,
 				B10601 /* TreasuryAutopilotStore.swift */,
 				B10400 /* QuarterlyTaxEstimator.swift */,
@@ -432,6 +436,7 @@
 			buildConfigurationList = E10003;
 			buildPhases = (
 				D10002 /* Sources */,
+				D10004 /* Frameworks */,
 				D10003 /* Resources */,
 			);
 			buildRules = (
@@ -439,6 +444,9 @@
 			dependencies = (
 			);
 			name = MilliTaxVault;
+			packageProductDependencies = (
+				X11002 /* LinkKit */,
+			);
 			productName = MilliTaxVault;
 			productReference = B10099 /* MilliTaxVault.app */;
 			productType = "com.apple.product-type.application";
@@ -484,6 +492,9 @@
 			productRefGroup = C10099 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				X11001 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */,
+			);
 			targets = (
 				D10001 /* MilliTaxVault */,
 				D10500 /* MilliTaxVaultTests */,
@@ -562,6 +573,7 @@
 				A10301,
 				A10302,
 				A11001 /* MilliBackendClient.swift in Sources */,
+				A11002 /* PlaidLinkCoordinator.swift in Sources */,
 				A10304,
 				A10400,
 				A10510,
@@ -592,6 +604,14 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		D10004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A11003 /* LinkKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D10503 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -638,6 +658,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		X11001 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/plaid/plaid-link-ios-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		X11002 /* LinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = X11001 /* XCRemoteSwiftPackageReference "plaid-link-ios-spm" */;
+			productName = LinkKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E10004 /* Debug */ = {

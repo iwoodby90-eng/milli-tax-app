@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - TreasuryExecutionService
-// Server-side execution path for the Stripe Treasury money-movement rail
+// Server-side execution path for the Column money-movement rail
 // (closeout item 2). The client-side state contract (PayoutStateContract /
 // TreasuryAutopilotStore) is landed; this service is the authoritative
 // backend driver. No SwiftUI simulation may substitute for provider state —
