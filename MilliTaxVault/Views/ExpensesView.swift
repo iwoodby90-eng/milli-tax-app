@@ -1,8 +1,9 @@
 import SwiftUI
 
 // MARK: - ExpensesView
-// Premium native expense + receipt surface. All visible controls are functional;
-// OCR/camera ingestion remains explicitly unavailable until its production service is connected.
+// Premium native expense + receipt surface. All visible controls are functional.
+// Receipt capture runs the VisionKit document scanner with on-device OCR; the
+// parsed merchant, date and amount are always confirmed by the user before save.
 
 struct ExpensesView: View {
     var onBack: () -> Void = {}
@@ -260,11 +261,7 @@ struct ExpensesView: View {
 
     private func receiptRow(_ receipt: ReceiptItem) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: receipt.isLinked ? "doc.text.fill" : "doc.badge.plus")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(receipt.isLinked ? MilliColors.positive : MilliColors.warning)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill((receipt.isLinked ? MilliColors.positive : MilliColors.warning).opacity(0.10)))
+            receiptThumbnail(receipt)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(receipt.merchant)
@@ -290,6 +287,28 @@ struct ExpensesView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func receiptThumbnail(_ receipt: ReceiptItem) -> some View {
+        if let filename = receipt.imageFilename,
+           let image = ReceiptImageStore.image(named: filename) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 34, height: 34)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(MilliColors.cyanGlow.opacity(0.35), lineWidth: 0.7)
+                }
+        } else {
+            Image(systemName: receipt.isLinked ? "doc.text.fill" : "doc.badge.plus")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(receipt.isLinked ? MilliColors.positive : MilliColors.warning)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill((receipt.isLinked ? MilliColors.positive : MilliColors.warning).opacity(0.10)))
+        }
     }
 
     private var addButton: some View {
@@ -334,6 +353,7 @@ private struct AddExpenseSheet: View {
     @State private var category: ExpenseCategory = .fuel
     @State private var date = Date()
     @State private var deductible = true
+    @State private var showScanner = false
 
     private var amount: Double? {
         parseCurrency(amountText)
@@ -350,6 +370,28 @@ private struct AddExpenseSheet: View {
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
+                        if ReceiptScannerView.isSupported {
+                            Button {
+                                showScanner = true
+                            } label: {
+                                Label("Scan Receipt", systemImage: "camera.viewfinder")
+                                    .font(MilliFont.labelLarge)
+                                    .foregroundStyle(MilliColors.cyanGlow)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                            .fill(MilliColors.graphiteSurface)
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                                    .stroke(MilliColors.cyanGlow.opacity(0.35), lineWidth: 0.8)
+                                            }
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Fills merchant, amount and date from a scanned receipt")
+                        }
+
                         inputSection("MERCHANT") {
                             TextField("Gas station, repair shop, store...", text: $merchant)
                                 .font(MilliFont.bodyMedium)
@@ -464,8 +506,30 @@ private struct AddExpenseSheet: View {
                         .foregroundStyle(MilliColors.cyanGlow)
                 }
             }
+            .fullScreenCover(isPresented: $showScanner) {
+                ReceiptScannerView(
+                    onScan: { scan in
+                        apply(scan)
+                        showScanner = false
+                    },
+                    onCancel: { showScanner = false }
+                )
+                .ignoresSafeArea()
+            }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private func apply(_ scan: ScannedReceipt) {
+        if let merchant = scan.merchant {
+            self.merchant = merchant
+        }
+        if let amount = scan.amount {
+            amountText = String(format: "%.2f", amount)
+        }
+        if let date = scan.date {
+            self.date = date
+        }
     }
 
     private func inputSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -500,6 +564,9 @@ private struct AddReceiptSheet: View {
     @State private var merchant = ""
     @State private var amountText = ""
     @State private var date = Date()
+    @State private var showScanner = false
+    @State private var scannedImageFilename: String?
+    @State private var unreadableFields: [String] = []
 
     private var amount: Double? {
         let cleaned = amountText.replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")
@@ -516,19 +583,19 @@ private struct AddReceiptSheet: View {
             ZStack {
                 MilliColors.background.ignoresSafeArea()
 
+                ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 16) {
-                    Image(systemName: "doc.viewfinder")
-                        .font(.system(size: 44, weight: .medium))
-                        .foregroundStyle(MilliColors.cyanGlow)
+                    scanPanel
 
-                    Text("Receipt Capture")
-                        .font(MilliFont.screenTitle)
-                        .foregroundStyle(MilliColors.textPrimary)
-
-                    Text("Camera/OCR ingestion is not connected in this build yet. You can add the receipt metadata now without pretending an OCR scan occurred.")
-                        .font(MilliFont.bodyMedium)
-                        .foregroundStyle(MilliColors.textSecondary)
-                        .multilineTextAlignment(.center)
+                    if !unreadableFields.isEmpty {
+                        Label(
+                            "Couldn't read \(unreadableFields.joined(separator: " and ")) — enter \(unreadableFields.count > 1 ? "them" : "it") below.",
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.warning)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     TextField("Merchant", text: $merchant)
                         .font(MilliFont.bodyMedium)
@@ -562,12 +629,13 @@ private struct AddReceiptSheet: View {
                                 merchant: merchant.trimmingCharacters(in: .whitespacesAndNewlines),
                                 date: date,
                                 amount: amount,
-                                isLinked: false
+                                isLinked: false,
+                                imageFilename: scannedImageFilename
                             )
                         )
                         dismiss()
                     } label: {
-                        Text("Add Receipt Metadata")
+                        Text(scannedImageFilename == nil ? "Save Receipt" : "Save Scanned Receipt")
                             .font(MilliFont.headlineSmall)
                             .foregroundStyle(MilliColors.blackGlass)
                             .frame(maxWidth: .infinity)
@@ -581,6 +649,7 @@ private struct AddReceiptSheet: View {
                     .disabled(!canSave)
                 }
                 .padding(24)
+                }
             }
             .navigationTitle("Add Receipt")
             .navigationBarTitleDisplayMode(.inline)
@@ -590,8 +659,109 @@ private struct AddReceiptSheet: View {
                         .foregroundStyle(MilliColors.cyanGlow)
                 }
             }
+            .fullScreenCover(isPresented: $showScanner) {
+                ReceiptScannerView(
+                    onScan: { scan in
+                        apply(scan)
+                        showScanner = false
+                    },
+                    onCancel: { showScanner = false }
+                )
+                .ignoresSafeArea()
+            }
         }
         .preferredColorScheme(.dark)
+    }
+
+    // MARK: Scan panel
+
+    @ViewBuilder
+    private var scanPanel: some View {
+        VStack(spacing: 12) {
+            if let scannedImageFilename,
+               let image = ReceiptImageStore.image(named: scannedImageFilename) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 170)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(MilliColors.cyanGlow.opacity(0.32), lineWidth: 0.8)
+                    }
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.16), radius: 14)
+
+                Button("Rescan") { showScanner = true }
+                    .font(MilliFont.labelLarge)
+                    .foregroundStyle(MilliColors.cyanGlow)
+            } else {
+                Image(systemName: "doc.viewfinder")
+                    .font(.system(size: 40, weight: .medium))
+                    .foregroundStyle(MilliColors.cyanGlow)
+
+                Text("Receipt Capture")
+                    .font(MilliFont.screenTitle)
+                    .foregroundStyle(MilliColors.textPrimary)
+
+                if ReceiptScannerView.isSupported {
+                    Text("Scan a receipt and Milli reads the merchant, date and total on your device. Check the values before saving.")
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .multilineTextAlignment(.center)
+
+                    Button {
+                        showScanner = true
+                    } label: {
+                        Label("Scan Receipt", systemImage: "camera.fill")
+                            .font(MilliFont.headlineSmall)
+                            .foregroundStyle(MilliColors.blackGlass)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 46)
+                            .background(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("This device has no document scanner, so enter the receipt details by hand.")
+                        .font(MilliFont.bodySmall)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+        }
+    }
+
+    private func apply(_ scan: ScannedReceipt) {
+        scannedImageFilename = scan.imageFilename
+
+        var missing: [String] = []
+        if let merchant = scan.merchant {
+            self.merchant = merchant
+        } else {
+            missing.append("the merchant")
+        }
+
+        if let amount = scan.amount {
+            amountText = String(format: "%.2f", amount)
+        } else {
+            missing.append("the total")
+        }
+
+        if let date = scan.date {
+            self.date = date
+        } else {
+            missing.append("the date")
+        }
+
+        unreadableFields = missing
     }
 
     private var fieldBackground: some View {

@@ -33,6 +33,7 @@
 		A10062 /* MilliSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10062; };
 		A10063 /* MilliRenderKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10063; };
 		A11002 /* MilliFinancialSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11002; };
+		A11003 /* ReceiptScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11003; };
 		A10070 /* MilliSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10070; };
 		A10071 /* MilliSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10071; };
 		A10072 /* MilliProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10072; };
@@ -100,6 +101,7 @@
 		A20100 /* ExpenseModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20100; };
 		A20101 /* ExpenseStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20101; };
 		A20102 /* ExpenseStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20102; };
+		A20103 /* ReceiptTextParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20103; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -129,6 +131,7 @@
 		B10062 /* MilliSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliSpacing.swift; sourceTree = "<group>"; };
 		B10063 /* MilliRenderKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliRenderKit.swift; sourceTree = "<group>"; };
 		B11002 /* MilliFinancialSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliFinancialSnapshot.swift; sourceTree = "<group>"; };
+		B11003 /* ReceiptScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptScanner.swift; sourceTree = "<group>"; };
 		B10070 /* MilliSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliSurface.swift; sourceTree = "<group>"; };
 		B10071 /* MilliSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliSparkline.swift; sourceTree = "<group>"; };
 		B10072 /* MilliProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilliProgressRing.swift; sourceTree = "<group>"; };
@@ -199,6 +202,7 @@
 		B20100 /* ExpenseModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseModels.swift; sourceTree = "<group>"; };
 		B20101 /* ExpenseStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseStore.swift; sourceTree = "<group>"; };
 		B20102 /* ExpenseStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseStoreTests.swift; sourceTree = "<group>"; };
+		B20103 /* ReceiptTextParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptTextParserTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -237,6 +241,7 @@
 				B10302 /* AppleAuthManager.swift */,
 				B11001 /* MilliBackendClient.swift */,
 				B11002 /* MilliFinancialSnapshot.swift */,
+				B11003 /* ReceiptScanner.swift */,
 				B10304 /* BankConnectionService.swift */,
 				B10601 /* TreasuryAutopilotStore.swift */,
 				B10400 /* QuarterlyTaxEstimator.swift */,
@@ -419,6 +424,7 @@
 				B10803 /* MilliMoneyTests.swift */,
 				B10805 /* MilliLedgerEngineTests.swift */,
 				B10807 /* TreasuryExecutionTests.swift */,				B20102 /* ExpenseStoreTests.swift */,
+				B20103 /* ReceiptTextParserTests.swift */,
 
 			);
 			path = MilliTaxVaultTests;
@@ -563,6 +569,7 @@
 				A10302,
 				A11001 /* MilliBackendClient.swift in Sources */,
 				A11002 /* MilliFinancialSnapshot.swift in Sources */,
+				A11003 /* ReceiptScanner.swift in Sources */,
 				A10063 /* MilliRenderKit.swift in Sources */,
 				A10304,
 				A10400,
@@ -585,6 +592,7 @@
 				A10700 /* TreasuryAutopilotTests.swift in Sources */,
 				A10801 /* MilliCentsAnalyzerTests.swift in Sources */,
 				A20102 /* ExpenseStoreTests.swift in Sources */,
+				A20103 /* ReceiptTextParserTests.swift in Sources */,
 				A10803 /* MilliMoneyTests.swift in Sources */,
 				A10805 /* MilliLedgerEngineTests.swift in Sources */,
 				A10807 /* TreasuryExecutionTests.swift in Sources */,

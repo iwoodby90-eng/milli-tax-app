@@ -29,6 +29,12 @@ struct RetirementView: View {
     @State private var showAccountOpeningOnboarding = false
     @State private var showConnectRolloverSheet = false
 
+    // What-if planner inputs — starting points for a slider the user moves,
+    // not claims about this account.
+    @State private var plannerMonthly: Double = 250
+    @State private var plannerYears: Int = 25
+    @State private var plannerReturn: Double = 7
+
     // Consolidated balance including Milli Account + all connected past accounts
     private var totalConsolidatedBalance: Double {
         let base = (profile.milliAccount?.balance ?? profile.currentBalance)
@@ -609,19 +615,146 @@ struct RetirementView: View {
         .padding(12)
     }
 
-    private var emptyProjectionState: some View {
-        VStack(spacing: 12) {
-            Image("retirement-hero")
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: 210, maxHeight: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 18)
+    // MARK: - What-If Planner
+    // Shown until a real account or income exists. Every figure comes from the
+    // sliders the user moves, so it is an explicit estimate, never a balance.
+    private var plannerProjection: RetirementProjection? {
+        RetirementProjectionCalculator.project(
+            startingBalance: totalConsolidatedBalance,
+            monthlyContribution: plannerMonthly,
+            years: plannerYears,
+            annualReturnPercent: plannerReturn
+        )
+    }
 
-            Text("Open a Milli retirement account or connect an existing one to see live compounding projections.")
-                .font(MilliFont.bodyMedium)
+    private var emptyProjectionState: some View {
+        VStack(spacing: 14) {
+            plannerHeader
+            if let projection = plannerProjection {
+                plannerResult(projection)
+                projectionChart(projection)
+            }
+            plannerSliders
+            plannerDisclosure
+        }
+        .padding(16)
+        .milliCard()
+    }
+
+    private var plannerHeader: some View {
+        VStack(spacing: 4) {
+            MilliMicroLabel(text: "What-if planner")
+            Text("See what your contributions could grow to")
+                .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func plannerResult(_ projection: RetirementProjection) -> some View {
+        VStack(spacing: 4) {
+            Text(currency(projection.endingBalance))
+                .font(.custom("Sora-Bold", size: 38, relativeTo: .largeTitle))
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .contentTransition(.numericText())
+
+            Text("estimated by \(String(projection.retirementYear))")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+
+            HStack(spacing: 18) {
+                plannerFigure("You contribute", currency(projection.totalContributions))
+                plannerFigure("Growth", "+\(currency(projection.totalGrowth))", accent: MilliColors.positive)
+            }
+            .padding(.top, 6)
+        }
+        .animation(.easeOut(duration: 0.2), value: projection.endingBalance)
+    }
+
+    private func plannerFigure(
+        _ label: String,
+        _ value: String,
+        accent: Color = MilliColors.textPrimary
+    ) -> some View {
+        VStack(spacing: 2) {
+            Text(label.uppercased())
+                .font(MilliFont.sectionLabel)
+                .tracking(0.7)
+                .foregroundStyle(MilliColors.textTertiary)
+            Text(value)
+                .font(MilliFont.numericSmall)
+                .monospacedDigit()
+                .foregroundStyle(accent)
+        }
+    }
+
+    private var plannerSliders: some View {
+        VStack(spacing: 12) {
+            plannerSlider(
+                title: "Monthly contribution",
+                value: currency(plannerMonthly),
+                binding: $plannerMonthly,
+                range: 0...2000,
+                step: 25
+            )
+
+            plannerSlider(
+                title: "Years invested",
+                value: "\(plannerYears) yrs",
+                binding: Binding(
+                    get: { Double(plannerYears) },
+                    set: { plannerYears = Int($0.rounded()) }
+                ),
+                range: 5...40,
+                step: 1
+            )
+
+            plannerSlider(
+                title: "Expected annual return",
+                value: plannerReturn.formatted(.number.precision(.fractionLength(1))) + "%",
+                binding: $plannerReturn,
+                range: 2...10,
+                step: 0.5
+            )
+        }
+    }
+
+    private func plannerSlider(
+        title: String,
+        value: String,
+        binding: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+                Spacer()
+                Text(value)
+                    .font(MilliFont.numericSmall)
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.cyanGlow)
+            }
+            Slider(value: binding, in: range, step: step)
+                .tint(MilliColors.cyanGlow)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(value)")
+    }
+
+    private var plannerDisclosure: some View {
+        VStack(spacing: 10) {
+            Text("An estimate from the values above, compounded monthly — not a balance or a guarantee. Open a Milli account or connect an existing one to project your real contributions.")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             Button("Configure Plan") {
                 showInputs = true
@@ -629,8 +762,6 @@ struct RetirementView: View {
             .font(MilliFont.labelLarge)
             .foregroundStyle(MilliColors.cyanGlow)
         }
-        .padding(24)
-        .milliCard()
     }
 
     private func currency(_ value: Double) -> String {
@@ -1032,15 +1163,31 @@ public enum RetirementProjectionCalculator {
         // record or an income the contribution rate applies to.
         guard consolidatedBalance > 0 || profile.annualIncome > 0 else { return nil }
 
-        let retirementYear = currentYear + yearsToRetirement
-        let monthlyContribution = profile.annualIncome * (profile.contributionPercent / 100) / 12
+        return project(
+            startingBalance: consolidatedBalance,
+            monthlyContribution: profile.annualIncome * (profile.contributionPercent / 100) / 12,
+            years: yearsToRetirement,
+            annualReturnPercent: profile.annualReturnPercent
+        )
+    }
 
-        let annualReturn = profile.annualReturnPercent / 100
+    /// Compound-growth projection from explicit planning inputs. Used by the
+    /// what-if planner, where the user supplies every value directly.
+    public static func project(
+        startingBalance: Double,
+        monthlyContribution: Double,
+        years: Int,
+        annualReturnPercent: Double
+    ) -> RetirementProjection? {
+        guard years > 0 else { return nil }
+
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let annualReturn = annualReturnPercent / 100
         let monthlyRate = annualReturn == 0 ? 0 : pow(1 + annualReturn, 1.0 / 12.0) - 1
-        let totalMonths = yearsToRetirement * 12
+        let totalMonths = years * 12
 
-        var balance = consolidatedBalance
-        var userContributions = consolidatedBalance
+        var balance = max(startingBalance, 0)
+        var userContributions = balance
         var annualPoints: [RetirementProjectionPoint] = [
             RetirementProjectionPoint(
                 year: currentYear,
@@ -1050,8 +1197,8 @@ public enum RetirementProjectionCalculator {
         ]
 
         for month in 1...totalMonths {
-            balance = balance * (1 + monthlyRate) + monthlyContribution
-            userContributions += monthlyContribution
+            balance = balance * (1 + monthlyRate) + max(monthlyContribution, 0)
+            userContributions += max(monthlyContribution, 0)
 
             if month % 12 == 0 || month == totalMonths {
                 let yearOffset = Int(ceil(Double(month) / 12.0))
@@ -1074,7 +1221,7 @@ public enum RetirementProjectionCalculator {
         }
 
         return RetirementProjection(
-            retirementYear: retirementYear,
+            retirementYear: currentYear + years,
             endingBalance: balance,
             totalContributions: userContributions,
             totalGrowth: max(balance - userContributions, 0),

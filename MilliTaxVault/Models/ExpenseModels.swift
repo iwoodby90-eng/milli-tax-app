@@ -93,13 +93,23 @@ struct ReceiptItem: Identifiable, Codable, Equatable {
     let date: Date
     let amount: Double
     let isLinked: Bool
+    /// Name of the scanned image in `ReceiptImageStore`; nil for entries typed by hand.
+    let imageFilename: String?
 
-    init(id: UUID = UUID(), merchant: String, date: Date, amount: Double, isLinked: Bool) {
+    init(
+        id: UUID = UUID(),
+        merchant: String,
+        date: Date,
+        amount: Double,
+        isLinked: Bool,
+        imageFilename: String? = nil
+    ) {
         self.id = id
         self.merchant = merchant
         self.date = date
         self.amount = amount
         self.isLinked = isLinked
+        self.imageFilename = imageFilename
     }
 
     static var seeded: [ReceiptItem] {
