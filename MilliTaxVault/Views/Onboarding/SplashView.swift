@@ -3,6 +3,7 @@ import SwiftUI
 struct SplashView: View {
     var onComplete: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var contentScale: CGFloat = 0.94
     @State private var contentOpacity: Double = 0
 
@@ -63,9 +64,14 @@ struct SplashView: View {
             .accessibilityLabel("MILLI. Money, Made Intelligent.")
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.65)) {
+            if reduceMotion {
                 contentScale = 1
                 contentOpacity = 1
+            } else {
+                withAnimation(.easeOut(duration: 0.65)) {
+                    contentScale = 1
+                    contentOpacity = 1
+                }
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.35) {
