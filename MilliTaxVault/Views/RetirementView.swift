@@ -13,6 +13,19 @@ public struct MilliRetirementAccount: Codable, Equatable {
     public let isApproved: Bool
     public let openingDate: Date
 
+    /// Deterministic reference-only account used exclusively when
+    /// ReferenceDataPolicy enables screenshot/demo content in DEBUG.
+    public static let standard = MilliRetirementAccount(
+        accountNumber: "MLI-ROTH-8492",
+        planType: "Milli Roth IRA",
+        custodian: "Apex Clearing Custody",
+        balance: 42_685.73,
+        monthlyAutoDepositPercent: 15.0,
+        annualLimit: 7_000.0,
+        isApproved: true,
+        openingDate: Date()
+    )
+
 }
 
 // MARK: - RetirementView
