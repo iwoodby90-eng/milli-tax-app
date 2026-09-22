@@ -212,15 +212,22 @@ struct TaxVaultView: View {
         .milliCard(padding: 13)
     }
 
-    /// Cumulative reserve over the verified payout ledger. Empty until the
-    /// ledger has at least two entries to plot.
+    /// Cumulative reserve over the verified payout ledger. The chart stays
+    /// empty until every payout has an authoritative backend allocation amount.
     private var reserveHistory: [MilliTrendPoint] {
-        let ordered = snapshot.payouts.reversed()
+        let ordered = Array(snapshot.payouts.reversed())
+        guard ordered.count >= 2 else { return [] }
+
+        let allocations = ordered.compactMap { payout -> Double? in
+            guard let cents = payout.stateContractProjection.taxAllocatedCents else { return nil }
+            return Double(cents) / 100.0
+        }
+        guard allocations.count == ordered.count else { return [] }
+
         var running = 0.0
         let calendar = Calendar.current
-
-        return ordered.enumerated().compactMap { index, payout in
-            running += payout.taxProtected
+        return allocations.enumerated().compactMap { index, amount in
+            running += amount
             guard let date = calendar.date(
                 byAdding: .day,
                 value: index - ordered.count,
@@ -314,7 +321,9 @@ struct TaxVaultView: View {
     }
 
     private func activityRow(_ payout: VerifiedPayout) -> some View {
-        HStack(spacing: 10) {
+        let allocatedAmount = payout.stateContractProjection.taxAllocatedCents.map { Double($0) / 100.0 }
+
+        return HStack(spacing: 10) {
             Image(systemName: "arrow.down.left")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
@@ -326,7 +335,7 @@ struct TaxVaultView: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Reserved from \(payout.platform)")
+                Text(allocatedAmount == nil ? "Payout from \(payout.platform)" : "Reserved from \(payout.platform)")
                     .font(MilliFont.headlineSmall)
                     .foregroundStyle(MilliColors.textPrimary)
                     .lineLimit(1)
@@ -338,10 +347,14 @@ struct TaxVaultView: View {
             Spacer(minLength: 4)
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(payout.taxProtected.formatted(.currency(code: "USD").sign(strategy: .always())))
+                Text(
+                    allocatedAmount.map {
+                        $0.formatted(.currency(code: "USD").sign(strategy: .always()))
+                    } ?? MilliPlaceholder.value
+                )
                     .font(MilliFont.numericSmall)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.positive)
+                    .foregroundStyle(allocatedAmount == nil ? MilliColors.textTertiary : MilliColors.positive)
                 Text("of \(payout.grossAmount.formatted(.currency(code: "USD")))")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
