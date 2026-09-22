@@ -74,6 +74,8 @@ enum AutopilotAllocationEngine {
 struct AutopilotSettingsView: View {
     var onBack: () -> Void = {}
 
+    @StateObject private var bankService = BankConnectionService.shared
+
     @AppStorage("milliAutopilotRetirementEnabled") private var retirementEnabled = true
     @AppStorage("milliAutopilotInvestingEnabled") private var investingEnabled = false
     @AppStorage("milliAutopilotSavingsEnabled") private var savingsEnabled = true
@@ -83,7 +85,11 @@ struct AutopilotSettingsView: View {
     @AppStorage("milliAutopilotSavingsPercent") private var savingsPercent = 3.0
 
     private let taxPercent = 23.0
-    private let examplePayout = 312.64
+    /// Preview basis: the user's most recent verified payout. Without one the
+    /// split is shown as percentages rather than invented dollars.
+    private var previewPayout: Double? {
+        bankService.payouts.first?.grossAmount
+    }
 
     private var allocationSettings: AutopilotAllocationSettings {
         AutopilotAllocationSettings(
@@ -97,8 +103,10 @@ struct AutopilotSettingsView: View {
         )
     }
 
-    private var allocation: AutopilotAllocationResult {
-        AutopilotAllocationEngine.allocate(payout: examplePayout, settings: allocationSettings)
+    private var allocation: AutopilotAllocationResult? {
+        previewPayout.map {
+            AutopilotAllocationEngine.allocate(payout: $0, settings: allocationSettings)
+        }
     }
 
     private var optionalAllocationTotal: Double {
@@ -121,7 +129,7 @@ struct AutopilotSettingsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
     }
 
     private var header: some View {
@@ -332,12 +340,14 @@ struct AutopilotSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("PAYOUT PREVIEW")
                         .sectionHeaderStyle()
-                    Text("Example payout")
+                    Text(previewPayout == nil
+                         ? "Splits apply to your first verified payout"
+                         : "Your latest payout")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                 }
                 Spacer()
-                Text(examplePayout.formatted(.currency(code: "USD")))
+                Text(MilliFigureFormat.currency(previewPayout))
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
@@ -345,10 +355,25 @@ struct AutopilotSettingsView: View {
 
             Divider().overlay(Color.white.opacity(0.06))
 
-            previewRow("Milli Tax Vault™", allocation.taxReserve, MilliColors.cyanGlow)
-            previewRow("Retirement", allocation.retirement, MilliColors.positive)
-            previewRow("Investing", allocation.investing, MilliColors.deepCyan)
-            previewRow("Savings", allocation.savings, MilliColors.deepCyan)
+            previewRow("Milli Tax Vault™", allocation?.taxReserve, taxPercent, MilliColors.cyanGlow)
+            previewRow(
+                "Retirement",
+                allocation?.retirement,
+                retirementEnabled ? retirementPercent : 0,
+                MilliColors.positive
+            )
+            previewRow(
+                "Investing",
+                allocation?.investing,
+                investingEnabled ? investingPercent : 0,
+                MilliColors.deepCyan
+            )
+            previewRow(
+                "Savings",
+                allocation?.savings,
+                savingsEnabled ? savingsPercent : 0,
+                MilliColors.deepCyan
+            )
 
             Divider().overlay(Color.white.opacity(0.07))
 
@@ -357,7 +382,7 @@ struct AutopilotSettingsView: View {
                     .font(MilliFont.sectionLabel)
                     .foregroundStyle(MilliColors.textSecondary)
                 Spacer()
-                Text(allocation.availableToSpend.formatted(.currency(code: "USD")))
+                Text(MilliFigureFormat.currency(allocation?.availableToSpend))
                     .font(MilliFont.numericMedium)
                     .monospacedDigit()
                     .foregroundStyle(MilliColors.textPrimary)
@@ -367,7 +392,12 @@ struct AutopilotSettingsView: View {
         .milliCard(padding: 14)
     }
 
-    private func previewRow(_ title: String, _ amount: Double, _ color: Color) -> some View {
+    private func previewRow(
+        _ title: String,
+        _ amount: Double?,
+        _ percent: Double,
+        _ color: Color
+    ) -> some View {
         HStack {
             HStack(spacing: 6) {
                 Circle().fill(color).frame(width: 6, height: 6)
@@ -376,10 +406,17 @@ struct AutopilotSettingsView: View {
                     .foregroundStyle(MilliColors.textSecondary)
             }
             Spacer()
-            Text(amount.formatted(.currency(code: "USD")))
-                .font(MilliFont.numericSmall)
-                .monospacedDigit()
-                .foregroundStyle(amount == 0 ? MilliColors.textTertiary : MilliColors.textPrimary)
+            if let amount {
+                Text(amount.formatted(.currency(code: "USD")))
+                    .font(MilliFont.numericSmall)
+                    .monospacedDigit()
+                    .foregroundStyle(amount == 0 ? MilliColors.textTertiary : MilliColors.textPrimary)
+            } else {
+                Text("\(percent.formatted(.number.precision(.fractionLength(0))))% of payout")
+                    .font(MilliFont.numericSmall)
+                    .monospacedDigit()
+                    .foregroundStyle(percent == 0 ? MilliColors.textTertiary : MilliColors.textSecondary)
+            }
         }
     }
 

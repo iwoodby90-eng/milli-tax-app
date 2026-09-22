@@ -1,10 +1,10 @@
 import SwiftUI
-import Charts
 
 // MARK: - TaxReadyScoreView
-// Premium readiness instrument matching the approved Milli reference. The hero
-// remains derived from the underlying factor scores so production services can
-// replace the seeded factors without redesigning the view.
+// Readiness instrument in the approved Milli language. Every factor reflects
+// state Milli can actually observe on this account — a connected bank, a saved
+// tax profile, recorded expenses and trips, and reserve pace against the
+// year. Nothing is seeded, so a fresh account reads zero rather than a score.
 
 struct TaxReadyScoreView: View {
     var onBack: () -> Void = {}
@@ -13,7 +13,7 @@ struct TaxReadyScoreView: View {
 
     private var score: Int {
         guard !factors.isEmpty else { return 0 }
-        return Int((Double(factors.reduce(0) { $0 + $1.score }) / Double(factors.count)).rounded())
+        return Int((Double(completedCount) / Double(factors.count) * 100).rounded())
     }
 
     private var readiness: ReadinessState {
@@ -36,7 +36,7 @@ struct TaxReadyScoreView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
     }
 
     private var header: some View {
@@ -126,6 +126,7 @@ struct TaxReadyScoreView: View {
             Text(readiness.message)
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
@@ -135,17 +136,24 @@ struct TaxReadyScoreView: View {
 
     private var factorList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SCORE FACTORS")
-                .sectionHeaderStyle()
+            HStack {
+                Text("SCORE FACTORS")
+                    .sectionHeaderStyle()
+                Spacer()
+                Text("\(completedCount) of \(factors.count) complete")
+                    .font(MilliFont.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
 
             VStack(spacing: 0) {
                 ForEach(Array(factors.enumerated()), id: \.element.id) { index, factor in
                     HStack(spacing: 9) {
                         Image(systemName: factor.icon)
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(factor.color)
+                            .foregroundStyle(factor.state.color)
                             .frame(width: 26, height: 26)
-                            .background(Circle().fill(factor.color.opacity(0.09)))
+                            .background(Circle().fill(factor.state.color.opacity(0.09)))
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(factor.name)
@@ -159,9 +167,9 @@ struct TaxReadyScoreView: View {
 
                         Spacer()
 
-                        Text(factor.status)
+                        Text(factor.state.label)
                             .font(MilliFont.caption)
-                            .foregroundStyle(factor.color)
+                            .foregroundStyle(factor.state.color)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -175,97 +183,48 @@ struct TaxReadyScoreView: View {
         }
     }
 
-    private var history: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("SCORE HISTORY")
-                    .sectionHeaderStyle()
-                Spacer()
-                Text("Last 6 months")
-                    .font(MilliFont.caption)
-                    .foregroundStyle(MilliColors.textTertiary)
-            }
+    private var methodology: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 12))
+                .foregroundStyle(MilliColors.deepCyan)
 
-            Chart(historyData) { point in
-                LineMark(
-                    x: .value("Month", point.month),
-                    y: .value("Score", point.score)
-                )
-                .foregroundStyle(MilliColors.cyanGlow)
-                .interpolationMethod(.catmullRom)
-                .lineStyle(StrokeStyle(lineWidth: 1.8))
-
-                PointMark(
-                    x: .value("Month", point.month),
-                    y: .value("Score", point.score)
-                )
-                .foregroundStyle(MilliColors.cyanGlow)
-                .symbolSize(18)
-            }
-            .chartYScale(domain: 60...100)
-            .chartYAxis {
-                AxisMarks(values: [60, 70, 80, 90, 100]) { _ in
-                    AxisGridLine().foregroundStyle(Color.white.opacity(0.04))
-                    AxisValueLabel().foregroundStyle(MilliColors.textTertiary)
-                }
-            }
-            .chartXAxis {
-                AxisMarks { _ in
-                    AxisValueLabel().foregroundStyle(MilliColors.textTertiary)
-                }
-            }
-            .frame(height: 145)
+            Text("Your score is the share of readiness factors Milli can verify on this account. History appears once your score has been tracked across a full tax season.")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
         }
         .milliCard(padding: 14)
     }
-
-    private var factors: [ScoreFactor] {
-        [
-            .init(name: "Income Tracking", detail: "6 / 6 income sources connected", score: 96, icon: "dollarsign.circle.fill"),
-            .init(name: "Expenses Categorized", detail: "94% categorized", score: 84, icon: "receipt.fill"),
-            .init(name: "Mileage Tracking", detail: "100% tracking enabled", score: 94, icon: "car.fill"),
-            .init(name: "Quarterly Taxes", detail: "On time", score: 82, icon: "building.columns.fill"),
-            .init(name: "Documents Captured", detail: "12 / 12 expected", score: 69, icon: "doc.text.fill")
-        ]
-    }
-
-    private var historyData: [ScoreHistoryPoint] {
-        let scores = [68, 72, 78, 82, 84, score]
-        let calendar = Calendar.current
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-
-        return scores.enumerated().map { index, value in
-            let monthsBack = scores.count - 1 - index
-            let date = calendar.date(byAdding: .month, value: -monthsBack, to: Date()) ?? Date()
-            return ScoreHistoryPoint(month: formatter.string(from: date), score: value)
-        }
-    }
 }
 
-private struct ScoreFactor: Identifiable {
+private struct ReadinessFactor: Identifiable {
+    enum State: Equatable {
+        case complete
+        case attention
+        case pending
+
+        var label: String {
+            switch self {
+            case .complete: return "Complete"
+            case .attention: return "Needs Attention"
+            case .pending: return "Not Set Up"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .complete: return MilliColors.positive
+            case .attention: return MilliColors.warning
+            case .pending: return MilliColors.textTertiary
+            }
+        }
+    }
+
     let id = UUID()
     let name: String
-    let detail: String
-    let score: Int
     let icon: String
-
-    var status: String {
-        switch score {
-        case 90...: return "Excellent"
-        case 80..<90: return "Good"
-        case 70..<80: return "Fair"
-        default: return "Needs Attention"
-        }
-    }
-
-    var color: Color {
-        switch score {
-        case 80...: return MilliColors.positive
-        case 70..<80: return MilliColors.warning
-        default: return MilliColors.warning
-        }
-    }
+    let state: State
+    let detail: String
 }
 
 private struct ReadinessState {
@@ -273,33 +232,28 @@ private struct ReadinessState {
 
     var title: String {
         switch score {
-        case 90...: return "Excellent"
-        case 80..<90: return "Great"
-        case 70..<80: return "Good"
-        case 60..<70: return "Fair"
-        default: return "Needs Attention"
+        case 100: return "Complete"
+        case 80..<100: return "Great"
+        case 60..<80: return "Good"
+        case 1..<60: return "Getting Started"
+        default: return "Not Started"
         }
     }
 
     var message: String {
         switch score {
-        case 80...: return "You're on track for tax season"
-        case 70..<80: return "A few improvements can strengthen your tax readiness"
-        default: return "Review the factors below to improve your tax readiness"
+        case 100: return "Every readiness factor is in place"
+        case 60..<100: return "Finish the remaining factors to be fully tax ready"
+        case 1..<60: return "Complete the factors below to build your readiness"
+        default: return "Connect a bank and add your tax profile to begin"
         }
     }
 
     var color: Color {
         switch score {
         case 80...: return MilliColors.positive
-        case 60..<80: return MilliColors.warning
-        default: return MilliColors.negative
+        case 40..<80: return MilliColors.warning
+        default: return MilliColors.textTertiary
         }
     }
-}
-
-private struct ScoreHistoryPoint: Identifiable {
-    let id = UUID()
-    let month: String
-    let score: Int
 }

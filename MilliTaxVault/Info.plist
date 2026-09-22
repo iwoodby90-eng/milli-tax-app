@@ -2,6 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<false/>
+	</dict>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Sora-Regular.ttf</string>
@@ -21,6 +32,8 @@
 	<string>Milli uses your location while a mileage trip or navigation session is active to provide directions and record deductible business miles.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Milli can continue an active navigation or mileage trip in the background so directions and business miles are not lost when you switch apps or lock your iPhone.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Milli uses the camera to scan receipts so merchant, date and amount can be read on your device and attached to a deductible expense.</string>
 	<key>MKDirectionsApplicationSupportedModes</key>
 	<array>
 		<string>MKDirectionsModeCar</string>

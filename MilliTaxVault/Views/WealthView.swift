@@ -55,7 +55,7 @@ struct SavingsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showAddGoal) {
             AddSavingsGoalSheet { goal in
                 goals.append(goal)

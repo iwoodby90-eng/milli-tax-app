@@ -1,0 +1,14 @@
+---
+# Test code is excluded from static analysis: pytest relies on bare `assert`
+# statements and the fixtures build schema names with psycopg.sql.Identifier,
+# both of which the security patterns flag as issues in production code only.
+exclude_paths:
+  - "backend/tests/**"
+  - "MilliTaxVaultTests/**"
+
+engines:
+  # TSQLLint targets SQL Server. The migrations are PostgreSQL DDL, so its
+  # SET ANSI_NULLS / SET NOCOUNT / schema-qualification rules do not apply.
+  tsqllint:
+    exclude_paths:
+      - "backend/migrations/**"

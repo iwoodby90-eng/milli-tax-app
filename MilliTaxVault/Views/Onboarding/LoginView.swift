@@ -1,5 +1,4 @@
 import SwiftUI
-import Security
 import AuthenticationServices
 
 struct LoginView: View {
@@ -18,7 +17,12 @@ struct LoginView: View {
     @State private var confirmPassword = ""
     @State private var showPassword = false
     @State private var authenticationMessage: String?
+    @State private var isSubmitting = false
     @FocusState private var focusedField: Field?
+
+    /// Matches the backend password policy so the button state never promises
+    /// something the server will reject.
+    private static let minimumPasswordLength = 12
 
     private enum AuthMode {
         case signIn
@@ -43,13 +47,14 @@ struct LoginView: View {
     }
 
     private var canSubmit: Bool {
+        guard !isSubmitting else { return false }
         switch mode {
         case .signIn:
-            return hasValidEmailShape && password.count >= 8
+            return hasValidEmailShape && !password.isEmpty
         case .signUp:
             return fullName.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
                 && hasValidEmailShape
-                && password.count >= 8
+                && password.count >= Self.minimumPasswordLength
                 && password == confirmPassword
         }
     }
@@ -131,6 +136,11 @@ struct LoginView: View {
                     }
 
                     if mode == .signUp {
+                        Text("At least \(Self.minimumPasswordLength) characters with a letter and a number.")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
                         credentialField(
                             title: "CONFIRM PASSWORD",
                             icon: "checkmark.shield.fill",
@@ -146,14 +156,6 @@ struct LoginView: View {
                 }
 
                 HStack {
-                    #if DEBUG
-                    if mode == .signIn {
-                        Button("Use Demo Account", action: fillDemoCredentials)
-                            .font(MilliFont.caption)
-                            .foregroundStyle(MilliColors.cyanGlow)
-                    }
-                    #endif
-
                     Spacer()
 
                     if mode == .signIn, let onForgotPassword {
@@ -188,8 +190,14 @@ struct LoginView: View {
                             .font(.custom("Sora-SemiBold", size: 15, relativeTo: .headline))
                             .tracking(0.8)
 
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 12, weight: .bold))
+                        if isSubmitting {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(MilliColors.blackGlass)
+                        } else {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 12, weight: .bold))
+                        }
                     }
                     .foregroundStyle(canSubmit ? MilliColors.blackGlass : MilliColors.textTertiary)
                     .frame(maxWidth: .infinity)
@@ -282,16 +290,8 @@ struct LoginView: View {
 
     private var brandHero: some View {
         VStack(spacing: 11) {
-            ZStack {
-                Circle()
-                    .fill(MilliColors.cyanGlow.opacity(0.06))
-                    .frame(width: 92, height: 92)
-                    .blur(radius: 14)
-
-                ChromeEmblemView(size: 68)
-            }
-
-            MilliWordmark(fontSize: 34, tracking: 6.4)
+            MilliWordmark(fontSize: 40, tracking: 7.2)
+                .padding(.top, 10)
 
             Text("Money, Made Intelligent.")
                 .font(MilliFont.bodyMedium)
@@ -432,7 +432,7 @@ struct LoginView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(MilliColors.cyanGlow)
-            Text("Banking access uses server-verified Apple ID • Session tokens stay in Keychain")
+            Text("Credentials are verified by the Milli backend • Session tokens stay in Keychain")
                 .font(MilliFont.caption)
                 .foregroundStyle(MilliColors.textTertiary)
         }
@@ -441,7 +441,7 @@ struct LoginView: View {
 
     private var loginBackground: some View {
         ZStack {
-            MilliColors.background.ignoresSafeArea()
+            MilliAmbientBackground()
 
             RadialGradient(
                 colors: [MilliColors.cyanGlow.opacity(0.065), Color.clear],
@@ -465,107 +465,51 @@ struct LoginView: View {
         authenticationMessage = nil
         focusedField = nil
 
-        switch mode {
-        case .signIn:
-            signIn()
-        case .signUp:
-            createAccount()
-        }
-    }
-
-    private func signIn() {
-        #if DEBUG
-        if normalizedEmail == "ian@milli.local", password == "MilliDemo2026!" {
-            onSignIn(normalizedEmail)
-            return
-        }
-        #endif
-
-        guard let storedEmail = UserDefaults.standard.string(forKey: "milliProfileEmail")?.lowercased(),
-              storedEmail == normalizedEmail
-        else {
-            authenticationMessage = "We couldn't find this Milli profile on this device. Create an account to begin first-time setup."
-            return
-        }
-
-        guard MilliLocalCredentialStore.passwordMatches(password, for: normalizedEmail) else {
-            authenticationMessage = "The email or password is incorrect."
-            return
-        }
-
-        onSignIn(normalizedEmail)
-    }
-
-    private func createAccount() {
-        let name = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard password == confirmPassword else {
+        if mode == .signUp, password != confirmPassword {
             authenticationMessage = "Passwords do not match."
             return
         }
 
-        guard MilliLocalCredentialStore.store(password: password, for: normalizedEmail) else {
-            authenticationMessage = "Milli couldn't securely save this local sign-in. Please try again."
-            return
+        let credentialEmail = normalizedEmail
+        let credentialPassword = password
+        let name = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isSignUp = mode == .signUp
+        isSubmitting = true
+
+        Task { @MainActor in
+            defer { isSubmitting = false }
+            do {
+                if isSignUp {
+                    try await MilliBackendClient.shared.signUpWithEmail(
+                        email: credentialEmail,
+                        password: credentialPassword
+                    )
+                } else {
+                    try await MilliBackendClient.shared.signInWithEmail(
+                        email: credentialEmail,
+                        password: credentialPassword
+                    )
+                }
+            } catch {
+                authenticationMessage = error.localizedDescription
+                return
+            }
+
+            // The password itself never touches local storage; only the
+            // profile label and the Keychain session survive this screen.
+            password = ""
+            confirmPassword = ""
+
+            let defaults = UserDefaults.standard
+            defaults.set(credentialEmail, forKey: "milliProfileEmail")
+            if isSignUp {
+                defaults.set(name, forKey: "milliProfileName")
+                defaults.set(true, forKey: "milliHasCreatedAccount")
+                onCreateAccount(credentialEmail)
+            } else {
+                onSignIn(credentialEmail)
+            }
         }
-
-        let defaults = UserDefaults.standard
-        defaults.set(name, forKey: "milliProfileName")
-        defaults.set(normalizedEmail, forKey: "milliProfileEmail")
-        defaults.set(true, forKey: "milliHasCreatedAccount")
-
-        onCreateAccount(normalizedEmail)
-    }
-
-    #if DEBUG
-    private func fillDemoCredentials() {
-        email = "ian@milli.local"
-        password = "MilliDemo2026!"
-        authenticationMessage = nil
-        focusedField = nil
-    }
-    #endif
-}
-
-private enum MilliLocalCredentialStore {
-    private static let service = "com.milli.taxvault.local-auth"
-
-    static func store(password: String, for email: String) -> Bool {
-        guard let data = password.data(using: .utf8) else { return false }
-
-        let base: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: email
-        ]
-
-        SecItemDelete(base as CFDictionary)
-
-        var insert = base
-        insert[kSecValueData as String] = data
-        insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-
-        return SecItemAdd(insert as CFDictionary, nil) == errSecSuccess
-    }
-
-    static func passwordMatches(_ password: String, for email: String) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: email,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-
-        var result: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data,
-              let storedPassword = String(data: data, encoding: .utf8)
-        else {
-            return false
-        }
-
-        return storedPassword == password
     }
 }
 

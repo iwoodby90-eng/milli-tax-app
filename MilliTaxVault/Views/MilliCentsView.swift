@@ -10,17 +10,19 @@ struct MilliCentsView: View {
 
     @State private var mode: MilliCentsMode = .manualCalculator
     @State private var selectedPlatform: String = "DoorDash"
-    @State private var offerAmount: Double = 32.64
-    @State private var estimatedMiles: Double = 24.8
-    @State private var deadMiles: Double = 6.4
-    @State private var returnMiles: Double = 7.2
+    @State private var offerAmount: Double = 0
+    @State private var estimatedMiles: Double = 0
+    @State private var deadMiles: Double = 0
+    @State private var returnMiles: Double = 0
     @State private var gasPrice: Double = 3.85
     @State private var vehicleMpg: Double = 26.0
     @State private var effectiveTaxRate: Double = 0.25
 
     @State private var showInfo = false
     @State private var showPlatformConnectSheet = false
-    @State private var liveIncomingOffers: [LiveGigOffer] = LiveGigOffer.sampleLiveOffers
+    // Offers arrive from connected driving platforms. Nothing is listed until a
+    // platform integration actually delivers one.
+    @State private var liveIncomingOffers: [LiveGigOffer] = []
 
     // Computed Economics
     private var totalMiles: Double {
@@ -82,7 +84,7 @@ struct MilliCentsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showInfo) {
             MilliCentsInfoSheet()
                 .presentationDetents([.medium, .large])
@@ -465,6 +467,13 @@ struct MilliCentsView: View {
                 .tracking(0.7)
                 .foregroundStyle(MilliColors.textSecondary)
 
+            if liveIncomingOffers.isEmpty {
+                Text("No offers yet. Connect a driving platform and incoming offers are scored here in real time.")
+                    .font(MilliFont.bodySmall)
+                    .foregroundStyle(MilliColors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             VStack(spacing: 8) {
                 ForEach(liveIncomingOffers) { liveOffer in
                     Button {
@@ -630,13 +639,6 @@ public struct LiveGigOffer: Identifiable {
 
     public var totalMiles: Double { estimatedMiles + deadMiles + returnMiles }
 
-    public static let sampleLiveOffers: [LiveGigOffer] = [
-        .init(id: "LGO-1", platform: "DoorDash", colorHex: "FF3008", amount: 32.64, estimatedMiles: 24.8, deadMiles: 6.4, returnMiles: 7.2, destinationZone: "Lincoln Park → River North", timeLabel: "Just now", recommendationTag: "GO (HIGH PROFIT)", recommendationColor: MilliColors.cyanGlow),
-        .init(id: "LGO-2", platform: "Spark Driver", colorHex: "0071DC", amount: 48.50, estimatedMiles: 18.2, deadMiles: 3.1, returnMiles: 4.5, destinationZone: "Walmart Supercenter Batch", timeLabel: "2m ago", recommendationTag: "GO (OPTIMAL)", recommendationColor: MilliColors.cyanGlow),
-        .init(id: "LGO-3", platform: "Uber Eats", colorHex: "000000", amount: 11.25, estimatedMiles: 14.2, deadMiles: 5.0, returnMiles: 8.0, destinationZone: "Suburbs Delivery", timeLabel: "5m ago", recommendationTag: "SKIP (LOW $/MI)", recommendationColor: MilliColors.negative),
-        .init(id: "LGO-4", platform: "Amazon Flex", colorHex: "FF9900", amount: 92.00, estimatedMiles: 42.0, deadMiles: 8.5, returnMiles: 10.0, destinationZone: "3-Hour Logistics Block", timeLabel: "8m ago", recommendationTag: "GO (STRONG BLOCK)", recommendationColor: MilliColors.cyanGlow),
-        .init(id: "LGO-5", platform: "Instacart", colorHex: "16844A", amount: 24.00, estimatedMiles: 16.5, deadMiles: 4.0, returnMiles: 6.0, destinationZone: "Costco Heavy Batch", timeLabel: "11m ago", recommendationTag: "MAYBE", recommendationColor: MilliColors.warning)
-    ]
 }
 
 // MARK: - Gig Platform Connect Sheet
@@ -644,11 +646,11 @@ public struct LiveGigOffer: Identifiable {
 private struct GigPlatformConnectSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var platforms = [
-        ("DoorDash Driver", "bag.fill", Color(hex: "FF3008"), true),
-        ("Uber Driver", "car.fill", Color(hex: "000000"), true),
-        ("Walmart Spark Driver", "sparkles", Color(hex: "0071DC"), true),
-        ("Amazon Flex", "cube.box.fill", Color(hex: "FF9900"), true),
-        ("Instacart Shopper", "cart.fill", Color(hex: "16844A"), true),
+        ("DoorDash Driver", "bag.fill", Color(hex: "FF3008"), false),
+        ("Uber Driver", "car.fill", Color(hex: "000000"), false),
+        ("Walmart Spark Driver", "sparkles", Color(hex: "0071DC"), false),
+        ("Amazon Flex", "cube.box.fill", Color(hex: "FF9900"), false),
+        ("Instacart Shopper", "cart.fill", Color(hex: "16844A"), false),
         ("Lyft Driver", "steeringwheel", Color(hex: "FF00BF"), false),
         ("Grubhub for Drivers", "fork.knife", Color(hex: "C44724"), false)
     ]
@@ -691,7 +693,7 @@ private struct GigPlatformConnectSheet: View {
                 }
                 .padding(16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("Platform Connections")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -738,7 +740,7 @@ private struct MilliCentsInfoSheet: View {
                 }
                 .padding(16)
             }
-            .background(MilliColors.background.ignoresSafeArea())
+            .background { MilliAmbientBackground() }
             .navigationTitle("About Milli Cents")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

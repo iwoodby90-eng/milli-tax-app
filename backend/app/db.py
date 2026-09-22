@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
+from psycopg import Connection
 from psycopg_pool import ConnectionPool
 
 from .config import get_settings
@@ -27,7 +28,7 @@ def pool() -> Optional[ConnectionPool]:
 
 
 @contextmanager
-def connection() -> Iterator[object]:
+def connection() -> Iterator[Connection]:
     p = pool()
     if p is None:
         raise RuntimeError("DATABASE_URL is not configured")

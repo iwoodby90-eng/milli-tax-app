@@ -1,239 +1,370 @@
 import SwiftUI
 
 // MARK: - TaxVaultView
-// Compact premium reserve-account presentation matching the approved Milli reference.
-// Production money movement remains explicit: the transfer control opens setup
-// until a verified funding rail is connected rather than pretending a transfer occurred.
+// Milli Tax Vault™ reserve surface, built to the obsidian/chrome reference:
+// wordmark and companion, vault hero, quarterly + reserve two-up, verified
+// activity, and a two-up action footer.
+//
+// Every figure is derived by MilliFinancialSnapshot from verified payouts and
+// the user's own tax profile. Nothing is seeded: with no connected bank the
+// screen renders its unavailable states, and money movement stays behind an
+// explicit funding-source setup rather than pretending a transfer occurred.
 
 struct TaxVaultView: View {
     var onBack: () -> Void = {}
 
+    @StateObject private var bankService = BankConnectionService.shared
     @State private var showTransferSetup = false
-    @State private var showNotifications = false
+    @State private var showEstimateDetail = false
 
-    // Until the authoritative Tax Vault repository is wired into this surface,
-    // the reference content is intentionally and visibly DEMO. Never present
-    // reference balances/activity as live financial truth.
-    private let vault = TaxVaultDisplayModel.demoReference
-    private let provenance: ProvenanceLabel = .demo
+    private var snapshot: MilliFinancialSnapshot { MilliFinancialSnapshot.current() }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                header
-                reserveHero
-                targetRow
-                addButton
-                recentActivity
+        ZStack {
+            MilliAmbientBackground()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 12) {
+                    brandRow
+                    vaultHero
+                    twoUpRow
+                    recentActivity
+                    actionFooter
+                }
+                .padding(.horizontal, MilliSpacing.screenHorizontal)
+                .padding(.top, 4)
+                .padding(.bottom, MilliSpacing.bottomContentClearance)
             }
-            .padding(.horizontal, MilliSpacing.screenHorizontal)
-            .padding(.top, 8)
-            .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
         .sheet(isPresented: $showTransferSetup) {
             transferSetupSheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showNotifications) {
-            MilliDetailSheet(title: "Notifications")
+        .sheet(isPresented: $showEstimateDetail) {
+            MilliDetailSheet(title: "Quick Estimate")
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
     }
 
-    private var header: some View {
-        ZStack {
-            HStack {
+    // MARK: Brand row
+
+    private var brandRow: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(MilliColors.textSecondary)
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(Color.white.opacity(0.035)))
+                        .frame(width: 32, height: 32)
+                        .background(Circle().fill(Color.white.opacity(0.04)))
                 }
                 .buttonStyle(.plain)
-                Spacer()
-                Button {
-                    showNotifications = true
-                } label: {
-                    Image(systemName: "bell")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(MilliColors.textSecondary)
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Notifications")
+                .accessibilityLabel("Back")
+
+                MilliWordmark(fontSize: 26, tracking: 4.2)
             }
 
-            VStack(spacing: 2) {
-                Text("Milli Tax Vault™")
-                    .font(MilliFont.headlineSmall)
-                    .foregroundStyle(MilliColors.textPrimary)
-                ProvenanceTag(label: provenance)
-            }
+            Spacer(minLength: 6)
+
+            MilliCompanionBanner(
+                title: "Milli AI",
+                message: "Taxes don't have to be stressful. I'll keep your reserve on pace."
+            )
+            .frame(maxWidth: 190)
         }
-        .frame(height: 46)
+        .padding(.top, 2)
     }
 
-    private var reserveHero: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("RESERVE BALANCE")
-                    .font(MilliFont.sectionLabel)
-                    .tracking(0.8)
+    // MARK: Vault hero
+
+    private var vaultHero: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MILLI TAX VAULT™")
+                    .font(.custom("Sora-SemiBold", size: 16, relativeTo: .headline))
+                    .tracking(0.6)
+                    .foregroundStyle(MilliColors.cyanGlow)
+
+                Text("Taxes. Set aside. Stay ahead.")
+                    .font(MilliFont.bodySmall)
                     .foregroundStyle(MilliColors.textSecondary)
-                Text(currency(vault.balance))
+
+                MilliMicroLabel(text: "Vault balance")
+                    .padding(.top, 6)
+
+                Text(MilliFigureFormat.currency(snapshot.reservedForTaxes))
                     .font(MilliFont.heroNumber)
                     .monospacedDigit()
+                    .minimumScaleFactor(0.65)
+                    .lineLimit(1)
+                    .milliFigure(MilliFigureFormat.currency(snapshot.reservedForTaxes))
+
+                Text(vaultProvenanceCaption)
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
+
+            Spacer(minLength: 0)
+
+            Image("tax-vault-hero")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.18), radius: 12)
+                .accessibilityHidden(true)
+        }
+        .milliCard(padding: 14)
+    }
+
+    private var vaultProvenanceCaption: String {
+        guard snapshot.isBankConnected else {
+            return "Connect a bank to start reserving from verified payouts"
+        }
+        guard snapshot.hasPayouts else {
+            return "Awaiting the first verified payout"
+        }
+        return "Withheld from \(snapshot.payouts.count) verified payouts"
+    }
+
+    // MARK: Quarterly + reserve stack
+
+    private var twoUpRow: some View {
+        VStack(spacing: MilliSpacing.gridGap) {
+            quarterlyCard
+            reserveCard
+        }
+    }
+
+    private var quarterlyCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            MilliMicroLabel(text: "Quarterly taxes", accent: true)
+
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    MilliMicroLabel(text: "Next due date")
+                    Text(MilliFigureFormat.date(snapshot.nextEstimatedPaymentDue))
+                        .font(MilliFont.numericMedium)
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .milliFigure(MilliFigureFormat.date(snapshot.nextEstimatedPaymentDue))
+                    Text(snapshot.nextEstimatedPaymentPeriod.map { "\($0) estimated taxes" } ?? "IRS schedule")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
+
+                Spacer(minLength: 0)
+
+                MilliGaugeRing(
+                    progress: snapshot.reserveProgress,
+                    value: MilliFigureFormat.percent(snapshot.reserveProgress),
+                    caption: "Funded",
+                    size: 58,
+                    lineWidth: 5.5
+                )
+            }
+
+            Divider().overlay(Color.white.opacity(0.06))
+
+            figureRow("Estimated liability", MilliFigureFormat.currency(snapshot.annualLiability))
+            figureRow("Amount reserved", MilliFigureFormat.currency(snapshot.reservedForTaxes))
+            figureRow(
+                "Remaining to goal",
+                MilliFigureFormat.currency(snapshot.remainingToGoal),
+                accent: MilliColors.cyanGlow
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard(padding: 13)
+    }
+
+    private var reserveCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            MilliMicroLabel(text: "Reserve progress", accent: true)
+
+            Text("Stay consistent. Stay protected.")
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+
+            figureBlock("Annual projection", MilliFigureFormat.currency(snapshot.annualLiability))
+            figureBlock("Total reserved", MilliFigureFormat.currency(snapshot.reservedForTaxes))
+
+            MilliMicroLabel(text: "Year progress")
+            Text(MilliFigureFormat.percent(snapshot.yearProgress))
+                .font(MilliFont.numericMedium)
+                .monospacedDigit()
+                .foregroundStyle(MilliColors.textPrimary)
+
+            MilliTrendChart(
+                points: reserveHistory,
+                height: 54,
+                emptyMessage: "Reserve history appears after your first payout"
+            )
+
+            Text(reserveGuidance)
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .milliCard(padding: 13)
+    }
+
+    /// Cumulative reserve over the verified payout ledger. Empty until the
+    /// ledger has at least two entries to plot.
+    private var reserveHistory: [MilliTrendPoint] {
+        let ordered = snapshot.payouts.reversed()
+        var running = 0.0
+        let calendar = Calendar.current
+
+        return ordered.enumerated().compactMap { index, payout in
+            running += payout.taxProtected
+            guard let date = calendar.date(
+                byAdding: .day,
+                value: index - ordered.count,
+                to: Date()
+            ) else {
+                return nil
+            }
+            return MilliTrendPoint(date: date, value: running)
+        }
+    }
+
+    private var reserveGuidance: String {
+        guard let progress = snapshot.reserveProgress else {
+            return "Add your tax profile and connect a bank to pace this reserve."
+        }
+        return progress >= snapshot.yearProgress
+            ? "On track to meet your annual tax obligation."
+            : "Behind the pace of the year — consider raising your reserve rate."
+    }
+
+    private func figureRow(_ label: String, _ value: String, accent: Color = MilliColors.textPrimary) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(MilliFont.caption)
+                .foregroundStyle(MilliColors.textSecondary)
+            Spacer(minLength: 4)
+            Text(value)
+                .font(MilliFont.numericSmall)
+                .monospacedDigit()
+                .foregroundStyle(MilliPlaceholder.isPlaceholder(value) ? MilliColors.textTertiary : accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func figureBlock(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            MilliMicroLabel(text: label)
+            Text(value)
+                .font(MilliFont.numericMedium)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .milliFigure(value)
+        }
+    }
+
+    // MARK: Recent activity
+
+    private var recentActivity: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                MilliMicroLabel(text: "Recent activity", accent: true)
+                Spacer()
+                Text("Verified payouts only")
+                    .font(MilliFont.caption)
+                    .foregroundStyle(MilliColors.textTertiary)
+            }
+
+            if snapshot.hasPayouts {
+                VStack(spacing: 0) {
+                    let entries = snapshot.recentPayouts(limit: 4)
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, payout in
+                        activityRow(payout)
+                        if index < entries.count - 1 {
+                            Divider()
+                                .overlay(Color.white.opacity(0.055))
+                                .padding(.leading, 46)
+                        }
+                    }
+                }
+                .background(MilliCardBackground(showGlow: true))
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 20, weight: .light))
+                        .foregroundStyle(MilliColors.textTertiary)
+                    Text("No vault activity yet")
+                        .font(MilliFont.bodyMedium)
+                        .foregroundStyle(MilliColors.textSecondary)
+                    Text("Reserve entries appear as verified payouts land.")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 26)
+                .background(MilliCardBackground(showGlow: false))
+            }
+        }
+    }
+
+    private func activityRow(_ payout: VerifiedPayout) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.left")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle()
+                        .fill(MilliColors.cyanGlow.opacity(0.09))
+                        .overlay(Circle().stroke(MilliColors.cyanGlow.opacity(0.22), lineWidth: 0.7))
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Reserved from \(payout.platform)")
+                    .font(MilliFont.headlineSmall)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("\(progressPercentText) of annual target · DEMO")
+                    .lineLimit(1)
+                Text(payout.dateLabel)
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
 
             Spacer(minLength: 4)
 
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.08), lineWidth: 7)
-                Circle()
-                    .trim(from: 0, to: vault.progress)
-                    .stroke(
-                        LinearGradient(
-                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.22), radius: 7)
-                Text(progressPercentText)
-                    .font(.custom("Sora-SemiBold", size: 17))
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(payout.taxProtected.formatted(.currency(code: "USD").sign(strategy: .always())))
+                    .font(MilliFont.numericSmall)
                     .monospacedDigit()
-                    .foregroundStyle(MilliColors.textPrimary)
-            }
-            .frame(width: 78, height: 78)
-        }
-        .milliCard(padding: 14)
-    }
-
-    private var targetRow: some View {
-        HStack(spacing: 0) {
-            metric("ANNUAL TARGET", currency(vault.annualTarget), subtitle: "Demo tax reserve goal")
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(width: 1, height: 48)
-            metric("CURRENT RESERVE RATE", "\(Int(vault.reserveRate * 100))%", subtitle: "Demo payout setting")
-        }
-        .milliCard(padding: 12)
-    }
-
-    private func metric(_ title: String, _ value: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(MilliFont.sectionLabel)
-                .foregroundStyle(MilliColors.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-            Text(value)
-                .font(MilliFont.numericSmall)
-                .monospacedDigit()
-                .foregroundStyle(MilliColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-            Text(subtitle)
-                .font(MilliFont.caption)
-                .foregroundStyle(MilliColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 4)
-    }
-
-    private var addButton: some View {
-        Button {
-            showTransferSetup = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                    .font(.system(size: 14, weight: .bold))
-                Text("Add to Vault")
-                    .font(MilliFont.headlineSmall)
-            }
-            .foregroundStyle(MilliColors.blackGlass)
-            .frame(maxWidth: .infinity)
-            .frame(height: 46)
-            .background(
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [MilliColors.cyanGlow, MilliColors.deepCyan],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .shadow(color: MilliColors.cyanGlow.opacity(0.20), radius: 8)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var recentActivity: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("RECENT ACTIVITY")
-                    .sectionHeaderStyle()
-                Spacer()
-                Text("DEMO LEDGER")
-                    .font(MilliFont.caption)
-                    .tracking(0.5)
-                    .foregroundStyle(MilliColors.textTertiary)
-            }
-
-            VStack(spacing: 0) {
-                ForEach(Array(vault.activity.enumerated()), id: \.element.id) { index, item in
-                    transactionRow(item)
-                    if index < vault.activity.count - 1 {
-                        Divider()
-                            .overlay(Color.white.opacity(0.055))
-                            .padding(.leading, 46)
-                    }
-                }
-            }
-            .background(MilliCardBackground(showGlow: true))
-        }
-        .padding(.top, 2)
-    }
-
-    private func transactionRow(_ item: VaultActivity) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: item.icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(item.iconColor)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(item.iconColor.opacity(0.10)))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .font(MilliFont.headlineSmall)
-                    .foregroundStyle(MilliColors.textPrimary)
-                Text(item.dateLabel)
+                    .foregroundStyle(MilliColors.positive)
+                Text("of \(payout.grossAmount.formatted(.currency(code: "USD")))")
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textTertiary)
             }
-
-            Spacer()
-
-            Text(item.amount.formatted(.currency(code: "USD").sign(strategy: .always())))
-                .font(MilliFont.numericSmall)
-                .monospacedDigit()
-                .foregroundStyle(item.amount < 0 ? MilliColors.negative : MilliColors.positive)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Footer
+
+    private var actionFooter: some View {
+        MilliActionPair(
+            primaryTitle: "Add to Vault",
+            primaryCaption: "Transfer funds in",
+            primaryIcon: "arrow.down.circle",
+            primaryAction: { showTransferSetup = true },
+            secondaryTitle: "Quick Estimate",
+            secondaryCaption: "Update your projection",
+            secondaryIcon: "function",
+            secondaryAction: { showEstimateDetail = true }
+        )
     }
 
     private var transferSetupSheet: some View {
@@ -249,7 +380,7 @@ struct TaxVaultView: View {
                     Text("Connect a Funding Source")
                         .font(MilliFont.screenTitle)
                         .foregroundStyle(MilliColors.textPrimary)
-                    Text("Vault transfers will become available after a production funding account is connected and verified. No money is moved from this setup screen.")
+                    Text("Vault transfers become available after a production funding account is connected and verified. No money is moved from this setup screen.")
                         .font(MilliFont.bodyMedium)
                         .foregroundStyle(MilliColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -270,47 +401,8 @@ struct TaxVaultView: View {
             .padding(24)
         }
     }
-
-    private var progressPercentText: String {
-        "\(Int((Double(vault.progress) * 100).rounded()))%"
-    }
-
-    private func currency(_ value: Double) -> String {
-        value.formatted(.currency(code: "USD"))
-    }
 }
 
-private struct TaxVaultDisplayModel {
-    let balance: Double
-    let annualTarget: Double
-    let reserveRate: Double
-    let activity: [VaultActivity]
-
-    var progress: CGFloat {
-        guard annualTarget > 0 else { return 0 }
-        return CGFloat(min(max(balance / annualTarget, 0), 1))
-    }
-
-    static var demoReference: TaxVaultDisplayModel {
-        TaxVaultDisplayModel(
-            balance: 5_284.17,
-            annualTarget: 22_800,
-            reserveRate: 0.23,
-            activity: [
-                VaultActivity(title: "Amazon Flex", dateLabel: "Demo payout", amount: 43.11, icon: "shippingbox.fill", iconColor: MilliColors.cyanGlow),
-                VaultActivity(title: "Spark Driver", dateLabel: "Demo payout", amount: 36.06, icon: "sparkles", iconColor: Color(hex: "4E8CFF")),
-                VaultActivity(title: "DoorDash", dateLabel: "Demo payout", amount: 21.70, icon: "bag.fill", iconColor: MilliColors.negative),
-                VaultActivity(title: "Quarterly Tax Payment", dateLabel: "Demo payment", amount: -1_247.00, icon: "building.columns.fill", iconColor: MilliColors.negative)
-            ]
-        )
-    }
-}
-
-struct VaultActivity: Identifiable {
-    let id = UUID()
-    let title: String
-    let dateLabel: String
-    let amount: Double
-    let icon: String
-    let iconColor: Color
+#Preview {
+    TaxVaultView()
 }

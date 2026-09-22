@@ -4,7 +4,8 @@ import Security
 // MARK: - MilliBackendClient
 // Native client for Milli's FastAPI backend. The app is never an identity
 // authority: user-scoped requests require an opaque server session minted only
-// after the backend verifies a signed Apple identity token.
+// after the backend verifies a signed Apple identity token or an email and
+// password credential it stores as a salted digest.
 
 @MainActor
 final class MilliBackendClient {
@@ -135,6 +136,34 @@ final class MilliBackendClient {
             body: [
                 "challenge_id": challengeID.uuidString.lowercased(),
                 "identity_token": identityToken
+            ]
+        )
+        guard response.tokenType.caseInsensitiveCompare("Bearer") == .orderedSame else {
+            throw ClientError.invalidResponse
+        }
+        MilliBackendSessionStore.save(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken
+        )
+    }
+
+    /// Creates an email/password account. The password is sent once over TLS
+    /// and never stored on the device; only the returned session is kept.
+    func signUpWithEmail(email: String, password: String) async throws {
+        try await openEmailSession(path: "/auth/email/signup", email: email, password: password)
+    }
+
+    func signInWithEmail(email: String, password: String) async throws {
+        try await openEmailSession(path: "/auth/email/login", email: email, password: password)
+    }
+
+    private func openEmailSession(path: String, email: String, password: String) async throws {
+        let response: BackendSession = try await publicRequest(
+            method: "POST",
+            path: path,
+            body: [
+                "email": email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                "password": password
             ]
         )
         guard response.tokenType.caseInsensitiveCompare("Bearer") == .orderedSame else {
@@ -385,9 +414,11 @@ final class MilliBackendClient {
     private var candidateBaseURLs: [URL] {
         var values: [String] = []
 
+        #if DEBUG
         if let environmentURL = ProcessInfo.processInfo.environment["MILLI_API_BASE_URL"] {
             values.append(environmentURL)
         }
+        #endif
 
         if let plistURL = Bundle.main.object(forInfoDictionaryKey: "MILLI_API_BASE_URL") as? String {
             values.append(plistURL)
@@ -401,7 +432,13 @@ final class MilliBackendClient {
             let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             guard !trimmed.isEmpty, seen.insert(trimmed).inserted else { return nil }
-            return URL(string: trimmed)
+            // Banking traffic is HTTPS-only: a cleartext or non-web override is
+            // never a usable Milli backend.
+            guard let url = URL(string: trimmed),
+                  url.scheme?.lowercased() == "https",
+                  let host = url.host, !host.isEmpty
+            else { return nil }
+            return url
         }
     }
 }

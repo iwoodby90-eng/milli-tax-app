@@ -8,6 +8,7 @@ import SwiftUI
 struct AccountsView: View {
     var onBack: () -> Void = {}
 
+    @StateObject private var bankService = BankConnectionService.shared
     @State private var showConnectionSetup = false
 
     // LAUNCH P0 CLEANUP: removed ConnectedAccount.seeded (fake balances).
@@ -21,6 +22,11 @@ struct AccountsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
+                MilliAccountCard(
+                    institution: bankService.connectedBank?.institutionName,
+                    mask: bankService.connectedBank?.accountMask,
+                    isLive: bankService.connectedBank?.isLive ?? false
+                )
                 totalBalanceCard
                 accountsList
                 connectionButton
@@ -30,7 +36,7 @@ struct AccountsView: View {
             .padding(.top, 8)
             .padding(.bottom, MilliSpacing.bottomContentClearance)
         }
-        .background(MilliColors.background.ignoresSafeArea())
+        .background { MilliAmbientBackground() }
         .sheet(isPresented: $showConnectionSetup) {
             accountConnectionSheet
                 .presentationDetents([.medium])
@@ -86,6 +92,23 @@ struct AccountsView: View {
                 .sectionHeaderStyle()
 
             VStack(spacing: 0) {
+                if accounts.isEmpty {
+                    VStack(spacing: 6) {
+                        Image(systemName: "building.columns")
+                            .font(.system(size: 20, weight: .light))
+                            .foregroundStyle(MilliColors.textTertiary)
+                        Text("No linked accounts yet")
+                            .font(MilliFont.headlineSmall)
+                            .foregroundStyle(MilliColors.textSecondary)
+                        Text("Linked balances and their live status appear here.")
+                            .font(MilliFont.caption)
+                            .foregroundStyle(MilliColors.textTertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 26)
+                }
+
                 ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                     HStack(spacing: 10) {
                         ZStack {
@@ -158,7 +181,7 @@ struct AccountsView: View {
                 .foregroundStyle(MilliColors.positive)
                 .padding(.top, 1)
 
-            Text("Production account linking is intentionally unavailable until the verified connection provider is configured. Seed balances are clearly isolated from live financial data.")
+            Text("Balances appear only after a bank is linked through Plaid. Nothing on this screen is estimated or simulated.")
                 .font(MilliFont.bodySmall)
                 .foregroundStyle(MilliColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

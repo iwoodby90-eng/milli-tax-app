@@ -1,38 +1,29 @@
 import SwiftUI
 
+// MARK: - SplashView
+// Launch identity: chrome wordmark, tagline hairline and the Milli companion
+// rising out of the obsidian canvas, matching the launch reference.
+
 struct SplashView: View {
     var onComplete: () -> Void
 
-    @State private var emblemScale: CGFloat = 0.82
-    @State private var contentOpacity: Double = 0
+    @State private var wordmarkOpacity: Double = 0
+    @State private var taglineOpacity: Double = 0
+    @State private var companionOffset: CGFloat = 26
+    @State private var companionOpacity: Double = 0
+    @State private var hairlineWidth: CGFloat = 0
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [MilliColors.cardBackground, MilliColors.obsidian, MilliColors.cardBackground],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            MilliAmbientBackground()
 
-            VStack(spacing: 24) {
-                Spacer()
+            VStack(spacing: 18) {
+                Spacer(minLength: 0)
 
-                ChromeEmblemView(size: 136)
-                    .scaleEffect(emblemScale)
+                MilliWordmark(fontSize: 52, showsTagline: true)
+                    .opacity(wordmarkOpacity)
 
-                VStack(spacing: 14) {
-                    Image("milli_wordmark")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 290)
-                        .accessibilityHidden(true)
-
-                    Text("Money, Made Intelligent.")
-                        .font(.custom("Inter-Medium", size: 15, relativeTo: .subheadline))
-                        .tracking(0.5)
-                        .foregroundStyle(MilliColors.silver)
-
+                VStack(spacing: 10) {
                     Capsule(style: .continuous)
                         .fill(
                             LinearGradient(
@@ -41,29 +32,46 @@ struct SplashView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: 96, height: 1.5)
-                        .shadow(color: MilliColors.cyanGlow.opacity(0.45), radius: 4)
+                        .frame(width: hairlineWidth, height: 1.5)
+                        .shadow(color: MilliColors.cyanGlow.opacity(0.55), radius: 5)
                 }
-                .opacity(contentOpacity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("MILLI. Money, Made Intelligent.")
+                .opacity(taglineOpacity)
 
-                Spacer()
+                Image("milli-ai-robot-large")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 260, maxHeight: 320)
+                    .shadow(color: MilliColors.cyanGlow.opacity(0.26), radius: 28)
+                    .offset(y: companionOffset)
+                    .opacity(companionOpacity)
+                    .accessibilityHidden(true)
+
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 28)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("MILLI. Money, Made Intelligent.")
         }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.55)) {
-                emblemScale = 1
-            }
+        .onAppear(perform: animateIn)
+    }
 
-            withAnimation(.easeInOut(duration: 0.5).delay(0.28)) {
-                contentOpacity = 1
-            }
+    private func animateIn() {
+        withAnimation(.easeOut(duration: 0.55)) {
+            wordmarkOpacity = 1
+        }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.35) {
-                onComplete()
-            }
+        withAnimation(.easeInOut(duration: 0.5).delay(0.26)) {
+            taglineOpacity = 1
+            hairlineWidth = 180
+        }
+
+        withAnimation(.easeOut(duration: 0.7).delay(0.34)) {
+            companionOffset = 0
+            companionOpacity = 1
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.35) {
+            onComplete()
         }
     }
 }

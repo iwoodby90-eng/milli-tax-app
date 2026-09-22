@@ -205,7 +205,11 @@ struct MilliAIOrb: View {
 
     var body: some View {
         Button(action: onTap) {
-            MilliAICharacterView(size: characterSize, animated: true)
+            Image("milli-ai-robot")
+                .resizable()
+                .scaledToFit()
+                .frame(width: characterSize, height: characterSize)
+                .shadow(color: MilliColors.cyanGlow.opacity(0.35), radius: 14)
                 .offset(x: floatX, y: floatY)
                 .rotationEffect(.degrees(tilt))
                 .contentShape(Rectangle())

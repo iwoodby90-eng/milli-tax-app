@@ -8,24 +8,22 @@ import SwiftUI
 // Follows the same UserDefaults persistence pattern as BankConnectionService:
 //   - Codable models (ExpenseItem, ReceiptItem) are encoded/decoded to UserDefaults.
 //   - The store is @MainActor ObservableObject so SwiftUI views can observe it.
-//   - Seeded demo data is used ONLY on first launch; once the user adds or
-//     removes an item, the persisted state is authoritative.
 //   - All amounts are Double (display-layer currency). The store does not
 //     fabricate financial truth — it persists user-entered data only.
 //
-// Data-truth rule: seeded data carries no provenance label because the
-// ExpensesView is a local tracking tool, not a live financial feed. The
-// seeded items are clearly demo content that the user can delete.
+// Data-truth rule: the store starts empty. Deductions feed the tax estimate,
+// so sample content would become a fabricated liability figure. Reference
+// content exists only behind `resetToSeed()` for tests and diagnostics.
 
 @MainActor
 final class ExpenseStore: ObservableObject {
+    static let shared = ExpenseStore()
 
     @Published private(set) var expenses: [ExpenseItem] = []
     @Published private(set) var receipts: [ReceiptItem] = []
 
     private let storageKeyExpenses = "milli_expenses_v1"
     private let storageKeyReceipts = "milli_receipts_v1"
-    private let storageKeySeeded = "milli_expenses_seeded_v1"
 
     init() {
         loadFromStorage()
@@ -85,17 +83,6 @@ final class ExpenseStore: ObservableObject {
 
     private func loadFromStorage() {
         let defaults = UserDefaults.standard
-        let hasSeeded = defaults.bool(forKey: storageKeySeeded)
-
-        if !hasSeeded {
-            // First launch: seed with demo content.
-            expenses = ExpenseItem.seeded
-            receipts = ReceiptItem.seeded
-            persist()
-            defaults.set(true, forKey: storageKeySeeded)
-            return
-        }
-
         let decoder = JSONDecoder()
         if let data = defaults.data(forKey: storageKeyExpenses),
            let saved = try? decoder.decode([ExpenseItem].self, from: data) {
