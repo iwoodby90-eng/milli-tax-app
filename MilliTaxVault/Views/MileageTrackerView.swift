@@ -73,6 +73,7 @@ struct MileageTrackerView: View {
                 navigationMap
                 telemetryCard
                 primaryAction
+                appleMapsHandoff
                 todaySummary
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
@@ -503,6 +504,38 @@ struct MileageTrackerView: View {
         .buttonStyle(.plain)
         .disabled(!isNavigating && routeCoordinates.isEmpty)
         .opacity(!isNavigating && routeCoordinates.isEmpty ? 0.48 : 1)
+    }
+
+    @ViewBuilder
+    private var appleMapsHandoff: some View {
+        if let destinationItem {
+            Button {
+                destinationItem.openInMaps(
+                    launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving]
+                )
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "map.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("OPEN IN APPLE MAPS")
+                        .font(.custom("Sora-SemiBold", size: 11, relativeTo: .caption))
+                        .tracking(0.5)
+                }
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.white.opacity(0.045))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(MilliColors.cyanGlow.opacity(0.24), lineWidth: 0.8)
+                        }
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Hands this route to the Apple Maps app for turn-by-turn directions")
+        }
     }
 
     private var todaySummary: some View {

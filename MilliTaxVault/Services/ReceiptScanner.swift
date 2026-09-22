@@ -151,7 +151,12 @@ enum ReceiptImageStore {
         }
         let folder = base.appendingPathComponent("Receipts", isDirectory: true)
         if !FileManager.default.fileExists(atPath: folder.path) {
-            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            // Receipt images are financial records: keep them unreadable while the device is locked.
+            try? FileManager.default.createDirectory(
+                at: folder,
+                withIntermediateDirectories: true,
+                attributes: [.protectionKey: FileProtectionType.complete]
+            )
         }
         return folder
     }
@@ -160,7 +165,10 @@ enum ReceiptImageStore {
         guard let directory, let data = image.jpegData(compressionQuality: 0.72) else { return nil }
         let filename = "\(UUID().uuidString).jpg"
         do {
-            try data.write(to: directory.appendingPathComponent(filename), options: .atomic)
+            try data.write(
+                to: directory.appendingPathComponent(filename),
+                options: [.atomic, .completeFileProtection]
+            )
             return filename
         } catch {
             return nil

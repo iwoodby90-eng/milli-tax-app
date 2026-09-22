@@ -41,6 +41,7 @@ struct MilliNavBar: View {
     var onHomeTap: () -> Void = {}
 
     @State private var isDialPressed = false
+    @ObservedObject private var companion = MilliCompanionDirector.shared
 
     /// Intrinsic aspect ratio of `milli-nav-deck`.
     private let deckAspect: CGFloat = 981.0 / 290.0
@@ -77,6 +78,19 @@ struct MilliNavBar: View {
 
                 centerDialButton(size: width * 0.238)
                     .position(x: width * 0.5, y: height * 0.44)
+
+                if let milestone = companion.celebration {
+                    MilliDialCelebration(milestone: milestone, dialSize: width * 0.238) {
+                        companion.dismissCelebration()
+                    }
+                    .position(x: width * 0.5, y: height * 0.44)
+                }
+
+                MilliNavWalker(
+                    deckWidth: width,
+                    deckHeight: height,
+                    isWalking: companion.isStrolling && companion.celebration == nil
+                )
             }
             .frame(width: width, height: height)
         }

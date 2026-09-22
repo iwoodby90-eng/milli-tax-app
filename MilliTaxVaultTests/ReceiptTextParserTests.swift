@@ -8,7 +8,7 @@ import XCTest
 final class ReceiptTextParserTests: XCTestCase {
     private let reference = Date(timeIntervalSince1970: 1_760_000_000)
 
-    func testReadsMerchantTotalAndDateFromLabelledReceipt() {
+    func testReadsMerchantTotalAndDateFromLabelledReceipt() throws {
         let lines = [
             "SHELL STATION #4821",
             "1420 W Lake St",

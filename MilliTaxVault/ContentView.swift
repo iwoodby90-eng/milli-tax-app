@@ -11,6 +11,8 @@ struct ContentView: View {
     @State private var activeScreen: ActiveScreen
     @State private var hasActivatedMileageCockpit: Bool
 
+    @ObservedObject private var companion = MilliCompanionDirector.shared
+
     init(
         pendingNavigationRequest: Binding<NavigationHandoffRequest?> = .constant(nil),
         onLogout: @escaping () -> Void = {}
@@ -88,10 +90,19 @@ struct ContentView: View {
                     }
                 }
             }
+
+            MilliConfettiView(isActive: companion.celebration != nil)
+                .ignoresSafeArea()
+                .zIndex(4)
         }
         .preferredColorScheme(.dark)
         .onAppear {
             routePendingNavigationRequestIfNeeded()
+            companion.startStrolling()
+            companion.evaluate(snapshot: MilliFinancialSnapshot.current())
+        }
+        .onDisappear {
+            companion.stopStrolling()
         }
         .onChange(of: pendingNavigationRequest?.id) { _, _ in
             routePendingNavigationRequestIfNeeded()
@@ -100,6 +111,7 @@ struct ContentView: View {
             if newScreen == .activity {
                 hasActivatedMileageCockpit = true
             }
+            companion.evaluate(snapshot: MilliFinancialSnapshot.current())
         }
     }
 

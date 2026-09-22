@@ -290,16 +290,8 @@ struct LoginView: View {
 
     private var brandHero: some View {
         VStack(spacing: 11) {
-            ZStack {
-                Circle()
-                    .fill(MilliColors.cyanGlow.opacity(0.06))
-                    .frame(width: 92, height: 92)
-                    .blur(radius: 14)
-
-                ChromeEmblemView(size: 68)
-            }
-
-            MilliWordmark(fontSize: 34, tracking: 6.4)
+            MilliWordmark(fontSize: 40, tracking: 7.2)
+                .padding(.top, 10)
 
             Text("Money, Made Intelligent.")
                 .font(MilliFont.bodyMedium)
