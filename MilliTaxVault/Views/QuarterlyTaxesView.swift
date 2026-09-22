@@ -262,3 +262,33 @@ struct QuarterlyTaxesView: View {
 #Preview {
     QuarterlyTaxesView()
 }
+
+
+private struct QuarterlyTaxDisplayModel {
+    let periodLabel: String
+    let dueLabel: String
+    let federal: Double
+    let selfEmployment: Double
+    let state: Double
+    let stateLabel: String
+    let projectedAnnual: Double
+    let paidToDate: Double
+
+    var total: Double { federal + selfEmployment + state }
+    var remaining: Double { max(projectedAnnual - paidToDate, 0) }
+    var paidProgress: CGFloat {
+        guard projectedAnnual > 0 else { return 0 }
+        return CGFloat(min(max(paidToDate / projectedAnnual, 0), 1))
+    }
+
+    static let reference = QuarterlyTaxDisplayModel(
+        periodLabel: "CURRENT",
+        dueLabel: "Next estimated payment",
+        federal: 682,
+        selfEmployment: 352,
+        state: 213,
+        stateLabel: "State",
+        projectedAnnual: 4_988,
+        paidToDate: 1_865
+    )
+}
