@@ -1,9 +1,8 @@
 import SwiftUI
 
 // MARK: - MilliCard
-// Premium graphite/black-glass surface shared by the whole app.
-// The goal is depth without visual noise: machined edge, restrained cyan atmosphere,
-// and enough separation from the obsidian canvas to read cleanly on OLED displays.
+// Reference-locked black-glass surface: deep obsidian body, machined silver edge,
+// subtle cyan atmosphere, and a narrow top specular highlight.
 
 struct MilliCard<Content: View>: View {
     let content: Content
@@ -26,56 +25,62 @@ struct MilliCardBackground: View {
         let shape = RoundedRectangle(cornerRadius: MilliSpacing.radiusLg, style: .continuous)
 
         shape
-            .fill(MilliColors.blackGlassSurface)
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: "151A1F"), location: 0.00),
+                        .init(color: Color(hex: "0E1318"), location: 0.34),
+                        .init(color: Color(hex: "090D11"), location: 0.76),
+                        .init(color: Color(hex: "06080A"), location: 1.00)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .overlay {
-                MilliGradients.cyanAmbient
-                    .opacity(showGlow ? 1 : 0)
+                if showGlow {
+                    RadialGradient(
+                        colors: [MilliColors.cyanGlow.opacity(0.085), .clear],
+                        center: .topTrailing,
+                        startRadius: 0,
+                        endRadius: 170
+                    )
                     .clipShape(shape)
                     .allowsHitTesting(false)
+                }
             }
             .overlay {
                 shape
                     .stroke(
-                        showGlow ? MilliColors.precisionChromeEdge : LinearGradient(
-                            colors: [MilliColors.borderSubtle, MilliColors.borderSubtle],
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(0.38), location: 0.00),
+                                .init(color: MilliColors.chromeMid.opacity(0.17), location: 0.30),
+                                .init(color: MilliColors.cyanGlow.opacity(showGlow ? 0.27 : 0.10), location: 0.62),
+                                .init(color: Color.white.opacity(0.08), location: 1.00)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 0.72
+                        lineWidth: 0.85
                     )
             }
             .overlay(alignment: .top) {
                 LinearGradient(
                     colors: [
-                        Color.clear,
-                        MilliColors.glassHighlight,
-                        Color.white.opacity(0.025),
-                        Color.clear
+                        .clear,
+                        Color.white.opacity(0.28),
+                        Color.white.opacity(0.055),
+                        .clear
                     ],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-                .frame(height: 0.8)
+                .frame(height: 0.9)
                 .padding(.horizontal, 18)
-                .allowsHitTesting(false)
             }
-            .overlay(alignment: .bottom) {
-                LinearGradient(
-                    colors: [Color.clear, MilliColors.glassLowlight, Color.clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(height: 0.6)
-                .padding(.horizontal, 14)
-                .allowsHitTesting(false)
-            }
-            .shadow(color: Color.black.opacity(0.48), radius: 14, x: 0, y: 7)
-            .shadow(
-                color: showGlow ? MilliColors.cyanGlow.opacity(0.035) : Color.clear,
-                radius: 10,
-                x: 0,
-                y: -1
-            )
+            .shadow(color: Color.black.opacity(0.62), radius: 18, x: 0, y: 9)
+            .shadow(color: showGlow ? MilliColors.cyanGlow.opacity(0.06) : .clear, radius: 14, x: 0, y: -2)
     }
 }
 

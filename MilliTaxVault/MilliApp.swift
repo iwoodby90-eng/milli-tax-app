@@ -168,7 +168,7 @@ struct MilliApp: App {
             _appState = State(initialValue: screenshotMode ? .main : .login)
         }
         #else
-        _appState = State(initialValue: .login)
+        _appState = State(initialValue: .splash)
         #endif
     }
 

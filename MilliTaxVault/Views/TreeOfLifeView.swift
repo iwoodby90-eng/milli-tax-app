@@ -157,14 +157,25 @@ struct TreeOfLifeView: View {
                     }
 
                 RadialGradient(
-                    colors: [MilliColors.cyanGlow.opacity(pulse ? 0.12 : 0.07), Color.clear],
-                    center: UnitPoint(x: 0.5, y: 0.54),
+                    colors: [MilliColors.cyanGlow.opacity(pulse ? 0.16 : 0.09), Color.clear],
+                    center: UnitPoint(x: 0.5, y: 0.50),
                     startRadius: 8,
-                    endRadius: geo.size.width * 0.58
+                    endRadius: geo.size.width * 0.62
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
+                Image("tree-of-life-bg")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+                    .opacity(events.isEmpty ? 0.78 : 0.52)
+                    .blendMode(.screen)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .allowsHitTesting(false)
+
                 treeCanvas(size: geo.size)
+                    .opacity(events.isEmpty ? 0.48 : 0.72)
 
                 ForEach(Array(events.prefix(nodePositions.count).enumerated()), id: \.element.id) { index, event in
                     let position = nodePositions[index]
