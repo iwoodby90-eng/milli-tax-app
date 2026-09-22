@@ -9,22 +9,52 @@ struct WealthOverviewView: View {
     var onBack: () -> Void = {}
     var navigate: ((ActiveScreen) -> Void)? = nil
 
-    private let model = WealthOverviewModel.reference
-    private var showsReferenceData: Bool { ReferenceDataPolicy.allowsDemoReferenceData }
+    @StateObject private var retirement = RetirementPlanningStore()
+
+    // Net worth is only what Milli can actually account for: balances on
+    // retirement accounts the user opened or rolled over. Nothing is inferred.
+    private var allocations: [WealthAllocation] {
+        var rows: [WealthAllocation] = []
+        if let milli = retirement.milliAccount, milli.balance > 0 {
+            rows.append(WealthAllocation(name: milli.planType, value: milli.balance, color: MilliColors.cyanGlow))
+        }
+        for account in retirement.mergedAccounts where account.balance > 0 {
+            rows.append(
+                WealthAllocation(
+                    name: "\(account.custodianName) \(account.accountType)",
+                    value: account.balance,
+                    color: MilliColors.deepCyan
+                )
+            )
+        }
+        return rows
+    }
+
+    private var totalNetWorth: Double? {
+        allocations.isEmpty ? nil : allocations.reduce(0) { $0 + $1.value }
+    }
+
+    private var monthlyContributions: Double? {
+        let monthly = retirement.annualIncome * (retirement.contributionPercent / 100) / 12
+        return monthly > 0 ? monthly : nil
+    }
+
+    private var projection: RetirementProjection? {
+        RetirementProjectionCalculator.calculate(
+            profile: retirement.snapshot,
+            consolidatedBalance: totalNetWorth ?? 0
+        )
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 10) {
                 header
                 wealthDestinations
-                if showsReferenceData {
-                    netWorthHero
-                    allocationCard
-                    projectionCard
-                    goalsCard
-                } else {
-                    unavailableDataCard
-                }
+                netWorthHero
+                allocationCard
+                projectionCard
+                goalsCard
             }
             .padding(.horizontal, MilliSpacing.screenHorizontal)
             .padding(.top, 8)
@@ -58,39 +88,11 @@ struct WealthOverviewView: View {
 
             Spacer()
 
-            ProvenanceTag(label: ReferenceDataPolicy.provenance)
-                .frame(width: 70, alignment: .trailing)
+            Image(systemName: "chart.pie.fill")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(MilliColors.cyanGlow)
+                .frame(width: 34, height: 34)
         }
-    }
-
-    private var unavailableDataCard: some View {
-        VStack(spacing: 13) {
-            ZStack {
-                Circle()
-                    .fill(MilliColors.cyanGlow.opacity(0.07))
-                    .frame(width: 62, height: 62)
-                Image(systemName: "chart.pie")
-                    .font(.system(size: 26, weight: .medium))
-                    .foregroundStyle(MilliColors.cyanGlow)
-            }
-
-            Text("Your wealth picture starts with verified accounts")
-                .font(MilliFont.headlineSmall)
-                .foregroundStyle(MilliColors.textPrimary)
-                .multilineTextAlignment(.center)
-
-            Text(
-                "Connect investing, retirement, savings, and cash accounts to build net worth and " +
-                "projections from real balances. Reference portfolio values stay confined to demo captures."
-            )
-                .font(MilliFont.bodySmall)
-                .foregroundStyle(MilliColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .milliCard(padding: 18)
     }
 
     private var wealthDestinations: some View {
@@ -379,46 +381,6 @@ private struct WealthAllocation: Identifiable {
         guard total > 0 else { return 0 }
         return value / total
     }
-}
-
-private struct WealthTrendPoint: Identifiable {
-    let id = UUID()
-    let month: String
-    let value: Double
-}
-
-private struct WealthOverviewModel {
-    let allocations: [WealthAllocation]
-    let monthlyChange: Double
-    let retirementProjection: Double
-    let futureNetWorth: Double
-    let monthlyContributions: Double
-    let trend: [WealthTrendPoint]
-
-    var totalNetWorth: Double {
-        allocations.reduce(0) { $0 + $1.value }
-    }
-
-    static let reference = WealthOverviewModel(
-        allocations: [
-            .init(name: "Investments", value: 42_685, color: MilliColors.cyanGlow),
-            .init(name: "Retirement", value: 148_320, color: Color(hex: "3276D9")),
-            .init(name: "Savings", value: 18_765, color: MilliColors.deepCyan),
-            .init(name: "Cash", value: 14_790, color: MilliColors.silver)
-        ],
-        monthlyChange: 7_250,
-        retirementProjection: 1_623_587,
-        futureNetWorth: 2_467_892,
-        monthlyContributions: 2_850,
-        trend: [
-            .init(month: "Mar", value: 186_900),
-            .init(month: "Apr", value: 190_750),
-            .init(month: "May", value: 198_300),
-            .init(month: "Jun", value: 204_810),
-            .init(month: "Jul", value: 217_310),
-            .init(month: "Aug", value: 224_560)
-        ]
-    )
 }
 
 #Preview {
