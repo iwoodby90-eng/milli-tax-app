@@ -381,19 +381,6 @@ private struct WealthAllocation: Identifiable {
     }
 }
 
-
-private struct WealthAllocation: Identifiable {
-    let id = UUID()
-    let name: String
-    let value: Double
-    let color: Color
-
-    func share(of total: Double) -> Double {
-        guard total > 0 else { return 0 }
-        return value / total
-    }
-}
-
 private struct WealthTrendPoint: Identifiable {
     let id = UUID()
     let month: String
