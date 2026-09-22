@@ -47,15 +47,22 @@ struct MilliFinancialSnapshot {
         return payouts.reduce(0) { $0 + $1.grossAmount }
     }
 
-    /// Amount withheld into the tax reserve across verified payouts.
+    /// Amount confirmed by the authoritative backend as allocated to the tax reserve.
+    /// Until the backend supplies an allocation amount for every payout, the
+    /// aggregate remains unavailable rather than being inferred on-device.
     var reservedForTaxes: Double? {
         guard hasPayouts else { return nil }
-        return payouts.reduce(0) { $0 + $1.taxProtected }
+        let allocations = payouts.compactMap { $0.stateContractProjection.taxAllocatedCents }
+        guard allocations.count == payouts.count else { return nil }
+        let totalCents = allocations.reduce(Int64(0), +)
+        return Double(totalCents) / 100.0
     }
 
+    /// Spendable amount is derived only after an authoritative allocation
+    /// amount is available for every payout in the snapshot.
     var availableToSpend: Double? {
-        guard hasPayouts else { return nil }
-        return payouts.reduce(0) { $0 + $1.availableToSpend }
+        guard let gross = grossPayouts, let reserved = reservedForTaxes else { return nil }
+        return gross - reserved
     }
 
     var pendingPayoutCount: Int { payouts.filter(\.isPending).count }
