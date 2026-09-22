@@ -4,7 +4,7 @@ import Charts
 // MARK: - MilliRetirementAccount Model
 
 public struct MilliRetirementAccount: Codable, Equatable {
-    public let accountNumber: String
+    public let accountNumber: String?
     public let planType: String
     public let custodian: String
     public var balance: Double
@@ -132,7 +132,7 @@ struct RetirementView: View {
                 Spacer()
 
                 if let acc = profile.milliAccount {
-                    Text(acc.accountNumber)
+                    Text(acc.accountNumber ?? "APPLICATION PENDING")
                         .font(.custom("Inter-SemiBold", size: 11))
                         .foregroundStyle(MilliColors.cyanGlow)
                         .padding(.horizontal, 7)
@@ -882,13 +882,13 @@ private struct MilliRetirementOnboardingSheet: View {
             Button {
                 // Open account
                 let newAccount = MilliRetirementAccount(
-                    accountNumber: "MLI-\(planType.prefix(4).uppercased())-\(Int.random(in: 1000...9999))",
+                    accountNumber: nil,
                     planType: "Milli \(planType)",
                     custodian: "Apex Clearing Custody",
                     balance: 0,
                     monthlyAutoDepositPercent: contributionPercent,
                     annualLimit: planType.contains("SEP") ? 69000.0 : 7000.0,
-                    isApproved: true,
+                    isApproved: false,
                     openingDate: Date()
                 )
                 store.openMilliAccount(newAccount)
@@ -900,7 +900,7 @@ private struct MilliRetirementOnboardingSheet: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.seal.fill")
-                    Text("Electronically Sign & Open Account")
+                    Text("Electronically Sign & Submit Application")
                 }
                 .font(.custom("Inter-SemiBold", size: 14))
                 .foregroundStyle(MilliColors.blackGlass)

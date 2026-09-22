@@ -24,8 +24,8 @@ struct LaunchOnboardingFlowView: View {
 
     private let stepCount = 6
 
-    private var taxPercent: Double {
-        let income = taxProfile.annualIncomeAmount ?? 55_000
+    private var taxPercent: Double? {
+        guard let income = taxProfile.annualIncomeAmount, income > 0 else { return nil }
         switch income {
         case ..<30_000: return 20
         case ..<60_000: return 23
@@ -261,7 +261,7 @@ struct LaunchOnboardingFlowView: View {
                 Text("Tax Protection")
                     .font(MilliFont.headlineSmall)
                     .foregroundStyle(MilliColors.textPrimary)
-                Text("On • estimated reserve \(Int(taxPercent))% from your current tax profile")
+                Text(reserveRateCaption)
                     .font(MilliFont.caption)
                     .foregroundStyle(MilliColors.textSecondary)
             }
@@ -323,7 +323,21 @@ struct LaunchOnboardingFlowView: View {
         .milliCard(padding: 12)
     }
 
+    private var reserveRateCaption: String {
+        guard let taxPercent else {
+            return "On • add your annual income to set the reserve rate"
+        }
+        return "On • estimated reserve \(Int(taxPercent))% from your current tax profile"
+    }
+
+    @ViewBuilder
     private var onboardingAllocationPreview: some View {
+        if let taxPercent {
+            allocationPreview(taxPercent: taxPercent)
+        }
+    }
+
+    private func allocationPreview(taxPercent: Double) -> some View {
         let examplePayout = 200.0
         let result = AutopilotAllocationEngine.allocate(
             payout: examplePayout,

@@ -338,7 +338,9 @@ struct AutopilotSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("PAYOUT PREVIEW")
                         .sectionHeaderStyle()
-                    Text(bankService.payouts.isEmpty ? "Example payout" : "Your latest payout")
+                    Text(bankService.payouts.isEmpty
+                         ? "Example only — not your data"
+                         : "Your latest payout")
                         .font(MilliFont.caption)
                         .foregroundStyle(MilliColors.textTertiary)
                 }
