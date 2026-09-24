@@ -91,17 +91,17 @@ final class MilliBackendClient {
         var errorDescription: String? {
             switch self {
             case .backendUnavailable:
-                return "Milli couldn't reach the secure banking service."
+                return "Milli couldn't reach its secure service. Check your connection and try again."
             case .invalidResponse:
-                return "Milli received an invalid response from the secure banking service."
+                return "Milli received an invalid response from its secure service."
             case .financialSignInRequired:
-                return "Sign in with Apple is required before Milli can access banking or money features."
+                return "Sign in is required before Milli can access connected-account or money features."
             case .unauthorized(let message):
                 return message
             case .server(let status, let message):
-                return "Secure banking service error \(status): \(message)"
+                return "Milli service error \(status): \(message)"
             case .decoding:
-                return "Milli received secure banking data in an unexpected format."
+                return "Milli received secure service data in an unexpected format."
             }
         }
     }
