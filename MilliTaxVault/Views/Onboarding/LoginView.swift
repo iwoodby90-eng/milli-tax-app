@@ -237,11 +237,10 @@ struct LoginView: View {
         .background(loginBackground)
         .preferredColorScheme(.dark)
         .task {
+            // Prepare Sign in with Apple without treating an Apple/backend
+            // challenge preload failure as a global login failure. Email/password
+            // authentication remains an independent path.
             await appleAuthManager.prepareBackendChallenge()
-            if !appleAuthManager.isBackendChallengeReady,
-               let message = appleAuthManager.authErrorMessage {
-                authenticationMessage = message
-            }
         }
     }
 
