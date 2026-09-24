@@ -282,7 +282,6 @@ struct FinancialAccountCard: View {
         }
     }
 
-    @ViewBuilder
     private var statusBadge: some View {
         let text: String
         let color: Color
