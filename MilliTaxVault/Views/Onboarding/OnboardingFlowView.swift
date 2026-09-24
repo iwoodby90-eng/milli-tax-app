@@ -442,6 +442,15 @@ struct BankAutopilotProfile: Codable, Equatable {
     var transactionMonitoringConsent: Bool = false
     var taxVaultTransferConsent: Bool = false
 
+    /// First-run onboarding only requires a verified Plaid payout account.
+    /// Tax Vault/Column provisioning and transfer consent happen later, inside
+    /// the Tax Vault activation flow.
+    var isReadyForOnboarding: Bool {
+        connectionStatus == .connected
+    }
+
+    /// Money-moving Autopilot remains fail-closed until the user has separately
+    /// enabled payout monitoring and explicitly authorized Tax Vault transfers.
     var isReadyForAutopilot: Bool {
         connectionStatus == .connected
             && transactionMonitoringConsent

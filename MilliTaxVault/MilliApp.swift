@@ -201,7 +201,7 @@ struct MilliApp: App {
                     .transition(.opacity)
 
                 case .setup:
-                    OnboardingFlowView(onComplete: {
+                    LaunchOnboardingFlowView(onComplete: {
                         hasCompletedSetup = true
                         activateSelectedTrialIfNeeded()
                         transition(to: .main)
@@ -263,6 +263,7 @@ struct MilliApp: App {
         hasCompletedSetup = false
         defaults.removeObject(forKey: "onboarding_vehicle")
         defaults.removeObject(forKey: "onboarding_taxProfile")
+        defaults.removeObject(forKey: "onboarding_bankAutopilotProfile")
         defaults.removeObject(forKey: "onboarding_plan")
         defaults.removeObject(forKey: "milliAutopilotRetirementEnabled")
         defaults.removeObject(forKey: "milliAutopilotInvestingEnabled")
