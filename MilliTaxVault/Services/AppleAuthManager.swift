@@ -58,7 +58,7 @@ public final class AppleAuthManager: NSObject, ObservableObject {
             backendChallenge = try await MilliBackendClient.shared.createAppleAuthChallenge()
             isBackendChallengeReady = true
         } catch {
-            authErrorMessage = "Secure sign-in is temporarily unavailable: \(error.localizedDescription)"
+            authErrorMessage = "Sign in with Apple is temporarily unavailable: \(error.localizedDescription)"
         }
     }
 
