@@ -2,45 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Explicit modern launch-screen declaration prevents legacy 3:2 compatibility letterboxing. -->
-	<key>UILaunchScreen</key>
-	<dict/>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<false/>
-		<key>NSAllowsLocalNetworking</key>
-		<false/>
-	</dict>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Sora-Regular.ttf</string>
-		<string>Sora-Medium.ttf</string>
-		<string>Sora-SemiBold.ttf</string>
-		<string>Sora-Bold.ttf</string>
-		<string>Inter-Regular.ttf</string>
-		<string>Inter-Medium.ttf</string>
-		<string>Inter-SemiBold.ttf</string>
-		<string>Inter-Bold.ttf</string>
-	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Milli uses your location while a mileage trip or navigation session is active to provide directions and record deductible business miles.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Milli can continue an active navigation or mileage trip in the background so directions and business miles are not lost when you switch apps or lock your iPhone.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Milli uses the camera to scan receipts so merchant, date and amount can be read on your device and attached to a deductible expense.</string>
-	<key>MKDirectionsApplicationSupportedModes</key>
-	<array>
-		<string>MKDirectionsModeCar</string>
-	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -66,5 +27,45 @@
 			</array>
 		</dict>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
+	<key>MKDirectionsApplicationSupportedModes</key>
+	<array>
+		<string>MKDirectionsModeCar</string>
+	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<false/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Milli uses the camera to scan receipts so merchant, date and amount can be read on your device and attached to a deductible expense.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Milli can continue an active navigation or mileage trip in the background so directions and business miles are not lost when you switch apps or lock your iPhone.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Milli uses your location while a mileage trip or navigation session is active to provide directions and record deductible business miles.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Sora-Regular.ttf</string>
+		<string>Sora-Medium.ttf</string>
+		<string>Sora-SemiBold.ttf</string>
+		<string>Sora-Bold.ttf</string>
+		<string>Inter-Regular.ttf</string>
+		<string>Inter-Medium.ttf</string>
+		<string>Inter-SemiBold.ttf</string>
+		<string>Inter-Bold.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>
