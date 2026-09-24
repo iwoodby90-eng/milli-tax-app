@@ -198,7 +198,7 @@ struct LaunchOnboardingFlowView: View {
                         .foregroundStyle(MilliColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Once the connected account reports an eligible gig payout, Milli identifies the source, applies your tax profile, and prepares the matching Tax Vault reserve automatically.")
+                    Text("Once the connected account reports an eligible gig payout, Milli identifies the source, applies your tax profile, and calculates a Tax Vault reserve target. Money moves only after you separately activate Milli Tax Vault™.")
                         .font(MilliFont.bodySmall)
                         .foregroundStyle(MilliColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -258,7 +258,7 @@ struct LaunchOnboardingFlowView: View {
                 .background(Circle().fill(MilliColors.cyanGlow.opacity(0.09)))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Tax Protection")
+                Text("Tax Reserve Plan")
                     .font(MilliFont.headlineSmall)
                     .foregroundStyle(MilliColors.textPrimary)
                 Text(reserveRateCaption)
@@ -268,9 +268,9 @@ struct LaunchOnboardingFlowView: View {
 
             Spacer()
 
-            Image(systemName: "checkmark.seal.fill")
+            Image(systemName: "arrow.forward.circle.fill")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(MilliColors.positive)
+                .foregroundStyle(MilliColors.cyanGlow)
         }
         .milliCard(padding: 12)
     }
@@ -325,9 +325,9 @@ struct LaunchOnboardingFlowView: View {
 
     private var reserveRateCaption: String {
         guard let taxPercent else {
-            return "On • add your annual income to set the reserve rate"
+            return "Estimate available after your tax profile is complete"
         }
-        return "On • estimated reserve \(Int(taxPercent))% from your current tax profile"
+        return "Estimated reserve \(Int(taxPercent))% • activate Tax Vault after setup"
     }
 
     @ViewBuilder
@@ -404,7 +404,7 @@ struct LaunchOnboardingFlowView: View {
     }
 
     private func saveAndComplete() {
-        guard bankProfile.isReadyForAutopilot else { return }
+        guard bankProfile.isReadyForOnboarding else { return }
 
         if let vehicleData = try? JSONEncoder().encode(vehicle) {
             UserDefaults.standard.set(vehicleData, forKey: "onboarding_vehicle")
@@ -416,6 +416,7 @@ struct LaunchOnboardingFlowView: View {
             UserDefaults.standard.set(bankData, forKey: "onboarding_bankAutopilotProfile")
         }
         UserDefaults.standard.set(selectedPlan.rawValue, forKey: "onboarding_plan")
+        UserDefaults.standard.set(false, forKey: "milliTaxVaultTransferAuthorized")
 
         UserDefaults.standard.set(retirementEnabled, forKey: "milliAutopilotRetirementEnabled")
         UserDefaults.standard.set(investingEnabled, forKey: "milliAutopilotInvestingEnabled")
@@ -623,17 +624,21 @@ private struct PlaidBankConnectionSetupView: View {
                 .milliCard(padding: 13)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("AUTOPILOT PERMISSIONS").sectionHeaderStyle()
-                    onboardingToggle(label: "Detect gig payouts", isOn: $profile.transactionMonitoringConsent)
-                    onboardingToggle(label: "Move calculated tax reserve to Milli Tax Vault™", isOn: $profile.taxVaultTransferConsent)
+                    Text("PAYOUT DETECTION").sectionHeaderStyle()
+                    onboardingToggle(label: "Detect gig payouts from this account", isOn: $profile.transactionMonitoringConsent)
+
+                    Text("Milli Tax Vault™ is activated separately after onboarding. If you activate it, Milli will complete the required account setup and transfer authorization before any money can move.")
+                        .font(MilliFont.caption)
+                        .foregroundStyle(MilliColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .milliCard(padding: 13)
 
                 HStack(spacing: 12) {
                     OnboardingBackButton(action: onBack)
                     OnboardingPrimaryButton(title: "Continue", action: onNext)
-                        .opacity(profile.isReadyForAutopilot ? 1 : 0.38)
-                        .allowsHitTesting(profile.isReadyForAutopilot)
+                        .opacity(profile.isReadyForOnboarding ? 1 : 0.38)
+                        .allowsHitTesting(profile.isReadyForOnboarding)
                 }
                 .padding(.bottom, 34)
             }
