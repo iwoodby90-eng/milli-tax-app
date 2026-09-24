@@ -424,8 +424,9 @@ final class MilliBackendClient {
             values.append(plistURL)
         }
 
-        values.append("https://milli-tax-vault-api.onrender.com")
-        values.append("https://milli-tax-app.onrender.com")
+        // Canonical Render backend for Milli. Environment / Info.plist
+        // overrides remain first so local and release configuration can replace it.
+        values.append("https://milli-tax-app-1.onrender.com")
 
         var seen = Set<String>()
         return values.compactMap { rawValue in
