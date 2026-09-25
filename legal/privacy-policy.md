@@ -1,0 +1,138 @@
+# Privacy Policy
+
+**MILLI Tax Vault**
+**Effective Date: September 25, 2026**
+
+---
+
+## 1. Introduction
+
+MILLI Tax Vault ("Milli," "we," "us," or "our") operates the Milli financial operating system, available at drivemilli.com and through our mobile application (the "Service"). This Privacy Policy explains how we collect, use, disclose, and protect information about you when you use the Service.
+
+By accessing or using the Service, you agree to the collection and use of information as described in this Privacy Policy. If you do not agree, please do not use the Service.
+
+---
+
+## 2. Information We Collect
+
+### 2.1 Information You Provide Directly
+
+- **Account registration**: name, email address, phone number, and password.
+- **Identity verification for the Milli Elite Card**: full legal name, date of birth, Social Security Number (SSN), residential address, phone number, and email address. This information is collected solely for Lithic's card program KYC (Know Your Customer) enrollment. SSN is transmitted to Lithic in memory only and is never stored by Milli on any server or database. See Section 4 for details.
+- **Gig platform credentials**: information you provide to connect your earnings platforms through our integrations.
+- **Support communications**: messages, feedback, or requests you send to us.
+
+### 2.2 Information We Collect Automatically
+
+- **Usage data**: features accessed, screens viewed, actions taken within the app, and session duration.
+- **Device information**: device type, operating system version, unique device identifiers, and IP address.
+- **Log data**: error logs, crash reports, and diagnostic information.
+
+### 2.3 Information We Collect Through Third-Party Integrations
+
+- **Plaid**: when you link an external bank account, Plaid collects and transmits your bank account and routing numbers, account balances, and transaction history to enable payout routing and reserve verification. Your use of Plaid is also governed by Plaid's Privacy Policy (https://plaid.com/legal).
+- **Lithic**: when you enroll in the Milli Elite Card program, Lithic collects identity information for KYC compliance, issues and manages your card, and processes card transactions. Card tokens (not Primary Account Numbers) are stored server-side; the mobile client never holds card credentials. Your use of the Lithic card program is also governed by Lithic's cardholder agreement and privacy policy.
+- **Column Bank**: when you open a Tax Vault reserve account or use ACH transfer features, Column Bank ("Column") acts as the banking and ACH layer. Column may collect information necessary to comply with applicable banking regulations and anti-money laundering (AML) requirements. Column is a nationally chartered, FDIC-insured bank. Your use of Column's banking services is also governed by Column's terms and privacy policy.
+
+---
+
+## 3. How We Use Your Information
+
+We use the information we collect to:
+
+- Create and maintain your Milli account.
+- Provide, operate, and improve the Service, including Tax Vault, Autopilot, Milli-Cents, Milli AI, and related features.
+- Route payouts and manage reserve allocations through Column Bank's ACH infrastructure.
+- Enable Milli Elite Card enrollment and card issuance through Lithic.
+- Connect and verify your external bank accounts through Plaid.
+- Calculate your Tax Ready Score and provide financial insights.
+- Send transactional notifications, account alerts, and service updates.
+- Respond to support requests.
+- Detect, investigate, and prevent fraud and unauthorized activity.
+- Comply with applicable laws and regulatory obligations.
+- Analyze usage trends to improve product experience.
+
+We do not sell your personal information to third parties.
+
+---
+
+## 4. Data Handling for Milli Elite Card Enrollment (Lithic KYC)
+
+Enrollment in the Milli Elite Card requires identity verification that Lithic performs as the card program provider. When you initiate enrollment:
+
+- You will be asked to provide your full legal name, date of birth, SSN, residential address, phone number, and email address in a dedicated enrollment screen within the app.
+- Your SSN is transmitted directly to Lithic over an encrypted connection and is held in application memory only during transmission. It is not logged, stored in any Milli database, or retained after the transmission completes.
+- Lithic performs its own KYC verification and returns an approval, decline, or pending status. Only the result and an account token are stored by Milli — not the underlying identity data submitted.
+- Card tokens (not PANs or CVVs) are stored server-side after card issuance. The mobile client never holds card credential data.
+
+Your KYC data is governed by Lithic's cardholder agreement and privacy policy once transmitted.
+
+---
+
+## 5. Sharing of Information
+
+We share your information only in the following circumstances:
+
+- **Service providers**: Plaid (bank account linking), Lithic (card issuance and KYC), Column Bank (banking and ACH), and other vendors who assist in operating the Service. Each is bound by contractual data protection obligations.
+- **Legal compliance**: when required by law, regulation, court order, or government request.
+- **Fraud and security**: to detect, prevent, or address fraud, security issues, or technical problems.
+- **Business transfers**: in connection with a merger, acquisition, or sale of all or substantially all of our assets, in which case your information may be transferred subject to the same protections described here.
+- **With your consent**: for any other purpose with your explicit consent.
+
+---
+
+## 6. Data Retention
+
+We retain your personal information for as long as your account is active and for a reasonable period thereafter to comply with our legal obligations, resolve disputes, and enforce our agreements. When you close your account, we will delete or anonymize your personal data within 90 days, except where longer retention is required by applicable law or regulation (including banking and financial recordkeeping requirements applicable to Column Bank and Lithic).
+
+SSN and government-issued ID data submitted during Milli Elite Card enrollment is not retained by Milli beyond the moment of transmission and is therefore not subject to retention or deletion requests on Milli's end; those requests should be directed to Lithic.
+
+---
+
+## 7. Security
+
+We implement industry-standard security measures to protect your information, including:
+
+- Encryption in transit (TLS) and at rest.
+- Server-authoritative architecture: financial authority and provider credentials are held server-side only; the mobile client holds no financial secrets.
+- Least-privilege access controls and partner boundary separation.
+- Operational monitoring and incident response procedures.
+
+No security system is impenetrable. We encourage you to use a strong, unique password and to notify us immediately if you suspect unauthorized access to your account.
+
+---
+
+## 8. Children's Privacy
+
+The Service is not directed to individuals under the age of 18. We do not knowingly collect personal information from anyone under 18. If you believe we have inadvertently collected information from a minor, please contact us and we will delete it promptly.
+
+---
+
+## 9. Your Rights and Choices
+
+Depending on your state of residence, you may have the right to:
+
+- Access the personal information we hold about you.
+- Request correction of inaccurate information.
+- Request deletion of your personal information (subject to legal retention requirements).
+- Opt out of marketing communications at any time by following the unsubscribe instructions in any such communication.
+
+To exercise these rights, contact us at the address in Section 11. We will respond within 45 days.
+
+---
+
+## 10. Changes to This Policy
+
+We may update this Privacy Policy from time to time. We will notify you of material changes by posting the updated policy at drivemilli.com/privacy and, where appropriate, by in-app notification. The effective date at the top of this page reflects the most recent revision. Your continued use of the Service after a change takes effect constitutes acceptance of the updated policy.
+
+---
+
+## 11. Contact Us
+
+MILLI Tax Vault
+drivemilli.com
+Support: available through the support path in the Milli app
+
+---
+
+*© 2026 MILLI Tax Vault. All rights reserved.*
