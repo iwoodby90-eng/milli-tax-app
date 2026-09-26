@@ -91,7 +91,7 @@ begin
 
             if exists (
                 select 1 from pg_constraint
-                 where conrelid = 'public.auth_sessions_legacy_20260926'::regclass
+                 where conrelid = to_regclass(current_schema() || '.auth_sessions_legacy_20260926')
                    and conname = 'auth_sessions_user_id_fkey'
             ) then
                 alter table auth_sessions_legacy_20260926
