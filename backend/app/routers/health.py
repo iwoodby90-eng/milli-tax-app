@@ -34,6 +34,10 @@ def ready() -> dict:
     plaid = "configured" if settings.plaid_configured else "unconfigured"
     column = "configured" if settings.column_configured else "unconfigured"
     column_ach = "configured" if settings.column_ach_configured else "unconfigured"
+    column_card = "configured" if settings.column_card_configured else "unconfigured"
+    column_physical_card = (
+        "configured" if settings.column_physical_card_configured else "unconfigured"
+    )
 
     return {
         "database": database,
@@ -43,6 +47,8 @@ def ready() -> dict:
         "column": column,
         "column_env": settings.column_env,
         "column_ach": column_ach,
+        "column_card": column_card,
+        "column_physical_card": column_physical_card,
         "ready": (
             database == "ok"
             and apple_auth == "configured"
