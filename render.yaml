@@ -40,5 +40,7 @@ services:
       # Core backend / identity
       - key: DATABASE_URL
         sync: false
+      - key: AUTO_MIGRATE_RELEASE_SCHEMA
+        value: "true"
       - key: APPLE_SIGN_IN_AUDIENCE
         value: com.milli.taxvault
