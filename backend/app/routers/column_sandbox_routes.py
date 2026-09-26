@@ -517,6 +517,15 @@ def provision_demo(
     user_id: uuid.UUID = Depends(require_user),
 ) -> SandboxProvisionOut:
     """Create and persist the complete synthetic Column sandbox customer."""
+    settings = get_settings()
+    if body.card_type == "physical" and not settings.column_card_template_id:
+        # Fail before creating any provider resources: physical cards are never
+        # allowed to fall back to a generic/unapproved design.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Approved MILLI physical card template is not configured",
+        )
+
     entity_id, kyc_status = _customer(user_id, body.request_id)
     if kyc_status != "verified":
         raise HTTPException(
