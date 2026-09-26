@@ -5,12 +5,15 @@ layer. Every user-scoped financial endpoint is authorized by a server-issued
 session; the mobile app is never a financial authority.
 """
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .body_limit import MAX_REQUEST_BYTES, BodySizeLimitMiddleware
 from .config import get_settings
 from .rate_limit import RATE_LIMITED_PREFIXES, RateLimiter
+from .release_migrations import apply_release_migrations
 from .routers import (
     auth_routes,
     column_routes,
@@ -23,6 +26,16 @@ from .routers import (
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Hosted schema changes are opt-in and run before the service accepts
+    # traffic. Any migration failure aborts startup instead of serving against
+    # an incompatible financial schema.
+    apply_release_migrations()
+    yield
+
+
 app = FastAPI(
     title="MILLI Tax Vault API",
     version="0.3.0",
@@ -30,6 +43,7 @@ app = FastAPI(
     docs_url=None if settings.environment == "production" else "/docs",
     redoc_url=None if settings.environment == "production" else "/redoc",
     openapi_url=None if settings.environment == "production" else "/openapi.json",
+    lifespan=lifespan,
 )
 
 app.include_router(health.router)
