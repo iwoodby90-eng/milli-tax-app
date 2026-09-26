@@ -177,6 +177,7 @@ class ColumnClient:
         card_account_id: str,
         authorized_user_entity_id: str,
         card_type: str,
+        encrypted_pin: str,
         card_template_id: str | None = None,
         shipping_details: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
@@ -185,9 +186,7 @@ class ColumnClient:
             "authorized_user_entity_id": authorized_user_entity_id,
             "type": card_type,
             "status": "active",
-            # Column's sandbox explicitly supports SKIP for debit-card PIN setup.
-            # Production PIN enrollment is a separate encrypted flow.
-            "encrypted_pin": "SKIP",
+            "encrypted_pin": encrypted_pin,
         }
         if card_template_id:
             payload["card_template_id"] = card_template_id
