@@ -28,6 +28,10 @@ services:
         value: https://api.column.com
       - key: COLUMN_API_KEY
         sync: false
+      - key: COLUMN_CARD_PROGRAM_ID
+        sync: false
+      - key: COLUMN_CARD_TEMPLATE_ID
+        sync: false
       - key: COLUMN_ACH_CREDIT_SEC_CODE
         sync: false
       - key: COLUMN_ACH_DEBIT_SEC_CODE
