@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from app import db
 from app.config import get_settings
 from app.main import app
-from app.routers import column_routes
+from app.routers import column_routes, column_sandbox_routes
 from app.security import require_user
 
 
@@ -56,10 +56,47 @@ class FakePlaid:
 
 class FakeColumn:
     def __init__(self):
+        self.entity_calls = []
         self.bank_account_calls = []
+        self.card_program_calls = []
+        self.card_account_calls = []
+        self.card_calls = []
         self.counterparty_calls = []
         self.transfer_calls = []
         self.counterparties = {}
+
+    def create_person_entity(self, **kwargs):
+        self.entity_calls.append(kwargs)
+        return {
+            "id": "enti_sandbox_1",
+            "verification_status": "VERIFIED",
+        }
+
+    def create_sandbox_debit_card_program(self, **kwargs):
+        self.card_program_calls.append(kwargs)
+        return {
+            "id": "cpgm_sandbox_1",
+            "status": "active",
+            "primary_card_scheme": "visa",
+        }
+
+    def create_card_account(self, **kwargs):
+        self.card_account_calls.append(kwargs)
+        return {
+            "id": "cacc_sandbox_1",
+            "status": "open",
+        }
+
+    def create_card(self, **kwargs):
+        self.card_calls.append(kwargs)
+        return {
+            "id": "card_sandbox_1",
+            "status": "active",
+            "type": kwargs["card_type"],
+            "last_four_digits": "4242",
+            "expiration_month": 12,
+            "expiration_year": 2030,
+        }
 
     def create_bank_account(self, **kwargs):
         self.bank_account_calls.append(kwargs)
@@ -130,6 +167,7 @@ def column_db(monkeypatch):
             "003_create_plaid_and_tax_vault.sql",
             "004_create_server_auth.sql",
             "005_create_column_money_rail.sql",
+            "008_create_column_customer_and_cards.sql",
         ):
             conn.execute((root / migration).read_text())
         conn.commit()
@@ -141,6 +179,7 @@ def column_db(monkeypatch):
         monkeypatch.setattr(db, "connection", connection)
         monkeypatch.setattr(column_routes, "_provider_client", lambda: fake_column)
         monkeypatch.setattr(column_routes, "get_plaid_client", lambda: fake_plaid)
+        monkeypatch.setattr(column_sandbox_routes, "_provider", lambda: fake_column)
 
         monkeypatch.setenv("DATABASE_URL", "postgresql://configured-for-test")
         monkeypatch.setenv("COLUMN_API_KEY", "test_column_key")
@@ -353,3 +392,52 @@ def test_transfer_sec_code_is_server_controlled_and_status_cannot_be_injected(co
     injected["status"] = "settled"
     injected["entry_class_code"] = "PPD"
     assert client.post("/column/transfers", json=injected).status_code == 422
+
+
+
+def test_sandbox_demo_provisions_entity_account_and_virtual_card_once(column_db):
+    client = column_db["client"]
+    fake_column = column_db["fake_column"]
+
+    request_id = str(uuid4())
+    payload = {"request_id": request_id, "card_type": "virtual"}
+
+    first = client.post("/column/sandbox/provision-demo", json=payload)
+    assert first.status_code == 201, first.text
+    body = first.json()
+    assert body["customer"]["verification_status"] == "verified"
+    assert body["customer"]["ready_for_financial_products"] is True
+    assert body["bank_account"]["provider_status"] == "open"
+    assert body["card_account"]["provider_status"] == "open"
+    assert body["card"]["provider_status"] == "active"
+    assert body["card"]["last_four"] == "4242"
+    assert body["card"]["design"] == "milli-approved"
+
+    # Replaying the same authenticated request returns persisted resources
+    # instead of minting a second Column customer/account/card.
+    second = client.post("/column/sandbox/provision-demo", json=payload)
+    assert second.status_code == 201, second.text
+    assert second.json()["card"]["id"] == body["card"]["id"]
+
+    assert len(fake_column.entity_calls) == 1
+    assert len(fake_column.bank_account_calls) == 1
+    assert len(fake_column.card_program_calls) == 1
+    assert len(fake_column.card_account_calls) == 1
+    assert len(fake_column.card_calls) == 1
+
+    readback = client.get("/column/sandbox/provision-demo")
+    assert readback.status_code == 200, readback.text
+    assert readback.json()["card"]["last_four"] == "4242"
+
+
+def test_sandbox_physical_card_fails_closed_without_approved_template(column_db):
+    client = column_db["client"]
+    fake_column = column_db["fake_column"]
+
+    response = client.post(
+        "/column/sandbox/provision-demo",
+        json={"request_id": str(uuid4()), "card_type": "physical"},
+    )
+    assert response.status_code == 409
+    assert "approved milli physical card template" in response.json()["detail"].lower()
+    assert fake_column.card_calls == []

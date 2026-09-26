@@ -1,7 +1,7 @@
 # Terms of Service
 
 **MILLI Tax Vault**
-**Effective Date: September 25, 2026**
+**Effective Date: September 26, 2026**
 
 ---
 
@@ -69,7 +69,7 @@ The following features are planned but have not yet been built or released:
 
 The following features are available at the Elite tier, subject to eligibility requirements and partner availability:
 
-- **Elite Checking Account** and **Milli Elite Card**: issued through Lithic. Enrollment requires Lithic KYC verification. See our Disclosures for details.
+- **Elite Checking Account** and **Milli Elite Card**: planned through Column and subject to Column production approval, eligibility, compliance requirements, and partner availability. Current card integration is sandbox-only. See our Disclosures for details.
 - **Solo 401(k) access**: subject to eligibility and investment partner terms.
 - **Investment account access**: subject to eligibility and investment partner terms. Investment products involve risk, including possible loss of principal.
 
@@ -113,7 +113,7 @@ Your participation in early access is governed by these Terms.
 
 ## 7. Third-Party Services
 
-The Service integrates with third-party services including Plaid (bank account linking), Column Bank (banking and ACH), and Lithic (card program). Your use of these services is subject to their own terms, privacy policies, and eligibility requirements. Milli is not responsible for the acts or omissions of these third parties.
+The Service integrates with third-party services including Plaid (bank account linking) and Column Bank (banking, ACH, and planned card infrastructure). Your use of these services is subject to their own terms, privacy policies, and eligibility requirements. Milli is not responsible for the acts or omissions of these third parties.
 
 By connecting a third-party account through the Service, you authorize Milli to access information from that account as necessary to provide the Service.
 

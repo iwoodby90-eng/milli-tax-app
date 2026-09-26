@@ -1,7 +1,7 @@
 # Disclosures
 
 **MILLI Tax Vault**
-**Effective Date: September 25, 2026**
+**Effective Date: September 26, 2026**
 
 ---
 
@@ -25,15 +25,17 @@ Column Bank is an independent entity. Milli is not an agent, employee, or subsid
 
 ---
 
-## 3. Card Program — Lithic
+## 3. Card Program — Column (Pending Production Approval)
 
-The Milli Elite Card is issued through **Lithic**, a card program manager and licensed payment facilitator. Lithic is responsible for card authorization, card number issuance, physical card fulfillment, and card program compliance.
+Milli is building the **Milli Elite Card** on Column's card-issuing infrastructure. The current integration is limited to Column Sandbox for development and partner validation. No production Milli Elite Card is available until Column approves Milli's live card program, required compliance controls, network/BIN configuration, and the final card program agreement.
 
-**Eligibility**: Access to the Milli Elite Card is subject to Lithic's KYC (Know Your Customer) eligibility review, which requires submission of full legal name, date of birth, Social Security Number, residential address, phone number, and email address. Milli does not make eligibility determinations; Lithic does.
+**Eligibility**: If and when production enrollment opens, access to the Milli Elite Card will be subject to identity verification, eligibility, and compliance requirements established for the approved Column card program. Milli does not guarantee that any applicant will qualify.
 
-**Not a bank card**: The Milli Elite Card is issued through Lithic's card program. It is not a bank account or deposit product. Balances loaded or held on the card are not FDIC-insured unless the card program explicitly provides pass-through FDIC insurance through a partner bank; refer to Lithic's cardholder agreement for details.
+**Debit card structure**: The intended Milli Elite Card is a debit card linked to an eligible Column deposit account. Deposit insurance, cardholder protections, fees, transaction limits, and other terms will be governed by the final Column deposit and cardholder agreements presented before enrollment.
 
-**Cardholder agreement**: Use of the Milli Elite Card is governed by the Lithic cardholder agreement, which Milli will present to you during the card enrollment process.
+**Approved card design**: Physical issuance will remain disabled until Column has an approved Milli physical-card template. Milli will not intentionally substitute an unapproved or generic physical card design.
+
+**Sandbox cards**: Cards created in Column Sandbox are test objects only. They cannot be used for real purchases, do not represent live customer funds, and do not create a production banking relationship.
 
 ---
 
@@ -77,8 +79,7 @@ Milli's tools — including Tax Vault, Autopilot, Milli-Cents, and Milli AI — 
 
 Your use of financial products offered through Milli is subject to the terms and conditions of the relevant partner:
 
-- **Column Bank**: Column's deposit account agreement and privacy policy govern your Tax Vault reserve account and ACH services.
-- **Lithic**: Lithic's cardholder agreement and privacy policy govern your Milli Elite Card.
+- **Column Bank**: Column's applicable deposit, payments, privacy, and card-program agreements govern Column-provided banking, ACH, and any approved Milli Elite Card services.
 - **Plaid**: Plaid's end user privacy policy governs the collection and use of your linked bank account data.
 
 In the event of a conflict between these Disclosures and a partner's agreement, the partner's agreement governs the partner's product.

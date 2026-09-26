@@ -21,8 +21,12 @@ user identity or financial settlement state.
 - **No invented financial truth:** unavailable database/provider state returns
   an explicit error or `UNAVAILABLE`; the API does not synthesize a plausible
   balance.
-- **Provider secrets stay server-side:** Plaid access tokens are persisted only
-  by the backend and are never returned to the iOS client.
+- **Provider secrets stay server-side:** Plaid access tokens and Column API keys
+  are backend-only and are never returned to the iOS client.
+- **Sandbox card proof is synthetic:** `/column/sandbox/provision-demo` creates a
+  server-generated test identity only in Column Sandbox. It never accepts or
+  persists a real SSN/DOB/address. Physical issuance fails closed unless the
+  approved MILLI `COLUMN_CARD_TEMPLATE_ID` is configured.
 - **Signed Plaid webhooks:** `Plaid-Verification` ES256 signatures, request-body
   hashes, and freshness are verified before a webhook is accepted.
 - **Reserve movements fail safe:** new Tax Vault ledger entries are
@@ -71,6 +75,8 @@ user identity or financial settlement state.
 | GET | `/tax-vault/entries` | Auditable user-scoped ledger history |
 | GET/PUT | `/plaid/payout-source` | User-selected account where gig payouts land |
 | GET/PUT | `/tax-vault/settings` | Authenticated Autopilot reserve settings |
+| POST | `/column/sandbox/provision-demo` | Sandbox-only entity → account → debit card proof |
+| GET | `/column/sandbox/provision-demo` | Read persisted sandbox provisioning proof |
 
 ## Local run
 
@@ -94,6 +100,7 @@ psql "$DATABASE_URL" -f migrations/004_create_server_auth.sql
 psql "$DATABASE_URL" -f migrations/005_create_column_money_rail.sql
 psql "$DATABASE_URL" -f migrations/006_add_plaid_transactions_cursor.sql
 psql "$DATABASE_URL" -f migrations/007_add_email_password_auth.sql
+psql "$DATABASE_URL" -f migrations/008_create_column_customer_and_cards.sql
 ```
 
 ## Sign-in credentials
@@ -117,7 +124,12 @@ environment variables / secret storage, never in source control.
 Required authenticated-finance configuration includes:
 
 `DATABASE_URL`, `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV`,
-`PLAID_WEBHOOK_URL`, and `APPLE_SIGN_IN_AUDIENCE`.
+`PLAID_WEBHOOK_URL`, `COLUMN_API_KEY`, and `APPLE_SIGN_IN_AUDIENCE`.
+
+For cards, Sandbox can create a simulated Visa debit program automatically.
+Production requires `COLUMN_CARD_PROGRAM_ID`. Physical card issuance additionally
+requires `COLUMN_CARD_TEMPLATE_ID`, which must reference the approved MILLI card
+artwork/template configured with Column.
 
 Keep provider environments aligned (sandbox with sandbox, production with
 production). Production readiness must remain false when required identity,
