@@ -14,6 +14,7 @@ from .rate_limit import RATE_LIMITED_PREFIXES, RateLimiter
 from .routers import (
     auth_routes,
     column_routes,
+    column_sandbox_routes,
     health,
     payout_source,
     plaid_routes,
@@ -36,6 +37,7 @@ app.include_router(auth_routes.router)
 app.include_router(plaid_routes.router)
 app.include_router(payout_source.router)
 app.include_router(column_routes.router)
+app.include_router(column_sandbox_routes.router)
 app.include_router(tax_vault.router)
 
 
