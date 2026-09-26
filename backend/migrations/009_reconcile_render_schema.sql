@@ -17,6 +17,14 @@ create table if not exists milli_users (
     updated_at timestamptz not null default now()
 );
 
+alter table milli_users
+    alter column apple_subject drop not null,
+    add column if not exists email_verified boolean not null default false,
+    add column if not exists password_hash text,
+    add column if not exists password_updated_at timestamptz,
+    add column if not exists failed_login_count integer not null default 0,
+    add column if not exists locked_until timestamptz;
+
 do $$
 begin
     if to_regclass('public.users') is not null then
