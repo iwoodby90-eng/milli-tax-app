@@ -27,7 +27,7 @@ alter table milli_users
 
 do $$
 begin
-    if to_regclass('public.users') is not null then
+    if to_regclass(current_schema() || '.users') is not null then
         insert into milli_users
             (id, apple_subject, email, email_verified, created_at, updated_at)
         select id, apple_subject, email, false, created_at, updated_at
@@ -67,21 +67,21 @@ create index if not exists auth_challenges_expiry_idx
 -- invalidated because the old schema has no access-token digest or split expirations.
 do $$
 begin
-    if to_regclass('public.auth_sessions') is not null
+    if to_regclass(current_schema() || '.auth_sessions') is not null
        and not exists (
             select 1
               from information_schema.columns
-             where table_schema = 'public'
+             where table_schema = current_schema()
                and table_name = 'auth_sessions'
                and column_name = 'access_token_hash'
        )
     then
-        if to_regclass('public.auth_sessions_legacy_20260926') is null then
+        if to_regclass(current_schema() || '.auth_sessions_legacy_20260926') is null then
             alter table auth_sessions rename to auth_sessions_legacy_20260926;
 
             if exists (
                 select 1 from pg_constraint
-                 where conrelid = 'public.auth_sessions_legacy_20260926'::regclass
+                 where conrelid = to_regclass(current_schema() || '.auth_sessions_legacy_20260926')
                    and conname = 'auth_sessions_pkey'
             ) then
                 alter table auth_sessions_legacy_20260926
@@ -99,7 +99,7 @@ begin
                     to auth_sessions_legacy_20260926_user_id_fkey;
             end if;
 
-            if to_regclass('public.auth_sessions_user_active_idx') is not null then
+            if to_regclass(current_schema() || '.auth_sessions_user_active_idx') is not null then
                 alter index auth_sessions_user_active_idx
                     rename to auth_sessions_legacy_20260926_user_active_idx;
             end if;
