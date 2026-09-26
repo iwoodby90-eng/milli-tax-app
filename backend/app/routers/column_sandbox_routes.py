@@ -440,6 +440,7 @@ def _card(
             card_account_id=card_account_provider_id,
             authorized_user_entity_id=entity_id,
             card_type=card_type,
+            encrypted_pin="SKIP",
             card_template_id=(
                 settings.column_card_template_id
                 if card_type == "physical"
