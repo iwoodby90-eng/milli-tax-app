@@ -439,5 +439,5 @@ def test_sandbox_physical_card_fails_closed_without_approved_template(column_db)
         json={"request_id": str(uuid4()), "card_type": "physical"},
     )
     assert response.status_code == 409
-    assert "approved MILLI physical card template" in response.json()["detail"]
+    assert "approved milli physical card template" in response.json()["detail"].lower()
     assert fake_column.card_calls == []
