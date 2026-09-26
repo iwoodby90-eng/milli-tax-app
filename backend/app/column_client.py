@@ -108,7 +108,6 @@ class ColumnClient:
             "address": address,
             "pep_status": "not_checked",
             "expected_payment_rails": "ach,card_spend",
-            "purpose_of_account": ["tax_reserve", "spending"],
         }
         if phone_number:
             payload["phone_number"] = phone_number
