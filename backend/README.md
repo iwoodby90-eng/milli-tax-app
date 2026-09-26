@@ -101,6 +101,7 @@ psql "$DATABASE_URL" -f migrations/005_create_column_money_rail.sql
 psql "$DATABASE_URL" -f migrations/006_add_plaid_transactions_cursor.sql
 psql "$DATABASE_URL" -f migrations/007_add_email_password_auth.sql
 psql "$DATABASE_URL" -f migrations/008_create_column_customer_and_cards.sql
+psql "$DATABASE_URL" -f migrations/009_reconcile_render_schema.sql
 ```
 
 ## Sign-in credentials
@@ -134,6 +135,12 @@ artwork/template configured with Column.
 Keep provider environments aligned (sandbox with sandbox, production with
 production). Production readiness must remain false when required identity,
 database, or provider configuration is missing.
+
+Render sets `AUTO_MIGRATE_RELEASE_SCHEMA=true`. On startup the API takes a
+PostgreSQL advisory lock and applies migration 009 exactly once, recording it in
+`milli_schema_migrations`. The reconciliation preserves existing user UUIDs and
+Plaid ownership, archives incompatible pre-September-2026 auth sessions, and
+fails service startup rather than serving against a partially upgraded schema.
 
 ## Tests
 
