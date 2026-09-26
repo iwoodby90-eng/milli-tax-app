@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     column_api_key: Optional[str] = None
     column_env: Literal["sandbox", "production"] = "sandbox"
     column_base_url: str = "https://api.column.com"
+    # Card issuing: sandbox can create a test debit program automatically.
+    # Production requires Column-provisioned program/template IDs.
+    column_card_program_id: Optional[str] = None
+    column_card_template_id: Optional[str] = None
 
     # ACH SEC classification is a compliance decision, not a UI choice. These
     # are deliberately environment-configured so the mobile client cannot
@@ -68,6 +72,20 @@ class Settings(BaseSettings):
             and self.column_ach_credit_sec_code
             and self.column_ach_debit_sec_code
         )
+
+    @property
+    def column_card_configured(self) -> bool:
+        if not self.column_configured:
+            return False
+        # Sandbox may create and persist its own simulated debit program.
+        if self.column_env == "sandbox":
+            return True
+        return bool(self.column_card_program_id)
+
+    @property
+    def column_physical_card_configured(self) -> bool:
+        # Never let production physical issuance fall back to a generic card.
+        return bool(self.column_card_configured and self.column_card_template_id)
 
 
 @lru_cache
