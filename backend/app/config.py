@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     environment: Literal["sandbox", "production"] = "sandbox"
     database_url: Optional[str] = None
+    # One-shot/idempotent release migration gate for hosted environments.
+    auto_migrate_release_schema: bool = False
 
     # Plaid: account connectivity, Auth, balances and transaction data.
     plaid_client_id: Optional[str] = None
