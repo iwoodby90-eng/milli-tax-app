@@ -1,7 +1,7 @@
 # Disclosures
 
 **MILLI Tax Vault**
-**Effective Date: September 25, 2026**
+**Effective Date: September 26, 2026**
 
 ---
 
